@@ -12,9 +12,6 @@ import {
     Check
 } from 'lucide-react';
 import Link from 'next/link';
-import { Share_Tech_Mono } from 'next/font/google';
-
-const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
 // --- TIPOS ---
 interface DailyLog {
@@ -36,10 +33,8 @@ interface WeeklyData {
     days: DailyLog[];
     summary: {
         totalHours: number;
-        totalExtraHours: number;
-        pendingHours: number;
-        estimatedPayout: number;
-        status: 'paid' | 'pending';
+        weeklyBalance: number; // Diferencia de horas
+        estimatedValue: number; // Valor monetario
     };
 }
 
@@ -60,12 +55,18 @@ export default function HistoryPage() {
         fetchHistory();
     }, [currentDate]);
 
-    // Helper Formato Generico
+    // --- HELPERS VISUALES (SIN SIGNOS) ---
+
     const formatValue = (val: number, unit: string) => {
         return val > 0 ? `${val.toFixed(0)}${unit}` : '\u00A0';
     };
 
-    // --- CORRECCIÓN: AÑADIDA LA FUNCIÓN QUE FALTABA ---
+    // Sin signos + ni -, solo valor absoluto
+    const formatBalance = (val: number) => {
+        if (Math.abs(val) < 0.1) return '0h';
+        return `${Math.abs(val).toFixed(0)}h`;
+    };
+
     const formatMoney = (val: number) => {
         return val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
     };
@@ -78,7 +79,7 @@ export default function HistoryPage() {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('first_name, contracted_hours_weekly, overtime_cost_per_hour')
+                .select('first_name, contracted_hours_weekly, overtime_cost_per_hour, is_fixed_salary')
                 .eq('id', user.id)
                 .single();
 
@@ -86,6 +87,7 @@ export default function HistoryPage() {
 
             const contractHours = profile?.contracted_hours_weekly || 40;
             const overtimeRate = profile?.overtime_cost_per_hour || 0;
+            const isFixedSalary = profile?.is_fixed_salary || false;
 
             const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
             const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -140,16 +142,27 @@ export default function HistoryPage() {
                     });
                 }
 
-                const overtime = Math.max(0, weekTotalHours - contractHours);
-                const pending = Math.max(0, contractHours - weekTotalHours);
-                const payout = overtime * overtimeRate;
+                // CÁLCULO DE BALANCE SEMANAL (Diferencial)
+                let weeklyBalance = 0;
+
+                if (isFixedSalary) {
+                    weeklyBalance = weekTotalHours;
+                } else {
+                    weeklyBalance = weekTotalHours - contractHours;
+                }
+
+                const estimatedValue = weeklyBalance > 0 ? weeklyBalance * overtimeRate : 0;
 
                 weeks.push({
                     weekNumber: getWeekNumber(currentWeekStart),
                     startDate: new Date(currentWeekStart),
                     endDate: new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate() + 6),
                     days: weekDays,
-                    summary: { totalHours: weekTotalHours, totalExtraHours: overtime, pendingHours: pending, estimatedPayout: payout, status: 'pending' }
+                    summary: {
+                        totalHours: weekTotalHours,
+                        weeklyBalance: weeklyBalance,
+                        estimatedValue: estimatedValue
+                    }
                 });
                 currentWeekStart.setDate(currentWeekStart.getDate() + 7);
             }
@@ -280,12 +293,9 @@ export default function HistoryPage() {
                                                     {week.startDate.getDate()} {week.startDate.toLocaleDateString('es-ES', { month: 'short' })} - {week.endDate.getDate()} {week.endDate.toLocaleDateString('es-ES', { month: 'short' })}
                                                 </h3>
                                             </div>
-                                            {week.summary.estimatedPayout > 0 && (
-                                                <div className={`px-2 py-1 rounded text-[10px] font-black uppercase border ${week.summary.status === 'paid'
-                                                    ? 'bg-green-50 text-green-600 border-green-200'
-                                                    : 'bg-yellow-50 text-yellow-600 border-yellow-200'
-                                                    }`}>
-                                                    {week.summary.status === 'paid' ? 'PAGADO' : 'PENDIENTE'}
+                                            {week.summary.estimatedValue > 0 && (
+                                                <div className="px-2 py-1 rounded text-[10px] font-black uppercase border bg-green-50 text-green-600 border-green-200">
+                                                    AHORRO
                                                 </div>
                                             )}
                                         </div>
@@ -334,27 +344,22 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
+                                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-3 gap-2 text-xs">
                                             <div className="flex flex-col items-center border-r border-gray-200">
                                                 <span className="text-[9px] font-bold text-gray-400 uppercase">TOTAL</span>
                                                 <span className="font-black text-gray-800 text-sm">{formatValue(week.summary.totalHours, 'h')}</span>
                                             </div>
                                             <div className="flex flex-col items-center border-r border-gray-200">
-                                                <span className="text-[9px] font-bold text-gray-400 uppercase">EXTRAS</span>
-                                                <span className="font-black text-sm text-blue-600">{formatValue(week.summary.totalExtraHours, 'h')}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center border-r border-gray-200">
-                                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
-                                                <span className={`font-black text-sm ${week.summary.pendingHours > 0 ? 'text-green-600' :
-                                                    week.summary.pendingHours < 0 ? 'text-red-500' : 'text-gray-400'
-                                                    }`}>
-                                                    {formatValue(week.summary.pendingHours, 'h')}
+                                                {/* BALANCE SEMANAL */}
+                                                <span className="text-[9px] font-bold text-gray-400 uppercase">BALANCE</span>
+                                                <span className={`font-black text-sm ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {formatBalance(week.summary.weeklyBalance)}
                                                 </span>
                                             </div>
                                             <div className="flex flex-col items-center">
+                                                {/* ETIQUETA A COBRAR */}
                                                 <span className="text-[9px] font-bold text-gray-400 uppercase">A COBRAR</span>
-                                                {/* CORRECCIÓN: Usar formatMoney */}
-                                                <span className="font-black text-sm text-green-600">{formatMoney(week.summary.estimatedPayout)}</span>
+                                                <span className="font-black text-sm text-green-600">{formatMoney(week.summary.estimatedValue)}</span>
                                             </div>
                                         </div>
                                     </div>

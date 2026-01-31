@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Clock,
     Home,
@@ -11,7 +11,8 @@ import {
     Mic,
     MessageSquare,
     X,
-    Sparkles // Nuevo icono para la IA
+    Sparkles,
+    ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -27,10 +28,31 @@ export default function StaffLayout({
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
-    
-    // Estados para los modales/popups
+
+    // Estados
     const [showAIMenu, setShowAIMenu] = useState(false);
-    const [showAccountMenu, setShowAccountMenu] = useState(false); 
+    const [showAccountMenu, setShowAccountMenu] = useState(false);
+    // userName ya no es necesario visualmente en el header, pero lo mantenemos si lo usas en lógica futura o lo quitamos.
+    // Lo dejo por si acaso, pero no se renderiza.
+    const [userRole, setUserRole] = useState<'staff' | 'manager'>('staff');
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role') // Solo necesitamos el rol ahora
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    setUserRole(profile.role === 'manager' ? 'manager' : 'staff');
+                }
+            }
+        };
+        fetchProfile();
+    }, []);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -46,17 +68,15 @@ export default function StaffLayout({
     ];
 
     const isActive = (path: string) => pathname === path;
-    
-    // TUS COLORES ORIGINALES
+
     const corporateBlue = "bg-[#5B8FB9]";
     const sidebarDark = "bg-[#1a1a1a]";
 
     return (
-        // CAMBIO: Fondo azul corporativo en el contenedor raíz
         <div className={`flex min-h-screen ${corporateBlue}`}>
             <Toaster position="top-center" richColors />
 
-            {/* SIDEBAR ESCRITORIO (Sin cambios) */}
+            {/* SIDEBAR ESCRITORIO */}
             <aside className={`hidden md:flex w-64 flex-col ${sidebarDark} text-white fixed h-full shadow-2xl z-50`}>
                 <div className="p-4 border-b border-gray-800 flex items-center justify-center h-36">
                     <div className="relative w-full h-full">
@@ -75,8 +95,8 @@ export default function StaffLayout({
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive(item.href)
-                                    ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             <item.icon size={20} className={isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-white'} />
@@ -92,28 +112,43 @@ export default function StaffLayout({
                 </div>
             </aside>
 
-            {/* HEADER MÓVIL (Mismo azul corporativo) */}
-            <header className={`md:hidden fixed top-0 left-0 right-0 px-6 py-4 flex justify-between items-center z-50 ${corporateBlue} shadow-md`}>
-                <div className="relative w-32 h-10">
+            {/* HEADER MÓVIL */}
+            <header className={`md:hidden fixed top-0 left-0 right-0 px-4 py-3 flex justify-between items-center z-50 ${corporateBlue} shadow-md`}>
+
+                {/* GRUPO IZQUIERDA: Solo Logo */}
+                <div className="relative w-28 h-8">
                     <Image
                         src="/logo-white.png"
-                        alt="La Marbella Logo"
+                        alt="Logo"
                         fill
                         className="object-contain object-left"
                         priority
                     />
                 </div>
-                <button
-                    onClick={() => setShowAIMenu(true)}
-                    className="bg-gradient-to-br from-blue-400 to-purple-500 p-2 rounded-full text-white hover:shadow-lg transition-all shadow-md border border-white/20 active:scale-95 flex items-center justify-center"
-                >
-                    <Sparkles size={20} strokeWidth={2.5} />
-                </button>
+
+                {/* GRUPO DERECHA: Botón Gestión + IA */}
+                <div className="flex items-center gap-2">
+                    {userRole === 'manager' && (
+                        <Link
+                            href="/dashboard"
+                            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md border border-orange-400 transition-transform active:scale-95"
+                        >
+                            <ShieldAlert size={14} fill="currentColor" className="text-orange-100" />
+                            <span className="text-[10px] font-black uppercase tracking-wide">Gestión</span>
+                        </Link>
+                    )}
+
+                    <button
+                        onClick={() => setShowAIMenu(true)}
+                        className="bg-gradient-to-br from-blue-400 to-purple-500 p-1.5 rounded-full text-white hover:shadow-lg transition-all shadow-md border border-white/20 active:scale-95 flex items-center justify-center"
+                    >
+                        <Sparkles size={18} strokeWidth={2.5} />
+                    </button>
+                </div>
             </header>
 
             {/* CONTENIDO PRINCIPAL */}
-            {/* CAMBIO: Fondo azul corporativo también aquí para asegurar consistencia */}
-            <main className={`flex-1 w-full md:ml-64 md:p-8 pt-24 pb-28 px-4 min-h-screen ${corporateBlue}`}>
+            <main className={`flex-1 w-full md:ml-64 md:p-8 pt-20 pb-28 px-4 min-h-screen ${corporateBlue}`}>
                 {children}
             </main>
 
@@ -122,22 +157,19 @@ export default function StaffLayout({
                 <div className="fixed inset-0 z-40 bg-black/20 md:hidden" onClick={() => setShowAccountMenu(false)} />
             )}
 
-            {/* BARRA INFERIOR (Móvil - AZUL CORPORATIVO) */}
+            {/* BARRA INFERIOR (Móvil) */}
             <nav className={`md:hidden fixed bottom-0 left-0 right-0 ${corporateBlue} text-white z-50 pb-safe border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] rounded-t-3xl`}>
                 <div className="flex justify-between items-center h-20 px-4">
                     {navItems.map((item) => {
-                        
-                        // CASO ESPECIAL: BOTÓN CUENTA (Popup)
                         if (item.name === 'Cuenta') {
                             const isAccountActive = showAccountMenu || isActive(item.href);
                             return (
                                 <div key={item.name} className="relative flex flex-col items-center justify-center w-full h-full">
-                                    {/* POPUP DE CUENTA */}
                                     {showAccountMenu && (
                                         <div className="absolute bottom-16 right-4 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 animate-in slide-in-from-bottom-2 fade-in duration-200 z-50 text-gray-800">
                                             <div className="flex flex-col gap-1">
-                                                <Link 
-                                                    href="/staff/account" 
+                                                <Link
+                                                    href="/staff/account"
                                                     onClick={() => setShowAccountMenu(false)}
                                                     className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                                                 >
@@ -145,7 +177,7 @@ export default function StaffLayout({
                                                     <span className="text-sm font-bold text-gray-700">Mi Cuenta</span>
                                                 </Link>
                                                 <div className="h-px bg-gray-100 my-1"></div>
-                                                <button 
+                                                <button
                                                     onClick={handleSignOut}
                                                     className="flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-colors text-red-600 w-full text-left"
                                                 >
@@ -156,11 +188,10 @@ export default function StaffLayout({
                                             <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-gray-100 transform rotate-45"></div>
                                         </div>
                                     )}
-                                    <button 
+                                    <button
                                         onClick={() => setShowAccountMenu(!showAccountMenu)}
-                                        className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
-                                            isAccountActive ? 'text-white' : 'text-blue-200 hover:text-white'
-                                        }`}
+                                        className={`flex flex-col items-center justify-center space-y-1 transition-colors ${isAccountActive ? 'text-white' : 'text-blue-200 hover:text-white'
+                                            }`}
                                     >
                                         <div className={`p-1.5 rounded-xl transition-all ${isAccountActive ? 'bg-white/20 shadow-inner' : ''}`}>
                                             <item.icon size={22} strokeWidth={isAccountActive ? 2.5 : 2} />
@@ -170,15 +201,12 @@ export default function StaffLayout({
                                 </div>
                             );
                         }
-
-                        // RESTO DE ITEMS
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-                                    isActive(item.href) ? 'text-white' : 'text-blue-200 hover:text-white'
-                                }`}
+                                className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${isActive(item.href) ? 'text-white' : 'text-blue-200 hover:text-white'
+                                    }`}
                             >
                                 <div className={`p-1.5 rounded-xl transition-all ${isActive(item.href) ? 'bg-white/20 shadow-inner' : ''}`}>
                                     <item.icon size={22} strokeWidth={isActive(item.href) ? 2.5 : 2} />

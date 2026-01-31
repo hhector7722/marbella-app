@@ -33,8 +33,8 @@ interface DailyLog {
 
 interface WeeklySummary {
     totalHours: number;
-    totalExtraHours: number;
-    pendingHours: number;
+    hoursDifference: number;
+    currentBalance: number;
     estimatedPayout: number;
     status: 'paid' | 'pending';
     startBalance: number;
@@ -53,7 +53,6 @@ export default function StaffDashboard() {
 
     // Usuario / Estado
     const [userId, setUserId] = useState<string | null>(null);
-    const [userName, setUserName] = useState('');
     const [userRole, setUserRole] = useState<'staff' | 'manager'>('staff');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
@@ -62,7 +61,7 @@ export default function StaffDashboard() {
     // Datos REALES
     const [weekDays, setWeekDays] = useState<DailyLog[]>([]);
     const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
-        totalHours: 0, totalExtraHours: 0, pendingHours: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
+        totalHours: 0, hoursDifference: 0, currentBalance: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
     });
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
     const [currentMonthName, setCurrentMonthName] = useState('');
@@ -97,13 +96,13 @@ export default function StaffDashboard() {
         return () => clearInterval(interval);
     }, [status, todayLog]);
 
-    // Helpers
-    // CAMBIO: Eliminado signo +, - y unidad 'h'. Solo valor absoluto.
-    const formatValue = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : Math.abs(val).toFixed(0);
-
+    // Helpers Visuales
+    const formatWorked = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : Math.abs(val).toFixed(0);
+    const formatBalance = (val: number) => {
+        if (Math.abs(val) < 0.1) return '\u00A0';
+        return Math.abs(val).toFixed(0);
+    };
     const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
-
-    // Helper limpieza teléfono
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
         return cleaned.startsWith('34') ? `+${cleaned}` : `+34${cleaned}`;
@@ -119,23 +118,22 @@ export default function StaffDashboard() {
             let overtimeRate = 0;
             let historicalBalance = 0;
             let preferStock = false;
+            let isFixedSalary = false;
 
-            // 1. OBTENER PERFIL
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours')
+                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours, is_fixed_salary')
                 .eq('id', user.id)
                 .single();
 
             if (profile) {
-                setUserName(profile.first_name);
                 setUserRole(profile.role === 'manager' ? 'manager' : 'staff');
                 if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
                 if (profile.overtime_cost_per_hour !== null) overtimeRate = profile.overtime_cost_per_hour;
                 if (profile.hours_balance !== undefined && profile.hours_balance !== null) historicalBalance = profile.hours_balance;
                 if (profile.prefer_stock_hours) preferStock = profile.prefer_stock_hours;
+                if (profile.is_fixed_salary) isFixedSalary = profile.is_fixed_salary;
             }
 
-            // 2. LOGS DIARIOS
             const today = new Date();
             const todayISO = today.toISOString().split('T')[0];
             const startOfDay = new Date(todayISO).toISOString();
@@ -195,18 +193,29 @@ export default function StaffDashboard() {
             }
             setWeekDays(daysStructure);
 
-            // 3. CALCULO DE SALDO
-            const weekDifference = totalWeekHours - contractHours;
-            const projectedBalance = historicalBalance + weekDifference;
+            let weekDifference = 0;
+            if (isFixedSalary) {
+                weekDifference = totalWeekHours;
+            } else {
+                weekDifference = totalWeekHours - contractHours;
+            }
+
+            const currentTotalBalance = historicalBalance + weekDifference;
+
             let payout = 0;
-            let balanceForDisplay = projectedBalance;
-            if (projectedBalance > 0 && !preferStock) payout = projectedBalance * overtimeRate;
+            if (currentTotalBalance > 0 && !preferStock) {
+                payout = currentTotalBalance * overtimeRate;
+            }
 
             setWeeklySummary({
-                totalHours: totalWeekHours, totalExtraHours: Math.max(0, weekDifference), pendingHours: balanceForDisplay, estimatedPayout: payout, status: 'pending', startBalance: historicalBalance
+                totalHours: totalWeekHours,
+                hoursDifference: weekDifference,
+                currentBalance: currentTotalBalance,
+                estimatedPayout: payout,
+                status: 'pending',
+                startBalance: historicalBalance
             });
 
-            // 4. TURNOS REALES
             const { data: realShifts, error: shiftsError } = await supabase
                 .from('shifts')
                 .select('start_time, end_time')
@@ -281,24 +290,7 @@ export default function StaffDashboard() {
     return (
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6">
 
-            {/* Header */}
-            <div className="flex justify-between items-end">
-                <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-white">Hola, {userName || 'Compañero'}</h2>
-                    <p className="text-blue-100 text-xs md:text-sm opacity-80 min-h-[1rem]">
-                        {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </p>
-                </div>
-                {userRole === 'manager' && (
-                    <Link href="/dashboard" className="bg-orange-500 hover:bg-orange-600 transition-colors px-3 py-1.5 rounded-lg border border-orange-400 shadow-lg flex items-center gap-1.5 cursor-pointer group">
-                        <ShieldAlert size={14} className="text-white group-hover:animate-pulse" />
-                        <div className="flex flex-col items-end leading-none">
-                            <span className="text-[8px] text-orange-200 font-bold uppercase tracking-wider">VOLVER A</span>
-                            <span className="text-[10px] font-black text-white uppercase tracking-wide">GESTIÓN</span>
-                        </div>
-                    </Link>
-                )}
-            </div>
+            {/* HEADER ANTIGUO ELIMINADO */}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
@@ -358,27 +350,41 @@ export default function StaffDashboard() {
                             </div>
                         </div>
 
+                        {/* --- GRID DE RESUMEN (SIN SIGNOS) --- */}
                         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
+
+                            {/* COLUMNA 1: TRABAJADO */}
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">TOTAL</span>
-                                {/* CAMBIO: Uso de formatValue actualizado sin 'h' */}
-                                <span className="font-black text-gray-800 text-sm">{formatValue(weeklySummary.totalHours)}</span>
-                            </div>
-                            <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">EXTRAS</span>
-                                <span className="font-black text-sm text-blue-600">{formatValue(weeklySummary.totalExtraHours)}</span>
-                            </div>
-                            <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
-                                <span className={`font-black text-sm ${weeklySummary.pendingHours > 0 ? 'text-green-600' :
-                                        weeklySummary.pendingHours < 0 ? 'text-red-500' : 'text-gray-400'
-                                    }`}>
-                                    {formatValue(weeklySummary.pendingHours)}
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">TRABAJADO</span>
+                                <span className="font-black text-gray-800 text-sm">
+                                    {formatWorked(weeklySummary.totalHours)}
                                 </span>
                             </div>
+
+                            {/* COLUMNA 2: BALANCE SEMANAL */}
+                            <div className="flex flex-col items-center border-r border-gray-200">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">BALANCE SEM.</span>
+                                <span className={`font-black text-sm ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'
+                                    }`}>
+                                    {formatBalance(weeklySummary.hoursDifference)}
+                                </span>
+                            </div>
+
+                            {/* COLUMNA 3: PENDIENTE (SALDO TOTAL) */}
+                            <div className="flex flex-col items-center border-r border-gray-200">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
+                                <span className={`font-black text-sm ${weeklySummary.currentBalance >= 0 ? 'text-green-600' : 'text-red-500'
+                                    }`}>
+                                    {formatBalance(weeklySummary.currentBalance)}
+                                </span>
+                            </div>
+
+                            {/* COLUMNA 4: A COBRAR */}
                             <div className="flex flex-col items-center">
                                 <span className="text-[9px] font-bold text-gray-400 uppercase">A COBRAR</span>
-                                <span className="font-black text-sm text-green-600">{formatMoney(weeklySummary.estimatedPayout)}</span>
+                                <span className="font-black text-sm text-green-600">
+                                    {formatMoney(weeklySummary.estimatedPayout)}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -429,7 +435,6 @@ export default function StaffDashboard() {
                                                 <span className="block text-[6px] uppercase">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3)}</span>
                                                 <span className="leading-none text-gray-800">{shift.date.getDate()}</span>
                                             </div>
-                                            {/* CAMBIO VISUAL: Entrada (Verde) - Guion (Negro) - Salida (Rojo) */}
                                             <div className="flex items-center gap-2 text-xs font-black">
                                                 <span className="text-green-600">{shift.startTime}</span>
                                                 <span className="text-gray-800">-</span>
@@ -443,10 +448,7 @@ export default function StaffDashboard() {
 
                         <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
                             <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
-
-                            {/* CAMBIO ICONO: Sandwich (Hot Dog) */}
                             <FloatingIconSolid icon={Sandwich} colorClass="text-red-500" label="Recetas" onClick={() => toast.info("Abriendo recetario...")} />
-
                             <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Info Interés" onClick={() => setActiveMenu('info')} />
                             <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
                         </div>
