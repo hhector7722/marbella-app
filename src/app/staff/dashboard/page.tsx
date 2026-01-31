@@ -268,18 +268,22 @@ export default function StaffDashboard() {
     // --- COMPONENTES VISUALES ---
 
     const FloatingIconSolid = ({ icon: Icon, colorClass, label, onClick }: { icon: any, colorClass: string, label: string, onClick?: () => void }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50">
-            <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
-            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
+        // CAMBIO: Padding reducido (p-1.5) y justify-center para mantener la forma
+        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-1.5 group hover:bg-gray-50 aspect-square">
+            {/* CAMBIO: Icon size reducido de 36 a 28 */}
+            <Icon size={28} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
+            <span className="text-[8px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900 truncate w-full">{label}</span>
         </button>
     );
 
     const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group">
-            <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white shadow-sm`}>
-                <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+        // CAMBIO: Padding reducido y aspect-square
+        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-1.5 group aspect-square">
+            {/* CAMBIO: Caja de icono reducida a w-8 h-8 */}
+            <div className={`w-8 h-8 rounded-xl ${color} flex items-center justify-center text-white shadow-sm`}>
+                <Icon size={18} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
             </div>
-            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
+            <span className="text-[8px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900 truncate w-full">{label}</span>
         </button>
     );
 
@@ -288,15 +292,18 @@ export default function StaffDashboard() {
     if (loading) return <div className="p-8 text-white flex items-center gap-2"><div className="w-4 h-4 bg-white animate-pulse rounded-full"></div> Cargando...</div>;
 
     return (
-        <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6">
+        // CAMBIO: Reduced padding (p-2) and reduced gap (space-y-2)
+        <div className="p-2 md:p-8 w-full max-w-7xl mx-auto space-y-2 md:space-y-6">
 
             {/* HEADER ANTIGUO ELIMINADO */}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* CAMBIO: Reduced gap */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6 items-start">
 
                 {/* COLUMNA IZQUIERDA */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] p-5 shadow-xl">
+                <div className="lg:col-span-2 space-y-2 md:space-y-6">
+                    {/* CAMBIO: Reduced padding (p-3) and rounded corners (rounded-2xl) */}
+                    <div className="bg-white rounded-2xl p-3 shadow-xl">
                         <div className="flex justify-between items-center mb-1 px-1">
                             <h3 className="text-sm font-black text-gray-700 flex items-center gap-2 uppercase tracking-wide">
                                 <Calendar size={16} className="text-[#5B8FB9]" /> MIS REGISTROS
@@ -305,42 +312,44 @@ export default function StaffDashboard() {
                                 Histórico <ArrowRight size={12} />
                             </Link>
                         </div>
-                        <div className="mb-3 px-1"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{currentMonthName}</span></div>
+                        <div className="mb-1 px-1"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{currentMonthName}</span></div>
 
-                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-2 relative z-0">
                             <div className="grid grid-cols-7 border-b border-gray-100">
                                 {weekDays.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[110px] bg-white relative">
-                                        <div className="h-7 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                    // CAMBIO: Min height reduced from 110px to 60px
+                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[60px] bg-white relative">
+                                        {/* CAMBIO: Header height reduced from h-7 to h-5 */}
+                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                            <span className="text-[8px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
-                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
-                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                            <div className="flex-1 flex flex-col justify-center gap-1 w-full">
+                                        <div className="flex-1 p-0.5 flex flex-col items-center relative z-0 bg-white">
+                                            <span className={`absolute top-0.5 right-0.5 text-[8px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full mt-2">
                                                 {day.hasLog ? (
                                                     <>
                                                         <div className="flex items-center justify-center gap-1">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
-                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
+                                                            <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
                                                         </div>
                                                         {day.clockOut && (
                                                             <div className="flex items-center justify-center gap-1">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
+                                                                <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
                                                             </div>
                                                         )}
                                                     </>
-                                                ) : (<span className="text-gray-200 text-xs text-center">-</span>)}
+                                                ) : (<span className="text-gray-200 text-[8px] text-center">-</span>)}
                                             </div>
-                                            <div className="w-full mt-auto space-y-0.5 pt-1">
+                                            <div className="w-full mt-auto space-y-0.5 pt-0.5">
                                                 {day.hasLog && day.totalHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[8px] text-gray-400 border-t border-gray-50 pt-1">
+                                                    <div className="flex justify-between items-end text-[7px] text-gray-400 border-t border-gray-50 pt-0.5">
                                                         <span>Horas</span><span className="font-bold text-gray-800">{day.totalHours.toFixed(0)}</span>
                                                     </div>
                                                 )}
                                                 {day.extraHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[8px] text-gray-400">
-                                                        <span>Extras</span><span className="font-bold text-gray-800">{day.extraHours.toFixed(0)}</span>
+                                                    <div className="flex justify-between items-end text-[7px] text-gray-400">
+                                                        <span>Extra</span><span className="font-bold text-gray-800">{day.extraHours.toFixed(0)}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -350,38 +359,30 @@ export default function StaffDashboard() {
                             </div>
                         </div>
 
-                        {/* --- GRID DE RESUMEN (SIN SIGNOS) --- */}
-                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
-
-                            {/* COLUMNA 1: TRABAJADO */}
+                        {/* --- GRID DE RESUMEN --- */}
+                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 grid grid-cols-4 gap-1 text-xs">
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">TRABAJADO</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">TRABAJADO</span>
                                 <span className="font-black text-gray-800 text-sm">
                                     {formatWorked(weeklySummary.totalHours)}
                                 </span>
                             </div>
-
-                            {/* COLUMNA 2: BALANCE SEMANAL */}
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">BALANCE SEM.</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">BALANCE</span>
                                 <span className={`font-black text-sm ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'
                                     }`}>
                                     {formatBalance(weeklySummary.hoursDifference)}
                                 </span>
                             </div>
-
-                            {/* COLUMNA 3: PENDIENTE (SALDO TOTAL) */}
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">PENDIENTE</span>
                                 <span className={`font-black text-sm ${weeklySummary.currentBalance >= 0 ? 'text-green-600' : 'text-red-500'
                                     }`}>
                                     {formatBalance(weeklySummary.currentBalance)}
                                 </span>
                             </div>
-
-                            {/* COLUMNA 4: A COBRAR */}
                             <div className="flex flex-col items-center">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">A COBRAR</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">A COBRAR</span>
                                 <span className="font-black text-sm text-green-600">
                                     {formatMoney(weeklySummary.estimatedPayout)}
                                 </span>
@@ -391,51 +392,55 @@ export default function StaffDashboard() {
                 </div>
 
                 {/* COLUMNA DERECHA */}
-                <div className="space-y-6">
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col items-center text-center relative gap-4">
+                <div className="space-y-2 md:space-y-6">
+                    {/* CAMBIO: Padding reducido (p-3) */}
+                    <div className="bg-white rounded-2xl p-3 shadow-xl flex flex-col items-center text-center relative gap-2">
+                        {/* CAMBIO: Altura botón reducida (h-14) */}
                         <button onClick={openConfirmation} disabled={status === 'finished' || actionLoading}
-                            className={`w-full h-24 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
+                            className={`w-full h-14 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
                                 ${status === 'idle' ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200' : ''}
                                 ${status === 'working' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' : ''}
                                 ${status === 'finished' ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-100' : ''}
                             `}>
                             {actionLoading ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
-                                <><span className="text-2xl font-black uppercase tracking-wider">
+                                <><span className="text-xl font-black uppercase tracking-wider">
                                     {status === 'idle' ? 'FICHAR ENTRADA' : (status === 'working' ? 'FICHAR SALIDA' : 'JORNADA FINALIZADA')}
                                 </span></>
                             )}
                         </button>
                         {status !== 'idle' && (
-                            <div className="w-full bg-gray-900 rounded-2xl p-4 border-4 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-                                <span className={`${digitalFont.className} text-6xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}>
+                            <div className="w-full bg-gray-900 rounded-xl p-2 border-2 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
+                                {/* CAMBIO: Texto reducido a text-4xl */}
+                                <span className={`${digitalFont.className} text-4xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}>
                                     {elapsedTime}
                                 </span>
                             </div>
                         )}
-                        {status === 'idle' && <div className="w-full py-4 rounded-2xl bg-gray-50 border-2 border-gray-100 flex items-center justify-center text-gray-800 text-xs">No has fichado hoy</div>}
+                        {status === 'idle' && <div className="w-full py-2 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-800 text-[10px]">No has fichado hoy</div>}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 h-[200px]">
-                        <div className="bg-white rounded-[2rem] p-4 shadow-xl h-full flex flex-col overflow-hidden relative">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-bold text-gray-700 flex items-center gap-2 text-xs">
-                                    <CalendarDays size={16} className="text-purple-500" /> Horarios
+                    {/* CAMBIO: Altura grid reducida a 150px */}
+                    <div className="grid grid-cols-2 gap-2 h-[150px]">
+                        <div className="bg-white rounded-[1.5rem] p-3 shadow-xl h-full flex flex-col overflow-hidden relative">
+                            <div className="flex justify-between items-center mb-1">
+                                <h3 className="font-bold text-gray-700 flex items-center gap-1 text-[10px]">
+                                    <CalendarDays size={14} className="text-purple-500" /> Horarios
                                 </h3>
-                                <Link href="/staff/schedule" className="text-[10px] font-bold text-purple-500 hover:underline">Ver más</Link>
+                                <Link href="/staff/schedule" className="text-[9px] font-bold text-purple-500 hover:underline">Ver</Link>
                             </div>
-                            <div className="space-y-2 flex-1 overflow-y-auto">
+                            <div className="space-y-1.5 flex-1 overflow-y-auto">
                                 {nextShifts.length === 0 ? (
                                     <div className="h-full flex items-center justify-center">
                                         <p className="text-[10px] text-gray-400 text-center px-2">No tienes turnos asignados.</p>
                                     </div>
                                 ) : (
                                     nextShifts.map((shift, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="bg-white p-1 rounded-lg text-gray-500 font-bold text-[10px] text-center min-w-[30px] shadow-sm">
+                                        <div key={idx} className="flex items-center gap-2 p-1 bg-gray-50 rounded-lg border border-gray-100">
+                                            <div className="bg-white p-0.5 rounded text-gray-500 font-bold text-[8px] text-center min-w-[24px] shadow-sm">
                                                 <span className="block text-[6px] uppercase">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3)}</span>
                                                 <span className="leading-none text-gray-800">{shift.date.getDate()}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs font-black">
+                                            <div className="flex items-center gap-1 text-[10px] font-black">
                                                 <span className="text-green-600">{shift.startTime}</span>
                                                 <span className="text-gray-800">-</span>
                                                 <span className="text-red-500">{shift.endTime}</span>
@@ -446,7 +451,7 @@ export default function StaffDashboard() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
+                        <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
                             <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
                             <FloatingIconSolid icon={Sandwich} colorClass="text-red-500" label="Recetas" onClick={() => toast.info("Abriendo recetario...")} />
                             <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Info Interés" onClick={() => setActiveMenu('info')} />
@@ -457,7 +462,7 @@ export default function StaffDashboard() {
                 </div>
             </div>
 
-            {/* MODAL GEOLOCALIZACION */}
+            {/* MODALES IGUAL QUE ANTES (SIN CAMBIOS DE TAMAÑO) */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center">
@@ -470,7 +475,6 @@ export default function StaffDashboard() {
                 </div>
             )}
 
-            {/* MODAL MULTINIVEL: INFO E INTERÉS / PEDIDOS */}
             {activeMenu && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
                     <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all`}>
