@@ -50,29 +50,40 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
 
     const isActive = (path: string) => pathname === path;
     const corporateBlue = "bg-[#5B8FB9]";
-    const sidebarDark = "bg-[#1a1a1a]";
 
     return (
         <div className={`flex min-h-screen ${corporateBlue}`}>
             <Toaster position="top-center" richColors />
 
-            {/* SIDEBAR ESCRITORIO */}
-            <aside className={`hidden md:flex w-64 flex-col ${sidebarDark} text-white fixed h-full shadow-2xl z-50`}>
-                <div className="p-4 border-b border-gray-800 flex items-center justify-center h-36">
+            {/* SIDEBAR ESCRITORIO (FONDO AZUL) */}
+            <aside className={`hidden md:flex w-64 flex-col ${corporateBlue} text-white fixed h-full shadow-2xl z-50 border-r border-white/10`}>
+                {/* Logo con borde blanco translúcido */}
+                <div className="p-4 border-b border-white/10 flex items-center justify-center h-36">
                     <div className="relative w-full h-full">
                         <Image src="/logo-white.png" alt="Logo" fill className="object-contain" priority />
                     </div>
                 </div>
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     {navItems.map((item) => (
-                        <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive(item.href) ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-                            <item.icon size={20} className={isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-white'} />
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive(item.href)
+                                ? 'bg-blue-600 text-white shadow-lg' // Activo: Azul más oscuro
+                                : 'text-blue-100 hover:bg-white/10 hover:text-white' // Inactivo: Azul claro, hover blanco translúcido
+                                }`}
+                        >
+                            <item.icon
+                                size={20}
+                                className={isActive(item.href) ? 'text-white' : 'text-blue-200 group-hover:text-white'}
+                            />
                             <span className="font-medium text-sm">{item.name}</span>
                         </Link>
                     ))}
                 </nav>
-                <div className="p-4 border-t border-gray-800">
-                    <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-red-400 hover:bg-red-500/10 transition-colors font-medium text-sm">
+                {/* Footer con borde blanco translúcido */}
+                <div className="p-4 border-t border-white/10">
+                    <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-red-100 hover:bg-red-500/20 hover:text-white transition-colors font-medium text-sm">
                         <LogOut size={20} />
                         <span>Cerrar Sesión</span>
                     </button>
@@ -92,8 +103,14 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
                             <span className="text-[10px] font-black uppercase tracking-wide">Gestión</span>
                         </Link>
                     )}
-                    <button onClick={() => setShowAIMenu(true)} className="bg-gradient-to-br from-blue-400 to-purple-500 p-1.5 rounded-full text-white shadow-sm border border-white/20 active:scale-95">
-                        <Sparkles size={18} strokeWidth={2.5} />
+
+                    {/* BOTÓN IA MODIFICADO: Orden invertido (Texto IA primero, luego Icono) */}
+                    <button
+                        onClick={() => setShowAIMenu(true)}
+                        className="bg-gradient-to-br from-blue-400 to-purple-500 px-3 py-1.5 rounded-xl text-white shadow-sm border border-white/20 active:scale-95 flex items-center gap-1.5"
+                    >
+                        <span className="text-xs font-black tracking-wide">IA</span>
+                        <MessageSquare size={16} strokeWidth={2.5} className="text-white" />
                     </button>
                 </div>
             </header>

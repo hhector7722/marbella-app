@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from 'next/navigation';
 import {
     History,
     Users,
@@ -18,21 +19,26 @@ import {
     ArrowUpRight,
     ArrowDownLeft,
     Clock,
-    UserCircle // <--- ICONO AÑADIDO
+    UserCircle,
+    X,
+    FileText
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
     const supabase = createClient();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
 
     // Estados
     const [dailyStats, setDailyStats] = useState<any>(null);
     const [boxes, setBoxes] = useState<any[]>([]);
     const [boxMovements, setBoxMovements] = useState<any[]>([]);
-
-    // Estado para Horas Extras
     const [overtimeData, setOvertimeData] = useState<any[]>([]);
+
+    // Estados para Plantilla
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [allEmployees, setAllEmployees] = useState<any[]>([]);
 
     useEffect(() => {
         fetchData();
@@ -84,18 +90,27 @@ export default function DashboardPage() {
                 }
             }
 
-            // 3. HORAS EXTRAS
+            // 3. HORAS EXTRAS Y EMPLEADOS
             const d = new Date();
             d.setDate(d.getDate() - 15);
             const startISO = d.toISOString();
 
+            // Logs de tiempo
             const { data: logs } = await supabase
                 .from('time_logs')
                 .select('user_id, total_hours, clock_in')
                 .not('total_hours', 'is', null)
                 .gte('clock_in', startISO);
 
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, hourly_cost');
+            // Perfiles (CORREGIDO: nombre de columna exacto)
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name, role, overtime_cost_per_hour');
+
+            if (profiles) {
+                // Ahora sí guardamos los datos reales
+                setAllEmployees(profiles);
+            }
 
             if (logs && profiles) {
                 const profileMap = new Map(profiles.map(p => [p.id, p]));
@@ -124,8 +139,10 @@ export default function DashboardPage() {
 
                     const weekEntry = weeksMap.get(weekLabelId);
                     const userProfile = profileMap.get(log.user_id);
+
                     if (userProfile) {
-                        const cost = (log.total_hours || 0) * (userProfile.hourly_cost || 0);
+                        // CORREGIDO: Usamos overtime_cost_per_hour
+                        const cost = (log.total_hours || 0) * (userProfile.overtime_cost_per_hour || 0);
                         const existingStaff = weekEntry.staff.find((s: any) => s.id === log.user_id);
 
                         if (existingStaff) {
@@ -162,7 +179,7 @@ export default function DashboardPage() {
     const percentColor = percent > 35 ? '#ef4444' : (percent > 25 ? '#f59e0b' : '#10b981');
 
     return (
-        <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6 pb-24">
+        <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6 pb-24 relative">
 
             {/* Header */}
             <div className="flex justify-between items-end px-2">
@@ -176,7 +193,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* --- BLOQUE 1: ÚLTIMO CIERRE --- */}
+            {/* BLOQUE 1: ÚLTIMO CIERRE */}
             <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <div className="flex items-center gap-3">
@@ -234,7 +251,7 @@ export default function DashboardPage() {
             </div>
 
 
-            {/* --- BLOQUE 2: GRID DOBLE --- */}
+            {/* BLOQUE 2: GRID DOBLE */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* 2.1 Situación Cajas */}
@@ -374,7 +391,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* --- BLOQUE 3: ACCESOS DIRECTOS (Footer) --- */}
+            {/* BLOQUE 3: ACCESOS DIRECTOS (Footer) */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Link href="/dashboard/history" className="bg-white p-4 rounded-2xl shadow-md border-b-4 border-blue-100 hover:border-blue-400 hover:translate-y-[-2px] transition-all group flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -396,7 +413,11 @@ export default function DashboardPage() {
                     </div>
                 </Link>
 
-                <Link href="/dashboard/team" className="bg-white p-4 rounded-2xl shadow-md border-b-4 border-green-100 hover:border-green-400 hover:translate-y-[-2px] transition-all group flex items-center gap-3">
+                {/* BOTÓN PLANTILLA (Activa Modal) */}
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-white p-4 rounded-2xl shadow-md border-b-4 border-green-100 hover:border-green-400 hover:translate-y-[-2px] transition-all group flex items-center gap-3 w-full text-left"
+                >
                     <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-colors">
                         <Users size={20} />
                     </div>
@@ -404,9 +425,8 @@ export default function DashboardPage() {
                         <span className="block text-sm font-bold text-gray-700">Plantilla</span>
                         <span className="text-[10px] text-gray-400">Datos Staff</span>
                     </div>
-                </Link>
+                </button>
 
-                {/* --- AQUI ESTÁ EL CAMBIO: ACCESO DIRECTO MODO STAFF --- */}
                 <Link href="/staff/dashboard" className="bg-white p-4 rounded-2xl shadow-md border-b-4 border-indigo-100 hover:border-indigo-400 hover:translate-y-[-2px] transition-all group flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                         <UserCircle size={20} />
@@ -418,6 +438,54 @@ export default function DashboardPage() {
                 </Link>
             </div>
 
+            {/* MODAL DE PLANTILLA */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-lg text-gray-800">Menú Plantilla</h3>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col">
+                            {/* Opción 1: Registros */}
+                            <button
+                                onClick={() => router.push('/registros')}
+                                className="p-5 text-left hover:bg-blue-50 border-b border-gray-100 flex items-center gap-4 group transition-colors"
+                            >
+                                <div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-bold text-gray-700 text-lg">Registros</span>
+                            </button>
+
+                            {/* Lista de Empleados */}
+                            <div className="max-h-72 overflow-y-auto bg-gray-50/50">
+                                <p className="px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-gray-50/95 backdrop-blur">
+                                    Empleados ({allEmployees.length})
+                                </p>
+                                {allEmployees.map((emp) => (
+                                    <button
+                                        key={emp.id}
+                                        onClick={() => console.log(`Abrir perfil de ${emp.first_name}`)}
+                                        className="w-full p-4 text-left hover:bg-white border-b border-gray-100 flex items-center gap-3 text-gray-700 transition-colors"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                                            {emp.first_name.substring(0, 1)}
+                                        </div>
+                                        <span className="font-semibold">{emp.first_name} {emp.last_name}</span>
+                                    </button>
+                                ))}
+                                {allEmployees.length === 0 && (
+                                    <div className="p-4 text-center text-sm text-gray-400 italic">No hay empleados cargados</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

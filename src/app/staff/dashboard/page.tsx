@@ -3,18 +3,19 @@
 import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Play, Square, CheckCircle2, CalendarDays, AlertCircle, MapPin, ShieldAlert,
+    Play, Square, CalendarDays,
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
-    Sandwich, Info, Package,
-    Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle
+    Info, Package, // Eliminado Sandwich, añadido ChefHat
+    Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
+    ChefHat
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
+import { differenceInMinutes } from 'date-fns';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
-// --- DATA: CONTACTOS ---
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
     { name: 'Servei Tècnic Cafetera', phone: '(3493) 293-6749' },
@@ -24,7 +25,6 @@ const CONTACTS_DATA = [
     { name: 'Héctor', phone: '(3464) 722-9309' },
 ];
 
-// --- TYPES & CONFIG ---
 type WorkStatus = 'idle' | 'working' | 'finished';
 
 interface DailyLog {
@@ -37,7 +37,7 @@ interface WeeklySummary {
     currentBalance: number;
     estimatedPayout: number;
     status: 'paid' | 'pending';
-    startBalance: number;
+    startBalance: number; // Saldo Arrastrado
 }
 
 interface ShiftMock {
@@ -46,33 +46,47 @@ interface ShiftMock {
     endTime: string;
 }
 
+// --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
+const applyRoundingRule = (totalMinutes: number): number => {
+    if (totalMinutes <= 0) return 0;
+
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+
+    // Regla: 0-20min -> 0.0 | 21-50min -> 0.5 | 51-59min -> 1.0
+    if (m <= 20) return h;
+    if (m <= 50) return h + 0.5;
+    return h + 1;
+};
+
+// Helper para aplicar redondeo a horas ya calculadas (si vienen de DB sin redondear)
+const roundHoursValue = (hours: number): number => {
+    const minutes = Math.round(hours * 60);
+    return applyRoundingRule(minutes);
+};
+
 export default function StaffDashboard() {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
-
-    // Usuario / Estado
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'staff' | 'manager'>('staff');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
     const [elapsedTime, setElapsedTime] = useState('00:00');
-
-    // Datos REALES
     const [weekDays, setWeekDays] = useState<DailyLog[]>([]);
     const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
         totalHours: 0, hoursDifference: 0, currentBalance: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
     });
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
     const [currentMonthName, setCurrentMonthName] = useState('');
-
-    // Modales
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
-
-    // Estado Menús Emergentes
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | null>(null);
+
+    // Estado para preferencia de stock
+    const [preferStock, setPreferStock] = useState(false);
 
     useEffect(() => { initialize(); }, []);
 
@@ -90,22 +104,40 @@ export default function StaffDashboard() {
             };
             updateTimer(); interval = setInterval(updateTimer, 60000);
         } else if (status === 'finished' && todayLog?.total_hours) {
-            const h = Math.floor(todayLog.total_hours); const m = Math.round((todayLog.total_hours - h) * 60);
+            // Mostrar horas redondeadas en el display final
+            const rounded = roundHoursValue(todayLog.total_hours);
+            const h = Math.floor(rounded);
+            const m = Math.round((rounded - h) * 60);
             setElapsedTime(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
         } else { setElapsedTime('00:00'); }
         return () => clearInterval(interval);
     }, [status, todayLog]);
 
-    // Helpers Visuales
-    const formatWorked = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : Math.abs(val).toFixed(0);
+    // --- HELPERS VISUALES ---
+    const formatNumber = (val: number) => {
+        if (Math.abs(val) < 0.1) return '0';
+        return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
+    };
+
+    const formatWorked = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : formatNumber(Math.abs(val));
+
     const formatBalance = (val: number) => {
         if (Math.abs(val) < 0.1) return '\u00A0';
-        return Math.abs(val).toFixed(0);
+        return formatNumber(Math.abs(val));
     };
+
     const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
+
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
         return cleaned.startsWith('34') ? `+${cleaned}` : `+34${cleaned}`;
+    };
+
+    const shouldShowPending = (val: number) => {
+        const roundedVal = Math.round(val * 2) / 2;
+        if (roundedVal < 0) return true; // Mostrar deuda siempre
+        if (roundedVal > 0 && preferStock) return true; // Mostrar ahorro solo si prefiere stock
+        return false;
     };
 
     async function initialize() {
@@ -117,8 +149,8 @@ export default function StaffDashboard() {
             let contractHours = 40;
             let overtimeRate = 0;
             let historicalBalance = 0;
-            let preferStock = false;
             let isFixedSalary = false;
+            let userPreferStock = false;
 
             const { data: profile } = await supabase.from('profiles')
                 .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours, is_fixed_salary')
@@ -130,8 +162,10 @@ export default function StaffDashboard() {
                 if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
                 if (profile.overtime_cost_per_hour !== null) overtimeRate = profile.overtime_cost_per_hour;
                 if (profile.hours_balance !== undefined && profile.hours_balance !== null) historicalBalance = profile.hours_balance;
-                if (profile.prefer_stock_hours) preferStock = profile.prefer_stock_hours;
+                if (profile.prefer_stock_hours) userPreferStock = profile.prefer_stock_hours;
                 if (profile.is_fixed_salary) isFixedSalary = profile.is_fixed_salary;
+
+                setPreferStock(userPreferStock);
             }
 
             const today = new Date();
@@ -182,7 +216,10 @@ export default function StaffDashboard() {
                         const outDate = new Date(dayLog.clock_out);
                         clockOutStr = outDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                     }
-                    hours = dayLog.total_hours || 0;
+
+                    // APLICAR REDONDEO 20/40 TAMBIÉN AL MOSTRAR
+                    hours = dayLog.total_hours ? roundHoursValue(dayLog.total_hours) : 0;
+
                     totalWeekHours += hours;
                     if (hours > DAILY_LIMIT) dayExtras = hours - DAILY_LIMIT;
                 }
@@ -203,7 +240,7 @@ export default function StaffDashboard() {
             const currentTotalBalance = historicalBalance + weekDifference;
 
             let payout = 0;
-            if (currentTotalBalance > 0 && !preferStock) {
+            if (currentTotalBalance > 0 && !userPreferStock) {
                 payout = currentTotalBalance * overtimeRate;
             }
 
@@ -216,7 +253,7 @@ export default function StaffDashboard() {
                 startBalance: historicalBalance
             });
 
-            const { data: realShifts, error: shiftsError } = await supabase
+            const { data: realShifts } = await supabase
                 .from('shifts')
                 .select('start_time, end_time')
                 .eq('user_id', user.id)
@@ -255,8 +292,18 @@ export default function StaffDashboard() {
                 setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
-                const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
-                const { data } = await supabase.from('time_logs').update({ clock_out: now.toISOString(), total_hours: diffHours }).eq('id', todayLog.id).select().single();
+
+                // CALCULO DE MINUTOS REALES
+                const diffMinutes = differenceInMinutes(now, clockIn);
+
+                // APLICAR REGLA DE REDONDEO 20/40
+                const roundedHours = applyRoundingRule(diffMinutes);
+
+                const { data } = await supabase.from('time_logs').update({
+                    clock_out: now.toISOString(),
+                    total_hours: roundedHours
+                }).eq('id', todayLog.id).select().single();
+
                 setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
             }
             initialize();
@@ -268,22 +315,18 @@ export default function StaffDashboard() {
     // --- COMPONENTES VISUALES ---
 
     const FloatingIconSolid = ({ icon: Icon, colorClass, label, onClick }: { icon: any, colorClass: string, label: string, onClick?: () => void }) => (
-        // CAMBIO: Padding reducido (p-1.5) y justify-center para mantener la forma
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-1.5 group hover:bg-gray-50 aspect-square">
-            {/* CAMBIO: Icon size reducido de 36 a 28 */}
-            <Icon size={28} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
-            <span className="text-[8px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900 truncate w-full">{label}</span>
+        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50">
+            <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
+            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
         </button>
     );
 
     const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
-        // CAMBIO: Padding reducido y aspect-square
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-1.5 group aspect-square">
-            {/* CAMBIO: Caja de icono reducida a w-8 h-8 */}
-            <div className={`w-8 h-8 rounded-xl ${color} flex items-center justify-center text-white shadow-sm`}>
-                <Icon size={18} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group">
+            <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white shadow-sm`}>
+                <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
             </div>
-            <span className="text-[8px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900 truncate w-full">{label}</span>
+            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
         </button>
     );
 
@@ -292,18 +335,15 @@ export default function StaffDashboard() {
     if (loading) return <div className="p-8 text-white flex items-center gap-2"><div className="w-4 h-4 bg-white animate-pulse rounded-full"></div> Cargando...</div>;
 
     return (
-        // CAMBIO: Reduced padding (p-2) and reduced gap (space-y-2)
-        <div className="p-2 md:p-8 w-full max-w-7xl mx-auto space-y-2 md:space-y-6">
+        <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6">
 
-            {/* HEADER ANTIGUO ELIMINADO */}
+            {/* HEADER ELIMINADO */}
 
-            {/* CAMBIO: Reduced gap */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {/* COLUMNA IZQUIERDA */}
-                <div className="lg:col-span-2 space-y-2 md:space-y-6">
-                    {/* CAMBIO: Reduced padding (p-3) and rounded corners (rounded-2xl) */}
-                    <div className="bg-white rounded-2xl p-3 shadow-xl">
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white rounded-[2rem] p-5 shadow-xl">
                         <div className="flex justify-between items-center mb-1 px-1">
                             <h3 className="text-sm font-black text-gray-700 flex items-center gap-2 uppercase tracking-wide">
                                 <Calendar size={16} className="text-[#5B8FB9]" /> MIS REGISTROS
@@ -312,44 +352,42 @@ export default function StaffDashboard() {
                                 Histórico <ArrowRight size={12} />
                             </Link>
                         </div>
-                        <div className="mb-1 px-1"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{currentMonthName}</span></div>
+                        <div className="mb-3 px-1"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{currentMonthName}</span></div>
 
-                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-2 relative z-0">
+                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                             <div className="grid grid-cols-7 border-b border-gray-100">
                                 {weekDays.map((day, i) => (
-                                    // CAMBIO: Min height reduced from 110px to 60px
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[60px] bg-white relative">
-                                        {/* CAMBIO: Header height reduced from h-7 to h-5 */}
-                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                            <span className="text-[8px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[110px] bg-white relative">
+                                        <div className="h-7 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
-                                        <div className="flex-1 p-0.5 flex flex-col items-center relative z-0 bg-white">
-                                            <span className={`absolute top-0.5 right-0.5 text-[8px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full mt-2">
+                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
+                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                            <div className="flex-1 flex flex-col justify-center gap-1 w-full">
                                                 {day.hasLog ? (
                                                     <>
                                                         <div className="flex items-center justify-center gap-1">
-                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
-                                                            <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
+                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
                                                         </div>
                                                         {day.clockOut && (
                                                             <div className="flex items-center justify-center gap-1">
-                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
-                                                                <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
+                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
                                                             </div>
                                                         )}
                                                     </>
-                                                ) : (<span className="text-gray-200 text-[8px] text-center">-</span>)}
+                                                ) : (<span className="text-gray-200 text-xs text-center">-</span>)}
                                             </div>
-                                            <div className="w-full mt-auto space-y-0.5 pt-0.5">
+                                            <div className="w-full mt-auto space-y-0.5 pt-1">
                                                 {day.hasLog && day.totalHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[7px] text-gray-400 border-t border-gray-50 pt-0.5">
-                                                        <span>Horas</span><span className="font-bold text-gray-800">{day.totalHours.toFixed(0)}</span>
+                                                    <div className="flex justify-between items-end text-[8px] text-gray-400 border-t border-gray-50 pt-1">
+                                                        <span>Horas</span><span className="font-bold text-gray-800">{formatWorked(day.totalHours)}</span>
                                                     </div>
                                                 )}
                                                 {day.extraHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[7px] text-gray-400">
-                                                        <span>Extra</span><span className="font-bold text-gray-800">{day.extraHours.toFixed(0)}</span>
+                                                    <div className="flex justify-between items-end text-[8px] text-gray-400">
+                                                        <span>Extras</span><span className="font-bold text-gray-800">{formatWorked(day.extraHours)}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -360,29 +398,31 @@ export default function StaffDashboard() {
                         </div>
 
                         {/* --- GRID DE RESUMEN --- */}
-                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 grid grid-cols-4 gap-1 text-xs">
+                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
+
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[8px] font-bold text-gray-400 uppercase">TRABAJADO</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">HORAS</span>
                                 <span className="font-black text-gray-800 text-sm">
                                     {formatWorked(weeklySummary.totalHours)}
                                 </span>
                             </div>
+
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[8px] font-bold text-gray-400 uppercase">BALANCE</span>
-                                <span className={`font-black text-sm ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'
-                                    }`}>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">BALANCE</span>
+                                <span className={`font-black text-sm ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                     {formatBalance(weeklySummary.hoursDifference)}
                                 </span>
                             </div>
+
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[8px] font-bold text-gray-400 uppercase">PENDIENTE</span>
-                                <span className={`font-black text-sm ${weeklySummary.currentBalance >= 0 ? 'text-green-600' : 'text-red-500'
-                                    }`}>
-                                    {formatBalance(weeklySummary.currentBalance)}
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
+                                <span className={`font-black text-sm ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {shouldShowPending(weeklySummary.startBalance) ? formatBalance(weeklySummary.startBalance) : '\u00A0'}
                                 </span>
                             </div>
+
                             <div className="flex flex-col items-center">
-                                <span className="text-[8px] font-bold text-gray-400 uppercase">A COBRAR</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">A COBRAR</span>
                                 <span className="font-black text-sm text-green-600">
                                     {formatMoney(weeklySummary.estimatedPayout)}
                                 </span>
@@ -392,12 +432,10 @@ export default function StaffDashboard() {
                 </div>
 
                 {/* COLUMNA DERECHA */}
-                <div className="space-y-2 md:space-y-6">
-                    {/* CAMBIO: Padding reducido (p-3) */}
-                    <div className="bg-white rounded-2xl p-3 shadow-xl flex flex-col items-center text-center relative gap-2">
-                        {/* CAMBIO: Altura botón reducida (h-14) */}
+                <div className="space-y-6">
+                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col items-center text-center relative gap-4">
                         <button onClick={openConfirmation} disabled={status === 'finished' || actionLoading}
-                            className={`w-full h-14 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
+                            className={`w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
                                 ${status === 'idle' ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200' : ''}
                                 ${status === 'working' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' : ''}
                                 ${status === 'finished' ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-100' : ''}
@@ -409,38 +447,40 @@ export default function StaffDashboard() {
                             )}
                         </button>
                         {status !== 'idle' && (
-                            <div className="w-full bg-gray-900 rounded-xl p-2 border-2 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-                                {/* CAMBIO: Texto reducido a text-4xl */}
+                            <div className="w-full h-16 bg-gray-900 rounded-2xl border-4 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
                                 <span className={`${digitalFont.className} text-4xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}>
                                     {elapsedTime}
                                 </span>
                             </div>
                         )}
-                        {status === 'idle' && <div className="w-full py-2 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-800 text-[10px]">No has fichado hoy</div>}
+                        {status === 'idle' && (
+                            <div className="w-full h-16 rounded-2xl bg-gray-50 border-2 border-gray-100 flex items-center justify-center">
+                                <span className="text-[10px] text-gray-400 text-center">No has fichado hoy</span>
+                            </div>
+                        )}
                     </div>
 
-                    {/* CAMBIO: Altura grid reducida a 150px */}
-                    <div className="grid grid-cols-2 gap-2 h-[150px]">
-                        <div className="bg-white rounded-[1.5rem] p-3 shadow-xl h-full flex flex-col overflow-hidden relative">
-                            <div className="flex justify-between items-center mb-1">
-                                <h3 className="font-bold text-gray-700 flex items-center gap-1 text-[10px]">
-                                    <CalendarDays size={14} className="text-purple-500" /> Horarios
+                    <div className="grid grid-cols-2 gap-4 h-[200px]">
+                        <div className="bg-white rounded-[2rem] p-4 shadow-xl h-full flex flex-col overflow-hidden relative">
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="font-bold text-gray-700 flex items-center gap-2 text-xs">
+                                    <CalendarDays size={16} className="text-purple-500" /> Horarios
                                 </h3>
-                                <Link href="/staff/schedule" className="text-[9px] font-bold text-purple-500 hover:underline">Ver</Link>
+                                <Link href="/staff/schedule" className="text-[10px] font-bold text-purple-500 hover:underline">Ver más</Link>
                             </div>
-                            <div className="space-y-1.5 flex-1 overflow-y-auto">
+                            <div className="space-y-2 flex-1 overflow-y-auto">
                                 {nextShifts.length === 0 ? (
                                     <div className="h-full flex items-center justify-center">
                                         <p className="text-[10px] text-gray-400 text-center px-2">No tienes turnos asignados.</p>
                                     </div>
                                 ) : (
                                     nextShifts.map((shift, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 p-1 bg-gray-50 rounded-lg border border-gray-100">
-                                            <div className="bg-white p-0.5 rounded text-gray-500 font-bold text-[8px] text-center min-w-[24px] shadow-sm">
+                                        <div key={idx} className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div className="bg-white p-1 rounded-lg text-gray-500 font-bold text-[10px] text-center min-w-[30px] shadow-sm">
                                                 <span className="block text-[6px] uppercase">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3)}</span>
                                                 <span className="leading-none text-gray-800">{shift.date.getDate()}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-[10px] font-black">
+                                            <div className="flex items-center gap-2 text-xs font-black">
                                                 <span className="text-green-600">{shift.startTime}</span>
                                                 <span className="text-gray-800">-</span>
                                                 <span className="text-red-500">{shift.endTime}</span>
@@ -451,9 +491,24 @@ export default function StaffDashboard() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
+                        <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
                             <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
-                            <FloatingIconSolid icon={Sandwich} colorClass="text-red-500" label="Recetas" onClick={() => toast.info("Abriendo recetario...")} />
+
+                            {/* --- BOTÓN RECETAS: GORRO SIN RELLENO Y CONTORNO NEGRO --- */}
+                            <button
+                                onClick={() => toast.info("Abriendo recetario...")}
+                                className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50"
+                            >
+                                <ChefHat
+                                    size={36}
+                                    className="text-black transition-transform group-hover:scale-110 drop-shadow-sm"
+                                    strokeWidth={1.5}
+                                />
+                                <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">
+                                    Recetas
+                                </span>
+                            </button>
+
                             <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Info Interés" onClick={() => setActiveMenu('info')} />
                             <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
                         </div>
@@ -462,7 +517,7 @@ export default function StaffDashboard() {
                 </div>
             </div>
 
-            {/* MODALES IGUAL QUE ANTES (SIN CAMBIOS DE TAMAÑO) */}
+            {/* MODALES */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center">
