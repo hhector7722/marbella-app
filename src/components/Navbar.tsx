@@ -36,7 +36,7 @@ export default function Navbar() {
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
 
     return (
-        <nav className="bg-[#5B8FB9] text-white p-3 fixed top-0 left-0 right-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-14 flex items-center">
+        <nav className="bg-[#5B8FB9] text-white pt-safe fixed top-0 left-0 right-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-header-safe flex items-center">
             <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full">
 
                 {/* BLOQUE IZQUIERDO: BOTÓN VOLVER + LOGO + SALUDO */}
