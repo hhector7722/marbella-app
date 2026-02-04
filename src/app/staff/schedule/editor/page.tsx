@@ -213,7 +213,7 @@ export default function ScheduleEditorPage() {
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white">
+            <div className="w-full flex-1 flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-4">
                 <div className="w-full flex flex-col">
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex bg-green-500 text-white border-b border-green-600">
@@ -235,19 +235,22 @@ export default function ScheduleEditorPage() {
                     {/* FILAS DE EMPLEADOS */}
                     <div className="bg-white">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex h-6 md:h-7 transition-colors ${editingIndex === idx ? 'bg-blue-50/50' : ''}`}>
+                            <div key={shift.employeeId} className={`flex h-8 md:h-9 transition-colors ${editingIndex === idx ? 'bg-blue-50/50' : ''}`}>
                                 {/* Columna Nombre (Botón de Toggle) */}
                                 <div
                                     onClick={() => toggleShiftActive(idx)}
-                                    className="w-20 md:w-32 px-2 flex items-center justify-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors shrink-0"
+                                    className="w-20 md:w-32 px-3 flex items-center justify-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors shrink-0"
                                 >
-                                    <span className={`font-black text-[8px] md:text-[9px] truncate uppercase tracking-tight transition-colors ${shift.active ? (editingIndex === idx ? 'text-blue-600' : 'text-black') : 'text-gray-300'}`}>
+                                    <span className={`font-black text-[9px] md:text-[10px] truncate uppercase tracking-tight transition-colors ${shift.active ? (editingIndex === idx ? 'text-blue-600' : 'text-black') : 'text-gray-300'}`}>
                                         {shift.name.split(' ')[0]}
                                     </span>
                                 </div>
 
                                 {/* Zona de Barras */}
-                                <div className="flex-1 relative">
+                                <div
+                                    className="flex-1 relative cursor-pointer"
+                                    onClick={() => shift.active && setEditingIndex(idx)}
+                                >
                                     {/* Guías de fondo ultra sutiles */}
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
@@ -285,39 +288,25 @@ export default function ScheduleEditorPage() {
                 </div>
             </div>
 
-            {/* BARRA VIRTUAL DE EDICIÓN (BOTTOM FIXED) */}
+            {/* BARRA VIRTUAL DE EDICIÓN (SIMPLIFICADA) */}
             {editingIndex !== null && shifts[editingIndex].active && (
-                <div className="fixed bottom-2 left-2 right-2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    <div className="bg-white rounded-2xl shadow-2xl border-2 border-green-500 overflow-hidden">
-                        <div className="bg-green-500 px-3 py-1 flex justify-between items-center text-white">
-                            <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                                <Plus size={10} /> Editando: {shifts[editingIndex].name}
+                <div className="fixed bottom-4 left-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-6 duration-300">
+                    <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-green-500 overflow-hidden">
+                        <div className="bg-green-500 px-4 py-1.5 flex justify-between items-center text-white">
+                            <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                <Plus size={12} className="shrink-0" /> {shifts[editingIndex].name} • {shifts[editingIndex].start}-{shifts[editingIndex].end}
                             </span>
-                            <button onClick={() => setEditingIndex(null)} className="p-1 hover:bg-white/20 rounded-full">
-                                <X size={12} />
+                            <button onClick={() => setEditingIndex(null)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                                <X size={14} />
                             </button>
                         </div>
-                        <div className="p-2 bg-gray-50">
-                            <div className="flex h-5 mb-1">
-                                <div className="w-12 shrink-0" />
-                                <div className="flex-1 flex">
-                                    {hoursHeader.map((hour) => (
-                                        <div key={hour} className="flex-1 text-[7px] font-black text-gray-400 flex justify-center">
-                                            {hour}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="h-10 relative bg-white rounded-lg border border-gray-100 flex items-center">
-                                <div className="w-12 px-2 shrink-0">
-                                    <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-black text-[10px]">
-                                        {shifts[editingIndex].name.charAt(0)}
-                                    </div>
-                                </div>
+                        <div className="p-4 bg-gray-50/50">
+                            <div className="h-10 relative bg-white rounded-xl shadow-inner border border-gray-100 flex items-center overflow-hidden">
                                 <div className="flex-1 relative h-full">
+                                    {/* Carril de edición sin rejillas pesadas */}
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1 border-r border-gray-50 pointer-events-none last:border-r-0" />
+                                            <div key={i} className="flex-1 border-r border-gray-100/30 pointer-events-none last:border-r-0" />
                                         ))}
                                     </div>
                                     <ShiftBar
@@ -325,11 +314,6 @@ export default function ScheduleEditorPage() {
                                         onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
                                     />
                                 </div>
-                            </div>
-                            <div className="mt-2 text-center">
-                                <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                                    {shifts[editingIndex].start} - {shifts[editingIndex].end}
-                                </span>
                             </div>
                         </div>
                     </div>
