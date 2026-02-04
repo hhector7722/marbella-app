@@ -61,7 +61,7 @@ export default function BottomNavStaff() {
                 <div className="fixed inset-0 z-[90]" onClick={() => setIsMenuOpen(false)} />
             )}
 
-            <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-[#5B8FB9]/95 backdrop-blur-lg border border-white/20 z-[100] flex justify-between px-6 py-2 pb-safe shadow-2xl rounded-full">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-between px-8 py-3 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {staffItems.map((item) => (
                     <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
                         <item.icon size={22} />
