@@ -16,22 +16,19 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
-// --- CONFIGURACIÓN DEL GRID ---
 const START_HOUR = 7; // 7:00 AM
 const END_HOUR = 23;  // 23:00 PM
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-const PIXELS_PER_HOUR = 60;
 const SNAP_MINUTES = 15;
 
-// --- UTILIDADES ---
-const timeToPixels = (timeStr: string) => {
+const timeToPercent = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':').map(Number);
     const totalMinutes = (hours - START_HOUR) * 60 + minutes;
-    return (totalMinutes / 60) * PIXELS_PER_HOUR;
+    return (totalMinutes / (TOTAL_HOURS * 60)) * 100;
 };
 
-const pixelsToTime = (px: number) => {
-    const totalMinutes = (px / PIXELS_PER_HOUR) * 60;
+const percentToTime = (percent: number) => {
+    const totalMinutes = (percent / 100) * (TOTAL_HOURS * 60);
     const hours = Math.floor(totalMinutes / 60) + START_HOUR;
     const minutes = Math.round((totalMinutes % 60) / SNAP_MINUTES) * SNAP_MINUTES;
     const finalDate = new Date();
@@ -45,8 +42,8 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     const [isDragging, setIsDragging] = useState(false);
     const [dragType, setDragType] = useState<'move' | 'left' | 'right' | null>(null);
 
-    const leftPos = timeToPixels(shift.start);
-    const width = Math.max(timeToPixels(shift.end) - leftPos, 20);
+    const leftPos = timeToPercent(shift.start);
+    const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
 
     const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
         e.stopPropagation();
@@ -59,13 +56,13 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
         const handlePointerMove = (e: PointerEvent) => {
             if (!isDragging || !barRef.current) return;
             const parentRect = barRef.current.parentElement!.getBoundingClientRect();
-            const relativeX = e.clientX - parentRect.left;
-            const rawTime = pixelsToTime(Math.max(0, Math.min(relativeX, TOTAL_HOURS * PIXELS_PER_HOUR)));
+            const relativePercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
+            const rawTime = percentToTime(Math.max(0, Math.min(relativePercent, 100)));
 
             if (dragType === 'left') {
-                if (timeToPixels(rawTime) < timeToPixels(shift.end)) onUpdate({ ...shift, start: rawTime });
+                if (timeToPercent(rawTime) < timeToPercent(shift.end)) onUpdate({ ...shift, start: rawTime });
             } else if (dragType === 'right') {
-                if (timeToPixels(rawTime) > timeToPixels(shift.start)) onUpdate({ ...shift, end: rawTime });
+                if (timeToPercent(rawTime) > timeToPercent(shift.start)) onUpdate({ ...shift, end: rawTime });
             }
         };
 
@@ -84,8 +81,8 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     return (
         <div
             ref={barRef}
-            className="absolute top-2 bottom-2 bg-green-400/90 rounded-md border border-green-500 shadow-md flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10 touch-none"
-            style={{ left: `${leftPos}px`, width: `${width}px` }}
+            className="absolute top-1.5 bottom-1.5 bg-green-400/90 rounded-full border border-green-500 shadow-sm flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10 touch-none"
+            style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
             <div className="w-5 h-full cursor-ew-resize hover:bg-black/10 rounded-l-md flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'left')}><div className="w-1 h-4 bg-white/70 rounded-full" /></div>
@@ -203,55 +200,50 @@ export default function ScheduleEditorPage() {
             </div>
 
             {/* ZONA DE TRABAJO (SCROLLABLE) */}
-            <div className="flex-1 overflow-auto p-4 md:p-8">
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden min-w-[1000px] mx-auto max-w-[1400px]">
+            <div className="flex-1 p-2 md:p-4 overflow-hidden flex flex-col">
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden w-full flex-1 flex flex-col">
 
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-                        <div className="w-32 md:w-48 p-3 font-bold text-gray-500 text-[10px] md:text-xs sticky left-0 bg-gray-50 border-r z-30 flex items-center gap-2 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                            <Users size={14} /> <span className="truncate">EMPLEADO</span>
+                        <div className="w-20 md:w-32 p-2 font-bold text-gray-500 text-[8px] md:text-[10px] sticky left-0 bg-gray-50 border-r z-30 flex items-center gap-1 shadow-[2px_0_5px_rgba(0,0,0,0.05)] uppercase tracking-tighter">
+                            <Users size={12} /> <span className="truncate">STAFF</span>
                         </div>
-                        <div className="flex-1 relative h-10">
+                        <div className="flex-1 relative h-8 flex">
                             {hoursHeader.map((hour, i) => (
                                 <div
                                     key={hour}
-                                    className="absolute top-0 bottom-0 border-l border-gray-200 text-[10px] font-bold text-gray-400 pl-1 pt-1 select-none"
-                                    style={{ left: `${i * PIXELS_PER_HOUR}px`, width: `${PIXELS_PER_HOUR}px` }}
+                                    className="flex-1 border-l border-gray-100 text-[8px] font-bold text-gray-400 flex items-center justify-center select-none"
                                 >
-                                    {hour}:00
+                                    {hour}
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* FILAS DE EMPLEADOS */}
-                    <div className="divide-y divide-gray-100 bg-white">
+                    <div className="divide-y divide-gray-50 bg-white flex-1 overflow-y-auto">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-14 group">
+                            <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-10 md:h-12 group">
                                 {/* Columna Nombre */}
-                                <div className="w-32 md:w-48 p-2 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                                    <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
-                                        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-[10px] md:text-xs font-bold shrink-0 ${shift.active ? 'bg-[#5B8FB9] text-white' : 'bg-gray-100 text-gray-400'}`}>
-                                            {shift.name.charAt(0)}
-                                        </div>
-                                        <span className={`font-medium text-[11px] md:text-sm truncate ${shift.active ? 'text-gray-900' : 'text-gray-400'}`}>
-                                            {shift.name}
-                                        </span>
-                                    </div>
+                                <div className="w-20 md:w-32 p-1.5 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors shadow-[1px_0_3px_rgba(0,0,0,0.03)]">
+                                    <span className={`font-bold text-[10px] md:text-xs truncate ${shift.active ? 'text-gray-900' : 'text-gray-300'}`}>
+                                        {shift.name.split(' ')[0]}
+                                    </span>
                                     <button
                                         onClick={() => toggleShiftActive(idx)}
-                                        className={`w-5 h-5 md:w-6 md:h-6 rounded-md border flex items-center justify-center transition-all shrink-0 ${shift.active ? 'bg-red-50 border-red-200 text-red-500 hover:bg-red-100' : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100'}`}
-                                        title={shift.active ? "Quitar turno" : "Añadir turno"}
+                                        className={`w-4 h-4 rounded flex items-center justify-center transition-all shrink-0 ${shift.active ? 'text-red-400' : 'text-green-400'}`}
                                     >
                                         {shift.active ? <X size={12} /> : <Plus size={12} />}
                                     </button>
                                 </div>
 
                                 {/* Zona de Barras */}
-                                <div className="flex-1 relative">
-                                    {hoursHeader.map((_, i) => (
-                                        <div key={i} className="absolute top-0 bottom-0 border-r border-dashed border-gray-100 pointer-events-none" style={{ left: `${(i + 1) * PIXELS_PER_HOUR}px` }} />
-                                    ))}
+                                <div className="flex-1 relative bg-gray-50/30">
+                                    <div className="absolute inset-0 flex">
+                                        {hoursHeader.map((_, i) => (
+                                            <div key={i} className="flex-1 border-r border-gray-100/50 pointer-events-none" />
+                                        ))}
+                                    </div>
 
                                     {shift.active && (
                                         <ShiftBar
@@ -265,18 +257,17 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FILA DE TOTALES */}
-                    <div className="flex border-t-2 border-gray-100 bg-gray-50 sticky bottom-0 z-20">
-                        <div className="w-32 md:w-48 p-2 font-bold text-gray-600 text-[10px] md:text-xs sticky left-0 bg-gray-50 border-r flex items-center justify-end pr-2 md:pr-4 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                            TOTALES
+                    <div className="flex border-t border-gray-200 bg-gray-100/50 sticky bottom-0 z-20">
+                        <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] sticky left-0 bg-gray-100/50 border-r flex items-center justify-center pr-1 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            SUM
                         </div>
-                        <div className="flex-1 relative h-8 flex">
+                        <div className="flex-1 relative h-6 flex">
                             {totals.map((count, i) => (
                                 <div
                                     key={i}
-                                    className={`border-r border-gray-200 flex items-center justify-center font-bold text-xs transition-colors ${count > 0 ? 'text-[#5B8FB9] bg-blue-50/50' : 'text-gray-300'}`}
-                                    style={{ width: `${PIXELS_PER_HOUR}px` }}
+                                    className={`flex-1 border-r border-gray-200 flex items-center justify-center font-bold text-[10px] transition-colors ${count > 0 ? 'text-[#5B8FB9] bg-white/40' : 'text-gray-300'}`}
                                 >
-                                    {count > 0 ? count : '-'}
+                                    {count > 0 ? count : ''}
                                 </div>
                             ))}
                         </div>
