@@ -81,7 +81,7 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     return (
         <div
             ref={barRef}
-            className="absolute top-1.5 bottom-1.5 bg-green-400/90 rounded-full border border-green-500 shadow-sm flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10 touch-none"
+            className="absolute top-1 bottom-1 bg-green-400/90 rounded-full border border-green-500 shadow-sm flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10 touch-none"
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
@@ -240,7 +240,7 @@ export default function ScheduleEditorPage() {
                     {/* FILAS DE EMPLEADOS */}
                     <div className="divide-y divide-gray-50 bg-white flex-1 overflow-y-auto">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-10 md:h-12 group">
+                            <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-8 md:h-10 group">
                                 {/* Columna Nombre */}
                                 <div className="w-20 md:w-32 p-1.5 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors shadow-[1px_0_3px_rgba(0,0,0,0.03)]">
                                     <span className="font-black text-[9px] md:text-[11px] truncate text-black uppercase tracking-tight">
