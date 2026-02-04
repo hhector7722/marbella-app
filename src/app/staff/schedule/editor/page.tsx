@@ -213,14 +213,14 @@ export default function ScheduleEditorPage() {
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="w-full flex-1 flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-4">
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-4">
                 <div className="w-full flex flex-col">
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex bg-green-500 text-white border-b border-green-600">
                         <div className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0">
                             <Users size={12} /> STAFF
                         </div>
-                        <div className="flex-1 relative h-8 flex">
+                        <div className="flex-1 relative h-6 flex">
                             {hoursHeader.map((hour, i) => (
                                 <div
                                     key={hour}

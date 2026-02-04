@@ -1,0 +1,16 @@
+{
+    "name": "Bar La Marbella",
+    "short_name": "Marbella",
+    "description": "Sistema de gestión para Bar La Marbella",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#5B8FB9",
+    "theme_color": "#5B8FB9",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "64x64 32x32 24x24 16x16",
+            "type": "image/x-icon"
+        }
+    ]
+}
