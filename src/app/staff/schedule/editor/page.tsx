@@ -85,9 +85,31 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
-            <div className="w-5 h-full cursor-ew-resize hover:bg-black/10 rounded-l-md flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'left')}><div className="w-1 h-4 bg-white/70 rounded-full" /></div>
-            {width > 60 && <span className="text-[9px] font-bold text-green-900 pointer-events-none select-none truncate px-1">{shift.start}-{shift.end}</span>}
-            <div className="w-5 h-full cursor-ew-resize hover:bg-black/10 rounded-r-md flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'right')}><div className="w-1 h-4 bg-white/70 rounded-full" /></div>
+            {/* Tirador Izquierda */}
+            <div className="w-4 h-full cursor-ew-resize hover:bg-black/10 rounded-l-full flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'left')}>
+                <div className="w-0.5 h-3 bg-white/50 rounded-full" />
+            </div>
+
+            {/* Label de Tiempo */}
+            {width > 12 ? (
+                <span className="text-[7px] md:text-[9px] font-black text-green-900 pointer-events-none select-none truncate px-1">
+                    {shift.start}-{shift.end}
+                </span>
+            ) : (
+                <>
+                    <span className="absolute right-full mr-1 text-[7px] md:text-[8px] font-black text-gray-500 pointer-events-none select-none whitespace-nowrap">
+                        {shift.start}
+                    </span>
+                    <span className="absolute left-full ml-1 text-[7px] md:text-[8px] font-black text-gray-500 pointer-events-none select-none whitespace-nowrap">
+                        {shift.end}
+                    </span>
+                </>
+            )}
+
+            {/* Tirador Derecha */}
+            <div className="w-4 h-full cursor-ew-resize hover:bg-black/10 rounded-r-full flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'right')}>
+                <div className="w-0.5 h-3 bg-white/50 rounded-full" />
+            </div>
         </div>
     );
 };
@@ -164,44 +186,39 @@ export default function ScheduleEditorPage() {
                         <Link href="/staff/schedule" className="p-2 hover:bg-white/10 rounded-full transition-colors">
                             <ArrowLeft />
                         </Link>
-                        <div>
-                            <h2 className="font-bold text-xl leading-none">Editor de Horarios</h2>
-                            <p className="text-xs opacity-80 mt-1">Crea turnos arrastrando las barras</p>
-                        </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 md:gap-4 items-end bg-white/10 p-2 md:p-3 rounded-xl w-full md:w-auto">
-                        <div className="flex flex-col flex-1 md:flex-none">
-                            <label className="text-[9px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1"><Calendar size={10} /> Fecha</label>
+                    <div className="flex gap-2 md:gap-3 items-end bg-white/10 p-1.5 md:p-2 rounded-xl">
+                        <div className="flex flex-col w-28 md:w-32">
                             <input
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
-                                className="text-black text-xs md:text-sm px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full"
+                                className="text-black text-xs px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold"
                             />
                         </div>
-                        <div className="flex flex-col flex-1 md:w-40">
-                            <label className="text-[9px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1"><Trophy size={10} /> Actividad</label>
+                        <div className="flex flex-col w-28 md:w-32">
                             <input
                                 type="text"
                                 value={activity}
                                 onChange={(e) => setActivity(e.target.value)}
-                                className="text-black text-xs md:text-sm px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full"
+                                className="text-black text-xs px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold"
+                                placeholder="Actividad"
                             />
                         </div>
                         <button
                             onClick={handleSave}
-                            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg h-[34px] md:h-[38px] transition-transform active:scale-95 w-full md:w-auto mt-2 md:mt-0"
+                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg font-black flex items-center justify-center gap-2 shadow-lg h-[29px] transition-transform active:scale-95 text-[10px] uppercase tracking-wider"
                         >
-                            <Save size={16} /> <span className="text-xs md:text-sm">Guardar</span>
+                            <Save size={14} /> Guardar
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* ZONA DE TRABAJO (SCROLLABLE) */}
-            <div className="flex-1 p-2 md:p-4 overflow-hidden flex flex-col">
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden w-full flex-1 flex flex-col">
+            {/* ZONA DE TRABAJO (FLOATING) */}
+            <div className="flex-1 p-0 overflow-hidden flex flex-col bg-gray-50/50">
+                <div className="w-full flex-1 flex flex-col">
 
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
@@ -226,7 +243,7 @@ export default function ScheduleEditorPage() {
                             <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-10 md:h-12 group">
                                 {/* Columna Nombre */}
                                 <div className="w-20 md:w-32 p-1.5 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors shadow-[1px_0_3px_rgba(0,0,0,0.03)]">
-                                    <span className={`font-bold text-[10px] md:text-xs truncate ${shift.active ? 'text-gray-900' : 'text-gray-300'}`}>
+                                    <span className="font-black text-[9px] md:text-[11px] truncate text-black uppercase tracking-tight">
                                         {shift.name.split(' ')[0]}
                                     </span>
                                     <button
