@@ -21,6 +21,9 @@ export const metadata: Metadata = {
     userScalable: false,
     viewportFit: "cover",
   },
+  icons: {
+    apple: "/logo-white.png",
+  },
 };
 
 export default function RootLayout({
