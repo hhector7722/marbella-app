@@ -466,11 +466,11 @@ export default function DashboardPage() {
                             <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button>
                         </div>
                         <div className="p-4 grid grid-cols-2 gap-4">
-                            <button onClick={() => console.log('Ingredientes')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
+                            <button onClick={() => router.push('/ingredients')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
                                 <div className="bg-orange-100 text-orange-600 p-3 rounded-full group-hover:bg-orange-500 group-hover:text-white transition-colors"><Utensils size={24} /></div>
                                 <span className="font-bold text-orange-900 text-sm">Ingredientes</span>
                             </button>
-                            <button onClick={() => console.log('Recetas')} className="bg-red-50 border-2 border-red-100 hover:border-red-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
+                            <button onClick={() => router.push('/recipes')} className="bg-red-50 border-2 border-red-100 hover:border-red-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
                                 <div className="bg-red-100 text-red-600 p-3 rounded-full group-hover:bg-red-500 group-hover:text-white transition-colors"><ChefHat size={24} /></div>
                                 <span className="font-bold text-red-900 text-sm">Recetas</span>
                             </button>
