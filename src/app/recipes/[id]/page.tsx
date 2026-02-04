@@ -410,7 +410,7 @@ export default function RecipeDetailPage() {
                         </div>
                         <div className="overflow-y-auto flex-1 custom-scrollbar">
                             <table className="w-full text-[10px]">
-                                <thead className="sticky top-0 bg-white text-gray-500 font-bold uppercase border-b">
+                                <thead className="sticky top-header-safe bg-white text-gray-500 font-bold uppercase border-b">
                                     <tr><th className="text-left py-2">Ingrediente</th><th className="text-center">Cant</th><th className="text-center">Ud</th><th className="text-right">Coste</th><th className="w-5"></th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">

@@ -126,7 +126,7 @@ export default function StaffSchedulePage() {
         <div className="min-h-screen bg-gray-50 pb-10 rounded-[2.5rem] overflow-hidden border border-gray-100">
 
             {/* HEADER FIJO */}
-            <div className="bg-white sticky top-0 z-10 shadow-sm px-4 pt-4 pb-4">
+            <div className="bg-white sticky top-header-safe z-10 shadow-sm px-4 pt-4 pb-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <Link href="/staff/dashboard" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">

@@ -67,7 +67,7 @@ export default function MovementsPage() {
     return (
         <div className="min-h-screen bg-gray-50 pb-10">
             {/* Header */}
-            <header className="bg-[#5B8FB9] text-white p-4 sticky top-0 z-10 shadow-md">
+            <header className="bg-[#5B8FB9] text-white p-4 sticky top-header-safe z-10 shadow-md">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button onClick={() => router.back()} className="p-2 hover:bg-white/20 rounded-full transition-colors"><ArrowLeft size={24} /></button>

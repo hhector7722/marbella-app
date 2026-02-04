@@ -454,7 +454,7 @@ function TreasuryContent() {
                             <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
                                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 overflow-y-auto custom-scrollbar pb- safe">
                                     <div className="space-y-3">
-                                        <h4 className="font-bold text-green-600 flex items-center gap-2 border-b pb-2 sticky top-0 bg-white z-10"><ArrowDown size={16} /> ENTRA</h4>
+                                        <h4 className="font-bold text-green-600 flex items-center gap-2 border-b pb-2 sticky top-header-safe bg-white z-10"><ArrowDown size={16} /> ENTRA</h4>
                                         {DENOMINATIONS.map(d => (
                                             <div key={d} className="flex items-center gap-2">
                                                 <span className="w-10 text-xs font-bold text-right">{d}</span>
@@ -463,7 +463,7 @@ function TreasuryContent() {
                                         ))}
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="font-bold text-red-600 flex items-center gap-2 border-b pb-2 sticky top-0 bg-white z-10"><ArrowUp size={16} /> SALE</h4>
+                                        <h4 className="font-bold text-red-600 flex items-center gap-2 border-b pb-2 sticky top-header-safe bg-white z-10"><ArrowUp size={16} /> SALE</h4>
                                         {DENOMINATIONS.map(d => (
                                             <div key={d} className="flex items-center gap-2">
                                                 <span className="w-10 text-xs font-bold text-right">{d}</span>

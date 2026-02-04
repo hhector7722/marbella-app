@@ -251,7 +251,7 @@ export default function HistoryPage() {
 
     return (
         <div className="pb-10 min-h-screen">
-            <div className="bg-[#5B8FB9] text-white p-4 sticky top-0 z-40 border-b border-white/10 backdrop-blur-md shadow-sm">
+            <div className="bg-[#5B8FB9] text-white p-4 sticky top-header-safe z-40 border-b border-white/10 backdrop-blur-md shadow-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link href="/staff/dashboard" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><ArrowLeft size={20} /></Link>

@@ -220,7 +220,7 @@ export default function OvertimePage() {
         <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
 
             {/* PANEL IZQUIERDO: FILTROS Y RESUMEN */}
-            <div className="w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col p-6 z-10 h-auto md:h-screen sticky top-0">
+            <div className="w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col p-6 z-10 h-auto md:h-screen sticky top-header-safe">
                 <div className="mb-6">
                     <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-gray-800 mb-6 text-sm font-bold transition-colors w-fit">
                         <ArrowLeft size={16} /> Volver

@@ -38,7 +38,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.className} bg-[#5B8FB9]`}>
         <Navbar />
-        <main className="pt-20 pb-20 md:pb-0">
+        <main className="pt-header-safe pb-20 md:pb-0">
           {children}
         </main>
         <BottomNavWrapper />
