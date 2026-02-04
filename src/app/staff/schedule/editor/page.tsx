@@ -174,49 +174,43 @@ export default function ScheduleEditorPage() {
         shifts.filter(s => s.active && hour >= parseInt(s.start.split(':')[0]) && hour < parseInt(s.end.split(':')[0])).length
     );
 
-    if (loading) return <div className="p-8 text-center text-gray-400">Cargando editor...</div>;
+    if (loading) return <div className="p-8 text-center text-white font-bold">Cargando editor...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-4 gap-2">
 
-            {/* CABECERA DEL EDITOR */}
-            <div className="bg-[#5B8FB9] p-4 text-white shadow-md z-20">
-                <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-4">
-                        {/* Redundant arrow removed */}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 bg-white/10 p-2 rounded-xl w-full max-w-lg">
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            className="text-black text-[10px] px-2 py-2 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold h-9"
-                        />
-                        <input
-                            type="text"
-                            value={activity}
-                            onChange={(e) => setActivity(e.target.value)}
-                            className="text-black text-[10px] px-2 py-2 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold h-9"
-                            placeholder="Actividad"
-                        />
-                        <button
-                            onClick={handleSave}
-                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-2 rounded-lg font-black flex items-center justify-center gap-2 shadow-lg h-9 transition-transform active:scale-95 text-[10px] uppercase tracking-wider"
-                        >
-                            <Save size={14} /> GUARDAR
-                        </button>
-                    </div>
+            {/* CABECERA ULTRA-COMPACTA */}
+            <div className="flex justify-center w-full">
+                <div className="grid grid-cols-3 gap-2 w-full max-w-lg">
+                    <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="text-black text-[10px] px-2 h-8 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-full font-black bg-white/90"
+                    />
+                    <input
+                        type="text"
+                        value={activity}
+                        onChange={(e) => setActivity(e.target.value)}
+                        className="text-black text-[10px] px-2 h-8 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-full font-black bg-white/90"
+                        placeholder="Actividad"
+                    />
+                    <button
+                        onClick={handleSave}
+                        className="bg-green-500 hover:bg-green-600 text-white px-2 h-8 rounded-lg font-black flex items-center justify-center gap-1 shadow-md transition-transform active:scale-95 text-[9px] uppercase tracking-wider"
+                    >
+                        <Save size={12} /> GUARDAR
+                    </button>
                 </div>
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="p-2 md:p-4 bg-gray-50/50">
-                <div className="w-full flex flex-col rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                <div className="w-full flex flex-col">
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex bg-green-500 text-white">
-                        <div className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] bg-green-500 flex items-center gap-1 uppercase tracking-tighter">
-                            <Users size={12} /> <span className="truncate">STAFF</span>
+                        <div className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0 border-r border-green-600/30">
+                            <Users size={12} /> STAFF
                         </div>
                         <div className="flex-1 relative h-8 flex">
                             {hoursHeader.map((hour, i) => (
@@ -231,27 +225,24 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FILAS DE EMPLEADOS */}
-                    <div className="divide-y divide-gray-50 bg-white">
+                    <div className="bg-[#5B8FB9]">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-8 md:h-10 group">
-                                {/* Columna Nombre */}
-                                <div className="w-20 md:w-32 p-1.5 bg-white sticky left-0 z-10 flex items-center justify-between transition-colors">
-                                    <span className="font-black text-[9px] md:text-[11px] truncate text-black uppercase tracking-tight">
+                            <div key={shift.employeeId} className="flex h-8 md:h-9 border-b border-white/5 last:border-b-0 transition-colors">
+                                {/* Columna Nombre (Botón de Toggle) */}
+                                <div
+                                    onClick={() => toggleShiftActive(idx)}
+                                    className="w-20 md:w-32 p-1.5 flex items-center justify-start cursor-pointer hover:bg-white/5 active:bg-white/10 transition-colors border-r border-white/5 shrink-0"
+                                >
+                                    <span className={`font-black text-[9px] md:text-[10px] truncate uppercase tracking-tight transition-colors ${shift.active ? 'text-black' : 'text-white/40'}`}>
                                         {shift.name.split(' ')[0]}
                                     </span>
-                                    <button
-                                        onClick={() => toggleShiftActive(idx)}
-                                        className={`w-4 h-4 rounded flex items-center justify-center transition-all shrink-0 ${shift.active ? 'text-red-400' : 'text-green-400'}`}
-                                    >
-                                        {shift.active ? <X size={12} /> : <Plus size={12} />}
-                                    </button>
                                 </div>
 
                                 {/* Zona de Barras */}
-                                <div className="flex-1 relative bg-gray-50/20">
+                                <div className="flex-1 relative bg-black/5">
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1 border-r border-gray-100/30 pointer-events-none last:border-r-0" />
+                                            <div key={i} className="flex-1 border-r border-white/5 pointer-events-none last:border-r-0" />
                                         ))}
                                     </div>
 
@@ -267,22 +258,21 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FILA DE TOTALES */}
-                    <div className="flex border-t border-gray-100 bg-gray-50">
-                        <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] flex items-center justify-center uppercase tracking-widest">
+                    <div className="flex bg-white/10 backdrop-blur-sm border-t border-white/10">
+                        <div className="w-20 md:w-32 p-1 font-black text-white/30 text-[8px] flex items-center justify-center uppercase tracking-widest border-r border-white/5 shrink-0">
                             SUM
                         </div>
                         <div className="flex-1 relative h-6 flex">
                             {totals.map((count, i) => (
                                 <div
                                     key={i}
-                                    className={`flex-1 flex items-center justify-center font-black text-[10px] transition-colors ${count > 0 ? 'text-green-600 bg-green-50/30' : 'text-gray-300'}`}
+                                    className={`flex-1 flex items-center justify-center font-black text-[9px] transition-colors ${count > 0 ? 'text-green-300 bg-white/5' : 'text-white/10'}`}
                                 >
                                     {count > 0 ? count : ''}
                                 </div>
                             ))}
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
