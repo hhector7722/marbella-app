@@ -254,10 +254,7 @@ export default function DashboardPage() {
     const percentStrokeColor = '#ffffff';
 
     return (
-        // Cambio de fondo aquí: bg-gray-50 -> bg-[#5B8FB9]
-        <div className="min-h-screen bg-[#5B8FB9] pb-24">
-
-
+        <div className="pb-24">
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
                 {/* ÚLTIMO CIERRE */}
@@ -402,80 +399,86 @@ export default function DashboardPage() {
             </div>
 
             {/* MODAL GESTIÓN DE CAJA */}
-            {cashModalMode !== 'none' && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        {cashModalMode === 'menu' && (
-                            <>
-                                <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                                    <h3 className="font-bold text-lg text-gray-800">
-                                        Gestión {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
-                                    </h3>
-                                    <button onClick={() => setCashModalMode('none')} className="text-gray-400 hover:text-red-500"><X size={24} /></button>
-                                </div>
-                                <div className="p-4 grid grid-cols-2 gap-4">
-                                    <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
-                                    <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} /></div><span className="font-bold text-rose-800">Salida</span></button>
-                                    <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
-                                    <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
-                                </div>
-                            </>
-                        )}
-                        {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && <CashDenominationForm type={cashModalMode} boxName={selectedBox?.name || 'Caja'} onCancel={() => setCashModalMode('menu')} onSubmit={handleCashTransaction} />}
+            {
+                cashModalMode !== 'none' && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                            {cashModalMode === 'menu' && (
+                                <>
+                                    <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                                        <h3 className="font-bold text-lg text-gray-800">
+                                            Gestión {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
+                                        </h3>
+                                        <button onClick={() => setCashModalMode('none')} className="text-gray-400 hover:text-red-500"><X size={24} /></button>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-2 gap-4">
+                                        <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
+                                        <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} /></div><span className="font-bold text-rose-800">Salida</span></button>
+                                        <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
+                                        <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
+                                    </div>
+                                </>
+                            )}
+                            {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && <CashDenominationForm type={cashModalMode as 'in' | 'out' | 'audit'} boxName={selectedBox?.name || 'Caja'} onCancel={() => setCashModalMode('menu')} onSubmit={handleCashTransaction} />}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MODAL PLANTILLA */}
-            {isStaffModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50"><h3 className="font-bold text-lg text-gray-800">Menú Plantilla</h3><button onClick={() => setIsStaffModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button></div>
-                        <div className="flex flex-col">
-                            <button onClick={() => router.push('/registros')} className="p-5 text-left hover:bg-blue-50 border-b border-gray-100 flex items-center gap-4 group transition-colors"><div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><FileText size={20} /></div><span className="font-bold text-gray-700 text-lg">Registros</span></button>
-                            <div className="max-h-72 overflow-y-auto bg-gray-50/50">
-                                <p className="px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-gray-50/95 backdrop-blur">Empleados ({allEmployees.length})</p>
-                                {allEmployees.map((emp) => (<button key={emp.id} onClick={() => console.log(`Abrir perfil de ${emp.first_name}`)} className="w-full p-4 text-left hover:bg-white border-b border-gray-100 flex items-center gap-3 text-gray-700 transition-colors"><div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">{emp.first_name.substring(0, 1)}</div><span className="font-semibold">{emp.first_name} {emp.last_name}</span></button>))}
-                                {allEmployees.length === 0 && <div className="p-4 text-center text-sm text-gray-400 italic">No hay empleados cargados</div>}
+            {
+                isStaffModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="p-4 border-b flex justify-between items-center bg-gray-50"><h3 className="font-bold text-lg text-gray-800">Menú Plantilla</h3><button onClick={() => setIsStaffModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button></div>
+                            <div className="flex flex-col">
+                                <button onClick={() => router.push('/registros')} className="p-5 text-left hover:bg-blue-50 border-b border-gray-100 flex items-center gap-4 group transition-colors"><div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><FileText size={20} /></div><span className="font-bold text-gray-700 text-lg">Registros</span></button>
+                                <div className="max-h-72 overflow-y-auto bg-gray-50/50">
+                                    <p className="px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-gray-50/95 backdrop-blur">Empleados ({allEmployees.length})</p>
+                                    {allEmployees.map((emp) => (<button key={emp.id} onClick={() => console.log(`Abrir perfil de ${emp.first_name}`)} className="w-full p-4 text-left hover:bg-white border-b border-gray-100 flex items-center gap-3 text-gray-700 transition-colors"><div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">{emp.first_name.substring(0, 1)}</div><span className="font-semibold">{emp.first_name} {emp.last_name}</span></button>))}
+                                    {allEmployees.length === 0 && <div className="p-4 text-center text-sm text-gray-400 italic">No hay empleados cargados</div>}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MODAL PRODUCTO (NUEVO) */}
-            {isProductModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                            <h3 className="font-bold text-lg text-gray-800">Gestión Producto</h3>
-                            <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button>
-                        </div>
-                        <div className="p-4 grid grid-cols-2 gap-4">
-                            <button onClick={() => router.push('/ingredients')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                <div className="bg-orange-100 text-orange-600 p-3 rounded-full group-hover:bg-orange-500 group-hover:text-white transition-colors"><Utensils size={24} /></div>
-                                <span className="font-bold text-orange-900 text-sm">Ingredientes</span>
-                            </button>
-                            <button onClick={() => router.push('/recipes')} className="bg-red-50 border-2 border-red-100 hover:border-red-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                <div className="bg-red-100 text-red-600 p-3 rounded-full group-hover:bg-red-500 group-hover:text-white transition-colors"><ChefHat size={24} /></div>
-                                <span className="font-bold text-red-900 text-sm">Recetas</span>
-                            </button>
-                            <button onClick={() => console.log('Proveedores')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                <div className="bg-blue-100 text-blue-600 p-3 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-colors"><Truck size={24} /></div>
-                                <span className="font-bold text-blue-900 text-sm">Proveedores</span>
-                            </button>
-                            <button onClick={() => console.log('Pedidos')} className="bg-green-50 border-2 border-green-100 hover:border-green-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                <div className="bg-green-100 text-green-600 p-3 rounded-full group-hover:bg-green-500 group-hover:text-white transition-colors"><ShoppingCart size={24} /></div>
-                                <span className="font-bold text-green-900 text-sm">Pedidos</span>
-                            </button>
-                            <button onClick={() => console.log('Inventario')} className="col-span-2 bg-purple-50 border-2 border-purple-100 hover:border-purple-400 p-3 rounded-2xl flex flex-row items-center justify-center gap-3 group transition-all">
-                                <div className="bg-purple-100 text-purple-600 p-2 rounded-full group-hover:bg-purple-500 group-hover:text-white transition-colors"><ClipboardList size={24} /></div>
-                                <span className="font-bold text-purple-900 text-sm">Inventario</span>
-                            </button>
+            {
+                isProductModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                                <h3 className="font-bold text-lg text-gray-800">Gestión Producto</h3>
+                                <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button>
+                            </div>
+                            <div className="p-4 grid grid-cols-2 gap-4">
+                                <button onClick={() => router.push('/ingredients')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
+                                    <div className="bg-orange-100 text-orange-600 p-3 rounded-full group-hover:bg-orange-500 group-hover:text-white transition-colors"><Utensils size={24} /></div>
+                                    <span className="font-bold text-orange-900 text-sm">Ingredientes</span>
+                                </button>
+                                <button onClick={() => router.push('/recipes')} className="bg-red-50 border-2 border-red-100 hover:border-red-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
+                                    <div className="bg-red-100 text-red-600 p-3 rounded-full group-hover:bg-red-500 group-hover:text-white transition-colors"><ChefHat size={24} /></div>
+                                    <span className="font-bold text-red-900 text-sm">Recetas</span>
+                                </button>
+                                <button onClick={() => console.log('Proveedores')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
+                                    <div className="bg-blue-100 text-blue-600 p-3 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-colors"><Truck size={24} /></div>
+                                    <span className="font-bold text-blue-900 text-sm">Proveedores</span>
+                                </button>
+                                <button onClick={() => console.log('Pedidos')} className="bg-green-50 border-2 border-green-100 hover:border-green-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
+                                    <div className="bg-green-100 text-green-600 p-3 rounded-full group-hover:bg-green-500 group-hover:text-white transition-colors"><ShoppingCart size={24} /></div>
+                                    <span className="font-bold text-green-900 text-sm">Pedidos</span>
+                                </button>
+                                <button onClick={() => console.log('Inventario')} className="col-span-2 bg-purple-50 border-2 border-purple-100 hover:border-purple-400 p-3 rounded-2xl flex flex-row items-center justify-center gap-3 group transition-all">
+                                    <div className="bg-purple-100 text-purple-600 p-2 rounded-full group-hover:bg-purple-500 group-hover:text-white transition-colors"><ClipboardList size={24} /></div>
+                                    <span className="font-bold text-purple-900 text-sm">Inventario</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

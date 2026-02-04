@@ -50,15 +50,13 @@ export default function Navbar() {
                             <ChevronLeft size={24} strokeWidth={2.5} />
                         </button>
                     )}
-                    <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 md:w-16 md:h-16">
+                    <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10 md:w-12 md:h-12 shrink-0">
                             <Image src="/logo-white.png" alt="Logo" fill className="object-contain" priority />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-white text-xs md:text-base font-black leading-none uppercase tracking-[0.25em]">
-                                Hola, {userData.name}
-                            </span>
-                        </div>
+                        <span className="text-white text-[9px] md:text-xs font-black leading-none uppercase tracking-wider whitespace-nowrap">
+                            Hola, {userData.name}
+                        </span>
                     </div>
                 </div>
 
