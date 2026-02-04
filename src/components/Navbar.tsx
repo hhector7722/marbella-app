@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ChevronLeft } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 
 export default function Navbar() {
@@ -33,20 +33,32 @@ export default function Navbar() {
     if (pathname === '/login' || !userData) return null;
 
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
+    const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
 
     return (
-        <nav className="bg-[#5B8FB9] text-white p-4 sticky top-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm">
-            <div className="max-w-7xl mx-auto flex items-center justify-between px-2">
+        <nav className="bg-[#5B8FB9] text-white p-4 fixed top-0 left-0 right-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-20 flex items-center">
+            <div className="max-w-7xl mx-auto flex items-center justify-between px-2 w-full">
 
-                {/* BLOQUE IZQUIERDO: LOGO + SALUDO (CON ESPACIADO) */}
-                <div className="flex items-center gap-4">
-                    <div className="relative w-16 h-16">
-                        <Image src="/logo-white.png" alt="Logo" fill className="object-contain" priority />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-white text-base font-black leading-none uppercase tracking-[0.25em]">
-                            Hola, {userData.name}
-                        </span>
+                {/* BLOQUE IZQUIERDO: BOTÓN VOLVER + LOGO + SALUDO */}
+                <div className="flex items-center gap-2">
+                    {!isDashboard && (
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors mr-1"
+                            aria-label="Volver"
+                        >
+                            <ChevronLeft size={24} strokeWidth={2.5} />
+                        </button>
+                    )}
+                    <div className="flex items-center gap-4">
+                        <div className="relative w-12 h-12 md:w-16 md:h-16">
+                            <Image src="/logo-white.png" alt="Logo" fill className="object-contain" priority />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-white text-xs md:text-base font-black leading-none uppercase tracking-[0.25em]">
+                                Hola, {userData.name}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

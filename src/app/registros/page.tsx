@@ -248,24 +248,6 @@ export default function RegistrosPage() {
     return (
         <div className="h-screen w-full flex flex-col bg-white overflow-hidden text-gray-800">
 
-            {/* CABECERA (Azul Corporativo #5B8FB9) */}
-            <header className="flex-none h-16 bg-[#5B8FB9] text-white flex items-center justify-between px-6 shadow-md z-10">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.back()} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1 className="text-xl font-bold capitalize">
-                        {format(currentDate, 'MMMM yyyy', { locale: es })}
-                    </h1>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex bg-black/10 rounded-lg p-1 mr-4">
-                        <button onClick={prevMonth} className="p-2 hover:bg-white/20 rounded-md transition-colors"><ChevronLeft size={20} /></button>
-                        <div className="w-[1px] bg-white/20 mx-1"></div>
-                        <button onClick={nextMonth} className="p-2 hover:bg-white/20 rounded-md transition-colors"><ChevronRight size={20} /></button>
-                    </div>
-                </div>
-            </header>
 
             {/* DÍAS SEMANA */}
             <div className="flex-none grid grid-cols-7 bg-gradient-to-b from-red-500 to-red-600 border-b border-red-700 shadow-sm z-10">

@@ -330,18 +330,6 @@ export default function RecipeDetailPage() {
 
             <div className="max-w-6xl mx-auto space-y-2 w-full flex-1 flex flex-col">
 
-                {/* Header */}
-                <div className="bg-white rounded-xl shadow-md h-12 relative flex items-center justify-between px-4 shrink-0">
-                    <button onClick={() => router.push('/')} className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-semibold text-xs text-gray-700">
-                        <ArrowLeft className="w-4 h-4" /> Volver
-                    </button>
-                    <div className="absolute left-1/2 -translate-x-1/2 max-w-md">
-                        <h1 className="text-lg font-bold text-blue-600 text-center truncate">{recipe.name}</h1>
-                    </div>
-                    <button onClick={handleDelete} className="flex items-center gap-2 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold text-xs">
-                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                    </button>
-                </div>
 
                 {/* Image & Metadata */}
                 <div className="flex items-center justify-center gap-4 shrink-0">
@@ -363,11 +351,14 @@ export default function RecipeDetailPage() {
                 </div>
 
                 {/* Datos */}
-                <div className="flex justify-center shrink-0">
+                <div className="flex justify-center items-center gap-4 shrink-0">
                     <div className="bg-white rounded-full shadow-sm px-4 py-1 flex items-center gap-4 text-xs">
                         <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium hover:bg-blue-200 transition-colors uppercase">{recipe.category}</button>
                         <div className="flex items-center gap-1.5 text-gray-600"><Users className="w-3.5 h-3.5" /><span>{recipe.servings || 1} rac</span></div>
                     </div>
+                    <button onClick={handleDelete} className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold text-xs flex items-center gap-2">
+                        <Trash2 size={14} /> Eliminar
+                    </button>
                 </div>
 
                 {/* GRID 2x2 */}

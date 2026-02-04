@@ -257,20 +257,6 @@ export default function DashboardPage() {
         // Cambio de fondo aquí: bg-gray-50 -> bg-[#5B8FB9]
         <div className="min-h-screen bg-[#5B8FB9] pb-24">
 
-            {/* --- CABECERA ESTILO STAFF (Barra Azul Sticky) --- */}
-            <div className="bg-[#5B8FB9] text-white p-4 sticky top-0 z-40 border-b border-white/10 backdrop-blur-md shadow-sm">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <div>
-                        <h1 className="font-bold text-lg leading-none">Hola, Héctor</h1>
-                        <p className="text-xs text-blue-100 opacity-80">Panel de Gestión</p>
-                    </div>
-
-                    {/* Botón para ir al modo Staff */}
-                    <Link href="/staff/dashboard" className="px-4 py-2 bg-white/10 border border-white/20 rounded-full text-xs font-bold hover:bg-white/20 transition-colors flex items-center gap-2">
-                        Staff <ArrowRight size={14} />
-                    </Link>
-                </div>
-            </div>
 
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 

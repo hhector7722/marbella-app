@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, ArrowLeft, Clock, MapPin, Filter,
-    ChevronLeft, ChevronRight, AlertCircle, CheckCircle2,
-    Trophy, StickyNote
+    Calendar, ArrowLeft, Clock,
+    ChevronLeft, ChevronRight, CheckCircle2,
+    Trophy, StickyNote, Plus
 } from 'lucide-react';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
@@ -27,19 +27,35 @@ export default function StaffSchedulePage() {
     const [loading, setLoading] = useState(true);
     const [shifts, setShifts] = useState<Shift[]>([]);
 
+    // Nuevo estado para el Rol
+    const [userRole, setUserRole] = useState<string | null>(null);
+
     // Estado de filtros
     const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     useEffect(() => {
-        fetchShifts();
+        const initData = async () => {
+            await fetchProfileAndShifts();
+        };
+        initData();
     }, []);
 
-    const fetchShifts = async () => {
+    const fetchProfileAndShifts = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
+            // 1. Obtener Rol del Usuario
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profile) setUserRole(profile.role);
+
+            // 2. Obtener Turnos
             const { data, error } = await supabase
                 .from('shifts')
                 .select('*')
@@ -51,7 +67,7 @@ export default function StaffSchedulePage() {
             if (data) setShifts(data);
 
         } catch (error) {
-            console.error('Error fetching shifts:', error);
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
@@ -107,19 +123,30 @@ export default function StaffSchedulePage() {
     if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
 
     return (
-        /* CAMBIO PRINCIPAL: rounded-[2.5rem] y overflow-hidden al contenedor PADRE */
         <div className="min-h-screen bg-gray-50 pb-10 rounded-[2.5rem] overflow-hidden border border-gray-100">
 
-            {/* HEADER FIJO: Eliminado rounded inferior para que fluya con el contenedor padre */}
+            {/* HEADER FIJO */}
             <div className="bg-white sticky top-0 z-10 shadow-sm px-4 pt-4 pb-4">
-                <div className="flex items-center gap-3 mb-4">
-                    <Link href="/staff/dashboard" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
-                        <ArrowLeft size={20} className="text-gray-600" />
-                    </Link>
-                    <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                        <Calendar className="text-purple-600" size={24} />
-                        Mis Turnos
-                    </h1>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <Link href="/staff/dashboard" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                            <ArrowLeft size={20} className="text-gray-600" />
+                        </Link>
+                        <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                            <Calendar className="text-purple-600" size={24} />
+                            Mis Turnos
+                        </h1>
+                    </div>
+
+                    {/* BOTÓN SOLO PARA MANAGERS -> ABRE EL EDITOR */}
+                    {userRole === 'manager' && (
+                        <Link
+                            href="/staff/schedule/editor"
+                            className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center"
+                        >
+                            <Plus size={20} strokeWidth={3} />
+                        </Link>
+                    )}
                 </div>
 
                 {/* TABS SELECTOR */}
@@ -169,14 +196,12 @@ export default function StaffSchedulePage() {
 
                                             {/* INFO */}
                                             <div className="flex-1 space-y-2">
-                                                {/* ETIQUETAS: ACTIVIDAD y NOTAS */}
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     {shift.activity && (
                                                         <span className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-orange-200">
                                                             <Trophy size={10} /> {shift.activity}
                                                         </span>
                                                     )}
-
                                                     {shift.notes && (
                                                         <span className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 text-gray-500 text-[10px] italic rounded-lg border border-gray-100">
                                                             <StickyNote size={10} /> {shift.notes}
@@ -206,7 +231,6 @@ export default function StaffSchedulePage() {
                 {/* VISTA 2: HISTORIAL */}
                 {activeTab === 'history' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-
                         {/* FILTRO DE MES */}
                         <div className="flex items-center justify-between bg-white p-2 rounded-3xl border border-gray-200 shadow-sm">
                             <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-full text-gray-600"><ChevronLeft size={20} /></button>
@@ -255,7 +279,6 @@ export default function StaffSchedulePage() {
                         </div>
                     </div>
                 )}
-
             </div>
         </div>
     );
