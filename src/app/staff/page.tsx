@@ -98,12 +98,8 @@ export default function StaffDashboard() {
     }, [status, todayLog]);
 
     // Helpers
-    // CAMBIO: Eliminado signo +, - y unidad 'h'. Solo valor absoluto.
     const formatValue = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : Math.abs(val).toFixed(0);
-
     const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
-
-    // Helper limpieza teléfono
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
         return cleaned.startsWith('34') ? `+${cleaned}` : `+34${cleaned}`;
@@ -120,7 +116,6 @@ export default function StaffDashboard() {
             let historicalBalance = 0;
             let preferStock = false;
 
-            // 1. OBTENER PERFIL
             const { data: profile } = await supabase.from('profiles')
                 .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours')
                 .eq('id', user.id)
@@ -135,7 +130,6 @@ export default function StaffDashboard() {
                 if (profile.prefer_stock_hours) preferStock = profile.prefer_stock_hours;
             }
 
-            // 2. LOGS DIARIOS
             const today = new Date();
             const todayISO = today.toISOString().split('T')[0];
             const startOfDay = new Date(todayISO).toISOString();
@@ -195,7 +189,6 @@ export default function StaffDashboard() {
             }
             setWeekDays(daysStructure);
 
-            // 3. CALCULO DE SALDO
             const weekDifference = totalWeekHours - contractHours;
             const projectedBalance = historicalBalance + weekDifference;
             let payout = 0;
@@ -206,8 +199,7 @@ export default function StaffDashboard() {
                 totalHours: totalWeekHours, totalExtraHours: Math.max(0, weekDifference), pendingHours: balanceForDisplay, estimatedPayout: payout, status: 'pending', startBalance: historicalBalance
             });
 
-            // 4. TURNOS REALES
-            const { data: realShifts, error: shiftsError } = await supabase
+            const { data: realShifts } = await supabase
                 .from('shifts')
                 .select('start_time, end_time')
                 .eq('user_id', user.id)
@@ -227,9 +219,7 @@ export default function StaffDashboard() {
                     };
                 });
                 setNextShifts(formattedShifts);
-            } else {
-                setNextShifts([]);
-            }
+            } else { setNextShifts([]); }
 
         } catch (error) { console.error(error); }
         finally { setLoading(false); }
@@ -256,14 +246,29 @@ export default function StaffDashboard() {
 
     const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
 
-    // --- COMPONENTES VISUALES ---
+    // --- COMPONENTE VISUAL MEJORADO PARA LINK/BUTTON ---
+    const FloatingIconSolid = ({ icon: Icon, colorClass, label, onClick, href }: { icon: any, colorClass: string, label: string, onClick?: () => void, href?: string }) => {
+        const InnerContent = () => (
+            <div className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50 cursor-pointer">
+                <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
+                <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
+            </div>
+        );
 
-    const FloatingIconSolid = ({ icon: Icon, colorClass, label, onClick }: { icon: any, colorClass: string, label: string, onClick?: () => void }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50">
-            <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
-            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
-        </button>
-    );
+        if (href) {
+            return (
+                <Link href={href} className="block w-full h-full">
+                    <InnerContent />
+                </Link>
+            );
+        }
+
+        return (
+            <button onClick={onClick} className="w-full h-full block">
+                <InnerContent />
+            </button>
+        );
+    };
 
     const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
         <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group">
@@ -361,7 +366,6 @@ export default function StaffDashboard() {
                         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
                             <div className="flex flex-col items-center border-r border-gray-200">
                                 <span className="text-[9px] font-bold text-gray-400 uppercase">TOTAL</span>
-                                {/* CAMBIO: Uso de formatValue actualizado sin 'h' */}
                                 <span className="font-black text-gray-800 text-sm">{formatValue(weeklySummary.totalHours)}</span>
                             </div>
                             <div className="flex flex-col items-center border-r border-gray-200">
@@ -371,7 +375,7 @@ export default function StaffDashboard() {
                             <div className="flex flex-col items-center border-r border-gray-200">
                                 <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
                                 <span className={`font-black text-sm ${weeklySummary.pendingHours > 0 ? 'text-green-600' :
-                                        weeklySummary.pendingHours < 0 ? 'text-red-500' : 'text-gray-400'
+                                    weeklySummary.pendingHours < 0 ? 'text-red-500' : 'text-gray-400'
                                     }`}>
                                     {formatValue(weeklySummary.pendingHours)}
                                 </span>
@@ -429,7 +433,6 @@ export default function StaffDashboard() {
                                                 <span className="block text-[6px] uppercase">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3)}</span>
                                                 <span className="leading-none text-gray-800">{shift.date.getDate()}</span>
                                             </div>
-                                            {/* CAMBIO VISUAL: Entrada (Verde) - Guion (Negro) - Salida (Rojo) */}
                                             <div className="flex items-center gap-2 text-xs font-black">
                                                 <span className="text-green-600">{shift.startTime}</span>
                                                 <span className="text-gray-800">-</span>
@@ -444,8 +447,8 @@ export default function StaffDashboard() {
                         <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
                             <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
 
-                            {/* CAMBIO ICONO: Sandwich (Hot Dog) */}
-                            <FloatingIconSolid icon={Sandwich} colorClass="text-red-500" label="Recetas" onClick={() => toast.info("Abriendo recetario...")} />
+                            {/* AQUÍ ESTÁ EL CAMBIO: Se usa href para navegar a /recipes */}
+                            <FloatingIconSolid icon={Sandwich} colorClass="text-red-500" label="Recetas" href="/recipes" />
 
                             <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Info Interés" onClick={() => setActiveMenu('info')} />
                             <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
@@ -455,7 +458,7 @@ export default function StaffDashboard() {
                 </div>
             </div>
 
-            {/* MODAL GEOLOCALIZACION */}
+            {/* MODALES (Mismo código anterior...) */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center">
@@ -468,7 +471,6 @@ export default function StaffDashboard() {
                 </div>
             )}
 
-            {/* MODAL MULTINIVEL: INFO E INTERÉS / PEDIDOS */}
             {activeMenu && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
                     <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all`}>
@@ -490,6 +492,7 @@ export default function StaffDashboard() {
                         </h3>
 
                         <div className="space-y-3">
+                            {/* ... Contenido de menús ... */}
                             {activeMenu === 'info' && !infoSubMenu && (
                                 <>
                                     <button onClick={() => setInfoSubMenu('contactos')} className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl flex items-center gap-3 transition-colors group">

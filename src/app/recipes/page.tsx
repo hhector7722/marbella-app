@@ -103,9 +103,8 @@ export default function RecipesPage() {
     });
 
     return (
-        // ELIMINADO EL WRAPPER DEL SIDEBAR Y EL FONDO AZUL (Ya está en layout)
-        // Añadido p-6 md:p-8 para dar el aire que pedías
-        <div className="p-6 md:p-8 w-full">
+        // CAMBIO AQUÍ: Añadido bg-[#5B8FB9] y min-h-screen
+        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
             {/* Header */}

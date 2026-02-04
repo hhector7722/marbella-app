@@ -6,7 +6,7 @@ import {
     ArrowLeft, Calendar, ChevronLeft, ChevronRight, Filter, X, Check
 } from 'lucide-react';
 import Link from 'next/link';
-import { isSameWeek } from 'date-fns'; // Necesario para excluir semana actual
+import { isSameWeek } from 'date-fns';
 
 // --- TIPOS ---
 interface DailyLog {
@@ -15,7 +15,13 @@ interface DailyLog {
 
 interface WeeklyData {
     weekNumber: number; startDate: Date; endDate: Date; days: DailyLog[];
-    summary: { totalHours: number; weeklyBalance: number; estimatedValue: number; startBalance: number; };
+    summary: {
+        totalHours: number;
+        weeklyBalance: number;
+        estimatedValue: number;
+        startBalance: number;
+        finalBalance: number;
+    };
 }
 
 // --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
@@ -23,7 +29,6 @@ const applyRoundingRule = (totalMinutes: number): number => {
     if (totalMinutes <= 0) return 0;
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
-    // Regla: 0-20min -> 0.0 | 21-50min -> 0.5 | 51-59min -> 1.0
     if (m <= 20) return h;
     if (m <= 50) return h + 0.5;
     return h + 1;
@@ -48,10 +53,10 @@ const formatBalance = (val: number) => {
     return formatNumber(Math.abs(val));
 };
 
-const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
+const formatMoney = (val: number) => val > 0.1 ? `${val.toFixed(0)}€` : '\u00A0';
+
 const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
-// Función Week Number
 function getWeekNumber(d: Date) {
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
@@ -111,13 +116,12 @@ export default function HistoryPage() {
             const today = new Date(); today.setHours(23, 59, 59, 999);
             const effectiveEndDate = endOfMonth > today ? today : endOfMonth;
 
-            // Ajustar vista al Lunes
             const startView = new Date(startOfMonth);
             const dayOfWeek = startView.getDay();
             const diffToMonday = startView.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
             startView.setDate(diffToMonday); startView.setHours(0, 0, 0, 0);
 
-            // 1. FETCH LOGS (Detalle Diario)
+            // 1. FETCH LOGS
             const { data: logs } = await supabase.from('time_logs')
                 .select('*')
                 .eq('user_id', user.id)
@@ -125,7 +129,7 @@ export default function HistoryPage() {
                 .lte('clock_in', endOfMonth.toISOString())
                 .order('clock_in', { ascending: true });
 
-            // 2. FETCH SNAPSHOTS (Fotos Fijas Semanales)
+            // 2. FETCH SNAPSHOTS
             const searchSnapshotStart = new Date(startView);
             searchSnapshotStart.setDate(searchSnapshotStart.getDate() - 7);
 
@@ -141,17 +145,15 @@ export default function HistoryPage() {
 
             while (currentWeekStart <= effectiveEndDate) {
 
-                // --- LÓGICA DE EXCLUSIÓN: SALTAR SEMANA ACTUAL ---
                 if (isSameWeek(currentWeekStart, new Date(), { weekStartsOn: 1 })) {
                     currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-                    continue; // No procesar ni mostrar la semana en curso
+                    continue;
                 }
 
                 const weekDays: DailyLog[] = [];
                 let weekTotalHours = 0;
                 let hasFutureDays = true;
 
-                // Generar Días
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(currentWeekStart); d.setDate(currentWeekStart.getDate() + i);
                     if (d <= today) hasFutureDays = false;
@@ -165,11 +167,7 @@ export default function HistoryPage() {
                     if (log) {
                         const inD = new Date(log.clock_in); cin = inD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                         if (log.clock_out) { const outD = new Date(log.clock_out); cout = outD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
-
-                        // APLICAR LÓGICA DE REDONDEO 20/40 A LOS LOGS DEL HISTORIAL
-                        // Para asegurar que la suma que ve el usuario coincide con su nómina
                         h = log.total_hours ? roundHoursValue(log.total_hours) : 0;
-
                         weekTotalHours += h;
                     }
 
@@ -183,25 +181,31 @@ export default function HistoryPage() {
 
                 if (hasFutureDays) break;
 
-                // --- LÓGICA DE RESUMEN (SNAPSHOT vs LIVE) ---
+                // --- LÓGICA DE RESUMEN ---
                 const weekStartISO = currentWeekStart.toISOString().split('T')[0];
                 const snapshot = snapshots?.find(s => s.week_start === weekStartISO);
 
                 let summaryStartBalance = 0;
                 let summaryWeeklyBalance = 0;
                 let summaryTotalHours = 0;
+                let summaryFinalBalance = 0;
 
                 if (snapshot) {
                     summaryStartBalance = snapshot.pending_balance;
                     summaryWeeklyBalance = snapshot.balance_hours;
                     summaryTotalHours = snapshot.total_hours;
+                    summaryFinalBalance = snapshot.final_balance ?? (snapshot.pending_balance + snapshot.balance_hours);
                 } else {
-                    summaryTotalHours = weekTotalHours; // Usamos la suma redondeada calculada arriba
+                    summaryTotalHours = weekTotalHours;
 
-                    if (isFixedSalary) summaryWeeklyBalance = weekTotalHours;
-                    else summaryWeeklyBalance = weekTotalHours - contractHours;
+                    if (isFixedSalary) {
+                        // Manager: Todo lo fichado es extra
+                        summaryWeeklyBalance = weekTotalHours;
+                    } else {
+                        // Staff: Fichado - Contrato
+                        summaryWeeklyBalance = weekTotalHours - contractHours;
+                    }
 
-                    // Pendiente: Buscar snapshot anterior
                     const prevWeekDate = new Date(currentWeekStart);
                     prevWeekDate.setDate(prevWeekDate.getDate() - 7);
                     const prevWeekISO = prevWeekDate.toISOString().split('T')[0];
@@ -212,9 +216,12 @@ export default function HistoryPage() {
                     } else {
                         summaryStartBalance = 0;
                     }
+
+                    summaryFinalBalance = summaryStartBalance + summaryWeeklyBalance;
                 }
 
-                const estimatedValue = (!isFixedSalary && summaryWeeklyBalance > 0) ? summaryWeeklyBalance * overtimeRate : 0;
+                // CORRECCIÓN FINAL: Eliminamos '!isFixedSalary' para que todos cobren si hay saldo positivo
+                const estimatedValue = (summaryFinalBalance > 0) ? summaryFinalBalance * overtimeRate : 0;
 
                 weeks.push({
                     weekNumber: getWeekNumber(currentWeekStart),
@@ -225,7 +232,8 @@ export default function HistoryPage() {
                         totalHours: summaryTotalHours > 0 ? summaryTotalHours : weekTotalHours,
                         weeklyBalance: summaryWeeklyBalance,
                         estimatedValue: estimatedValue,
-                        startBalance: summaryStartBalance
+                        startBalance: summaryStartBalance,
+                        finalBalance: summaryFinalBalance
                     }
                 });
                 currentWeekStart.setDate(currentWeekStart.getDate() + 7);
