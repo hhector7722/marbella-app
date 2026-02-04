@@ -59,7 +59,8 @@ export default function LoginPage() {
                             src="/logo-white.png"
                             alt="Logo"
                             fill
-                            className="object-contain brightness-0"
+                            className="object-contain"
+                            style={{ filter: 'invert(55%) sepia(21%) saturate(913%) hue-rotate(167deg) brightness(91%) contrast(87%)' }}
                             priority
                         />
                     </div>
