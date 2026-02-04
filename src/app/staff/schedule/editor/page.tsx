@@ -48,14 +48,15 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     const leftPos = timeToPixels(shift.start);
     const width = Math.max(timeToPixels(shift.end) - leftPos, 20);
 
-    const handleMouseDown = (e: React.MouseEvent, type: 'move' | 'left' | 'right') => {
+    const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
         e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
         setIsDragging(true);
         setDragType(type);
     };
 
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
+        const handlePointerMove = (e: PointerEvent) => {
             if (!isDragging || !barRef.current) return;
             const parentRect = barRef.current.parentElement!.getBoundingClientRect();
             const relativeX = e.clientX - parentRect.left;
@@ -68,28 +69,28 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             }
         };
 
-        const handleMouseUp = () => { setIsDragging(false); setDragType(null); };
+        const handlePointerUp = () => { setIsDragging(false); setDragType(null); };
 
         if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointerup', handlePointerUp);
         }
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
         };
     }, [isDragging, dragType, shift, onUpdate]);
 
     return (
         <div
             ref={barRef}
-            className="absolute top-2 bottom-2 bg-green-400/90 rounded-md border border-green-500 shadow-md flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10"
+            className="absolute top-2 bottom-2 bg-green-400/90 rounded-md border border-green-500 shadow-md flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10 touch-none"
             style={{ left: `${leftPos}px`, width: `${width}px` }}
-            onMouseDown={(e) => handleMouseDown(e, 'move')}
+            onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
-            <div className="w-3 h-full cursor-ew-resize hover:bg-black/10 rounded-l-md flex items-center justify-center" onMouseDown={(e) => handleMouseDown(e, 'left')}><div className="w-0.5 h-3 bg-white/50 rounded-full" /></div>
-            {width > 50 && <span className="text-[9px] font-bold text-green-900 pointer-events-none select-none truncate px-1">{shift.start}-{shift.end}</span>}
-            <div className="w-3 h-full cursor-ew-resize hover:bg-black/10 rounded-r-md flex items-center justify-center" onMouseDown={(e) => handleMouseDown(e, 'right')}><div className="w-0.5 h-3 bg-white/50 rounded-full" /></div>
+            <div className="w-5 h-full cursor-ew-resize hover:bg-black/10 rounded-l-md flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'left')}><div className="w-1 h-4 bg-white/70 rounded-full" /></div>
+            {width > 60 && <span className="text-[9px] font-bold text-green-900 pointer-events-none select-none truncate px-1">{shift.start}-{shift.end}</span>}
+            <div className="w-5 h-full cursor-ew-resize hover:bg-black/10 rounded-r-md flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'right')}><div className="w-1 h-4 bg-white/70 rounded-full" /></div>
         </div>
     );
 };
@@ -172,30 +173,30 @@ export default function ScheduleEditorPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 items-end bg-white/10 p-2 rounded-xl">
-                        <div className="flex flex-col">
+                    <div className="flex flex-wrap gap-2 md:gap-4 items-end bg-white/10 p-2 md:p-3 rounded-xl w-full md:w-auto">
+                        <div className="flex flex-col flex-1 md:flex-none">
                             <label className="text-[9px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1"><Calendar size={10} /> Fecha</label>
                             <input
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
-                                className="text-black text-sm px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300"
+                                className="text-black text-xs md:text-sm px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full"
                             />
                         </div>
-                        <div className="flex flex-col w-40">
+                        <div className="flex flex-col flex-1 md:w-40">
                             <label className="text-[9px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1"><Trophy size={10} /> Actividad</label>
                             <input
                                 type="text"
                                 value={activity}
                                 onChange={(e) => setActivity(e.target.value)}
-                                className="text-black text-sm px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300"
+                                className="text-black text-xs md:text-sm px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full"
                             />
                         </div>
                         <button
                             onClick={handleSave}
-                            className="bg-green-500 hover:bg-green-600 text-white px-6 py-1.5 rounded-lg font-bold flex items-center gap-2 shadow-lg h-[34px] transition-transform active:scale-95"
+                            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg h-[34px] md:h-[38px] transition-transform active:scale-95 w-full md:w-auto mt-2 md:mt-0"
                         >
-                            <Save size={16} /> Guardar
+                            <Save size={16} /> <span className="text-xs md:text-sm">Guardar</span>
                         </button>
                     </div>
                 </div>
@@ -207,8 +208,8 @@ export default function ScheduleEditorPage() {
 
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-                        <div className="w-48 p-3 font-bold text-gray-500 text-xs sticky left-0 bg-gray-50 border-r z-30 flex items-center gap-2">
-                            <Users size={14} /> EMPLEADO
+                        <div className="w-32 md:w-48 p-3 font-bold text-gray-500 text-[10px] md:text-xs sticky left-0 bg-gray-50 border-r z-30 flex items-center gap-2 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            <Users size={14} /> <span className="truncate">EMPLEADO</span>
                         </div>
                         <div className="flex-1 relative h-10">
                             {hoursHeader.map((hour, i) => (
@@ -228,21 +229,21 @@ export default function ScheduleEditorPage() {
                         {shifts.map((shift, idx) => (
                             <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-14 group">
                                 {/* Columna Nombre */}
-                                <div className="w-48 p-2 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${shift.active ? 'bg-[#5B8FB9] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                <div className="w-32 md:w-48 p-2 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                    <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
+                                        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-[10px] md:text-xs font-bold shrink-0 ${shift.active ? 'bg-[#5B8FB9] text-white' : 'bg-gray-100 text-gray-400'}`}>
                                             {shift.name.charAt(0)}
                                         </div>
-                                        <span className={`font-medium text-sm truncate max-w-[90px] ${shift.active ? 'text-gray-900' : 'text-gray-400'}`}>
+                                        <span className={`font-medium text-[11px] md:text-sm truncate ${shift.active ? 'text-gray-900' : 'text-gray-400'}`}>
                                             {shift.name}
                                         </span>
                                     </div>
                                     <button
                                         onClick={() => toggleShiftActive(idx)}
-                                        className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all ${shift.active ? 'bg-red-50 border-red-200 text-red-500 hover:bg-red-100' : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100'}`}
+                                        className={`w-5 h-5 md:w-6 md:h-6 rounded-md border flex items-center justify-center transition-all shrink-0 ${shift.active ? 'bg-red-50 border-red-200 text-red-500 hover:bg-red-100' : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100'}`}
                                         title={shift.active ? "Quitar turno" : "Añadir turno"}
                                     >
-                                        {shift.active ? <X size={14} /> : <Plus size={14} />}
+                                        {shift.active ? <X size={12} /> : <Plus size={12} />}
                                     </button>
                                 </div>
 
@@ -265,7 +266,7 @@ export default function ScheduleEditorPage() {
 
                     {/* FILA DE TOTALES */}
                     <div className="flex border-t-2 border-gray-100 bg-gray-50 sticky bottom-0 z-20">
-                        <div className="w-48 p-2 font-bold text-gray-600 text-xs sticky left-0 bg-gray-50 border-r flex items-center justify-end pr-4">
+                        <div className="w-32 md:w-48 p-2 font-bold text-gray-600 text-[10px] md:text-xs sticky left-0 bg-gray-50 border-r flex items-center justify-end pr-2 md:pr-4 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                             TOTALES
                         </div>
                         <div className="flex-1 relative h-8 flex">
