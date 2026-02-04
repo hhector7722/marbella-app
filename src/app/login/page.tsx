@@ -54,13 +54,12 @@ export default function LoginPage() {
 
                 {/* Cabecera */}
                 <div className="flex flex-col items-center mb-10">
-                    <div className="relative w-32 h-32 mb-4">
+                    <div className="relative w-32 h-32 mb-4 bg-white rounded-full p-2 shadow-sm border border-gray-100">
                         <Image
                             src="/logo-white.png"
                             alt="Logo"
                             fill
                             className="object-contain"
-                            style={{ filter: 'invert(55%) sepia(21%) saturate(913%) hue-rotate(167deg) brightness(91%) contrast(87%)' }}
                             priority
                         />
                     </div>
