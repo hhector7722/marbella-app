@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, BookOpen, Package, TrendingUp, LogOut, User, ChevronUp } from 'lucide-react';
+import { Home, BookOpen, Package, TrendingUp, LogOut, User, Calendar, Clock, Settings } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 
@@ -13,12 +13,10 @@ export default function BottomNav() {
     const supabase = createClient();
 
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-    const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para el menú
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // 1. Bloqueo en Login
     if (pathname === '/login') return null;
 
-    // 2. Cargar perfil
     useEffect(() => {
         async function loadProfile() {
             const { data: { user } } = await supabase.auth.getUser();
@@ -32,11 +30,10 @@ export default function BottomNav() {
             }
         }
         loadProfile();
-    }, []);
+    }, [supabase]);
 
     const handleLogout = async () => {
         if (!confirm("¿Seguro que quieres cerrar sesión?")) return;
-
         const { error } = await supabase.auth.signOut();
         if (error) {
             toast.error('Error al salir');
@@ -51,84 +48,75 @@ export default function BottomNav() {
         ? "text-white scale-110 drop-shadow-md"
         : "text-blue-200 hover:text-white";
 
+    const isStaffPath = pathname.startsWith('/staff');
+
+    // Definición de items por contexto
+    const adminItems = [
+        { name: 'Inicio', href: '/dashboard', icon: Home },
+        { name: 'Recetas', href: '/recipes', icon: BookOpen },
+        { name: 'Ingr', href: '/ingredients', icon: Package },
+        { name: 'Stats', href: '/dashboard', icon: TrendingUp },
+    ];
+
+    const staffItems = [
+        { name: 'Inicio', href: '/staff/dashboard', icon: Home },
+        { name: 'Horarios', href: '/staff/schedule', icon: Calendar },
+        { name: 'Asistencia', href: '/staff/history', icon: Clock },
+        { name: 'Perfil', href: '/profile', icon: User },
+    ];
+
+    const currentItems = isStaffPath ? staffItems : adminItems;
+
     return (
         <>
-            {/* BACKDROP INVISIBLE: Para cerrar el menú al hacer clic fuera */}
             {isMenuOpen && (
-                <div
-                    className="fixed inset-0 z-[90]"
-                    onClick={() => setIsMenuOpen(false)}
-                />
+                <div className="fixed inset-0 z-[90]" onClick={() => setIsMenuOpen(false)} />
             )}
 
-            {/* BARRA DE NAVEGACIÓN */}
-            <nav className="md:hidden fixed bottom-0 w-full bg-[#5B8FB9] border-t border-white/20 z-[100] flex justify-between px-4 py-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
+            <nav className="md:hidden fixed bottom-1 left-4 right-4 bg-[#5B8FB9]/90 backdrop-blur-lg border border-white/20 z-[100] flex justify-between px-6 py-2 pb-safe shadow-2xl rounded-full">
+                {currentItems.map((item) => (
+                    <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
+                        <item.icon size={22} />
+                        <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">{item.name}</span>
+                    </Link>
+                ))}
 
-                <Link href="/" className={`flex flex-col items-center transition-all duration-200 ${getClass('/')}`}>
-                    <Home size={24} />
-                    <span className="text-[10px] font-bold mt-1">Inicio</span>
-                </Link>
-
-                <Link href="/recipes" className={`flex flex-col items-center transition-all duration-200 ${getClass('/recipes')}`}>
-                    <BookOpen size={24} />
-                    <span className="text-[10px] font-bold mt-1">Recetas</span>
-                </Link>
-
-                <Link href="/ingredients" className={`flex flex-col items-center transition-all duration-200 ${getClass('/ingredients')}`}>
-                    <Package size={24} />
-                    <span className="text-[10px] font-bold mt-1">Ingr</span>
-                </Link>
-
-                <Link href="/dashboard" className={`flex flex-col items-center transition-all duration-200 ${getClass('/dashboard')}`}>
-                    <TrendingUp size={24} />
-                    <span className="text-[10px] font-bold mt-1">Stats</span>
-                </Link>
-
-                {/* 5º BOTÓN: CUENTA (Toggle Menú) */}
                 <div className="relative">
-                    {/* MENÚ FLOTANTE (Solo visible si isMenuOpen es true) */}
                     {isMenuOpen && (
-                        <div className="absolute bottom-[120%] right-0 min-w-[160px] bg-white rounded-xl shadow-2xl border border-gray-100 p-2 flex flex-col gap-1 animate-in slide-in-from-bottom-2 fade-in duration-200 origin-bottom-right">
-
-                            {/* Opción 1: Mi Cuenta */}
+                        <div className="absolute bottom-[140%] right-0 min-w-(160px) bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-100 p-2 flex flex-col gap-1 animate-in slide-in-from-bottom-2 fade-in duration-200 origin-bottom-right">
                             <Link
                                 href="/profile"
                                 onClick={() => setIsMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-blue-50 rounded-xl transition-colors"
                             >
                                 <User size={16} className="text-blue-600" />
                                 Mi Cuenta
                             </Link>
-
-                            <div className="h-px bg-gray-100 my-1"></div>
-
-                            {/* Opción 2: Cerrar Sesión */}
+                            <div className="h-px bg-gray-100 my-1 mx-2"></div>
                             <button
                                 onClick={() => { setIsMenuOpen(false); handleLogout(); }}
-                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
                             >
                                 <LogOut size={16} />
-                                Cerrar Sesión
+                                Salir
                             </button>
                         </div>
                     )}
 
-                    {/* El Icono Activador */}
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={`flex flex-col items-center transition-all duration-200 ${isMenuOpen || isActive('/profile') ? "text-white scale-110" : "text-blue-200"}`}
+                        className={`flex flex-col items-center transition-all duration-200 ${isMenuOpen ? "text-white scale-110" : "text-blue-200"}`}
                     >
-                        <div className="w-6 h-6 rounded-full bg-white/10 border border-white/40 flex items-center justify-center overflow-hidden mb-1">
+                        <div className="w-6 h-6 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden mb-1">
                             {avatarUrl ? (
                                 <img src={avatarUrl} alt="Me" className="w-full h-full object-cover" />
                             ) : (
                                 <User size={14} className="text-white" />
                             )}
                         </div>
-                        <span className="text-[10px] font-bold">Cuenta</span>
+                        <span className="text-[9px] font-bold uppercase tracking-tighter">Cuenta</span>
                     </button>
                 </div>
-
             </nav>
         </>
     );

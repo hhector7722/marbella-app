@@ -32,20 +32,9 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     return (
         <div className="flex min-h-screen">
             <Toaster position="top-center" richColors />
-            <main className="flex-1 w-full pb-24 px-3">
+            <main className="flex-1 w-full px-3">
                 {children}
             </main>
-
-            {/* Barra Inferior Móvil */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#5B8FB9] text-white z-50 pb-safe border-t border-white/10 shadow-2xl rounded-t-3xl">
-                <div className="flex justify-between items-center h-16 px-6">
-                    {navItems.map((item) => (
-                        <Link key={item.href} href={item.href} className={`flex flex-col items-center justify-center space-y-1 ${isActive(item.href) ? 'text-white' : 'text-blue-200'}`}>
-                            <item.icon size={20} strokeWidth={2.5} />
-                        </Link>
-                    ))}
-                </div>
-            </nav>
         </div>
     );
 }
