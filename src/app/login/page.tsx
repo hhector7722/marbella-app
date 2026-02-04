@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import { toast, Toaster } from 'sonner';
 
 export default function LoginPage() {
@@ -52,13 +53,16 @@ export default function LoginPage() {
             <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-8 md:p-12 animate-in fade-in zoom-in duration-300">
 
                 {/* Cabecera */}
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black text-[#5B8FB9] mb-2 tracking-tight">
-                        BAR LA MARBELLA
-                    </h1>
-                    <p className="text-gray-400 text-sm font-medium uppercase tracking-wide">
-                        Sistema Operativo Integral
-                    </p>
+                <div className="flex flex-col items-center mb-10">
+                    <div className="relative w-32 h-32 mb-4">
+                        <Image
+                            src="/logo-white.png"
+                            alt="Logo"
+                            fill
+                            className="object-contain brightness-0"
+                            priority
+                        />
+                    </div>
                 </div>
 
                 {/* Formulario */}
@@ -113,12 +117,7 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                {/* Footer */}
-                <div className="mt-8 text-center">
-                    <p className="text-xs text-gray-300 font-bold">
-                        SOLO PERSONAL AUTORIZADO
-                    </p>
-                </div>
+                {/* Footer eliminado */}
             </div>
         </div>
     );
