@@ -19,7 +19,7 @@ import Link from 'next/link';
 const START_HOUR = 7; // 7:00 AM
 const END_HOUR = 23;  // 23:00 PM
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-const SNAP_MINUTES = 15;
+const SNAP_MINUTES = 30;
 
 const timeToPercent = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -183,53 +183,46 @@ export default function ScheduleEditorPage() {
             <div className="bg-[#5B8FB9] p-4 text-white shadow-md z-20">
                 <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <Link href="/staff/schedule" className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                            <ArrowLeft />
-                        </Link>
+                        {/* Redundant arrow removed */}
                     </div>
 
-                    <div className="flex gap-2 md:gap-3 items-end bg-white/10 p-1.5 md:p-2 rounded-xl">
-                        <div className="flex flex-col w-28 md:w-32">
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="text-black text-xs px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold"
-                            />
-                        </div>
-                        <div className="flex flex-col w-28 md:w-32">
-                            <input
-                                type="text"
-                                value={activity}
-                                onChange={(e) => setActivity(e.target.value)}
-                                className="text-black text-xs px-2 py-1.5 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold"
-                                placeholder="Actividad"
-                            />
-                        </div>
+                    <div className="grid grid-cols-3 gap-2 bg-white/10 p-2 rounded-xl w-full max-w-lg">
+                        <input
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="text-black text-[10px] px-2 py-2 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold h-9"
+                        />
+                        <input
+                            type="text"
+                            value={activity}
+                            onChange={(e) => setActivity(e.target.value)}
+                            className="text-black text-[10px] px-2 py-2 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-300 w-full font-bold h-9"
+                            placeholder="Actividad"
+                        />
                         <button
                             onClick={handleSave}
-                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg font-black flex items-center justify-center gap-2 shadow-lg h-[29px] transition-transform active:scale-95 text-[10px] uppercase tracking-wider"
+                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-2 rounded-lg font-black flex items-center justify-center gap-2 shadow-lg h-9 transition-transform active:scale-95 text-[10px] uppercase tracking-wider"
                         >
-                            <Save size={14} /> Guardar
+                            <Save size={14} /> GUARDAR
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="flex-1 p-0 overflow-hidden flex flex-col bg-gray-50/50">
-                <div className="w-full flex-1 flex flex-col">
-
+            <div className="p-2 md:p-4 bg-gray-50/50">
+                <div className="w-full flex flex-col rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm">
                     {/* ENCABEZADO DE HORAS */}
-                    <div className="flex border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-                        <div className="w-20 md:w-32 p-2 font-bold text-gray-500 text-[8px] md:text-[10px] sticky left-0 bg-gray-50 border-r z-30 flex items-center gap-1 shadow-[2px_0_5px_rgba(0,0,0,0.05)] uppercase tracking-tighter">
+                    <div className="flex bg-green-500 text-white">
+                        <div className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] bg-green-500 flex items-center gap-1 uppercase tracking-tighter">
                             <Users size={12} /> <span className="truncate">STAFF</span>
                         </div>
                         <div className="flex-1 relative h-8 flex">
                             {hoursHeader.map((hour, i) => (
                                 <div
                                     key={hour}
-                                    className="flex-1 border-l border-gray-100 text-[8px] font-bold text-gray-400 flex items-center justify-center select-none"
+                                    className="flex-1 text-[8px] md:text-[9px] font-black flex items-center justify-center select-none opacity-90"
                                 >
                                     {hour}
                                 </div>
@@ -238,11 +231,11 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FILAS DE EMPLEADOS */}
-                    <div className="divide-y divide-gray-50 bg-white flex-1 overflow-y-auto">
+                    <div className="divide-y divide-gray-50 bg-white">
                         {shifts.map((shift, idx) => (
                             <div key={shift.employeeId} className="flex hover:bg-blue-50/20 transition-colors h-8 md:h-10 group">
                                 {/* Columna Nombre */}
-                                <div className="w-20 md:w-32 p-1.5 border-r border-gray-100 bg-white sticky left-0 z-10 flex items-center justify-between group-hover:bg-blue-50/20 transition-colors shadow-[1px_0_3px_rgba(0,0,0,0.03)]">
+                                <div className="w-20 md:w-32 p-1.5 bg-white sticky left-0 z-10 flex items-center justify-between transition-colors">
                                     <span className="font-black text-[9px] md:text-[11px] truncate text-black uppercase tracking-tight">
                                         {shift.name.split(' ')[0]}
                                     </span>
@@ -255,10 +248,10 @@ export default function ScheduleEditorPage() {
                                 </div>
 
                                 {/* Zona de Barras */}
-                                <div className="flex-1 relative bg-gray-50/30">
+                                <div className="flex-1 relative bg-gray-50/20">
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1 border-r border-gray-100/50 pointer-events-none" />
+                                            <div key={i} className="flex-1 border-r border-gray-100/30 pointer-events-none last:border-r-0" />
                                         ))}
                                     </div>
 
@@ -274,15 +267,15 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FILA DE TOTALES */}
-                    <div className="flex border-t border-gray-200 bg-gray-100/50 sticky bottom-0 z-20">
-                        <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] sticky left-0 bg-gray-100/50 border-r flex items-center justify-center pr-1 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                    <div className="flex border-t border-gray-100 bg-gray-50">
+                        <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] flex items-center justify-center uppercase tracking-widest">
                             SUM
                         </div>
                         <div className="flex-1 relative h-6 flex">
                             {totals.map((count, i) => (
                                 <div
                                     key={i}
-                                    className={`flex-1 border-r border-gray-200 flex items-center justify-center font-bold text-[10px] transition-colors ${count > 0 ? 'text-[#5B8FB9] bg-white/40' : 'text-gray-300'}`}
+                                    className={`flex-1 flex items-center justify-center font-black text-[10px] transition-colors ${count > 0 ? 'text-green-600 bg-green-50/30' : 'text-gray-300'}`}
                                 >
                                     {count > 0 ? count : ''}
                                 </div>
