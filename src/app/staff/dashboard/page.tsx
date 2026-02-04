@@ -432,36 +432,36 @@ export default function StaffDashboard() {
                 </div>
 
                 {/* COLUMNA DERECHA */}
-                <div className="space-y-6">
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col items-center text-center relative gap-4">
+                <div className="space-y-4 md:space-y-6">
+                    <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
                         <button onClick={openConfirmation} disabled={status === 'finished' || actionLoading}
-                            className={`w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
+                            className={`w-full h-12 md:h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
                                 ${status === 'idle' ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200' : ''}
                                 ${status === 'working' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' : ''}
                                 ${status === 'finished' ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-100' : ''}
                             `}>
-                            {actionLoading ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
-                                <><span className="text-xl font-black uppercase tracking-wider">
+                            {actionLoading ? <div className="w-5 h-5 md:w-6 md:h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
+                                <><span className="text-base md:text-xl font-black uppercase tracking-wider">
                                     {status === 'idle' ? 'FICHAR ENTRADA' : (status === 'working' ? 'FICHAR SALIDA' : 'JORNADA FINALIZADA')}
                                 </span></>
                             )}
                         </button>
                         {status !== 'idle' && (
-                            <div className="w-full h-16 bg-gray-900 rounded-2xl border-4 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-                                <span className={`${digitalFont.className} text-4xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}>
+                            <div className="w-full h-12 md:h-16 bg-gray-900 rounded-2xl border-2 md:border-4 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
+                                <span className={`${digitalFont.className} text-3xl md:text-4xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}>
                                     {elapsedTime}
                                 </span>
                             </div>
                         )}
                         {status === 'idle' && (
-                            <div className="w-full h-16 rounded-2xl bg-gray-50 border-2 border-gray-100 flex items-center justify-center">
-                                <span className="text-[10px] text-gray-400 text-center">No has fichado hoy</span>
+                            <div className="w-full h-12 md:h-16 rounded-2xl bg-gray-50 border-2 border-gray-100 flex items-center justify-center">
+                                <span className="text-[10px] text-gray-400 text-center uppercase font-bold tracking-tight">No has fichado hoy</span>
                             </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 h-[200px]">
-                        <div className="bg-white rounded-[2rem] p-4 shadow-xl h-full flex flex-col overflow-hidden relative">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 h-[180px] md:h-[200px]">
+                        <div className="bg-white rounded-3xl p-4 shadow-xl h-full flex flex-col overflow-hidden relative border border-gray-50">
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="font-bold text-gray-700 flex items-center gap-2 text-xs">
                                     <CalendarDays size={16} className="text-purple-500" /> Horarios
