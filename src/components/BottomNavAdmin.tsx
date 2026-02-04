@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, BookOpen, Package, TrendingUp, LogOut, User, Calendar, Clock, Settings } from 'lucide-react';
+import { Home, BookOpen, Package, TrendingUp, LogOut, User } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 
-export default function BottomNav() {
+export default function BottomNavAdmin() {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
@@ -43,29 +43,17 @@ export default function BottomNav() {
         }
     };
 
-    const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+    const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path + '/'));
     const getClass = (path: string) => isActive(path)
         ? "text-white scale-110 drop-shadow-md"
         : "text-blue-200 hover:text-white";
 
-    const isStaffPath = pathname.startsWith('/staff');
-
-    // Definición de items por contexto
     const adminItems = [
-        { name: 'Inicio', href: '/dashboard', icon: Home },
+        { name: 'Admin', href: '/dashboard', icon: Home },
         { name: 'Recetas', href: '/recipes', icon: BookOpen },
         { name: 'Ingr', href: '/ingredients', icon: Package },
-        { name: 'Stats', href: '/dashboard', icon: TrendingUp },
+        { name: 'Treasury', href: '/dashboard/treasury', icon: TrendingUp },
     ];
-
-    const staffItems = [
-        { name: 'Inicio', href: '/staff/dashboard', icon: Home },
-        { name: 'Horarios', href: '/staff/schedule', icon: Calendar },
-        { name: 'Asistencia', href: '/staff/history', icon: Clock },
-        { name: 'Perfil', href: '/profile', icon: User },
-    ];
-
-    const currentItems = isStaffPath ? staffItems : adminItems;
 
     return (
         <>
@@ -73,9 +61,9 @@ export default function BottomNav() {
                 <div className="fixed inset-0 z-[90]" onClick={() => setIsMenuOpen(false)} />
             )}
 
-            <nav className="md:hidden fixed bottom-1 left-4 right-4 bg-[#5B8FB9]/90 backdrop-blur-lg border border-white/20 z-[100] flex justify-between px-6 py-2 pb-safe shadow-2xl rounded-full">
-                {currentItems.map((item) => (
-                    <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
+            <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-[#5B8FB9]/95 backdrop-blur-lg border border-white/20 z-[100] flex justify-between px-6 py-2 pb-safe shadow-2xl rounded-full">
+                {adminItems.map((item) => (
+                    <Link key={item.name} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
                         <item.icon size={22} />
                         <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">{item.name}</span>
                     </Link>
@@ -83,7 +71,7 @@ export default function BottomNav() {
 
                 <div className="relative">
                     {isMenuOpen && (
-                        <div className="absolute bottom-[140%] right-0 min-w-(160px) bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-100 p-2 flex flex-col gap-1 animate-in slide-in-from-bottom-2 fade-in duration-200 origin-bottom-right">
+                        <div className="absolute bottom-[140%] right-0 min-w-[160px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-100 p-2 flex flex-col gap-1 animate-in slide-in-from-bottom-2 fade-in duration-200 origin-bottom-right">
                             <Link
                                 href="/profile"
                                 onClick={() => setIsMenuOpen(false)}
