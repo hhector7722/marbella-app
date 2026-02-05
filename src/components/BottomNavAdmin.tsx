@@ -61,11 +61,11 @@ export default function BottomNavAdmin() {
                 <div className="fixed inset-0 z-[90]" onClick={() => setIsMenuOpen(false)} />
             )}
 
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-between px-8 py-3 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-between px-8 py-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {adminItems.map((item) => (
                     <Link key={item.name} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
-                        <item.icon size={22} />
-                        <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">{item.name}</span>
+                        <item.icon size={20} />
+                        <span className="text-[8px] font-bold mt-0.5 uppercase tracking-tighter">{item.name}</span>
                     </Link>
                 ))}
 
