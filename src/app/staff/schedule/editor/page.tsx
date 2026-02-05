@@ -172,44 +172,45 @@ export default function ScheduleEditorPage() {
             return;
         }
 
-        const shiftsToInsert = activeShifts.map(shift => {
-            // Convertir fecha y hora a timestamp
-            const startDateTime = new Date(`${date}T${shift.start}:00`);
-            const endDateTime = new Date(`${date}T${shift.end}:00`);
-
-            return {
-                user_id: shift.employeeId,
-                start_time: startDateTime.toISOString(),
-                end_time: endDateTime.toISOString(),
-                activity: activity || null,
-                notes: null,
-                is_published: true
-            };
-        });
-
         try {
-            // Primero eliminar turnos existentes para esa fecha
-            const startOfDay = new Date(`${date}T00:00:00`).toISOString();
-            const endOfDay = new Date(`${date}T23:59:59`).toISOString();
+            // Obtener el usuario actual para created_by
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error('No hay sesión activa');
+                return;
+            }
 
-            await supabase
-                .from('shifts')
-                .delete()
-                .gte('start_time', startOfDay)
-                .lte('start_time', endOfDay);
+            const shiftsToInsert = activeShifts.map(shift => {
+                // Convertir fecha y hora a timestamp
+                const startDateTime = new Date(`${date}T${shift.start}:00`);
+                const endDateTime = new Date(`${date}T${shift.end}:00`);
 
-            // Insertar nuevos turnos
+                return {
+                    user_id: shift.employeeId,
+                    start_time: startDateTime.toISOString(),
+                    end_time: endDateTime.toISOString(),
+                    activity: activity || null,
+                    notes: null,
+                    is_published: true
+                };
+            });
+
+            // Insertar nuevos turnos (sin eliminar los existentes para evitar problemas de RLS)
             const { error } = await supabase
                 .from('shifts')
                 .insert(shiftsToInsert);
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase error:', error);
+                toast.error(`Error: ${error.message}`);
+                return;
+            }
 
             toast.success(`${activeShifts.length} turno(s) guardado(s)`);
             router.push('/staff/schedule');
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al guardar los turnos');
+        } catch (error: any) {
+            console.error('Save error:', error);
+            toast.error(error?.message || 'Error al guardar los turnos');
         }
     };
 
