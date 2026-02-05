@@ -301,7 +301,7 @@ export default function HistoryPage() {
                                             <div className="h-px bg-white/30 flex-1"></div>
                                         </div>
                                     )}
-                                    <div className="bg-white rounded-[2rem] p-4 shadow-xl hover:shadow-2xl transition-shadow duration-300 animate-in slide-in-from-bottom-4" style={{ animationDelay: `${idx * 50}ms` }}>
+                                    <div className="bg-white rounded-[2rem] p-4 shadow-xl hover:shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-4 relative" style={{ animationDelay: `${idx * 50}ms` }}>
                                         <div className="flex justify-between items-end mb-2 px-1">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
@@ -309,7 +309,7 @@ export default function HistoryPage() {
                                                 </span>
                                             </div>
                                             {week.summary.isPaid && (
-                                                <div className="absolute -bottom-2 -right-2 w-24 h-24 rotate-[-15deg] opacity-80 pointer-events-none z-20">
+                                                <div className="absolute -bottom-5 -right-2 w-24 h-24 rotate-[-10deg] opacity-70 pointer-events-none z-20">
                                                     <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
                                                 </div>
                                             )}
