@@ -247,68 +247,58 @@ export default function LaborHistoryPage() {
                 <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
                     {/* CABECERA Y FILTROS */}
-                    <div className="mb-8 space-y-6">
+                    <div className="mb-6 space-y-4">
                         <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-                                <TrendingUp className="text-[#36606F]" size={28} /> Labor Cost
+                            <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                                <TrendingUp className="text-[#36606F]" size={24} /> Coste Mano de Obra
                             </h1>
                         </div>
 
-                        {/* FILTROS EN UNA FILA */}
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha:</span>
+                        {/* FILTROS EN UNA FILA COMPACTA */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[9px] font-black text-gray-400 uppercase">Día:</span>
                                 <button
                                     onClick={() => setShowCalendar('single')}
-                                    className={`h-9 px-4 rounded-xl text-xs font-bold border-2 transition-all flex items-center gap-2 ${filterMode === 'single' ? 'bg-[#36606F] border-[#36606F] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                                    className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'single' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
                                 >
-                                    <Calendar size={14} />
+                                    <Calendar size={12} />
                                     {new Date(selectedDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Periodo:</span>
+                            <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[9px] font-black text-gray-400 uppercase">Rango:</span>
                                 <button
                                     onClick={() => setShowCalendar('range')}
-                                    className={`h-9 px-4 rounded-xl text-xs font-bold border-2 transition-all flex items-center gap-2 ${filterMode === 'range' ? 'bg-[#36606F] border-[#36606F] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                                    className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'range' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
                                 >
-                                    <Calendar size={14} />
+                                    <Calendar size={12} />
                                     {rangeStart && rangeEnd
                                         ? `${new Date(rangeStart).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} - ${new Date(rangeEnd).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}`
-                                        : 'Seleccionar...'}
+                                        : 'Selec...'}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* KPI CARDS (Pequeños y Circulares) */}
-                    <div className="flex justify-center gap-6 mb-10">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-100 flex flex-col items-center justify-center shadow-sm">
-                                <span className="text-[10px] font-black text-emerald-600 leading-none">
-                                    {summary.avgPercentage.toFixed(1)}%
-                                </span>
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Eficiencia</span>
+                    {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
+                    <div className="grid grid-cols-3 gap-3 mb-8">
+                        <div className="bg-emerald-500 p-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
+                            <span className="text-white text-xs font-black leading-none mb-1">{summary.avgPercentage.toFixed(1)}%</span>
+                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Eficiencia</span>
                         </div>
 
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 rounded-full bg-rose-50 border-2 border-rose-100 flex flex-col items-center justify-center shadow-sm">
-                                <span className="text-[10px] font-black text-rose-600 leading-none">
-                                    {summary.totalCost.toFixed(0)}€
-                                </span>
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Coste</span>
+                        <div className="bg-rose-500 p-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
+                            <span className="text-white text-xs font-black leading-none mb-1">{summary.totalCost.toFixed(0)}€</span>
+                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Coste</span>
                         </div>
 
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 rounded-full bg-blue-50 border-2 border-blue-100 flex flex-col items-center justify-center shadow-sm">
-                                <span className="text-[10px] font-black text-blue-600 leading-none">
-                                    {summary.totalHours.toFixed(0)}h
-                                </span>
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Horas</span>
+                        <div className="bg-blue-500 p-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
+                            <span className="text-white text-xs font-black leading-none mb-1">{summary.totalHours.toFixed(0)}h</span>
+                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Horas</span>
                         </div>
                     </div>
 
