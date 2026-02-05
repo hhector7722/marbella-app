@@ -185,6 +185,7 @@ export default function HistoryPage() {
                 // --- LÓGICA DE RESUMEN ---
                 const weekStartISO = currentWeekStart.toISOString().split('T')[0];
                 const snapshot = snapshots?.find(s => s.week_start === weekStartISO);
+                const userPreferStock = profile?.prefer_stock_hours || false;
 
                 let summaryStartBalance = 0;
                 let summaryWeeklyBalance = 0;
@@ -200,10 +201,8 @@ export default function HistoryPage() {
                     summaryTotalHours = weekTotalHours;
 
                     if (isFixedSalary) {
-                        // Manager: Todo lo fichado es extra
                         summaryWeeklyBalance = weekTotalHours;
                     } else {
-                        // Staff: Fichado - Contrato
                         summaryWeeklyBalance = weekTotalHours - contractHours;
                     }
 
@@ -213,7 +212,12 @@ export default function HistoryPage() {
                     const prevSnapshot = snapshots?.find(s => s.week_start === prevWeekISO);
 
                     if (prevSnapshot) {
-                        summaryStartBalance = prevSnapshot.final_balance;
+                        // Si no prefiere acumular y balance previo > 0, se liquidó y arranca en 0
+                        if (!userPreferStock && prevSnapshot.final_balance > 0) {
+                            summaryStartBalance = 0;
+                        } else {
+                            summaryStartBalance = prevSnapshot.final_balance;
+                        }
                     } else {
                         summaryStartBalance = 0;
                     }
@@ -221,8 +225,11 @@ export default function HistoryPage() {
                     summaryFinalBalance = summaryStartBalance + summaryWeeklyBalance;
                 }
 
-                // CORRECCIÓN FINAL: Eliminamos '!isFixedSalary' para que todos cobren si hay saldo positivo
-                const estimatedValue = (summaryFinalBalance > 0) ? summaryFinalBalance * overtimeRate : 0;
+                // Solo cobra si balance > 0 Y no prefiere acumular
+                let estimatedValue = 0;
+                if (summaryFinalBalance > 0 && !userPreferStock) {
+                    estimatedValue = summaryFinalBalance * overtimeRate;
+                }
 
                 weeks.push({
                     weekNumber: getWeekNumber(currentWeekStart),

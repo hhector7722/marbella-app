@@ -33,6 +33,7 @@ interface StaffWeeklyStats {
     regularCost: number;
     overtimeCost: number;
     isPaid: boolean;
+    preferStock?: boolean;
 }
 
 interface WeeklyStats {
@@ -100,7 +101,7 @@ export default function OvertimePage() {
             // 2. Obtener Perfiles (Con las nuevas columnas de costes)
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly');
+                .select('id, first_name, last_name, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly, prefer_stock_hours');
 
             // 3. Obtener Estado Pagos de Snapshots
             const { data: snapshots } = await supabase
@@ -159,15 +160,14 @@ export default function OvertimePage() {
                     const profile = profileMap.get(userId);
 
                     if (profile) {
-                        // Valores por defecto si faltan datos
                         const limit = profile.contracted_hours_weekly || 40;
                         const regPrice = profile.regular_cost_per_hour || 0;
-                        const overPrice = profile.overtime_cost_per_hour || regPrice; // Si no hay precio extra, usa el normal
+                        const overPrice = profile.overtime_cost_per_hour || regPrice;
+                        const preferStock = profile.prefer_stock_hours || false;
 
                         let regHours = 0;
                         let overHours = 0;
 
-                        // Lógica de cálculo
                         if (hoursWorked > limit) {
                             regHours = limit;
                             overHours = hoursWorked - limit;
@@ -177,7 +177,8 @@ export default function OvertimePage() {
                         }
 
                         const regCost = regHours * regPrice;
-                        const overCost = overHours * overPrice;
+                        // Si prefiere acumular, no genera coste de horas extra
+                        const overCost = preferStock ? 0 : (overHours * overPrice);
                         const totalCost = regCost + overCost;
 
                         staffList.push({
@@ -190,7 +191,8 @@ export default function OvertimePage() {
                             totalCost: totalCost,
                             regularCost: regCost,
                             overtimeCost: overCost,
-                            isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === mondayDate.toISOString().split('T')[0])?.is_paid || false
+                            isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === mondayDate.toISOString().split('T')[0])?.is_paid || false,
+                            preferStock: preferStock
                         });
 
                         weekTotalCost += totalCost;
