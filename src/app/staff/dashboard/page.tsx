@@ -80,6 +80,7 @@ export default function StaffDashboard() {
     });
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
     const [currentMonthName, setCurrentMonthName] = useState('');
+    const [weekNumber, setWeekNumber] = useState<number | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
@@ -191,6 +192,18 @@ export default function StaffDashboard() {
             const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6); sunday.setHours(23, 59, 59, 999);
 
             setCurrentMonthName(monday.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
+
+            // CALCULAR NÚMERO DE SEMANA (ISO-8601)
+            const target = new Date(monday.valueOf());
+            const dayNr = (monday.getDay() + 6) % 7;
+            target.setDate(target.getDate() - dayNr + 3);
+            const firstThursday = target.valueOf();
+            target.setMonth(0, 1);
+            if (target.getDay() !== 4) {
+                target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+            }
+            const wNum = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
+            setWeekNumber(wNum);
 
             const { data: weekLogs } = await supabase.from('time_logs')
                 .select('clock_in, clock_out, total_hours')
@@ -346,7 +359,9 @@ export default function StaffDashboard() {
                     <div className="bg-white rounded-[2rem] p-4 shadow-xl">
                         <div className="flex justify-between items-end mb-2 px-1">
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">{currentMonthName}</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                                    {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
+                                </span>
                             </div>
                             <Link href="/staff/history" className="text-xs font-bold text-[#5B8FB9] flex items-center gap-1 hover:underline">
                                 Histórico <ArrowRight size={12} />
@@ -356,39 +371,43 @@ export default function StaffDashboard() {
                         <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                             <div className="grid grid-cols-7 border-b border-gray-100">
                                 {weekDays.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[100px] bg-white relative">
+                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[115px] bg-white relative">
                                         <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
                                         <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
                                             <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                            <div className="flex-1 flex flex-col justify-end gap-1 w-full pb-1">
-                                                {day.hasLog ? (
-                                                    <>
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
+                                            <div className="flex-1 flex flex-col justify-end gap-0.5 w-full pb-1 mt-4">
+                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                    {day.hasLog ? (
+                                                        <>
+                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
                                                             <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                        </div>
-                                                        {day.clockOut && (
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : (<span className="text-gray-200 text-xs text-center">-</span>)}
+                                                        </>
+                                                    ) : <span className="text-gray-200 text-[10px]">-</span>}
+                                                </div>
+                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                    {day.hasLog && day.clockOut ? (
+                                                        <>
+                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                        </>
+                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                </div>
                                             </div>
-                                            <div className="w-full space-y-0.5 pt-1">
-                                                {day.hasLog && day.totalHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[8px] text-gray-400 border-t border-gray-50 pt-1">
-                                                        <span>H</span><span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
-                                                    </div>
-                                                )}
-                                                {day.extraHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[8px] text-gray-400">
-                                                        <span>Ex</span><span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
-                                                    </div>
-                                                )}
+                                            <div className="w-full space-y-0 pt-0.5 border-t border-gray-50">
+                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                    <span className="ml-0.5">H</span>
+                                                    <span className="font-bold text-gray-800 pr-1">
+                                                        {day.hasLog && day.totalHours > 0 ? formatWorked(day.totalHours) : '-'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                    <span className="ml-0.5">Ex</span>
+                                                    <span className="font-bold text-gray-800 pr-1">
+                                                        {day.extraHours > 0 ? formatWorked(day.extraHours) : '-'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
