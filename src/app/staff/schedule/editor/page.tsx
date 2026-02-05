@@ -213,7 +213,7 @@ export default function ScheduleEditorPage() {
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-4">
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-2">
                 <div className="w-full flex flex-col">
                     {/* ENCABEZADO DE HORAS */}
                     <div className="flex bg-green-500 text-white border-b border-green-600">
@@ -290,33 +290,24 @@ export default function ScheduleEditorPage() {
                 </div>
             </div>
 
-            {/* BARRA DE EDICIÓN INTEGRADA - SOLO LA BARRA */}
+            {/* BARRA DE EDICIÓN FLOTANTE - SOLO LA BARRA */}
             {editingIndex !== null && shifts[editingIndex].active && (
-                <div className="mt-2 mx-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="bg-white rounded-2xl shadow-lg border border-green-400 overflow-hidden">
-                        <div className="bg-green-500 px-4 py-2 flex justify-between items-center text-white">
-                            <span className="text-xs font-black uppercase tracking-widest">
-                                {shifts[editingIndex].name} • {shifts[editingIndex].start} - {shifts[editingIndex].end}
-                            </span>
-                            <button onClick={() => setEditingIndex(null)} className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="p-3">
-                            <div className="h-12 relative bg-gray-50 rounded-xl border border-gray-100 flex items-center overflow-hidden">
-                                <div className="flex-1 relative h-full">
-                                    <div className="absolute inset-0 flex">
-                                        {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1 border-r border-gray-100/50 pointer-events-none last:border-r-0" />
-                                        ))}
-                                    </div>
-                                    <ShiftBar
-                                        shift={shifts[editingIndex]}
-                                        onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
-                                    />
-                                </div>
+                <div className="mt-3 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="h-10 relative bg-white/90 rounded-full shadow-lg border border-green-400 flex items-center overflow-hidden backdrop-blur-sm">
+                        <div className="flex-1 relative h-full">
+                            <div className="absolute inset-0 flex">
+                                {hoursHeader.map((_, i) => (
+                                    <div key={i} className="flex-1 border-r border-gray-100/30 pointer-events-none last:border-r-0" />
+                                ))}
                             </div>
+                            <ShiftBar
+                                shift={shifts[editingIndex]}
+                                onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
+                            />
                         </div>
+                        <button onClick={() => setEditingIndex(null)} className="p-2 mr-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
+                            <X size={14} />
+                        </button>
                     </div>
                 </div>
             )}
