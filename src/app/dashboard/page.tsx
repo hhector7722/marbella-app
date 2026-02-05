@@ -199,9 +199,75 @@ export default function DashboardPage() {
         try {
             // 1. RESUMEN DIARIO
             const { data: lastClose } = await supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single();
+
             if (lastClose) {
-                const mockLaborCost = 0;
-                const laborPercent = lastClose.net_sales > 0 ? (mockLaborCost / lastClose.net_sales) * 100 : 0;
+                // Obtener fecha del cierre
+                const closeDate = new Date(lastClose.closed_at);
+                const closeDateStart = new Date(closeDate);
+                closeDateStart.setHours(0, 0, 0, 0);
+                const closeDateEnd = new Date(closeDate);
+                closeDateEnd.setHours(23, 59, 59, 999);
+
+                // Obtener fichajes y profiles para ese día
+                const { data: dayLogs } = await supabase
+                    .from('time_logs')
+                    .select('user_id, total_hours')
+                    .gte('clock_in', closeDateStart.toISOString())
+                    .lte('clock_in', closeDateEnd.toISOString())
+                    .not('clock_out', 'is', null);
+
+                const { data: allProfiles } = await supabase
+                    .from('profiles')
+                    .select('id, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly');
+
+                // Calcular coste real de mano de obra
+                let laborCost = 0;
+                const profileMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
+                const countedManagers = new Set<string>();
+
+                // Sumar horas por empleado
+                const userDayHours = new Map<string, number>();
+                dayLogs?.forEach(log => {
+                    const current = userDayHours.get(log.user_id) || 0;
+                    userDayHours.set(log.user_id, current + (log.total_hours || 0));
+                });
+
+                // Calcular coste por empleado que fichó
+                userDayHours.forEach((hours, userId) => {
+                    const profile = profileMap.get(userId);
+                    if (profile) {
+                        const dailyContracted = (profile.contracted_hours_weekly || 40) / 5;
+                        const regPrice = profile.regular_cost_per_hour || 0;
+                        const overPrice = profile.overtime_cost_per_hour || regPrice;
+                        const isManager = profile.role === 'manager';
+
+                        if (isManager) {
+                            // Managers: base + extras
+                            laborCost += dailyContracted * regPrice;
+                            laborCost += hours * overPrice;
+                            countedManagers.add(userId);
+                        } else {
+                            // Staff: regulares + extras
+                            if (hours > dailyContracted) {
+                                laborCost += dailyContracted * regPrice;
+                                laborCost += (hours - dailyContracted) * overPrice;
+                            } else {
+                                laborCost += hours * regPrice;
+                            }
+                        }
+                    }
+                });
+
+                // Añadir managers que no ficharon
+                allProfiles?.forEach(profile => {
+                    if (profile.role === 'manager' && !countedManagers.has(profile.id)) {
+                        const dailyContracted = (profile.contracted_hours_weekly || 40) / 5;
+                        const regPrice = profile.regular_cost_per_hour || 0;
+                        laborCost += dailyContracted * regPrice;
+                    }
+                });
+
+                const laborPercent = lastClose.net_sales > 0 ? (laborCost / lastClose.net_sales) * 100 : 0;
 
                 setDailyStats({
                     date: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
@@ -210,7 +276,7 @@ export default function DashboardPage() {
                     facturat: lastClose.net_sales * 1.10,
                     vNeta: lastClose.net_sales,
                     ticketMedio: lastClose.tickets_count > 0 ? lastClose.net_sales / lastClose.tickets_count : 0,
-                    costeManoObra: mockLaborCost,
+                    costeManoObra: laborCost,
                     porcentajeManoObra: laborPercent
                 });
             }
