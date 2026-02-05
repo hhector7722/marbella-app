@@ -202,18 +202,15 @@ export default function StaffSchedulePage() {
                                                 </div>
 
                                                 {/* ACTIVIDAD Y HORARIO */}
-                                                <div className="flex-1 flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        {shift.activity && (
-                                                            <span className="text-[10px] font-medium text-gray-400">
-                                                                {shift.activity}
-                                                            </span>
-                                                        )}
-                                                        <span className="text-sm font-black text-gray-800">
-                                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                <div className="flex-1 flex items-center gap-3">
+                                                    {shift.activity && (
+                                                        <span className="text-[10px] font-medium text-gray-400">
+                                                            {shift.activity}
                                                         </span>
-                                                    </div>
-                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
+                                                    )}
+                                                    <span className="text-sm font-black text-gray-800 ml-auto">
+                                                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                    </span>
                                                 </div>
                                             </div>
                                         );
