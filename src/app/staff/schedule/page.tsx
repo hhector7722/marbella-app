@@ -195,8 +195,13 @@ export default function StaffSchedulePage() {
                                 ) : (
                                     upcomingShifts.map((shift) => {
                                         const { dayName, dayNumber, monthName } = formatDateCard(shift.start_time);
+                                        const shiftDate = new Date(shift.start_time).toISOString().split('T')[0];
                                         return (
-                                            <div key={shift.id} className="bg-white rounded-2xl px-3 py-2 shadow-sm border border-purple-100 flex items-center gap-3">
+                                            <div
+                                                key={shift.id}
+                                                className={`bg-white rounded-2xl px-3 py-2 shadow-sm border border-purple-100 flex items-center gap-3 ${userRole === 'manager' ? 'cursor-pointer hover:border-purple-300 hover:shadow-md active:scale-[0.99]' : ''} transition-all`}
+                                                onClick={() => userRole === 'manager' && router.push(`/staff/schedule/editor?date=${shiftDate}`)}
+                                            >
                                                 {/* FECHA COMPACTA */}
                                                 <div className="bg-purple-50 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-purple-100">
                                                     <span className="text-lg font-black text-purple-600 leading-none">{dayNumber}</span>

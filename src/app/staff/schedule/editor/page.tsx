@@ -128,25 +128,76 @@ export default function ScheduleEditorPage() {
     const [shifts, setShifts] = useState<any[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-    // Carga de empleados
+    // Leer date de URL y cargar empleados + turnos existentes
     useEffect(() => {
-        const fetchEmployees = async () => {
-            const { data } = await supabase.from('profiles').select('id, first_name, last_name, role').order('first_name');
-            if (data) {
-                setEmployees(data);
-                // Inicializar barras vacías para cada empleado
-                const initialShifts = data.map(emp => ({
-                    employeeId: emp.id,
-                    name: `${emp.first_name} ${emp.last_name?.charAt(0) || ''}.`,
-                    start: '12:00',
-                    end: '16:00',
-                    active: false
-                }));
-                setShifts(initialShifts);
+        // Leer fecha de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlDate = urlParams.get('date');
+        if (urlDate) {
+            setDate(urlDate);
+        }
+        const targetDate = urlDate || format(new Date(), 'yyyy-MM-dd');
+
+        const fetchData = async () => {
+            // 1. Cargar empleados
+            const { data: employeesData } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name, role')
+                .order('first_name');
+
+            if (!employeesData) {
+                setLoading(false);
+                return;
             }
+
+            setEmployees(employeesData);
+
+            // 2. Cargar turnos existentes para esa fecha
+            const startOfDay = `${targetDate}T00:00:00`;
+            const endOfDay = `${targetDate}T23:59:59`;
+
+            const { data: existingShifts } = await supabase
+                .from('shifts')
+                .select('*')
+                .gte('start_time', startOfDay)
+                .lte('start_time', endOfDay);
+
+            // 3. Crear barras para cada empleado
+            const initialShifts = employeesData.map(emp => {
+                // Buscar si hay un turno existente para este empleado
+                const existing = existingShifts?.find(s => s.user_id === emp.id);
+
+                if (existing) {
+                    const startTime = new Date(existing.start_time);
+                    const endTime = new Date(existing.end_time);
+                    return {
+                        employeeId: emp.id,
+                        name: `${emp.first_name} ${emp.last_name?.charAt(0) || ''}.`,
+                        start: format(startTime, 'HH:mm'),
+                        end: format(endTime, 'HH:mm'),
+                        active: true
+                    };
+                } else {
+                    return {
+                        employeeId: emp.id,
+                        name: `${emp.first_name} ${emp.last_name?.charAt(0) || ''}.`,
+                        start: '12:00',
+                        end: '16:00',
+                        active: false
+                    };
+                }
+            });
+
+            // Obtener actividad del primer turno existente
+            if (existingShifts && existingShifts.length > 0 && existingShifts[0].activity) {
+                setActivity(existingShifts[0].activity);
+            }
+
+            setShifts(initialShifts);
             setLoading(false);
         };
-        fetchEmployees();
+
+        fetchData();
     }, []);
 
     const handleUpdateShift = (index: number, newShift: any) => {
