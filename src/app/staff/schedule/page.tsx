@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, ArrowLeft, Clock,
@@ -24,6 +25,7 @@ interface Shift {
 
 export default function StaffSchedulePage() {
     const supabase = createClient();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [shifts, setShifts] = useState<Shift[]>([]);
 
@@ -237,20 +239,28 @@ export default function StaffSchedulePage() {
                                         </div>
                                     ) : (
                                         historyShifts.map((shift) => {
-                                            const { dayName, dayNumber } = formatDateCard(shift.start_time);
+                                            const { dayNumber, monthName } = formatDateCard(shift.start_time);
+                                            const shiftDate = new Date(shift.start_time).toISOString().split('T')[0];
                                             return (
-                                                <div key={shift.id} className="bg-white rounded-xl px-3 py-2 border border-gray-100 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all">
-                                                    <div className="bg-gray-100 rounded-lg px-2 py-1 text-center min-w-[40px]">
-                                                        <span className="text-sm font-black text-gray-600 leading-none">{dayNumber}</span>
-                                                        <span className="block text-[7px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
+                                                <div
+                                                    key={shift.id}
+                                                    className={`bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-200 flex items-center gap-3 ${userRole === 'manager' ? 'cursor-pointer hover:border-purple-300 hover:shadow-md active:scale-[0.99]' : ''} transition-all`}
+                                                    onClick={() => userRole === 'manager' && router.push(`/staff/schedule/editor?date=${shiftDate}`)}
+                                                >
+                                                    {/* FECHA COMPACTA */}
+                                                    <div className="bg-gray-100 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-gray-200">
+                                                        <span className="text-lg font-black text-gray-600 leading-none">{dayNumber}</span>
+                                                        <span className="block text-[8px] font-bold text-gray-400 uppercase">{monthName}</span>
                                                     </div>
-                                                    <div className="flex-1 flex items-center justify-between">
-                                                        <span className="text-xs font-black text-gray-600">
+
+                                                    {/* ACTIVIDAD Y HORARIO - JUNTOS */}
+                                                    <div className="flex-1 flex items-center gap-3">
+                                                        <span className="text-xs font-medium text-gray-500">
+                                                            {shift.activity || 'Turno'}
+                                                        </span>
+                                                        <span className="text-sm font-black text-gray-800">
                                                             {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                                                         </span>
-                                                        {shift.activity && (
-                                                            <span className="text-[8px] font-bold text-orange-500">{shift.activity}</span>
-                                                        )}
                                                     </div>
                                                 </div>
                                             );
