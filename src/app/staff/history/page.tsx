@@ -98,7 +98,7 @@ export default function HistoryPage() {
             if (!user) return;
 
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, contracted_hours_weekly, overtime_cost_per_hour, is_fixed_salary, prefer_stock_hours')
+                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, is_fixed_salary, prefer_stock_hours')
                 .eq('id', user.id).single();
 
             if (profile) {
@@ -109,6 +109,7 @@ export default function HistoryPage() {
             const contractHours = profile?.contracted_hours_weekly || 40;
             const overtimeRate = profile?.overtime_cost_per_hour || 0;
             const isFixedSalary = profile?.is_fixed_salary || false;
+            const isManager = profile?.role === 'manager';
 
             // RANGO DE FECHAS
             const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -200,7 +201,8 @@ export default function HistoryPage() {
                 } else {
                     summaryTotalHours = weekTotalHours;
 
-                    if (isFixedSalary) {
+                    // Managers y empleados con salario fijo: todas las horas son extras
+                    if (isManager || isFixedSalary) {
                         summaryWeeklyBalance = weekTotalHours;
                     } else {
                         summaryWeeklyBalance = weekTotalHours - contractHours;

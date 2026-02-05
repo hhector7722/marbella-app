@@ -292,12 +292,13 @@ export default function DashboardPage() {
                         const userProfile = profileMap.get(userId);
                         if (userProfile) {
                             const contractedHours = userProfile.contracted_hours_weekly || 40;
+                            const isManager = userProfile.role === 'manager';
                             const isFixedSalary = userProfile.is_fixed_salary || false;
                             const preferStock = userProfile.prefer_stock_hours || false;
                             const overtimeRate = userProfile.overtime_cost_per_hour || 0;
 
-                            // Balance semanal
-                            const weeklyBalance = isFixedSalary ? totalHours : (totalHours - contractedHours);
+                            // Balance semanal: managers y empleados con salario fijo cuentan todas las horas como extras
+                            const weeklyBalance = (isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
 
                             // Obtener pending_balance (arrastre de semana anterior)
                             let pendingBalance = 0;

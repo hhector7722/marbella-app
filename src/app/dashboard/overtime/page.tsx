@@ -164,11 +164,16 @@ export default function OvertimePage() {
                         const regPrice = profile.regular_cost_per_hour || 0;
                         const overPrice = profile.overtime_cost_per_hour || regPrice;
                         const preferStock = profile.prefer_stock_hours || false;
+                        const isManager = profile.role === 'manager';
 
                         let regHours = 0;
                         let overHours = 0;
 
-                        if (hoursWorked > limit) {
+                        // Managers: todas las horas son extras
+                        if (isManager) {
+                            regHours = 0;
+                            overHours = hoursWorked;
+                        } else if (hoursWorked > limit) {
                             regHours = limit;
                             overHours = hoursWorked - limit;
                         } else {
