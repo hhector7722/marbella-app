@@ -9,9 +9,9 @@ import {
     ArrowLeft,
     Users,
     Calendar,
-    Trophy // <--- Añadido aquí para solucionar el error
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
-import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -23,17 +23,15 @@ const SNAP_MINUTES = 30;
 
 const timeToPercent = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const totalMinutes = (hours - START_HOUR) * 60 + minutes;
-    return (totalMinutes / (TOTAL_HOURS * 60)) * 100;
+    return ((hours - START_HOUR) + (minutes / 60)) / TOTAL_HOURS * 100;
 };
 
 const percentToTime = (percent: number) => {
-    const totalMinutes = (percent / 100) * (TOTAL_HOURS * 60);
-    const hours = Math.floor(totalMinutes / 60) + START_HOUR;
-    const minutes = Math.round((totalMinutes % 60) / SNAP_MINUTES) * SNAP_MINUTES;
-    const finalDate = new Date();
-    finalDate.setHours(hours, minutes);
-    return format(finalDate, 'HH:mm');
+    const totalMinutes = (percent / 100) * TOTAL_HOURS * 60;
+    const snappedMinutes = Math.round(totalMinutes / SNAP_MINUTES) * SNAP_MINUTES;
+    const hours = Math.floor(snappedMinutes / 60) + START_HOUR;
+    const mins = snappedMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 };
 
 // --- COMPONENTE BARRA INTERACTIVA ---
@@ -90,21 +88,15 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
                 <div className="w-0.5 h-3 bg-white/50 rounded-full" />
             </div>
 
-            {/* Label de Tiempo */}
-            {width > 12 ? (
-                <span className="text-[7px] md:text-[9px] font-black text-green-900 pointer-events-none select-none truncate px-1">
-                    {shift.start}-{shift.end}
-                </span>
-            ) : (
-                <>
-                    <span className="absolute right-full mr-1 text-[7px] md:text-[8px] font-black text-gray-500 pointer-events-none select-none whitespace-nowrap">
-                        {shift.start}
-                    </span>
-                    <span className="absolute left-full ml-1 text-[7px] md:text-[8px] font-black text-gray-500 pointer-events-none select-none whitespace-nowrap">
-                        {shift.end}
-                    </span>
-                </>
-            )}
+            {/* Hora Entrada (izquierda, blanco) */}
+            <span className="absolute left-1 text-[7px] md:text-[8px] font-black text-white pointer-events-none select-none drop-shadow-md">
+                {shift.start}
+            </span>
+
+            {/* Hora Salida (derecha, rojo) */}
+            <span className="absolute right-1 text-[7px] md:text-[8px] font-black text-red-600 pointer-events-none select-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+                {shift.end}
+            </span>
 
             {/* Tirador Derecha */}
             <div className="w-4 h-full cursor-ew-resize hover:bg-black/10 rounded-r-full flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'right')}>
@@ -118,43 +110,43 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
 export default function ScheduleEditorPage() {
     const supabase = createClient();
     const router = useRouter();
-
     const [loading, setLoading] = useState(true);
-    const [employees, setEmployees] = useState<any[]>([]);
 
-    // Estados del formulario
-    const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-    const [activity, setActivity] = useState('Servicio General');
+    // Estado del editor
+    const [date, setDate] = useState('');
+    const [activity, setActivity] = useState('');
     const [shifts, setShifts] = useState<any[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-    // Leer date de URL y cargar empleados + turnos existentes
-    useEffect(() => {
-        // Leer fecha de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlDate = urlParams.get('date');
-        if (urlDate) {
-            setDate(urlDate);
-        }
-        const targetDate = urlDate || format(new Date(), 'yyyy-MM-dd');
+    // Estado para detectar cambios sin guardar
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-        const fetchData = async () => {
-            // 1. Cargar empleados
-            const { data: employeesData } = await supabase
+    // Modal de calendario
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [calendarDate, setCalendarDate] = useState(new Date());
+
+    useEffect(() => {
+        // Obtener fecha de URL o usar hoy
+        const params = new URLSearchParams(window.location.search);
+        const urlDate = params.get('date');
+        const targetDate = urlDate || new Date().toISOString().split('T')[0];
+        setDate(targetDate);
+        setCalendarDate(new Date(targetDate));
+        fetchData(targetDate);
+    }, []);
+
+    const fetchData = async (targetDate: string) => {
+        setLoading(true);
+        try {
+            // 1. Obtener todos los empleados
+            const { data: employees } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, role')
+                .select('id, first_name, last_name')
                 .order('first_name');
 
-            if (!employeesData) {
-                setLoading(false);
-                return;
-            }
-
-            setEmployees(employeesData);
-
-            // 2. Cargar turnos existentes para esa fecha
-            const startOfDay = `${targetDate}T00:00:00`;
-            const endOfDay = `${targetDate}T23:59:59`;
+            // 2. Obtener turnos existentes para esta fecha
+            const startOfDay = `${targetDate}T00:00:00.000Z`;
+            const endOfDay = `${targetDate}T23:59:59.999Z`;
 
             const { data: existingShifts } = await supabase
                 .from('shifts')
@@ -162,52 +154,56 @@ export default function ScheduleEditorPage() {
                 .gte('start_time', startOfDay)
                 .lte('start_time', endOfDay);
 
-            // 3. Crear barras para cada empleado
-            const initialShifts = employeesData.map(emp => {
-                // Buscar si hay un turno existente para este empleado
-                const existing = existingShifts?.find(s => s.user_id === emp.id);
+            // 3. Crear estructura con todos los empleados
+            const shiftMap = new Map(existingShifts?.map(s => [s.user_id, s]) || []);
 
+            const allShifts = employees?.map(emp => {
+                const existing = shiftMap.get(emp.id);
                 if (existing) {
-                    const startTime = new Date(existing.start_time);
-                    const endTime = new Date(existing.end_time);
                     return {
                         employeeId: emp.id,
-                        name: `${emp.first_name} ${emp.last_name?.charAt(0) || ''}.`,
-                        start: format(startTime, 'HH:mm'),
-                        end: format(endTime, 'HH:mm'),
+                        name: `${emp.first_name} ${emp.last_name || ''}`,
+                        start: new Date(existing.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                        end: new Date(existing.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                         active: true
                     };
-                } else {
-                    return {
-                        employeeId: emp.id,
-                        name: `${emp.first_name} ${emp.last_name?.charAt(0) || ''}.`,
-                        start: '12:00',
-                        end: '16:00',
-                        active: false
-                    };
                 }
-            });
+                return {
+                    employeeId: emp.id,
+                    name: `${emp.first_name} ${emp.last_name || ''}`,
+                    start: '09:00',
+                    end: '17:00',
+                    active: false
+                };
+            }) || [];
 
-            // Obtener actividad del primer turno existente
+            // Cargar actividad si existe
             if (existingShifts && existingShifts.length > 0 && existingShifts[0].activity) {
                 setActivity(existingShifts[0].activity);
             }
 
-            setShifts(initialShifts);
+            setShifts(allShifts);
+            setHasUnsavedChanges(false);
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al cargar datos');
+        } finally {
             setLoading(false);
-        };
-
-        fetchData();
-    }, []);
+        }
+    };
 
     const handleUpdateShift = (index: number, newShift: any) => {
-        const updated = [...shifts]; updated[index] = newShift; setShifts(updated);
+        const updated = [...shifts];
+        updated[index] = newShift;
+        setShifts(updated);
+        setHasUnsavedChanges(true);
     };
 
     const toggleShiftActive = (index: number) => {
         const updated = [...shifts];
         updated[index].active = !updated[index].active;
         setShifts(updated);
+        setHasUnsavedChanges(true);
         if (updated[index].active) {
             setEditingIndex(index);
         } else if (editingIndex === index) {
@@ -224,7 +220,6 @@ export default function ScheduleEditorPage() {
         }
 
         try {
-            // Obtener el usuario actual
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 toast.error('No hay sesión activa');
@@ -232,7 +227,6 @@ export default function ScheduleEditorPage() {
             }
 
             const shiftsToInsert = activeShifts.map(shift => {
-                // Convertir fecha y hora a timestamp
                 const startDateTime = new Date(`${date}T${shift.start}:00`);
                 const endDateTime = new Date(`${date}T${shift.end}:00`);
 
@@ -246,7 +240,7 @@ export default function ScheduleEditorPage() {
                 };
             });
 
-            // 1. Primero eliminar TODOS los turnos existentes para esa fecha
+            // 1. Eliminar turnos existentes para esa fecha
             const startOfDay = `${date}T00:00:00.000Z`;
             const endOfDay = `${date}T23:59:59.999Z`;
 
@@ -262,7 +256,7 @@ export default function ScheduleEditorPage() {
                 return;
             }
 
-            // 2. Insertar los nuevos/editados turnos
+            // 2. Insertar los nuevos turnos
             const { error } = await supabase
                 .from('shifts')
                 .insert(shiftsToInsert);
@@ -273,12 +267,47 @@ export default function ScheduleEditorPage() {
                 return;
             }
 
+            setHasUnsavedChanges(false);
             toast.success(`${activeShifts.length} turno(s) guardado(s)`);
             router.push('/staff/schedule');
         } catch (error: any) {
             console.error('Save error:', error);
             toast.error(error?.message || 'Error al guardar los turnos');
         }
+    };
+
+    // Generar días del calendario
+    const generateCalendarDays = () => {
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        const days: (number | null)[] = [];
+        const startDay = (firstDay.getDay() + 6) % 7;
+        for (let i = 0; i < startDay; i++) {
+            days.push(null);
+        }
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            days.push(d);
+        }
+        return days;
+    };
+
+    const handleSelectCalendarDate = (day: number) => {
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        if (hasUnsavedChanges) {
+            if (!confirm('Tienes cambios sin guardar. ¿Seguro que quieres cambiar de fecha?')) {
+                return;
+            }
+        }
+
+        setShowCalendarModal(false);
+        setDate(dateStr);
+        fetchData(dateStr);
     };
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
@@ -294,16 +323,18 @@ export default function ScheduleEditorPage() {
             {/* CABECERA ULTRA-COMPACTA */}
             <div className="flex justify-center w-full">
                 <div className="flex flex-wrap justify-center gap-2 w-full max-w-lg">
-                    <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="text-black text-[10px] px-2 h-7 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-24 md:w-28 font-black bg-white/90"
-                    />
+                    {/* Fecha con botón de calendario */}
+                    <button
+                        onClick={() => setShowCalendarModal(true)}
+                        className="text-black text-[10px] px-3 h-7 rounded-lg font-black bg-white/90 hover:bg-white flex items-center gap-1 transition-colors"
+                    >
+                        <Calendar size={12} />
+                        {new Date(date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </button>
                     <input
                         type="text"
                         value={activity}
-                        onChange={(e) => setActivity(e.target.value)}
+                        onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
                         className="text-black text-[10px] px-2 h-7 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-28 md:w-32 font-black bg-white/90"
                         placeholder="Actividad"
                     />
@@ -319,10 +350,13 @@ export default function ScheduleEditorPage() {
             {/* ZONA DE TRABAJO (FLOATING) */}
             <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-2">
                 <div className="w-full flex flex-col">
-                    {/* ENCABEZADO DE HORAS */}
-                    <div className="flex bg-green-500 text-white border-b border-green-600">
-                        <div className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0">
-                            <Users size={12} /> STAFF
+                    {/* ENCABEZADO DE HORAS - ROJO */}
+                    <div className="flex bg-red-500 text-white border-b border-red-600">
+                        <div
+                            className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0 cursor-pointer hover:bg-red-600 transition-colors"
+                            onClick={() => setShowCalendarModal(true)}
+                        >
+                            <Calendar size={12} /> {new Date(date).getDate()}
                         </div>
                         <div className="flex-1 relative h-6 flex">
                             {hoursHeader.map((hour, i) => (
@@ -350,12 +384,9 @@ export default function ScheduleEditorPage() {
                                     </span>
                                 </div>
 
-                                {/* Zona de Barras */}
-                                <div
-                                    className="flex-1 relative cursor-pointer"
-                                    onClick={() => shift.active && setEditingIndex(idx)}
-                                >
-                                    {/* Guías de fondo ultra sutiles */}
+                                {/* Zona de Barras - Siempre editable si está activa */}
+                                <div className="flex-1 relative">
+                                    {/* Guías de fondo */}
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
                                             <div key={i} className="flex-1 border-r border-gray-50/50 pointer-events-none last:border-r-0" />
@@ -373,29 +404,27 @@ export default function ScheduleEditorPage() {
                         ))}
                     </div>
 
-                    {/* FILA DE TOTALES - OCULTA AL EDITAR */}
-                    {editingIndex === null && (
-                        <div className="flex bg-gray-50 border-t border-gray-100">
-                            <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
-                                SUM
-                            </div>
-                            <div className="flex-1 relative h-5 md:h-6 flex">
-                                {totals.map((count, i) => (
-                                    <div
-                                        key={i}
-                                        className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-green-600 bg-green-50/20' : 'text-gray-300'}`}
-                                    >
-                                        {count > 0 ? count : ''}
-                                    </div>
-                                ))}
-                            </div>
+                    {/* FILA DE TOTALES - SIEMPRE VISIBLE - FONDO AMARILLO CLARO */}
+                    <div className="flex bg-yellow-100 border-t border-yellow-200 sticky bottom-0">
+                        <div className="w-20 md:w-32 p-1 font-black text-yellow-700 text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
+                            SUM
                         </div>
-                    )}
+                        <div className="flex-1 relative h-5 md:h-6 flex">
+                            {totals.map((count, i) => (
+                                <div
+                                    key={i}
+                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-green-600' : 'text-gray-300'}`}
+                                >
+                                    {count > 0 ? count : ''}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* BARRA DE EDICIÓN FLOTANTE - SOLO LA BARRA */}
-            {editingIndex !== null && shifts[editingIndex].active && (
+            {/* BARRA DE EDICIÓN FLOTANTE - SIEMPRE EDITABLE */}
+            {editingIndex !== null && shifts[editingIndex]?.active && (
                 <div className="mt-3 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="h-10 relative bg-white/90 rounded-full shadow-lg border border-green-400 flex items-center overflow-hidden backdrop-blur-sm">
                         <div className="flex-1 relative h-full">
@@ -412,6 +441,69 @@ export default function ScheduleEditorPage() {
                         <button onClick={() => setEditingIndex(null)} className="p-2 mr-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
                             <X size={14} />
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Calendario */}
+            {showCalendarModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                            <h3 className="font-bold text-gray-800">Seleccionar Fecha</h3>
+                            <button onClick={() => setShowCalendarModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                                <X size={20} className="text-gray-400" />
+                            </button>
+                        </div>
+
+                        {/* Navegación de mes */}
+                        <div className="flex items-center justify-between p-4">
+                            <button
+                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                                className="p-2 hover:bg-gray-100 rounded-xl"
+                            >
+                                <ChevronLeft size={20} className="text-gray-600" />
+                            </button>
+                            <span className="font-bold text-gray-800 capitalize">
+                                {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                                className="p-2 hover:bg-gray-100 rounded-xl"
+                            >
+                                <ChevronRight size={20} className="text-gray-600" />
+                            </button>
+                        </div>
+
+                        {/* Grid de días */}
+                        <div className="p-4 pt-0">
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                    <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1">
+                                {generateCalendarDays().map((day, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => day && handleSelectCalendarDate(day)}
+                                        disabled={!day}
+                                        className={`aspect-square flex items-center justify-center rounded-xl text-sm font-bold transition-all
+                                            ${!day ? 'invisible' : 'hover:bg-red-100 hover:text-red-600 text-gray-700'}
+                                            ${day === new Date().getDate() &&
+                                                calendarDate.getMonth() === new Date().getMonth() &&
+                                                calendarDate.getFullYear() === new Date().getFullYear()
+                                                ? 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
+                                                : ''
+                                            }
+                                        `}
+                                    >
+                                        {day}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

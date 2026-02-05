@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, ArrowLeft, Clock,
     ChevronLeft, ChevronRight, CheckCircle2,
-    Trophy, StickyNote, Plus
+    Plus, Users, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
@@ -21,6 +21,14 @@ interface Shift {
     notes: string | null;
     activity: string | null;
     is_published: boolean;
+    user_id: string;
+}
+
+interface Employee {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    role: string;
 }
 
 export default function StaffSchedulePage() {
@@ -29,8 +37,18 @@ export default function StaffSchedulePage() {
     const [loading, setLoading] = useState(true);
     const [shifts, setShifts] = useState<Shift[]>([]);
 
-    // Nuevo estado para el Rol
+    // Estado para el usuario actual y rol
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
+
+    // Estado para ver horarios de otro empleado (solo managers)
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+
+    // Modales
+    const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [calendarDate, setCalendarDate] = useState(new Date());
 
     // Estado de filtros
     const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
@@ -43,10 +61,19 @@ export default function StaffSchedulePage() {
         initData();
     }, []);
 
+    // Recargar turnos cuando cambia el empleado seleccionado
+    useEffect(() => {
+        if (currentUserId) {
+            fetchShiftsForUser(selectedEmployeeId || currentUserId);
+        }
+    }, [selectedEmployeeId, currentUserId]);
+
     const fetchProfileAndShifts = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
+
+            setCurrentUserId(user.id);
 
             // 1. Obtener Rol del Usuario
             const { data: profile } = await supabase
@@ -58,22 +85,17 @@ export default function StaffSchedulePage() {
             const role = profile?.role || 'staff';
             setUserRole(role);
 
-            // 2. Obtener Turnos (Manager ve todos, Staff solo los suyos)
-            let query = supabase
-                .from('shifts')
-                .select('*')
-                .eq('is_published', true)
-                .order('start_time', { ascending: false });
-
-            // Si no es manager, filtrar solo por su user_id
-            if (role !== 'manager') {
-                query = query.eq('user_id', user.id);
+            // 2. Si es manager, obtener lista de empleados
+            if (role === 'manager') {
+                const { data: allEmployees } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name, role')
+                    .order('first_name');
+                setEmployees(allEmployees || []);
             }
 
-            const { data, error } = await query;
-
-            if (error) throw error;
-            if (data) setShifts(data);
+            // 3. Por defecto, mostrar solo turnos del usuario actual
+            await fetchShiftsForUser(user.id);
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -82,44 +104,28 @@ export default function StaffSchedulePage() {
         }
     };
 
+    const fetchShiftsForUser = async (userId: string) => {
+        const { data, error } = await supabase
+            .from('shifts')
+            .select('*')
+            .eq('is_published', true)
+            .eq('user_id', userId)
+            .order('start_time', { ascending: false });
+
+        if (error) console.error('Error fetching shifts:', error);
+        if (data) setShifts(data);
+    };
+
     // --- LÓGICA DE FILTRADO ---
     const now = new Date();
 
-    // Helper para agrupar por fecha (para managers)
-    const groupByDate = (shiftsArray: Shift[]) => {
-        const grouped = new Map<string, Shift>();
-        shiftsArray.forEach(s => {
-            const dateKey = new Date(s.start_time).toISOString().split('T')[0];
-            const existing = grouped.get(dateKey);
-            // Mantener el turno con la hora de entrada más temprana
-            if (!existing || new Date(s.start_time) < new Date(existing.start_time)) {
-                grouped.set(dateKey, s);
-            }
-        });
-        return Array.from(grouped.values());
-    };
-
-    const upcomingShiftsRaw = shifts
-        .filter(s => new Date(s.start_time) >= now)
-        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-
-    // Para managers: una tarjeta por fecha. Para staff: sus propios turnos
-    const upcomingShifts = userRole === 'manager'
-        ? groupByDate(upcomingShiftsRaw)
-        : upcomingShiftsRaw;
-
-    const historyShiftsRaw = shifts
-        .filter(s => new Date(s.start_time) < now)
-        .filter(s => {
-            const d = new Date(s.start_time);
-            return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
-        })
-        .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
-
-    // Para managers: una tarjeta por fecha. Para staff: sus propios turnos
-    const historyShifts = userRole === 'manager'
-        ? groupByDate(historyShiftsRaw)
-        : historyShiftsRaw;
+    const upcomingShifts = shifts.filter(s => new Date(s.start_time) >= now);
+    const historyShifts = shifts.filter(s => {
+        const shiftDate = new Date(s.start_time);
+        return shiftDate < now &&
+            shiftDate.getMonth() === selectedDate.getMonth() &&
+            shiftDate.getFullYear() === selectedDate.getFullYear();
+    });
 
     // Helpers
     const prevMonth = () => {
@@ -134,23 +140,53 @@ export default function StaffSchedulePage() {
         setSelectedDate(newDate);
     };
 
-    const formatTime = (isoString: string) => {
-        return new Date(isoString).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const getDuration = (start: string, end: string) => {
-        const diff = new Date(end).getTime() - new Date(start).getTime();
-        const hours = diff / (1000 * 60 * 60);
-        return Number.isInteger(hours) ? `${hours}h` : `${hours.toFixed(1)}h`;
-    };
+    const formatTime = (isoString: string) => new Date(isoString).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
     const formatDateCard = (isoString: string) => {
-        const date = new Date(isoString);
+        const d = new Date(isoString);
         return {
-            dayName: date.toLocaleDateString('es-ES', { weekday: 'long' }),
-            dayNumber: date.getDate(),
-            monthName: date.toLocaleDateString('es-ES', { month: 'short' })
+            dayName: d.toLocaleDateString('es-ES', { weekday: 'short' }),
+            dayNumber: d.getDate(),
+            monthName: d.toLocaleDateString('es-ES', { month: 'short' })
         };
+    };
+
+    // Nombre del empleado seleccionado
+    const getSelectedEmployeeName = () => {
+        if (!selectedEmployeeId) return 'Mis Turnos';
+        const emp = employees.find(e => e.id === selectedEmployeeId);
+        return emp ? `${emp.first_name} ${emp.last_name || ''}` : 'Mis Turnos';
+    };
+
+    // Generar días del calendario
+    const generateCalendarDays = () => {
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        const days: (number | null)[] = [];
+
+        // Días vacíos al inicio (Lunes = 0)
+        const startDay = (firstDay.getDay() + 6) % 7;
+        for (let i = 0; i < startDay; i++) {
+            days.push(null);
+        }
+
+        // Días del mes
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            days.push(d);
+        }
+
+        return days;
+    };
+
+    const handleSelectCalendarDate = (day: number) => {
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        setShowCalendarModal(false);
+        router.push(`/staff/schedule/editor?date=${dateStr}`);
     };
 
     if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
@@ -170,18 +206,29 @@ export default function StaffSchedulePage() {
                                 </Link>
                                 <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
                                     <Calendar className="text-purple-600" size={24} />
-                                    Mis Turnos
+                                    {getSelectedEmployeeName()}
                                 </h1>
                             </div>
 
-                            {/* BOTÓN SOLO PARA MANAGERS -> ABRE EL EDITOR */}
+                            {/* BOTONES SOLO PARA MANAGERS */}
                             {userRole === 'manager' && (
-                                <Link
-                                    href="/staff/schedule/editor"
-                                    className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center"
-                                >
-                                    <Plus size={20} strokeWidth={3} />
-                                </Link>
+                                <div className="flex items-center gap-2">
+                                    {/* Botón selector de empleado */}
+                                    <button
+                                        onClick={() => setShowEmployeeModal(true)}
+                                        className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2.5 rounded-xl transition-all active:scale-95"
+                                    >
+                                        <Users size={20} />
+                                    </button>
+
+                                    {/* Botón + (abre calendario) */}
+                                    <button
+                                        onClick={() => setShowCalendarModal(true)}
+                                        className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
+                                    >
+                                        <Plus size={20} strokeWidth={3} />
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -214,7 +261,7 @@ export default function StaffSchedulePage() {
                                             <CheckCircle2 className="text-green-500" size={40} />
                                         </div>
                                         <h3 className="font-black text-gray-700">¡Todo despejado!</h3>
-                                        <p className="text-xs text-gray-400 mt-2 max-w-[200px] mx-auto">No tienes turnos programados próximamente. Disfruta tu descanso.</p>
+                                        <p className="text-xs text-gray-400 mt-2 max-w-[200px] mx-auto">No hay turnos programados próximamente.</p>
                                     </div>
                                 ) : (
                                     upcomingShifts.map((shift) => {
@@ -226,17 +273,12 @@ export default function StaffSchedulePage() {
                                                 className={`bg-white rounded-2xl px-3 py-2 shadow-sm border border-purple-100 flex items-center gap-3 ${userRole === 'manager' ? 'cursor-pointer hover:border-purple-300 hover:shadow-md active:scale-[0.99]' : ''} transition-all`}
                                                 onClick={() => userRole === 'manager' && router.push(`/staff/schedule/editor?date=${shiftDate}`)}
                                             >
-                                                {/* FECHA COMPACTA */}
                                                 <div className="bg-purple-50 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-purple-100">
                                                     <span className="text-lg font-black text-purple-600 leading-none">{dayNumber}</span>
                                                     <span className="block text-[8px] font-bold text-purple-400 uppercase">{monthName}</span>
                                                 </div>
-
-                                                {/* ACTIVIDAD Y HORARIO - JUNTOS */}
                                                 <div className="flex-1 flex items-center gap-3">
-                                                    <span className="text-xs font-medium text-gray-500">
-                                                        {shift.activity || 'Turno'}
-                                                    </span>
+                                                    <span className="text-xs font-medium text-gray-500">{shift.activity || 'Turno'}</span>
                                                     <span className="text-sm font-black text-gray-800">
                                                         {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                                                     </span>
@@ -276,17 +318,12 @@ export default function StaffSchedulePage() {
                                                     className={`bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-200 flex items-center gap-3 ${userRole === 'manager' ? 'cursor-pointer hover:border-purple-300 hover:shadow-md active:scale-[0.99]' : ''} transition-all`}
                                                     onClick={() => userRole === 'manager' && router.push(`/staff/schedule/editor?date=${shiftDate}`)}
                                                 >
-                                                    {/* FECHA COMPACTA */}
                                                     <div className="bg-gray-100 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-gray-200">
                                                         <span className="text-lg font-black text-gray-600 leading-none">{dayNumber}</span>
                                                         <span className="block text-[8px] font-bold text-gray-400 uppercase">{monthName}</span>
                                                     </div>
-
-                                                    {/* ACTIVIDAD Y HORARIO - JUNTOS */}
                                                     <div className="flex-1 flex items-center gap-3">
-                                                        <span className="text-xs font-medium text-gray-500">
-                                                            {shift.activity || 'Turno'}
-                                                        </span>
+                                                        <span className="text-xs font-medium text-gray-500">{shift.activity || 'Turno'}</span>
                                                         <span className="text-sm font-black text-gray-800">
                                                             {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                                                         </span>
@@ -301,6 +338,105 @@ export default function StaffSchedulePage() {
                     </div>
                 </div>
             </div>
+
+            {/* MODAL: Selector de Empleado */}
+            {showEmployeeModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEmployeeModal(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm max-h-[70vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                            <h3 className="font-bold text-gray-800">Seleccionar Empleado</h3>
+                            <button onClick={() => setShowEmployeeModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                                <X size={20} className="text-gray-400" />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-2 overflow-y-auto max-h-[50vh]">
+                            {/* Opción para ver los propios */}
+                            <button
+                                onClick={() => { setSelectedEmployeeId(null); setShowEmployeeModal(false); }}
+                                className={`w-full text-left p-3 rounded-xl transition-all ${!selectedEmployeeId ? 'bg-purple-100 text-purple-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
+                            >
+                                <span className="font-bold">Mis Turnos</span>
+                            </button>
+
+                            {employees.map(emp => (
+                                <button
+                                    key={emp.id}
+                                    onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeModal(false); }}
+                                    className={`w-full text-left p-3 rounded-xl transition-all ${selectedEmployeeId === emp.id ? 'bg-purple-100 text-purple-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
+                                >
+                                    <span className="font-bold">{emp.first_name} {emp.last_name || ''}</span>
+                                    <span className="text-xs text-gray-400 ml-2 capitalize">{emp.role}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Calendario */}
+            {showCalendarModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                            <h3 className="font-bold text-gray-800">Seleccionar Fecha</h3>
+                            <button onClick={() => setShowCalendarModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                                <X size={20} className="text-gray-400" />
+                            </button>
+                        </div>
+
+                        {/* Navegación de mes */}
+                        <div className="flex items-center justify-between p-4">
+                            <button
+                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                                className="p-2 hover:bg-gray-100 rounded-xl"
+                            >
+                                <ChevronLeft size={20} className="text-gray-600" />
+                            </button>
+                            <span className="font-bold text-gray-800 capitalize">
+                                {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                                className="p-2 hover:bg-gray-100 rounded-xl"
+                            >
+                                <ChevronRight size={20} className="text-gray-600" />
+                            </button>
+                        </div>
+
+                        {/* Grid de días */}
+                        <div className="p-4 pt-0">
+                            {/* Cabecera días de la semana */}
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                    <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
+                                ))}
+                            </div>
+
+                            {/* Días del mes */}
+                            <div className="grid grid-cols-7 gap-1">
+                                {generateCalendarDays().map((day, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => day && handleSelectCalendarDate(day)}
+                                        disabled={!day}
+                                        className={`aspect-square flex items-center justify-center rounded-xl text-sm font-bold transition-all
+                                            ${!day ? 'invisible' : 'hover:bg-purple-100 hover:text-purple-600 text-gray-700'}
+                                            ${day === new Date().getDate() &&
+                                                calendarDate.getMonth() === new Date().getMonth() &&
+                                                calendarDate.getFullYear() === new Date().getFullYear()
+                                                ? 'bg-purple-600 text-white hover:bg-purple-700 hover:text-white'
+                                                : ''
+                                            }
+                                        `}
+                                    >
+                                        {day}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
