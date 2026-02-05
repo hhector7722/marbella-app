@@ -131,16 +131,61 @@ export default function DashboardPage() {
         const key = `${weekId}-${staffId}`;
         const newStatus = !paidStatus[key];
 
+        // Optimistic update
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
 
         try {
-            await supabase.from('weekly_snapshots').upsert({
-                user_id: staffId,
-                week_start: weekId,
-                is_paid: newStatus
-            }, { onConflict: 'user_id, week_start' });
+            // Calcular week_end (6 días después de week_start)
+            const weekStart = new Date(weekId);
+            const weekEnd = addDays(weekStart, 6);
+            const weekEndStr = weekEnd.toISOString().split('T')[0];
+
+            // Buscar si existe el registro
+            const { data: existing, error: selectError } = await supabase
+                .from('weekly_snapshots')
+                .select('id')
+                .eq('user_id', staffId)
+                .eq('week_start', weekId)
+                .maybeSingle();
+
+            if (selectError) throw selectError;
+
+            if (existing) {
+                // Actualizar registro existente
+                const { error: updateError } = await supabase
+                    .from('weekly_snapshots')
+                    .update({ is_paid: newStatus })
+                    .eq('user_id', staffId)
+                    .eq('week_start', weekId);
+
+                if (updateError) throw updateError;
+            } else {
+                // Obtener datos del staff para esta semana
+                const weekData = overtimeData.find(w => w.weekId === weekId);
+                const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
+
+                // Crear nuevo registro con todos los campos requeridos
+                const { error: insertError } = await supabase
+                    .from('weekly_snapshots')
+                    .insert({
+                        user_id: staffId,
+                        week_start: weekId,
+                        week_end: weekEndStr,
+                        is_paid: newStatus,
+                        total_hours: staffData?.hours || 0,
+                        balance_hours: staffData?.hours || 0,
+                        contracted_hours_snapshot: 0,
+                        overtime_price_snapshot: 0,
+                        pending_balance: 0,
+                        final_balance: staffData?.hours || 0,
+                        total_cost: staffData?.amount || 0
+                    });
+
+                if (insertError) throw insertError;
+            }
         } catch (error) {
             console.error("Error updating paid status:", error);
+            // Revertir en caso de error
             setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
         }
     };
