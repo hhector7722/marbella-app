@@ -99,7 +99,7 @@ export default function TimeTracker() {
                 <button
                     onClick={handleClockOut}
                     disabled={loading}
-                    className="w-full max-w-xs py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black shadow-lg hover:shadow-red-500/30 transition-all flex items-center justify-center gap-2 text-lg"
+                    className="w-full max-w-xs py-4 bg-red-500 hover:bg-red-600 active:scale-95 text-white rounded-2xl font-black shadow-lg hover:shadow-red-500/30 transition-all flex items-center justify-center gap-2 text-lg"
                 >
                     <Square size={20} fill="currentColor" /> SALIR
                 </button>
@@ -107,7 +107,7 @@ export default function TimeTracker() {
                 <button
                     onClick={handleClockIn}
                     disabled={loading}
-                    className="w-full max-w-xs py-4 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-black shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 text-lg animate-in slide-in-from-bottom-2"
+                    className="w-full max-w-xs py-4 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-2xl font-black shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 text-lg animate-in slide-in-from-bottom-2"
                 >
                     <Play size={24} fill="currentColor" /> ENTRAR
                 </button>

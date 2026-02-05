@@ -74,7 +74,7 @@ export default function BottomNavAdmin() {
             {/* MOBILE: Bottom Bar */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-around items-center px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {adminItems.slice(0, 4).map((item) => (
-                    <Link key={item.name} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
+                    <Link key={item.name} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 ${getClass(item.href)}`}>
                         <item.icon size={20} />
                         <span className="text-[8px] font-bold mt-0.5 uppercase tracking-tighter">{item.name}</span>
                     </Link>
@@ -104,7 +104,7 @@ export default function BottomNavAdmin() {
 
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={`flex flex-col items-center transition-all duration-200 ${isMenuOpen ? "text-white scale-110" : "text-blue-200"}`}
+                        className={`flex flex-col items-center transition-all duration-200 active:scale-95 ${isMenuOpen ? "text-white scale-110" : "text-blue-200"}`}
                     >
                         <div className="w-6 h-6 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden mb-1">
                             {avatarUrl ? (
@@ -126,7 +126,7 @@ export default function BottomNavAdmin() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 ${getClass(item.href, true)}`}
+                            className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 active:scale-95 ${getClass(item.href, true)}`}
                         >
                             <item.icon size={20} />
                             <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter">{item.name}</span>

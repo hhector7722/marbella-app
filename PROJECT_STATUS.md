@@ -15,14 +15,14 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Histórico de Extras:** Vista de semanales con lógica de arrastre (Client-side).
 - [x] **Protocolo AI:** Integración de habilidades especializadas en carpeta `.agent`.
 
-## 🚧 EN PROCESO
-- [ ] **Auditoría de Lógica:** Comparando reglas `.agent` con implementación actual para evitar regresiones.
-- [ ] **Refactorización de Utilidades:** Centralizando cálculos de dinero y tiempo en `src/lib/utils.ts`.
+- [x] Auditoría de Lógica: Comparando reglas `.agent` con implementación actual para evitar regresiones.
+- [x] Refactorización de Utilidades: Centralizando cálculos de dinero y tiempo en Server Actions.
+- [x] Optimización UI Kiosco: Ajustar botones y targets táctiles al estándar de 48px+ en navegación y fichaje.
 
 ## 📅 PENDIENTE
-- [ ] **Migración a Server Actions:** Mover la lógica compleja de `OvertimePage` al servidor para mayor seguridad y velocidad.
+- [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.
 - [ ] **Validación RLS:** Revisar políticas de seguridad en tablas críticas (`weekly_snapshots`, `time_logs`).
-- [ ] **Optimización UI Kiosco:** Ajustar botones y targets táctiles al estándar de 48px+ en todas las pantallas de staff.
+- [ ] **Mejora Bento Grid:** Aplicar estilos visuales más consistentes en el resto de dashboards.
 
 ---
 
