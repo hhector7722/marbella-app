@@ -30,7 +30,7 @@ export default function Navbar() {
         fetchUserData();
     }, [supabase]);
 
-    if (pathname === '/login' || !userData) return null;
+    if (pathname === '/login') return null;
 
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
@@ -55,7 +55,7 @@ export default function Navbar() {
                             <Image src="/logo-white.png" alt="Logo" fill className="object-contain" priority />
                         </div>
                         <span className="text-white text-[8px] md:text-[10px] font-black leading-none uppercase tracking-wider whitespace-nowrap">
-                            Hola, {userData.name}
+                            {userData ? `Hola, ${userData.name}` : 'Cargando...'}
                         </span>
                     </div>
                 </div>
@@ -63,7 +63,7 @@ export default function Navbar() {
                 {/* BLOQUE DERECHO: INTERRUPTOR + BOTÓN IA */}
                 <div className="flex items-center gap-3">
                     {/* INTERRUPTOR */}
-                    {userData.role === 'manager' && (
+                    {userData?.role === 'manager' && (
                         <button
                             onClick={() => router.push(isAdminMode ? '/staff/dashboard' : '/dashboard')}
                             className={`relative w-16 h-7 flex items-center rounded-full transition-all duration-300 shadow-inner border-2 border-white/30 p-1 ${isAdminMode ? 'bg-[#FF9800]' : 'bg-[#4CAF50]'
