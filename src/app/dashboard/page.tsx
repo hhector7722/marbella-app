@@ -228,10 +228,10 @@ export default function DashboardPage() {
             }
 
             // 3. HORAS EXTRAS
-            const d = new Date(); d.setDate(d.getDate() - 30);
+            const d = new Date(); d.setDate(d.getDate() - 60);
             const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary');
-            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid').gte('week_start', d.toISOString().split('T')[0]);
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary, hours_balance');
+            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance').gte('week_start', d.toISOString().split('T')[0]);
 
             if (profiles) setAllEmployees(profiles);
 
@@ -256,11 +256,18 @@ export default function DashboardPage() {
                     userMap.set(log.user_id, (userMap.get(log.user_id) || 0) + (log.total_hours || 0));
                 });
 
-                // Segundo: construir estructura de semanas con horas extra correctamente calculadas
+                // Ordenar semanas cronológicamente para calcular arrastre correcto
+                const sortedWeekIds = Array.from(weekUserHoursMap.keys()).sort();
+
+                // Mapa para arrastre: userId -> finalBalance de semana anterior
+                const userFinalBalances = new Map<string, Map<string, number>>();
+
+                // Construir estructura de semanas con lógica de arrastre
                 const weeksMap = new Map<string, any>();
                 const initialPaidStatus: Record<string, boolean> = {};
 
-                weekUserHoursMap.forEach((userMap, weekLabelId) => {
+                sortedWeekIds.forEach(weekLabelId => {
+                    const userMap = weekUserHoursMap.get(weekLabelId)!;
                     const monday = new Date(weekLabelId);
                     const weekNum = getISOWeek(monday);
                     const sunday = addDays(monday, 6);
@@ -269,6 +276,9 @@ export default function DashboardPage() {
                     const titleLabel = `Semana ${weekNum}`;
                     const rangeLabel = `${startStr} a ${endStr}`;
 
+                    const prevMonday = addDays(monday, -7);
+                    const prevWeekId = prevMonday.toISOString().split('T')[0];
+
                     if (!weeksMap.has(weekLabelId)) {
                         weeksMap.set(weekLabelId, {
                             weekId: weekLabelId, title: titleLabel, dateRange: rangeLabel, total: 0, expanded: false, staff: []
@@ -276,6 +286,7 @@ export default function DashboardPage() {
                     }
 
                     const weekEntry = weeksMap.get(weekLabelId);
+                    if (!userFinalBalances.has(weekLabelId)) userFinalBalances.set(weekLabelId, new Map());
 
                     userMap.forEach((totalHours, userId) => {
                         const userProfile = profileMap.get(userId);
@@ -284,23 +295,36 @@ export default function DashboardPage() {
                             const isFixedSalary = userProfile.is_fixed_salary || false;
                             const overtimeRate = userProfile.overtime_cost_per_hour || 0;
 
-                            // Calcular horas extras correctamente
-                            let overtimeHours = 0;
-                            if (isFixedSalary) {
-                                overtimeHours = totalHours; // Empleados con salario fijo: todas las horas cuentan
+                            // Balance semanal
+                            const weeklyBalance = isFixedSalary ? totalHours : (totalHours - contractedHours);
+
+                            // Obtener pending_balance (arrastre)
+                            let pendingBalance = 0;
+                            const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekId);
+                            if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
+                                pendingBalance = prevSnapshot.final_balance;
                             } else {
-                                overtimeHours = Math.max(0, totalHours - contractedHours); // Solo las que exceden contrato
+                                const prevBalances = userFinalBalances.get(prevWeekId);
+                                pendingBalance = prevBalances?.get(userId) ?? (userProfile.hours_balance || 0);
                             }
 
-                            const cost = overtimeHours * overtimeRate;
+                            const finalBalance = pendingBalance + weeklyBalance;
+                            userFinalBalances.get(weekLabelId)!.set(userId, finalBalance);
 
-                            const isPaid = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId)?.is_paid || false;
+                            // Costo solo si balance > 0
+                            const cost = finalBalance > 0 ? finalBalance * overtimeRate : 0;
+
+                            const existingSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId);
+                            const isPaid = existingSnapshot?.is_paid || false;
+
                             weekEntry.staff.push({
                                 id: userId,
                                 name: userProfile.first_name,
                                 amount: cost,
-                                hours: overtimeHours,
-                                totalHours: totalHours
+                                hours: finalBalance,
+                                weeklyBalance: weeklyBalance,
+                                totalHours: totalHours,
+                                pendingBalance: pendingBalance
                             });
                             initialPaidStatus[`${weekLabelId}-${userId}`] = isPaid;
                             weekEntry.total += cost;
