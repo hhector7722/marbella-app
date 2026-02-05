@@ -117,11 +117,6 @@ export default function BottomNavStaff() {
 
             {/* DESKTOP: Sidebar - same width as admin (w-20) */}
             <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-[#5B8FB9] flex-col items-center py-6 z-[100] shadow-xl border-r border-white/10">
-                {/* Logo */}
-                <div className="w-12 h-12 mb-8 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <span className="text-white font-black text-lg">M</span>
-                </div>
-
                 {/* Nav Items */}
                 <div className="flex-1 flex flex-col gap-2 w-full px-2">
                     {staffItems.map((item) => (
