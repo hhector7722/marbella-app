@@ -500,43 +500,72 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* CAJAS */}
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full">
+                    {/* CAJA INICIAL */}
+                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full border-2 border-emerald-500">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-gray-700 flex items-center gap-2"><Wallet className="text-[#36606F]" size={20} /> Situación Cajas</h3>
+                            <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                                <Wallet className="text-emerald-500" size={20} /> Caja Inicial
+                            </h3>
                             <Link href="/dashboard/treasury" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
                         </div>
-                        <div className="space-y-3">
-                            {boxes.map(box => {
-                                const isOperational = box.type === 'operational';
-                                // Estilos Blanco con borde Color
-                                const cardStyles = isOperational
-                                    ? 'bg-white border-emerald-500 text-gray-900'
-                                    : 'bg-white border-orange-400 text-gray-900';
+                        {boxes.filter(b => b.type === 'operational').map(box => (
+                            <div key={box.id} className="space-y-4">
+                                <button
+                                    onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                    className="w-full flex justify-between items-center p-4 rounded-xl bg-emerald-50 border-2 border-emerald-100 shadow-sm hover:bg-emerald-100 transition-all cursor-pointer group"
+                                >
+                                    <span className="text-sm font-black text-emerald-800 uppercase tracking-wider">Saldo Actual</span>
+                                    <span className="text-2xl font-black text-emerald-900">{box.current_balance.toFixed(2)}€</span>
+                                </button>
 
-                                const dotColor = isOperational ? 'bg-emerald-500' : 'bg-orange-400';
-
-                                return (
-                                    <div key={box.id}>
-                                        <button
-                                            onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                            className={`w-full flex justify-between items-center p-3 rounded-xl border-2 shadow-sm hover:opacity-90 transition-all cursor-pointer group ${cardStyles}`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${dotColor}`}></div>
-                                                <span className="text-sm font-bold">{isOperational ? 'Caja Inicial' : box.name}</span>
+                                <div className="pl-4 border-l-2 border-emerald-100 py-1">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-3">Últimos movimientos</p>
+                                    <div className="space-y-2">
+                                        {boxMovements.length === 0 && <p className="text-[10px] text-gray-300 italic">Sin movimientos recientes</p>}
+                                        {boxMovements.map(mov => (
+                                            <div key={mov.id} className="flex justify-between items-center text-xs">
+                                                <div className="flex items-center gap-2 overflow-hidden text-gray-500">
+                                                    {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-red-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
+                                                    <span className="truncate max-w-[150px]">{mov.notes || 'Sin descripción'}</span>
+                                                </div>
+                                                <span className={`font-bold ${mov.type === 'expense' ? 'text-red-500' : 'text-emerald-600'}`}>
+                                                    {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
+                                                </span>
                                             </div>
-                                            <span className="text-lg font-black block">{box.current_balance.toFixed(2)}€</span>
-                                        </button>
-
-                                        {isOperational && (
-                                            <div className="pl-4 border-l-2 border-gray-100 ml-5 py-3 mb-2"><p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Últimos movimientos</p>
-                                                <div className="space-y-2">{boxMovements.map(mov => (<div key={mov.id} className="flex justify-between items-center text-xs"><div className="flex items-center gap-2 overflow-hidden">{mov.type === 'expense' ? <ArrowUpRight size={10} className="text-red-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}<span className="text-gray-500 truncate max-w-[120px]">{mov.notes}</span></div><span className={`font-bold ${mov.type === 'expense' ? 'text-red-500' : 'text-emerald-600'}`}>{mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€</span></div>))}</div>
-                                            </div>
-                                        )}
+                                        ))}
                                     </div>
-                                );
-                            })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* CAJAS DE CAMBIO */}
+                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full border-2 border-orange-400">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                                <Wallet className="text-orange-400" size={20} /> Cajas de Cambio
+                            </h3>
+                            <Link href="/dashboard/treasury" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
+                        </div>
+                        <div className="space-y-3 flex-1">
+                            {boxes.filter(b => b.type !== 'operational').length === 0 && (
+                                <div className="flex-1 flex items-center justify-center text-gray-300 text-xs italic">
+                                    No hay otras cajas configuradas
+                                </div>
+                            )}
+                            {boxes.filter(b => b.type !== 'operational').map(box => (
+                                <button
+                                    key={box.id}
+                                    onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                    className="w-full flex justify-between items-center p-4 rounded-xl bg-orange-50 border-2 border-orange-100 shadow-sm hover:bg-orange-100 transition-all cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+                                        <span className="text-sm font-bold text-orange-900">{box.name}</span>
+                                    </div>
+                                    <span className="text-xl font-black text-orange-900">{box.current_balance.toFixed(2)}€</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
 
