@@ -201,8 +201,8 @@ export default function StaffSchedulePage() {
                                                     <span className="block text-[8px] font-bold text-purple-400 uppercase">{monthName}</span>
                                                 </div>
 
-                                                {/* ACTIVIDAD Y HORARIO - DISTRIBUCIÓN SIMÉTRICA */}
-                                                <div className="flex-1 flex items-center justify-between">
+                                                {/* ACTIVIDAD Y HORARIO - JUNTOS */}
+                                                <div className="flex-1 flex items-center gap-3">
                                                     <span className="text-xs font-medium text-gray-500">
                                                         {shift.activity || 'Turno'}
                                                     </span>
