@@ -275,15 +275,41 @@ export default function OvertimePage() {
         }));
 
         try {
-            const { error } = await supabase
+            // First check if a snapshot exists for this user/week
+            const { data: existingSnapshot, error: selectError } = await supabase
                 .from('weekly_snapshots')
-                .upsert({
-                    user_id: staff.id,
-                    week_start: mondayISO,
-                    is_paid: newStatus
-                }, { onConflict: 'user_id, week_start' });
+                .select('id')
+                .eq('user_id', staff.id)
+                .eq('week_start', mondayISO)
+                .maybeSingle();
 
-            if (error) throw error;
+            if (selectError) throw selectError;
+
+            if (existingSnapshot) {
+                // Update existing record
+                const { error: updateError } = await supabase
+                    .from('weekly_snapshots')
+                    .update({ is_paid: newStatus })
+                    .eq('user_id', staff.id)
+                    .eq('week_start', mondayISO);
+
+                if (updateError) throw updateError;
+            } else {
+                // Create new record with all required fields
+                const { error: insertError } = await supabase
+                    .from('weekly_snapshots')
+                    .insert({
+                        user_id: staff.id,
+                        week_start: mondayISO,
+                        is_paid: newStatus,
+                        total_hours: staff.totalHours,
+                        balance_hours: staff.overtimeHours,
+                        pending_balance: 0,
+                        final_balance: staff.overtimeHours
+                    });
+
+                if (insertError) throw insertError;
+            }
         } catch (error) {
             console.error(error);
             // Revert on error
