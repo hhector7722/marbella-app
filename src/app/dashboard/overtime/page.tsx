@@ -161,47 +161,42 @@ export default function OvertimePage() {
 
                     if (profile) {
                         const limit = profile.contracted_hours_weekly || 40;
-                        const regPrice = profile.regular_cost_per_hour || 0;
-                        const overPrice = profile.overtime_cost_per_hour || regPrice;
+                        const overPrice = profile.overtime_cost_per_hour || 0;
                         const preferStock = profile.prefer_stock_hours || false;
                         const isManager = profile.role === 'manager';
 
-                        let regHours = 0;
                         let overHours = 0;
 
-                        // Managers: todas las horas son extras
+                        // Managers: todas las horas fichadas son extras
+                        // Staff: solo las que excedan el contrato
                         if (isManager) {
-                            regHours = 0;
                             overHours = hoursWorked;
                         } else if (hoursWorked > limit) {
-                            regHours = limit;
                             overHours = hoursWorked - limit;
-                        } else {
-                            regHours = hoursWorked;
-                            overHours = 0;
                         }
 
-                        const regCost = regHours * regPrice;
-                        // Si prefiere acumular, no genera coste de horas extra
+                        // Si prefiere acumular, no genera coste (se guarda en bolsa)
                         const overCost = preferStock ? 0 : (overHours * overPrice);
-                        const totalCost = regCost + overCost;
 
-                        staffList.push({
-                            id: userId,
-                            name: `${profile.first_name} ${profile.last_name || ''}`,
-                            role: profile.role || 'Staff',
-                            totalHours: hoursWorked,
-                            regularHours: regHours,
-                            overtimeHours: overHours,
-                            totalCost: totalCost,
-                            regularCost: regCost,
-                            overtimeCost: overCost,
-                            isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === mondayDate.toISOString().split('T')[0])?.is_paid || false,
-                            preferStock: preferStock
-                        });
+                        // Solo añadir si tiene horas extras
+                        if (overHours > 0) {
+                            staffList.push({
+                                id: userId,
+                                name: `${profile.first_name} ${profile.last_name || ''}`,
+                                role: profile.role || 'Staff',
+                                totalHours: hoursWorked,
+                                regularHours: 0,
+                                overtimeHours: overHours,
+                                totalCost: overCost,
+                                regularCost: 0,
+                                overtimeCost: overCost,
+                                isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === mondayDate.toISOString().split('T')[0])?.is_paid || false,
+                                preferStock: preferStock
+                            });
 
-                        weekTotalCost += totalCost;
-                        weekTotalHours += hoursWorked;
+                            weekTotalCost += overCost;
+                            weekTotalHours += overHours;
+                        }
                     }
                 });
 

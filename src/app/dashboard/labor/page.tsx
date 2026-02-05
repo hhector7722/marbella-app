@@ -9,8 +9,6 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// CONFIGURACIÓN (Coste estimado hasta módulo RRHH)
-const AVG_HOURLY_COST = 15.00;
 
 interface DailyLaborStats {
     date: string;
@@ -64,16 +62,23 @@ export default function LaborHistoryPage() {
                 .lte('closed_at', endISO)
                 .order('closed_at', { ascending: false });
 
-            // 2. Obtener Fichajes (Horas)
+            // 2. Obtener Fichajes (Horas) con user_id
             const { data: logsData } = await supabase
                 .from('time_logs')
-                .select('clock_in, clock_out, total_hours')
+                .select('user_id, clock_in, clock_out, total_hours')
                 .not('clock_out', 'is', null)
                 .gte('clock_in', startISO)
                 .lte('clock_in', endISO)
                 .order('clock_in', { ascending: false });
 
-            // 3. Cruzar Datos
+            // 3. Obtener Profiles con costes reales
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly');
+
+            const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+            // 4. Cruzar Datos por día
             const statsMap = new Map<string, DailyLaborStats>();
 
             // A. Inicializar con fechas de ventas
@@ -93,7 +98,10 @@ export default function LaborHistoryPage() {
                 }
             });
 
-            // B. Sumar horas
+            // B. Calcular horas y costes por empleado por día
+            // Estructura: { dateKey: { userId: hoursWorked } }
+            const dailyUserHours = new Map<string, Map<string, number>>();
+
             logsData?.forEach(log => {
                 const d = new Date(log.clock_in);
                 const dateKey = d.toLocaleDateString('es-ES');
@@ -110,12 +118,71 @@ export default function LaborHistoryPage() {
                     });
                 }
 
-                const dayStat = statsMap.get(dateKey)!;
-                dayStat.totalHours += (log.total_hours || 0);
-                dayStat.staffCount += 1;
+                if (!dailyUserHours.has(dateKey)) {
+                    dailyUserHours.set(dateKey, new Map());
+                }
+
+                const userHours = dailyUserHours.get(dateKey)!;
+                const currentHours = userHours.get(log.user_id) || 0;
+                userHours.set(log.user_id, currentHours + (log.total_hours || 0));
             });
 
-            // C. Calcular Totales
+            // C. Calcular costes reales por día
+            statsMap.forEach((stat, dateKey) => {
+                const userHours = dailyUserHours.get(dateKey) || new Map();
+                let dailyCost = 0;
+                let totalHours = 0;
+                const countedUsers = new Set<string>();
+
+                // Costes de empleados que ficharon
+                userHours.forEach((hours, userId) => {
+                    const profile = profileMap.get(userId);
+                    if (profile) {
+                        const dailyContracted = (profile.contracted_hours_weekly || 40) / 5; // 8h/día
+                        const regPrice = profile.regular_cost_per_hour || 0;
+                        const overPrice = profile.overtime_cost_per_hour || regPrice;
+                        const isManager = profile.role === 'manager';
+
+                        if (isManager) {
+                            // Managers: horas base (8h) + extras fichadas
+                            dailyCost += dailyContracted * regPrice; // Coste base
+                            dailyCost += hours * overPrice; // Extras fichadas
+                            totalHours += dailyContracted + hours;
+                        } else {
+                            // Staff: horas regulares + extras
+                            if (hours > dailyContracted) {
+                                dailyCost += dailyContracted * regPrice;
+                                dailyCost += (hours - dailyContracted) * overPrice;
+                            } else {
+                                dailyCost += hours * regPrice;
+                            }
+                            totalHours += hours;
+                        }
+                        countedUsers.add(userId);
+                    }
+                });
+
+                // Añadir coste base de managers que NO ficharon (se da por hecho que trabajaron)
+                profiles?.forEach(profile => {
+                    if (profile.role === 'manager' && !countedUsers.has(profile.id)) {
+                        const dailyContracted = (profile.contracted_hours_weekly || 40) / 5;
+                        const regPrice = profile.regular_cost_per_hour || 0;
+                        dailyCost += dailyContracted * regPrice;
+                        totalHours += dailyContracted;
+                        countedUsers.add(profile.id);
+                    }
+                });
+
+                stat.laborCost = dailyCost;
+                stat.totalHours = totalHours;
+                stat.staffCount = countedUsers.size;
+
+                if (stat.netSales > 0) {
+                    stat.percentage = (stat.laborCost / stat.netSales) * 100;
+                }
+            });
+
+            // D. Calcular Totales
             const processedHistory: DailyLaborStats[] = [];
             let sumCost = 0;
             let sumHours = 0;
@@ -123,9 +190,7 @@ export default function LaborHistoryPage() {
             let countWithSales = 0;
 
             statsMap.forEach(stat => {
-                stat.laborCost = stat.totalHours * AVG_HOURLY_COST;
                 if (stat.netSales > 0) {
-                    stat.percentage = (stat.laborCost / stat.netSales) * 100;
                     sumPercent += stat.percentage;
                     countWithSales++;
                 }
