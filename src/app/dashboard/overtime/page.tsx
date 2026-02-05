@@ -101,13 +101,15 @@ export default function OvertimePage() {
             // 2. Obtener Perfiles (Con las nuevas columnas de costes)
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly, prefer_stock_hours');
+                .select('id, first_name, last_name, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly, prefer_stock_hours, hours_balance, is_fixed_salary');
 
-            // 3. Obtener Estado Pagos de Snapshots
+            // 3. Obtener Estado Pagos y Balances de Snapshots (incluir semanas anteriores para arrastre)
+            const extendedStart = new Date(startISO);
+            extendedStart.setDate(extendedStart.getDate() - 14); // 2 semanas antes para arrastre
             const { data: snapshots } = await supabase
                 .from('weekly_snapshots')
-                .select('user_id, week_start, is_paid')
-                .gte('week_start', startISO.split('T')[0])
+                .select('user_id, week_start, is_paid, final_balance')
+                .gte('week_start', extendedStart.toISOString().split('T')[0])
                 .lte('week_start', endISO.split('T')[0]);
 
             if (!logs || !profiles) {
@@ -143,17 +145,38 @@ export default function OvertimePage() {
                 tempWeekUserHours[weekId][log.user_id] += (log.total_hours || 0);
             });
 
-            // 3. Procesar Costes
+            // 3. Procesar Costes con lógica de arrastre
             const weeksResult: WeeklyStats[] = [];
 
-            Object.keys(tempWeekUserHours).forEach(weekId => {
+            // Ordenar semanas cronológicamente para calcular arrastre correctamente
+            const sortedWeekIds = Object.keys(tempWeekUserHours).sort((a, b) =>
+                tempWeekMeta[a].getTime() - tempWeekMeta[b].getTime()
+            );
+
+            // Map para guardar balances finales calculados: { weekId: { userId: finalBalance } }
+            const userFinalBalances = new Map<string, Map<string, number>>();
+
+            sortedWeekIds.forEach(weekId => {
                 const usersInWeek = tempWeekUserHours[weekId];
                 const mondayDate = tempWeekMeta[weekId];
+                const weekStartISO = mondayDate.toISOString().split('T')[0];
                 const fullLabel = `Semana del ${mondayDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`;
+
+                // Calcular semana anterior
+                const prevMonday = new Date(mondayDate);
+                prevMonday.setDate(prevMonday.getDate() - 7);
+                const prevWeekId = Object.keys(tempWeekMeta).find(k =>
+                    tempWeekMeta[k].getTime() === prevMonday.getTime()
+                );
+                const prevWeekISO = prevMonday.toISOString().split('T')[0];
 
                 let weekTotalCost = 0;
                 let weekTotalHours = 0;
                 const staffList: StaffWeeklyStats[] = [];
+
+                if (!userFinalBalances.has(weekId)) {
+                    userFinalBalances.set(weekId, new Map());
+                }
 
                 Object.keys(usersInWeek).forEach(userId => {
                     const hoursWorked = usersInWeek[userId];
@@ -164,38 +187,61 @@ export default function OvertimePage() {
                         const overPrice = profile.overtime_cost_per_hour || 0;
                         const preferStock = profile.prefer_stock_hours || false;
                         const isManager = profile.role === 'manager';
+                        const isFixedSalary = profile.is_fixed_salary || false;
 
-                        let overHours = 0;
+                        // Balance semanal: managers y fijos = todas las horas, staff = horas - contrato
+                        const weeklyBalance = (isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
 
-                        // Managers: todas las horas fichadas son extras
-                        // Staff: solo las que excedan el contrato
-                        if (isManager) {
-                            overHours = hoursWorked;
-                        } else if (hoursWorked > limit) {
-                            overHours = hoursWorked - limit;
+                        // Obtener pending_balance (arrastre de semana anterior)
+                        let pendingBalance = 0;
+                        const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekISO);
+
+                        if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
+                            // Si no prefiere acumular y balance previo > 0, se liquidó
+                            if (!preferStock && prevSnapshot.final_balance > 0) {
+                                pendingBalance = 0;
+                            } else {
+                                pendingBalance = prevSnapshot.final_balance;
+                            }
+                        } else if (prevWeekId) {
+                            const prevBalances = userFinalBalances.get(prevWeekId);
+                            const prevBalance = prevBalances?.get(userId) ?? (profile.hours_balance || 0);
+                            if (!preferStock && prevBalance > 0) {
+                                pendingBalance = 0;
+                            } else {
+                                pendingBalance = prevBalance;
+                            }
+                        } else {
+                            pendingBalance = profile.hours_balance || 0;
                         }
 
-                        // Si prefiere acumular, no genera coste (se guarda en bolsa)
-                        const overCost = preferStock ? 0 : (overHours * overPrice);
+                        const finalBalance = pendingBalance + weeklyBalance;
+                        userFinalBalances.get(weekId)!.set(userId, finalBalance);
 
-                        // Solo añadir si tiene horas extras
-                        if (overHours > 0) {
+                        // Solo hay extras a pagar si balance final > 0
+                        const overtimeHours = finalBalance > 0 ? finalBalance : 0;
+
+                        // Si prefiere acumular, no genera coste
+                        const overCost = preferStock ? 0 : (overtimeHours * overPrice);
+
+                        // Solo añadir si tiene extras a pagar
+                        if (overtimeHours > 0 && !preferStock) {
                             staffList.push({
                                 id: userId,
                                 name: `${profile.first_name} ${profile.last_name || ''}`,
                                 role: profile.role || 'Staff',
                                 totalHours: hoursWorked,
                                 regularHours: 0,
-                                overtimeHours: overHours,
+                                overtimeHours: overtimeHours,
                                 totalCost: overCost,
                                 regularCost: 0,
                                 overtimeCost: overCost,
-                                isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === mondayDate.toISOString().split('T')[0])?.is_paid || false,
+                                isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === weekStartISO)?.is_paid || false,
                                 preferStock: preferStock
                             });
 
                             weekTotalCost += overCost;
-                            weekTotalHours += overHours;
+                            weekTotalHours += overtimeHours;
                         }
                     }
                 });
@@ -203,15 +249,18 @@ export default function OvertimePage() {
                 // Ordenar empleados por coste (los más caros primero)
                 staffList.sort((a, b) => b.totalCost - a.totalCost);
 
-                weeksResult.push({
-                    weekId,
-                    label: fullLabel,
-                    startDate: mondayDate,
-                    totalAmount: weekTotalCost,
-                    totalHours: weekTotalHours,
-                    expanded: false,
-                    staff: staffList
-                });
+                // Solo añadir semana si tiene extras
+                if (staffList.length > 0) {
+                    weeksResult.push({
+                        weekId,
+                        label: fullLabel,
+                        startDate: mondayDate,
+                        totalAmount: weekTotalCost,
+                        totalHours: weekTotalHours,
+                        expanded: false,
+                        staff: staffList
+                    });
+                }
             });
 
             // Ordenar semanas (más recientes primero)
