@@ -244,170 +244,173 @@ export default function LaborHistoryPage() {
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
-                    {/* CABECERA Y FILTROS */}
-                    <div className="mb-6 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                                <TrendingUp className="text-[#36606F]" size={24} /> Coste Mano de Obra
-                            </h1>
-                        </div>
+                    {/* CABECERA DE LA TARJETA (AZUL) */}
+                    <div className="bg-[#36606F] px-8 py-5 flex items-center gap-3">
+                        <TrendingUp className="text-white" size={24} />
+                        <h1 className="text-lg font-black text-white uppercase tracking-wider">
+                            Coste Mano de Obra
+                        </h1>
+                    </div>
 
+                    <div className="p-6 md:p-8 flex-1 flex flex-col">
                         {/* FILTROS EN UNA FILA COMPACTA */}
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[9px] font-black text-gray-400 uppercase">Día:</span>
-                                <button
-                                    onClick={() => setShowCalendar('single')}
-                                    className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'single' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
-                                >
-                                    <Calendar size={12} />
-                                    {new Date(selectedDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                                </button>
-                            </div>
-
-                            <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[9px] font-black text-gray-400 uppercase">Rango:</span>
-                                <button
-                                    onClick={() => setShowCalendar('range')}
-                                    className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'range' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
-                                >
-                                    <Calendar size={12} />
-                                    {rangeStart && rangeEnd
-                                        ? `${new Date(rangeStart).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} - ${new Date(rangeEnd).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}`
-                                        : 'Selec...'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
-                    <div className="grid grid-cols-3 gap-3 mb-8">
-                        <div className="bg-emerald-500 p-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
-                            <span className="text-white text-xs font-black leading-none mb-1">{summary.avgPercentage.toFixed(1)}%</span>
-                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Eficiencia</span>
-                        </div>
-
-                        <div className="bg-rose-500 p-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
-                            <span className="text-white text-xs font-black leading-none mb-1">{summary.totalCost.toFixed(0)}€</span>
-                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Coste</span>
-                        </div>
-
-                        <div className="bg-blue-500 p-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
-                            <span className="text-white text-xs font-black leading-none mb-1">{summary.totalHours.toFixed(0)}h</span>
-                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Horas</span>
-                        </div>
-                    </div>
-
-                    {/* LISTADO DE DÍAS */}
-                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                        <div className="space-y-3">
-                            {loading ? (
-                                <div className="text-center py-20 text-gray-300 font-bold animate-pulse uppercase tracking-widest text-xs">Cargando datos...</div>
-                            ) : history.length === 0 ? (
-                                <div className="text-center py-20 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-100">
-                                    <p className="text-gray-400 font-bold text-sm">No hay datos en este periodo</p>
+                        <div className="mb-6 space-y-4">
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase">Día:</span>
+                                    <button
+                                        onClick={() => setShowCalendar('single')}
+                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'single' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                                    >
+                                        <Calendar size={12} />
+                                        {new Date(selectedDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                                    </button>
                                 </div>
-                            ) : (
-                                history.map((day, idx) => {
-                                    let color = 'bg-gray-100 text-gray-600';
-                                    if (day.percentage > 0) {
-                                        if (day.percentage < 25) color = 'bg-emerald-100 text-emerald-700';
-                                        else if (day.percentage < 35) color = 'bg-amber-100 text-amber-700';
-                                        else color = 'bg-rose-100 text-rose-700';
-                                    }
-                                    if (day.netSales === 0 && day.laborCost > 0) color = 'bg-rose-100 text-rose-700';
 
-                                    return (
-                                        <div key={idx} className="bg-gray-50/50 hover:bg-white p-4 rounded-2xl border border-gray-100 grid grid-cols-12 items-center transition-all hover:shadow-md group">
-                                            <div className="col-span-4 flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 group-hover:text-[#36606F] transition-colors">
-                                                    <Calendar size={14} />
+                                <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase">Rango:</span>
+                                    <button
+                                        onClick={() => setShowCalendar('range')}
+                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'range' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                                    >
+                                        <Calendar size={12} />
+                                        {rangeStart && rangeEnd
+                                            ? `${new Date(rangeStart).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} - ${new Date(rangeEnd).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}`
+                                            : 'Selec...'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
+                        <div className="grid grid-cols-3 gap-3 mb-8">
+                            <div className="bg-emerald-500 p-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
+                                <span className="text-white text-xs font-black leading-none mb-1">{summary.avgPercentage.toFixed(1)}%</span>
+                                <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Eficiencia</span>
+                            </div>
+
+                            <div className="bg-rose-500 p-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
+                                <span className="text-white text-xs font-black leading-none mb-1">{summary.totalCost.toFixed(0)}€</span>
+                                <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Coste</span>
+                            </div>
+
+                            <div className="bg-blue-500 p-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
+                                <span className="text-white text-xs font-black leading-none mb-1">{summary.totalHours.toFixed(0)}h</span>
+                                <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Horas</span>
+                            </div>
+                        </div>
+
+                        {/* LISTADO DE DÍAS */}
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-3">
+                                {loading ? (
+                                    <div className="text-center py-20 text-gray-300 font-bold animate-pulse uppercase tracking-widest text-xs">Cargando datos...</div>
+                                ) : history.length === 0 ? (
+                                    <div className="text-center py-20 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-100">
+                                        <p className="text-gray-400 font-bold text-sm">No hay datos en este periodo</p>
+                                    </div>
+                                ) : (
+                                    history.map((day, idx) => {
+                                        let color = 'bg-gray-100 text-gray-600';
+                                        if (day.percentage > 0) {
+                                            if (day.percentage < 25) color = 'bg-emerald-100 text-emerald-700';
+                                            else if (day.percentage < 35) color = 'bg-amber-100 text-amber-700';
+                                            else color = 'bg-rose-100 text-rose-700';
+                                        }
+                                        if (day.netSales === 0 && day.laborCost > 0) color = 'bg-rose-100 text-rose-700';
+
+                                        return (
+                                            <div key={idx} className="bg-gray-50/50 hover:bg-white p-4 rounded-2xl border border-gray-100 grid grid-cols-12 items-center transition-all hover:shadow-md group">
+                                                <div className="col-span-4 flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 group-hover:text-[#36606F] transition-colors">
+                                                        <Calendar size={14} />
+                                                    </div>
+                                                    <div className="flex flex-col leading-tight">
+                                                        <span className="text-xs font-black text-gray-800 uppercase">{day.date.split('/')[0]}/{day.date.split('/')[1]}</span>
+                                                        <span className="text-[9px] font-bold text-gray-400 uppercase">{day.rawDate.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col leading-tight">
-                                                    <span className="text-xs font-black text-gray-800 uppercase">{day.date.split('/')[0]}/{day.date.split('/')[1]}</span>
-                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">{day.rawDate.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                <div className="col-span-2 text-right">
+                                                    <span className="text-[10px] font-bold text-gray-600 block">{day.totalHours.toFixed(1)}h</span>
+                                                </div>
+                                                <div className="col-span-3 text-right">
+                                                    <span className="text-[10px] font-black text-rose-500 block">{day.laborCost.toFixed(0)}€</span>
+                                                    <span className="text-[8px] font-bold text-gray-400 block tracking-tighter uppercase">Coste</span>
+                                                </div>
+                                                <div className="col-span-3 flex justify-end">
+                                                    <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black min-w-[65px] text-center shadow-sm ${color}`}>
+                                                        {day.netSales > 0 ? `${day.percentage.toFixed(1)}%` : '-'}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="col-span-2 text-right">
-                                                <span className="text-[10px] font-bold text-gray-600 block">{day.totalHours.toFixed(1)}h</span>
-                                            </div>
-                                            <div className="col-span-3 text-right">
-                                                <span className="text-[10px] font-black text-rose-500 block">{day.laborCost.toFixed(0)}€</span>
-                                                <span className="text-[8px] font-bold text-gray-400 block tracking-tighter uppercase">Coste</span>
-                                            </div>
-                                            <div className="col-span-3 flex justify-end">
-                                                <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black min-w-[65px] text-center shadow-sm ${color}`}>
-                                                    {day.netSales > 0 ? `${day.percentage.toFixed(1)}%` : '-'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* MODAL CALENDARIO */}
+                {showCalendar && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
+                        <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                                <h3 className="font-black text-gray-800 uppercase text-xs tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
+                                <button onClick={() => setShowCalendar(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
+                            </div>
+
+                            <div className="p-4">
+                                <div className="flex items-center justify-between mb-4 px-2">
+                                    <button onClick={() => setCalendarBaseDate(new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() - 1, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><ChevronLeft size={20} className="text-gray-600" /></button>
+                                    <span className="font-black text-gray-800 text-sm uppercase tracking-tighter">{calendarBaseDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                                    <button onClick={() => setCalendarBaseDate(new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() + 1, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><ChevronRight size={20} className="text-gray-600" /></button>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1">
+                                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                        <div key={d} className="text-center text-[9px] font-black text-gray-300 py-2">{d}</div>
+                                    ))}
+                                    {generateCalendarDays().map((day, i) => {
+                                        if (!day) return <div key={i} />;
+                                        const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                                        const isSelected = showCalendar === 'single'
+                                            ? selectedDate === dStr
+                                            : (rangeStart === dStr || rangeEnd === dStr);
+
+                                        const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
+
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => handleDateSelect(day)}
+                                                className={`aspect-square flex items-center justify-center rounded-xl text-xs font-black transition-all
+                                                ${isSelected ? 'bg-[#36606F] text-white shadow-md' : isInRange ? 'bg-blue-50 text-[#36606F]' : 'hover:bg-gray-100 text-gray-700'}
+                                            `}
+                                            >
+                                                {day}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {showCalendar === 'range' && rangeStart && !rangeEnd && (
+                                <div className="px-6 pb-6 text-center">
+                                    <span className="inline-block px-3 py-1 bg-amber-50 text-amber-700 text-[9px] font-black rounded-full uppercase tracking-widest animate-pulse">
+                                        Selecciona fecha final
+                                    </span>
+                                </div>
                             )}
                         </div>
                     </div>
-                </div>
+                )}
             </div>
-
-            {/* MODAL CALENDARIO */}
-            {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
-                    <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                            <h3 className="font-black text-gray-800 uppercase text-xs tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
-                            <button onClick={() => setShowCalendar(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
-                        </div>
-
-                        <div className="p-4">
-                            <div className="flex items-center justify-between mb-4 px-2">
-                                <button onClick={() => setCalendarBaseDate(new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() - 1, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><ChevronLeft size={20} className="text-gray-600" /></button>
-                                <span className="font-black text-gray-800 text-sm uppercase tracking-tighter">{calendarBaseDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                                <button onClick={() => setCalendarBaseDate(new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() + 1, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><ChevronRight size={20} className="text-gray-600" /></button>
-                            </div>
-
-                            <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                    <div key={d} className="text-center text-[9px] font-black text-gray-300 py-2">{d}</div>
-                                ))}
-                                {generateCalendarDays().map((day, i) => {
-                                    if (!day) return <div key={i} />;
-                                    const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-                                    const isSelected = showCalendar === 'single'
-                                        ? selectedDate === dStr
-                                        : (rangeStart === dStr || rangeEnd === dStr);
-
-                                    const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => handleDateSelect(day)}
-                                            className={`aspect-square flex items-center justify-center rounded-xl text-xs font-black transition-all
-                                                ${isSelected ? 'bg-[#36606F] text-white shadow-md' : isInRange ? 'bg-blue-50 text-[#36606F]' : 'hover:bg-gray-100 text-gray-700'}
-                                            `}
-                                        >
-                                            {day}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {showCalendar === 'range' && rangeStart && !rangeEnd && (
-                            <div className="px-6 pb-6 text-center">
-                                <span className="inline-block px-3 py-1 bg-amber-50 text-amber-700 text-[9px] font-black rounded-full uppercase tracking-widest animate-pulse">
-                                    Selecciona fecha final
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
