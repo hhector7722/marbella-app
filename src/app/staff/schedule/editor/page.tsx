@@ -224,7 +224,7 @@ export default function ScheduleEditorPage() {
         }
 
         try {
-            // Obtener el usuario actual para created_by
+            // Obtener el usuario actual
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 toast.error('No hay sesión activa');
@@ -246,7 +246,23 @@ export default function ScheduleEditorPage() {
                 };
             });
 
-            // Insertar nuevos turnos (sin eliminar los existentes para evitar problemas de RLS)
+            // 1. Primero eliminar TODOS los turnos existentes para esa fecha
+            const startOfDay = `${date}T00:00:00.000Z`;
+            const endOfDay = `${date}T23:59:59.999Z`;
+
+            const { error: deleteError } = await supabase
+                .from('shifts')
+                .delete()
+                .gte('start_time', startOfDay)
+                .lte('start_time', endOfDay);
+
+            if (deleteError) {
+                console.error('Delete error:', deleteError);
+                toast.error(`Error al limpiar turnos: ${deleteError.message}`);
+                return;
+            }
+
+            // 2. Insertar los nuevos/editados turnos
             const { error } = await supabase
                 .from('shifts')
                 .insert(shiftsToInsert);

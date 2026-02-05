@@ -85,17 +85,41 @@ export default function StaffSchedulePage() {
     // --- LÓGICA DE FILTRADO ---
     const now = new Date();
 
-    const upcomingShifts = shifts
+    // Helper para agrupar por fecha (para managers)
+    const groupByDate = (shiftsArray: Shift[]) => {
+        const grouped = new Map<string, Shift>();
+        shiftsArray.forEach(s => {
+            const dateKey = new Date(s.start_time).toISOString().split('T')[0];
+            const existing = grouped.get(dateKey);
+            // Mantener el turno con la hora de entrada más temprana
+            if (!existing || new Date(s.start_time) < new Date(existing.start_time)) {
+                grouped.set(dateKey, s);
+            }
+        });
+        return Array.from(grouped.values());
+    };
+
+    const upcomingShiftsRaw = shifts
         .filter(s => new Date(s.start_time) >= now)
         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-    const historyShifts = shifts
+    // Para managers: una tarjeta por fecha. Para staff: sus propios turnos
+    const upcomingShifts = userRole === 'manager'
+        ? groupByDate(upcomingShiftsRaw)
+        : upcomingShiftsRaw;
+
+    const historyShiftsRaw = shifts
         .filter(s => new Date(s.start_time) < now)
         .filter(s => {
             const d = new Date(s.start_time);
             return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
         })
         .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+
+    // Para managers: una tarjeta por fecha. Para staff: sus propios turnos
+    const historyShifts = userRole === 'manager'
+        ? groupByDate(historyShiftsRaw)
+        : historyShiftsRaw;
 
     // Helpers
     const prevMonth = () => {
