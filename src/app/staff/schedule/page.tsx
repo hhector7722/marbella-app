@@ -123,162 +123,169 @@ export default function StaffSchedulePage() {
     if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-10 rounded-[2.5rem] overflow-hidden border border-gray-100">
+        <div className="min-h-screen bg-gray-50 pb-10">
+            {/* CONTENEDOR TIPO TARJETA */}
+            <div className="max-w-2xl mx-auto px-4 md:px-0">
+                <div className="bg-white md:rounded-[2.5rem] rounded-b-[2.5rem] shadow-xl border border-gray-100 overflow-hidden min-h-[calc(100vh-2rem)]">
 
-            {/* HEADER FIJO */}
-            <div className="bg-white sticky top-header-safe z-10 shadow-sm px-4 pt-4 pb-4">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <Link href="/staff/dashboard" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
-                            <ArrowLeft size={20} className="text-gray-600" />
-                        </Link>
-                        <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                            <Calendar className="text-purple-600" size={24} />
-                            Mis Turnos
-                        </h1>
-                    </div>
-
-                    {/* BOTÓN SOLO PARA MANAGERS -> ABRE EL EDITOR */}
-                    {userRole === 'manager' && (
-                        <Link
-                            href="/staff/schedule/editor"
-                            className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center"
-                        >
-                            <Plus size={20} strokeWidth={3} />
-                        </Link>
-                    )}
-                </div>
-
-                {/* TABS SELECTOR */}
-                <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-2xl">
-                    <button
-                        onClick={() => setActiveTab('upcoming')}
-                        className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400'}`}
-                    >
-                        PRÓXIMOS
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('history')}
-                        className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'history' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'}`}
-                    >
-                        HISTORIAL
-                    </button>
-                </div>
-            </div>
-
-            {/* CONTENIDO PRINCIPAL */}
-            <div className="p-4 space-y-4 max-w-2xl mx-auto">
-
-                {/* VISTA 1: PRÓXIMOS */}
-                {activeTab === 'upcoming' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-                        {upcomingShifts.length === 0 ? (
-                            <div className="text-center py-10">
-                                <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <CheckCircle2 className="text-green-500" size={32} />
-                                </div>
-                                <h3 className="font-bold text-gray-700">Todo despejado</h3>
-                                <p className="text-xs text-gray-400 mt-1">No tienes turnos programados próximamente.</p>
+                    {/* HEADER FIJO DENTRO DE LA TARJETA */}
+                    <div className="bg-white sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <Link href="/staff/dashboard" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                                    <ArrowLeft size={20} className="text-gray-600" />
+                                </Link>
+                                <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                                    <Calendar className="text-purple-600" size={24} />
+                                    Mis Turnos
+                                </h1>
                             </div>
-                        ) : (
-                            upcomingShifts.map((shift) => {
-                                const { dayName, dayNumber, monthName } = formatDateCard(shift.start_time);
-                                return (
-                                    <div key={shift.id} className="bg-white rounded-3xl p-4 shadow-sm border border-purple-100 relative overflow-hidden group">
-                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-500"></div>
-                                        <div className="flex items-center gap-4">
-                                            {/* FECHA */}
-                                            <div className="flex flex-col items-center justify-center min-w-[50px] border-r border-gray-100 pr-4">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase">{monthName}</span>
-                                                <span className="text-2xl font-black text-gray-800 leading-none">{dayNumber}</span>
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{dayName.slice(0, 3)}</span>
-                                            </div>
 
-                                            {/* INFO */}
-                                            <div className="flex-1 space-y-2">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    {shift.activity && (
-                                                        <span className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-orange-200">
-                                                            <Trophy size={10} /> {shift.activity}
-                                                        </span>
-                                                    )}
-                                                    {shift.notes && (
-                                                        <span className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 text-gray-500 text-[10px] italic rounded-lg border border-gray-100">
-                                                            <StickyNote size={10} /> {shift.notes}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1.5 text-gray-800 font-bold text-lg">
-                                                        <Clock size={16} className="text-gray-400" />
-                                                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className="block text-[10px] text-gray-400 font-bold uppercase">Duración</span>
-                                                        <span className="text-sm font-black text-gray-800">{getDuration(shift.start_time, shift.end_time)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                )}
-
-                {/* VISTA 2: HISTORIAL */}
-                {activeTab === 'history' && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                        {/* FILTRO DE MES */}
-                        <div className="flex items-center justify-between bg-white p-2 rounded-3xl border border-gray-200 shadow-sm">
-                            <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-full text-gray-600"><ChevronLeft size={20} /></button>
-                            <span className="font-bold text-gray-800 capitalize text-sm">
-                                {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                            </span>
-                            <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-full text-gray-600"><ChevronRight size={20} /></button>
-                        </div>
-
-                        {/* LISTA HISTÓRICA */}
-                        <div className="space-y-2">
-                            {historyShifts.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400 text-xs">
-                                    No hay registros en este mes.
-                                </div>
-                            ) : (
-                                historyShifts.map((shift) => {
-                                    const { dayName, dayNumber } = formatDateCard(shift.start_time);
-                                    return (
-                                        <div key={shift.id} className="bg-white rounded-3xl p-3 border border-gray-200 flex items-center justify-between opacity-75 hover:opacity-100 transition-opacity">
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-gray-100 w-10 h-10 rounded-2xl flex flex-col items-center justify-center text-gray-500">
-                                                    <span className="text-[8px] font-black uppercase">{dayName.slice(0, 3)}</span>
-                                                    <span className="text-sm font-bold leading-none">{dayNumber}</span>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs font-bold text-gray-700">
-                                                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                    </div>
-                                                    {shift.activity ? (
-                                                        <div className="text-[10px] font-bold text-orange-600 flex items-center gap-1">
-                                                            <Trophy size={10} /> {shift.activity}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-[10px] text-gray-400">Turno finalizado</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <span className="px-2 py-1 bg-gray-50 rounded-lg text-xs font-bold text-gray-600 border border-gray-100">
-                                                {getDuration(shift.start_time, shift.end_time)}
-                                            </span>
-                                        </div>
-                                    );
-                                })
+                            {/* BOTÓN SOLO PARA MANAGERS -> ABRE EL EDITOR */}
+                            {userRole === 'manager' && (
+                                <Link
+                                    href="/staff/schedule/editor"
+                                    className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center"
+                                >
+                                    <Plus size={20} strokeWidth={3} />
+                                </Link>
                             )}
                         </div>
+
+                        {/* TABS SELECTOR DENTRO DEL HEADER */}
+                        <div className="grid grid-cols-2 p-1.5 bg-gray-100 rounded-2xl">
+                            <button
+                                onClick={() => setActiveTab('upcoming')}
+                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400 font-medium'}`}
+                            >
+                                PRÓXIMOS
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('history')}
+                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'history' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 font-medium'}`}
+                            >
+                                HISTORIAL
+                            </button>
+                        </div>
                     </div>
-                )}
+
+                    {/* CONTENIDO PRINCIPAL SCROLLABLE */}
+                    <div className="p-6 space-y-6">
+
+                        {/* VISTA 1: PRÓXIMOS */}
+                        {activeTab === 'upcoming' && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                {upcomingShifts.length === 0 ? (
+                                    <div className="text-center py-20 bg-gray-25 rounded-[2rem] border border-dashed border-gray-100">
+                                        <div className="bg-green-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <CheckCircle2 className="text-green-500" size={40} />
+                                        </div>
+                                        <h3 className="font-black text-gray-700">¡Todo despejado!</h3>
+                                        <p className="text-xs text-gray-400 mt-2 max-w-[200px] mx-auto">No tienes turnos programados próximamente. Disfruta tu descanso.</p>
+                                    </div>
+                                ) : (
+                                    upcomingShifts.map((shift) => {
+                                        const { dayName, dayNumber, monthName } = formatDateCard(shift.start_time);
+                                        return (
+                                            <div key={shift.id} className="bg-white rounded-[2rem] p-5 shadow-sm border border-purple-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-500"></div>
+                                                <div className="flex items-center gap-5">
+                                                    {/* FECHA */}
+                                                    <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-gray-100 pr-5">
+                                                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{monthName}</span>
+                                                        <span className="text-3xl font-black text-gray-800 leading-none my-1">{dayNumber}</span>
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
+                                                    </div>
+
+                                                    {/* INFO */}
+                                                    <div className="flex-1 space-y-3">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            {shift.activity && (
+                                                                <span className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 text-[10px] font-black rounded-full uppercase tracking-wider border border-orange-200">
+                                                                    <Trophy size={10} /> {shift.activity}
+                                                                </span>
+                                                            )}
+                                                            {shift.notes && (
+                                                                <span className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-gray-500 text-[10px] italic rounded-full border border-gray-100 font-medium">
+                                                                    <StickyNote size={10} /> {shift.notes}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2 text-gray-800 font-black text-xl">
+                                                                <Clock size={18} className="text-purple-300" />
+                                                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className="block text-[9px] text-gray-400 font-black uppercase tracking-widest">Duración</span>
+                                                                <span className="text-sm font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg">{getDuration(shift.start_time, shift.end_time)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+
+                        {/* VISTA 2: HISTORIAL */}
+                        {activeTab === 'history' && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                {/* FILTRO DE MES */}
+                                <div className="flex items-center justify-between bg-gray-50 p-2 rounded-2xl border border-gray-100 shadow-sm mx-4">
+                                    <button onClick={prevMonth} className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-gray-400 transition-all"><ChevronLeft size={22} /></button>
+                                    <span className="font-black text-gray-700 capitalize text-sm tracking-wide">
+                                        {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                                    </span>
+                                    <button onClick={nextMonth} className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-gray-400 transition-all"><ChevronRight size={22} /></button>
+                                </div>
+
+                                {/* LISTA HISTÓRICA */}
+                                <div className="space-y-3 px-2">
+                                    {historyShifts.length === 0 ? (
+                                        <div className="text-center py-16 bg-white rounded-[2rem] border border-gray-50">
+                                            <p className="text-gray-300 font-bold text-sm">Sin registros previos.</p>
+                                        </div>
+                                    ) : (
+                                        historyShifts.map((shift) => {
+                                            const { dayName, dayNumber } = formatDateCard(shift.start_time);
+                                            return (
+                                                <div key={shift.id} className="bg-white rounded-[1.5rem] p-4 border border-gray-100 flex items-center justify-between opacity-80 hover:opacity-100 transition-all hover:shadow-sm">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="bg-gray-100 w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-gray-500 border border-gray-200">
+                                                            <span className="text-[9px] font-black uppercase">{dayName.slice(0, 3)}</span>
+                                                            <span className="text-lg font-black leading-none">{dayNumber}</span>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-black text-gray-700 flex items-center gap-2">
+                                                                <Clock size={12} className="text-gray-300" />
+                                                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                            </div>
+                                                            {shift.activity ? (
+                                                                <div className="text-[10px] font-black text-orange-500 flex items-center gap-1.5 uppercase mt-1">
+                                                                    <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                                                                    {shift.activity}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-[10px] text-gray-400 mt-1">Jornada finalizada</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <span className="px-3 py-1 bg-gray-50 rounded-xl text-[10px] font-black text-gray-500 border border-gray-100">
+                                                        {getDuration(shift.start_time, shift.end_time)}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

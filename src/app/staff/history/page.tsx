@@ -21,6 +21,7 @@ interface WeeklyData {
         estimatedValue: number;
         startBalance: number;
         finalBalance: number;
+        isPaid: boolean;
     };
 }
 
@@ -134,7 +135,7 @@ export default function HistoryPage() {
             searchSnapshotStart.setDate(searchSnapshotStart.getDate() - 7);
 
             const { data: snapshots } = await supabase.from('weekly_snapshots')
-                .select('week_start, total_hours, balance_hours, pending_balance, final_balance')
+                .select('week_start, total_hours, balance_hours, pending_balance, final_balance, is_paid')
                 .eq('user_id', user.id)
                 .gte('week_start', searchSnapshotStart.toISOString().split('T')[0])
                 .order('week_start', { ascending: true });
@@ -233,7 +234,8 @@ export default function HistoryPage() {
                         weeklyBalance: summaryWeeklyBalance,
                         estimatedValue: estimatedValue,
                         startBalance: summaryStartBalance,
-                        finalBalance: summaryFinalBalance
+                        finalBalance: summaryFinalBalance,
+                        isPaid: snapshot?.is_paid || false
                     }
                 });
                 currentWeekStart.setDate(currentWeekStart.getDate() + 7);
@@ -252,18 +254,29 @@ export default function HistoryPage() {
     return (
         <div className="pb-10">
 
-            <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-                <div className="flex items-center justify-between px-1">
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2 bg-black/20 rounded-lg p-1">
-                            <button onClick={() => changeMonth(-1)} className="p-1 text-white hover:text-blue-200"><ChevronLeft size={16} /></button>
-                            <span className="text-[10px] font-bold text-white min-w-[80px] text-center capitalize uppercase tracking-widest">{currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                            <button onClick={() => changeMonth(1)} className="p-1 text-white hover:text-blue-200"><ChevronRight size={16} /></button>
-                        </div>
+            <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
+                {/* SELECCIÓN DE MES (Compacto) */}
+                <div className="flex items-center justify-between px-1 -mt-2 -mb-5">
+                    <div className="flex items-center gap-2 bg-black/5 rounded-lg p-1">
+                        <Calendar size={14} className="text-[#36606F] ml-1" />
+                        <span className="text-sm font-bold text-gray-700 capitalize pr-2">
+                            {getMonthLabel(currentDate)}
+                        </span>
                     </div>
+
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setShowFilter(true)} className={`px-4 py-1.5 border rounded-full text-[10px] font-bold shadow-sm flex items-center gap-2 transition-colors ${isFilterActive ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}><Filter size={10} /> {isFilterActive ? 'FILTRO' : 'FECHA'}</button>
-                        {isFilterActive && <button onClick={clearFilter} className="p-1.5 bg-red-500/20 border border-red-500/50 rounded-full text-white shadow-sm flex items-center justify-center hover:bg-red-500/40 transition-colors animate-in fade-in zoom-in duration-200"><X size={12} /></button>}
+                        {/* Botón Filtro */}
+                        <button
+                            onClick={() => setShowFilter(true)}
+                            className={`p-1.5 rounded-lg transition-all ${isFilterActive ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-400'}`}
+                        >
+                            <Filter size={16} />
+                        </button>
+                        {isFilterActive && (
+                            <button onClick={clearFilter} className="p-1.5 bg-red-100 text-red-500 rounded-lg">
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -272,7 +285,7 @@ export default function HistoryPage() {
                 ) : weeksData.length === 0 ? (
                     <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto"><Calendar size={40} className="mx-auto mb-2 opacity-50" /><p>No hay registros cerrados este mes</p></div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
                         {weeksData.map((week, idx) => {
                             const currentMonthLabel = getMonthLabel(week.startDate);
                             const prevWeekLabel = idx > 0 ? getMonthLabel(weeksData[idx - 1].startDate) : null;
@@ -292,6 +305,11 @@ export default function HistoryPage() {
                                                     SEMANA {week.weekNumber}
                                                 </span>
                                             </div>
+                                            {week.summary.isPaid && (
+                                                <div className="absolute -bottom-2 -right-2 w-24 h-24 rotate-[-15deg] opacity-80 pointer-events-none z-20">
+                                                    <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">

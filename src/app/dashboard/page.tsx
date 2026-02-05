@@ -126,10 +126,23 @@ export default function DashboardPage() {
         setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
     };
 
-    const togglePaid = (e: React.MouseEvent, weekId: string, staffId: string) => {
+    const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
-        setPaidStatus(prev => ({ ...prev, [key]: !prev[key] }));
+        const newStatus = !paidStatus[key];
+
+        setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
+
+        try {
+            await supabase.from('weekly_snapshots').upsert({
+                user_id: staffId,
+                week_start: weekId,
+                is_paid: newStatus
+            }, { onConflict: 'user_id, week_start' });
+        } catch (error) {
+            console.error("Error updating paid status:", error);
+            setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
+        }
     };
 
     const isWeekFullyPaid = (week: any) => {
@@ -173,6 +186,7 @@ export default function DashboardPage() {
             const d = new Date(); d.setDate(d.getDate() - 15);
             const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
             const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour');
+            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid').gte('week_start', d.toISOString().split('T')[0]);
 
             if (profiles) setAllEmployees(profiles);
 
@@ -210,8 +224,9 @@ export default function DashboardPage() {
                         if (existingStaff) {
                             existingStaff.amount += cost; existingStaff.hours += log.total_hours;
                         } else {
+                            const isPaid = snapshots?.find(s => s.user_id === log.user_id && s.week_start === weekLabelId)?.is_paid || false;
                             weekEntry.staff.push({ id: log.user_id, name: userProfile.first_name, amount: cost, hours: log.total_hours });
-                            initialPaidStatus[`${weekLabelId}-${log.user_id}`] = false;
+                            initialPaidStatus[`${weekLabelId}-${log.user_id}`] = isPaid;
                         }
                         weekEntry.total += cost;
                     }
