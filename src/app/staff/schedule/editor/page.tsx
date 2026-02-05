@@ -79,7 +79,7 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     return (
         <div
             ref={barRef}
-            className="absolute top-1 bottom-1 bg-green-400/90 rounded-full border border-green-500 shadow-sm flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-green-400 transition-all z-10 touch-none"
+            className="absolute top-1 bottom-1 bg-emerald-400/30 rounded-full border border-emerald-500/50 shadow-sm flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-emerald-400/40 transition-all z-10 touch-none"
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
@@ -88,13 +88,13 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
                 <div className="w-0.5 h-3 bg-white/50 rounded-full" />
             </div>
 
-            {/* Hora Entrada (izquierda, blanco) */}
-            <span className="absolute left-1 text-[7px] md:text-[8px] font-black text-white pointer-events-none select-none drop-shadow-md">
+            {/* Hora Entrada (movida hacia la derecha, fuente más grande) */}
+            <span className="absolute left-2.5 text-[9px] md:text-[10px] font-black text-white pointer-events-none select-none drop-shadow-md">
                 {shift.start}
             </span>
 
-            {/* Hora Salida (derecha, rojo) */}
-            <span className="absolute right-1 text-[7px] md:text-[8px] font-black text-red-600 pointer-events-none select-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+            {/* Hora Salida (movida hacia la izquierda, fuente más grande) */}
+            <span className="absolute right-2.5 text-[9px] md:text-[10px] font-black text-red-600 pointer-events-none select-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
                 {shift.end}
             </span>
 
@@ -353,16 +353,16 @@ export default function ScheduleEditorPage() {
                     {/* ENCABEZADO DE HORAS - ROJO */}
                     <div className="flex bg-red-500 text-white border-b border-red-600">
                         <div
-                            className="w-20 md:w-32 p-2 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0 cursor-pointer hover:bg-red-600 transition-colors"
+                            className="w-20 md:w-32 p-1 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0 cursor-pointer hover:bg-red-600 transition-colors"
                             onClick={() => setShowCalendarModal(true)}
                         >
-                            <Calendar size={12} /> {new Date(date).getDate()}
+                            <Calendar size={10} />
                         </div>
-                        <div className="flex-1 relative h-6 flex">
+                        <div className="flex-1 relative h-5 flex">
                             {hoursHeader.map((hour, i) => (
                                 <div
                                     key={hour}
-                                    className="flex-1 text-[8px] md:text-[9px] font-black flex items-center justify-center select-none opacity-90"
+                                    className="flex-1 text-[8px] md:text-[9px] font-black flex items-center justify-center select-none opacity-90 border-r border-red-400/30 last:border-r-0"
                                 >
                                     {hour}
                                 </div>
@@ -405,15 +405,15 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FILA DE TOTALES - SIEMPRE VISIBLE - FONDO AMARILLO CLARO */}
-                    <div className="flex bg-yellow-100 border-t border-yellow-200 sticky bottom-0">
-                        <div className="w-20 md:w-32 p-1 font-black text-yellow-700 text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
+                    <div className="flex bg-yellow-100 border-2 border-yellow-300 rounded-b-xl sticky bottom-0 shadow-inner">
+                        <div className="w-20 md:w-32 p-1 font-black text-black text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
                             SUM
                         </div>
                         <div className="flex-1 relative h-5 md:h-6 flex">
                             {totals.map((count, i) => (
                                 <div
                                     key={i}
-                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-green-600' : 'text-gray-300'}`}
+                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-black' : 'text-gray-300'}`}
                                 >
                                     {count > 0 ? count : ''}
                                 </div>
@@ -426,7 +426,7 @@ export default function ScheduleEditorPage() {
             {/* BARRA DE EDICIÓN FLOTANTE - SIEMPRE EDITABLE */}
             {editingIndex !== null && shifts[editingIndex]?.active && (
                 <div className="mt-3 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="h-10 relative bg-white/90 rounded-full shadow-lg border border-green-400 flex items-center overflow-hidden backdrop-blur-sm">
+                    <div className="h-10 relative bg-white/90 rounded-full shadow-lg border border-emerald-400 flex items-center overflow-hidden backdrop-blur-sm">
                         <div className="flex-1 relative h-full">
                             <div className="absolute inset-0 flex">
                                 {hoursHeader.map((_, i) => (

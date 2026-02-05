@@ -247,9 +247,9 @@ export default function LaborHistoryPage() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
                     {/* CABECERA DE LA TARJETA (AZUL) */}
-                    <div className="bg-[#36606F] px-8 py-5 flex items-center gap-3">
-                        <TrendingUp className="text-white" size={24} />
-                        <h1 className="text-lg font-black text-white uppercase tracking-wider">
+                    <div className="bg-[#36606F] px-8 py-3 flex items-center gap-3">
+                        <TrendingUp className="text-white" size={20} />
+                        <h1 className="text-base font-black text-white uppercase tracking-wider">
                             Coste Mano de Obra
                         </h1>
                     </div>
@@ -288,19 +288,19 @@ export default function LaborHistoryPage() {
 
                         {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
                         <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-emerald-500 p-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-xs font-black leading-none mb-1">{summary.avgPercentage.toFixed(1)}%</span>
-                                <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Eficiencia</span>
+                            <div className="bg-emerald-500 py-2 px-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
+                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.avgPercentage.toFixed(1)}%</span>
+                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Eficiencia</span>
                             </div>
 
-                            <div className="bg-rose-500 p-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-xs font-black leading-none mb-1">{summary.totalCost.toFixed(0)}€</span>
-                                <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Coste</span>
+                            <div className="bg-rose-500 py-2 px-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
+                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.totalCost.toFixed(0)}€</span>
+                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Coste</span>
                             </div>
 
-                            <div className="bg-blue-500 p-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-xs font-black leading-none mb-1">{summary.totalHours.toFixed(0)}h</span>
-                                <span className="text-[8px] font-bold text-white/80 uppercase tracking-tighter">Horas</span>
+                            <div className="bg-blue-500 py-2 px-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
+                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.totalHours.toFixed(0)}h</span>
+                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Horas</span>
                             </div>
                         </div>
 
