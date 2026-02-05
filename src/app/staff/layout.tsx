@@ -30,11 +30,9 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     const isActive = (path: string) => pathname === path;
 
     return (
-        <div className="flex min-h-screen">
+        <>
             <Toaster position="top-center" richColors />
-            <main className="flex-1 w-full px-3">
-                {children}
-            </main>
-        </div>
+            {children}
+        </>
     );
 }
