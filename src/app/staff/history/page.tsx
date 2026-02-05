@@ -255,15 +255,8 @@ export default function HistoryPage() {
         <div className="pb-10">
 
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
-                {/* SELECCIÓN DE MES (Compacto) */}
-                <div className="flex items-center justify-between px-1 -mt-2 -mb-5">
-                    <div className="flex items-center gap-2 bg-black/5 rounded-lg p-1">
-                        <Calendar size={14} className="text-[#36606F] ml-1" />
-                        <span className="text-sm font-bold text-gray-700 capitalize pr-2">
-                            {getMonthLabel(currentDate)}
-                        </span>
-                    </div>
-
+                {/* FILTRO COMPACTO - SOLO BOTÓN FILTRAR */}
+                <div className="flex items-center justify-end px-1 mb-2">
                     <div className="flex items-center gap-2">
                         {/* Botón Filtro */}
                         <button
@@ -294,8 +287,9 @@ export default function HistoryPage() {
                             return (
                                 <React.Fragment key={idx}>
                                     {showMonthHeader && (
-                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 py-4 flex items-center gap-4 opacity-70 animate-in fade-in slide-in-from-left-4">
-                                            <div className="h-px bg-white/30 flex-1"></div><span className="text-xs font-black text-white uppercase tracking-[0.2em] drop-shadow-md">{currentMonthLabel}</span><div className="h-px bg-white/30 flex-1"></div>
+                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 py-2 flex items-center gap-3 opacity-70 animate-in fade-in slide-in-from-left-4">
+                                            <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-md whitespace-nowrap">{currentMonthLabel}</span>
+                                            <div className="h-px bg-white/30 flex-1"></div>
                                         </div>
                                     )}
                                     <div className="bg-white rounded-[2rem] p-4 shadow-xl hover:shadow-2xl transition-shadow duration-300 animate-in slide-in-from-bottom-4" style={{ animationDelay: `${idx * 50}ms` }}>
