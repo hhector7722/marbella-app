@@ -343,27 +343,26 @@ export default function StaffDashboard() {
 
                 {/* COLUMNA IZQUIERDA */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] p-5 shadow-xl">
-                        <div className="flex justify-between items-center mb-1 px-1">
-                            <h3 className="text-sm font-black text-gray-700 flex items-center gap-2 uppercase tracking-wide">
-                                <Calendar size={16} className="text-[#5B8FB9]" /> MIS REGISTROS
-                            </h3>
+                    <div className="bg-white rounded-[2rem] p-4 shadow-xl">
+                        <div className="flex justify-between items-end mb-2 px-1">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">{currentMonthName}</span>
+                            </div>
                             <Link href="/staff/history" className="text-xs font-bold text-[#5B8FB9] flex items-center gap-1 hover:underline">
                                 Histórico <ArrowRight size={12} />
                             </Link>
                         </div>
-                        <div className="mb-3 px-1"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{currentMonthName}</span></div>
 
                         <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                             <div className="grid grid-cols-7 border-b border-gray-100">
                                 {weekDays.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[110px] bg-white relative">
-                                        <div className="h-7 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[100px] bg-white relative">
+                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
                                         <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
                                             <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                            <div className="flex-1 flex flex-col justify-center gap-1 w-full">
+                                            <div className="flex-1 flex flex-col justify-end gap-1 w-full pb-1">
                                                 {day.hasLog ? (
                                                     <>
                                                         <div className="flex items-center justify-center gap-1">
@@ -379,15 +378,15 @@ export default function StaffDashboard() {
                                                     </>
                                                 ) : (<span className="text-gray-200 text-xs text-center">-</span>)}
                                             </div>
-                                            <div className="w-full mt-auto space-y-0.5 pt-1">
+                                            <div className="w-full space-y-0.5 pt-1">
                                                 {day.hasLog && day.totalHours > 0 && (
                                                     <div className="flex justify-between items-end text-[8px] text-gray-400 border-t border-gray-50 pt-1">
-                                                        <span>Horas</span><span className="font-bold text-gray-800">{formatWorked(day.totalHours)}</span>
+                                                        <span>H</span><span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
                                                     </div>
                                                 )}
                                                 {day.extraHours > 0 && (
                                                     <div className="flex justify-between items-end text-[8px] text-gray-400">
-                                                        <span>Extras</span><span className="font-bold text-gray-800">{formatWorked(day.extraHours)}</span>
+                                                        <span>Ex</span><span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -398,31 +397,31 @@ export default function StaffDashboard() {
                         </div>
 
                         {/* --- GRID DE RESUMEN --- */}
-                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
+                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 grid grid-cols-4 gap-2 text-xs">
 
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">HORAS</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">H</span>
                                 <span className="font-black text-gray-800 text-sm">
                                     {formatWorked(weeklySummary.totalHours)}
                                 </span>
                             </div>
 
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">BALANCE</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">BALANCE</span>
                                 <span className={`font-black text-sm ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                     {formatBalance(weeklySummary.hoursDifference)}
                                 </span>
                             </div>
 
                             <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">PENDIENTE</span>
                                 <span className={`font-black text-sm ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                     {shouldShowPending(weeklySummary.startBalance) ? formatBalance(weeklySummary.startBalance) : '\u00A0'}
                                 </span>
                             </div>
 
                             <div className="flex flex-col items-center">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">A COBRAR</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase">A COBRAR</span>
                                 <span className="font-black text-sm text-green-600">
                                     {formatMoney(weeklySummary.estimatedPayout)}
                                 </span>
