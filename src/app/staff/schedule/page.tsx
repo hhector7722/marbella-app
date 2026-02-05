@@ -194,42 +194,26 @@ export default function StaffSchedulePage() {
                                     upcomingShifts.map((shift) => {
                                         const { dayName, dayNumber, monthName } = formatDateCard(shift.start_time);
                                         return (
-                                            <div key={shift.id} className="bg-white rounded-[2rem] p-5 shadow-sm border border-purple-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-                                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-500"></div>
-                                                <div className="flex items-center gap-5">
-                                                    {/* FECHA */}
-                                                    <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-gray-100 pr-5">
-                                                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{monthName}</span>
-                                                        <span className="text-3xl font-black text-gray-800 leading-none my-1">{dayNumber}</span>
-                                                        <span className="text-[10px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
-                                                    </div>
+                                            <div key={shift.id} className="bg-white rounded-2xl px-3 py-2 shadow-sm border border-purple-100 flex items-center gap-3">
+                                                {/* FECHA COMPACTA */}
+                                                <div className="bg-purple-50 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-purple-100">
+                                                    <span className="text-lg font-black text-purple-600 leading-none">{dayNumber}</span>
+                                                    <span className="block text-[8px] font-bold text-purple-400 uppercase">{monthName}</span>
+                                                </div>
 
-                                                    {/* INFO */}
-                                                    <div className="flex-1 space-y-3">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            {shift.activity && (
-                                                                <span className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 text-[10px] font-black rounded-full uppercase tracking-wider border border-orange-200">
-                                                                    <Trophy size={10} /> {shift.activity}
-                                                                </span>
-                                                            )}
-                                                            {shift.notes && (
-                                                                <span className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-gray-500 text-[10px] italic rounded-full border border-gray-100 font-medium">
-                                                                    <StickyNote size={10} /> {shift.notes}
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2 text-gray-800 font-black text-xl">
-                                                                <Clock size={18} className="text-purple-300" />
-                                                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <span className="block text-[9px] text-gray-400 font-black uppercase tracking-widest">Duración</span>
-                                                                <span className="text-sm font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg">{getDuration(shift.start_time, shift.end_time)}</span>
-                                                            </div>
-                                                        </div>
+                                                {/* HORARIO Y ACTIVIDAD */}
+                                                <div className="flex-1 flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-black text-gray-800">
+                                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                        </span>
+                                                        {shift.activity && (
+                                                            <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                                                                {shift.activity}
+                                                            </span>
+                                                        )}
                                                     </div>
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
                                                 </div>
                                             </div>
                                         );
@@ -260,30 +244,19 @@ export default function StaffSchedulePage() {
                                         historyShifts.map((shift) => {
                                             const { dayName, dayNumber } = formatDateCard(shift.start_time);
                                             return (
-                                                <div key={shift.id} className="bg-white rounded-[1.5rem] p-4 border border-gray-100 flex items-center justify-between opacity-80 hover:opacity-100 transition-all hover:shadow-sm">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="bg-gray-100 w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-gray-500 border border-gray-200">
-                                                            <span className="text-[9px] font-black uppercase">{dayName.slice(0, 3)}</span>
-                                                            <span className="text-lg font-black leading-none">{dayNumber}</span>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-black text-gray-700 flex items-center gap-2">
-                                                                <Clock size={12} className="text-gray-300" />
-                                                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                            </div>
-                                                            {shift.activity ? (
-                                                                <div className="text-[10px] font-black text-orange-500 flex items-center gap-1.5 uppercase mt-1">
-                                                                    <div className="w-1 h-1 bg-orange-400 rounded-full" />
-                                                                    {shift.activity}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="text-[10px] text-gray-400 mt-1">Jornada finalizada</div>
-                                                            )}
-                                                        </div>
+                                                <div key={shift.id} className="bg-white rounded-xl px-3 py-2 border border-gray-100 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all">
+                                                    <div className="bg-gray-100 rounded-lg px-2 py-1 text-center min-w-[40px]">
+                                                        <span className="text-sm font-black text-gray-600 leading-none">{dayNumber}</span>
+                                                        <span className="block text-[7px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
                                                     </div>
-                                                    <span className="px-3 py-1 bg-gray-50 rounded-xl text-[10px] font-black text-gray-500 border border-gray-100">
-                                                        {getDuration(shift.start_time, shift.end_time)}
-                                                    </span>
+                                                    <div className="flex-1 flex items-center justify-between">
+                                                        <span className="text-xs font-black text-gray-600">
+                                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                        </span>
+                                                        {shift.activity && (
+                                                            <span className="text-[8px] font-bold text-orange-500">{shift.activity}</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             );
                                         })
