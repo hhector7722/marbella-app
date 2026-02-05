@@ -230,7 +230,7 @@ export default function DashboardPage() {
             // 3. HORAS EXTRAS
             const d = new Date(); d.setDate(d.getDate() - 60);
             const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary, hours_balance');
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary, hours_balance, prefer_stock_hours');
             const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance').gte('week_start', d.toISOString().split('T')[0]);
 
             if (profiles) setAllEmployees(profiles);
@@ -293,26 +293,47 @@ export default function DashboardPage() {
                         if (userProfile) {
                             const contractedHours = userProfile.contracted_hours_weekly || 40;
                             const isFixedSalary = userProfile.is_fixed_salary || false;
+                            const preferStock = userProfile.prefer_stock_hours || false;
                             const overtimeRate = userProfile.overtime_cost_per_hour || 0;
 
                             // Balance semanal
                             const weeklyBalance = isFixedSalary ? totalHours : (totalHours - contractedHours);
 
-                            // Obtener pending_balance (arrastre)
+                            // Obtener pending_balance (arrastre de semana anterior)
                             let pendingBalance = 0;
                             const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekId);
+
                             if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
-                                pendingBalance = prevSnapshot.final_balance;
+                                // Si el empleado NO prefiere acumular y el balance previo era positivo,
+                                // se liquidó y el arrastre queda en 0
+                                if (!preferStock && prevSnapshot.final_balance > 0) {
+                                    pendingBalance = 0; // Se liquidó la semana anterior
+                                } else {
+                                    pendingBalance = prevSnapshot.final_balance;
+                                }
                             } else {
                                 const prevBalances = userFinalBalances.get(prevWeekId);
-                                pendingBalance = prevBalances?.get(userId) ?? (userProfile.hours_balance || 0);
+                                const prevBalance = prevBalances?.get(userId) ?? (userProfile.hours_balance || 0);
+
+                                // Misma lógica: si no prefiere acumular y era positivo, se liquidó
+                                if (!preferStock && prevBalance > 0) {
+                                    pendingBalance = 0;
+                                } else {
+                                    pendingBalance = prevBalance;
+                                }
                             }
 
                             const finalBalance = pendingBalance + weeklyBalance;
+
+                            // Guardar el balance real para arrastre interno
                             userFinalBalances.get(weekLabelId)!.set(userId, finalBalance);
 
-                            // Costo solo si balance > 0
-                            const cost = finalBalance > 0 ? finalBalance * overtimeRate : 0;
+                            // Costo: solo si balance > 0 Y no prefiere acumular
+                            // Si prefiere acumular, no genera costo (se guarda)
+                            let cost = 0;
+                            if (finalBalance > 0 && !preferStock) {
+                                cost = finalBalance * overtimeRate;
+                            }
 
                             const existingSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId);
                             const isPaid = existingSnapshot?.is_paid || false;
@@ -324,7 +345,8 @@ export default function DashboardPage() {
                                 hours: finalBalance,
                                 weeklyBalance: weeklyBalance,
                                 totalHours: totalHours,
-                                pendingBalance: pendingBalance
+                                pendingBalance: pendingBalance,
+                                preferStock: preferStock
                             });
                             initialPaidStatus[`${weekLabelId}-${userId}`] = isPaid;
                             weekEntry.total += cost;
