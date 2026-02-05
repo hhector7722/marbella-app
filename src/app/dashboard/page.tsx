@@ -228,17 +228,18 @@ export default function DashboardPage() {
             }
 
             // 3. HORAS EXTRAS
-            const d = new Date(); d.setDate(d.getDate() - 15);
+            const d = new Date(); d.setDate(d.getDate() - 30);
             const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour');
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary');
             const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid').gte('week_start', d.toISOString().split('T')[0]);
 
             if (profiles) setAllEmployees(profiles);
 
             if (logs && profiles) {
                 const profileMap = new Map(profiles.map(p => [p.id, p]));
-                const weeksMap = new Map<string, any>();
-                const initialPaidStatus: Record<string, boolean> = {};
+
+                // Primero: agrupar TODAS las horas por semana y usuario
+                const weekUserHoursMap = new Map<string, Map<string, number>>();
 
                 logs.forEach(log => {
                     const date = new Date(log.clock_in);
@@ -246,12 +247,25 @@ export default function DashboardPage() {
                     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
                     const monday = new Date(date.setDate(diff));
                     monday.setHours(0, 0, 0, 0);
+                    const weekLabelId = monday.toISOString().split('T')[0];
 
+                    if (!weekUserHoursMap.has(weekLabelId)) {
+                        weekUserHoursMap.set(weekLabelId, new Map());
+                    }
+                    const userMap = weekUserHoursMap.get(weekLabelId)!;
+                    userMap.set(log.user_id, (userMap.get(log.user_id) || 0) + (log.total_hours || 0));
+                });
+
+                // Segundo: construir estructura de semanas con horas extra correctamente calculadas
+                const weeksMap = new Map<string, any>();
+                const initialPaidStatus: Record<string, boolean> = {};
+
+                weekUserHoursMap.forEach((userMap, weekLabelId) => {
+                    const monday = new Date(weekLabelId);
                     const weekNum = getISOWeek(monday);
                     const sunday = addDays(monday, 6);
                     const startStr = format(monday, "d MMM", { locale: es });
                     const endStr = format(sunday, "d MMM", { locale: es });
-                    const weekLabelId = monday.toISOString().split('T')[0];
                     const titleLabel = `Semana ${weekNum}`;
                     const rangeLabel = `${startStr} a ${endStr}`;
 
@@ -262,20 +276,38 @@ export default function DashboardPage() {
                     }
 
                     const weekEntry = weeksMap.get(weekLabelId);
-                    const userProfile = profileMap.get(log.user_id);
-                    if (userProfile) {
-                        const cost = (log.total_hours || 0) * (userProfile.overtime_cost_per_hour || 0);
-                        const existingStaff = weekEntry.staff.find((s: any) => s.id === log.user_id);
-                        if (existingStaff) {
-                            existingStaff.amount += cost; existingStaff.hours += log.total_hours;
-                        } else {
-                            const isPaid = snapshots?.find(s => s.user_id === log.user_id && s.week_start === weekLabelId)?.is_paid || false;
-                            weekEntry.staff.push({ id: log.user_id, name: userProfile.first_name, amount: cost, hours: log.total_hours });
-                            initialPaidStatus[`${weekLabelId}-${log.user_id}`] = isPaid;
+
+                    userMap.forEach((totalHours, userId) => {
+                        const userProfile = profileMap.get(userId);
+                        if (userProfile) {
+                            const contractedHours = userProfile.contracted_hours_weekly || 40;
+                            const isFixedSalary = userProfile.is_fixed_salary || false;
+                            const overtimeRate = userProfile.overtime_cost_per_hour || 0;
+
+                            // Calcular horas extras correctamente
+                            let overtimeHours = 0;
+                            if (isFixedSalary) {
+                                overtimeHours = totalHours; // Empleados con salario fijo: todas las horas cuentan
+                            } else {
+                                overtimeHours = Math.max(0, totalHours - contractedHours); // Solo las que exceden contrato
+                            }
+
+                            const cost = overtimeHours * overtimeRate;
+
+                            const isPaid = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId)?.is_paid || false;
+                            weekEntry.staff.push({
+                                id: userId,
+                                name: userProfile.first_name,
+                                amount: cost,
+                                hours: overtimeHours,
+                                totalHours: totalHours
+                            });
+                            initialPaidStatus[`${weekLabelId}-${userId}`] = isPaid;
+                            weekEntry.total += cost;
                         }
-                        weekEntry.total += cost;
-                    }
+                    });
                 });
+
                 setPaidStatus(initialPaidStatus);
                 const sortedWeeks = Array.from(weeksMap.values()).sort((a, b) => b.weekId.localeCompare(a.weekId));
                 setOvertimeData(sortedWeeks);
