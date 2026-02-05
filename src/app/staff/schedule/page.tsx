@@ -201,17 +201,17 @@ export default function StaffSchedulePage() {
                                                     <span className="block text-[8px] font-bold text-purple-400 uppercase">{monthName}</span>
                                                 </div>
 
-                                                {/* HORARIO Y ACTIVIDAD */}
+                                                {/* ACTIVIDAD Y HORARIO */}
                                                 <div className="flex-1 flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-black text-gray-800">
-                                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                        </span>
                                                         {shift.activity && (
-                                                            <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                                                            <span className="text-[10px] font-medium text-gray-400">
                                                                 {shift.activity}
                                                             </span>
                                                         )}
+                                                        <span className="text-sm font-black text-gray-800">
+                                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                                        </span>
                                                     </div>
                                                     <span className="text-[9px] font-bold text-gray-400 uppercase">{dayName.slice(0, 3)}</span>
                                                 </div>
