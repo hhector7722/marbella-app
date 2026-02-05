@@ -269,44 +269,45 @@ export default function ScheduleEditorPage() {
                         ))}
                     </div>
 
-                    {/* FILA DE TOTALES */}
-                    <div className="flex bg-gray-50 border-t border-gray-100">
-                        <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
-                            SUM
+                    {/* FILA DE TOTALES - OCULTA AL EDITAR */}
+                    {editingIndex === null && (
+                        <div className="flex bg-gray-50 border-t border-gray-100">
+                            <div className="w-20 md:w-32 p-1 font-black text-gray-400 text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
+                                SUM
+                            </div>
+                            <div className="flex-1 relative h-5 md:h-6 flex">
+                                {totals.map((count, i) => (
+                                    <div
+                                        key={i}
+                                        className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-green-600 bg-green-50/20' : 'text-gray-300'}`}
+                                    >
+                                        {count > 0 ? count : ''}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex-1 relative h-5 md:h-6 flex">
-                            {totals.map((count, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-green-600 bg-green-50/20' : 'text-gray-300'}`}
-                                >
-                                    {count > 0 ? count : ''}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
-            {/* BARRA VIRTUAL DE EDICIÓN (SIMPLIFICADA) */}
+            {/* BARRA DE EDICIÓN INTEGRADA - SOLO LA BARRA */}
             {editingIndex !== null && shifts[editingIndex].active && (
-                <div className="fixed bottom-4 left-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-6 duration-300">
-                    <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-green-500 overflow-hidden">
-                        <div className="bg-green-500 px-4 py-1.5 flex justify-between items-center text-white">
-                            <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
-                                <Plus size={12} className="shrink-0" /> {shifts[editingIndex].name} • {shifts[editingIndex].start}-{shifts[editingIndex].end}
+                <div className="mt-2 mx-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="bg-white rounded-2xl shadow-lg border border-green-400 overflow-hidden">
+                        <div className="bg-green-500 px-4 py-2 flex justify-between items-center text-white">
+                            <span className="text-xs font-black uppercase tracking-widest">
+                                {shifts[editingIndex].name} • {shifts[editingIndex].start} - {shifts[editingIndex].end}
                             </span>
-                            <button onClick={() => setEditingIndex(null)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                                <X size={14} />
+                            <button onClick={() => setEditingIndex(null)} className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
+                                <X size={16} />
                             </button>
                         </div>
-                        <div className="p-4 bg-gray-50/50">
-                            <div className="h-10 relative bg-white rounded-xl shadow-inner border border-gray-100 flex items-center overflow-hidden">
+                        <div className="p-3">
+                            <div className="h-12 relative bg-gray-50 rounded-xl border border-gray-100 flex items-center overflow-hidden">
                                 <div className="flex-1 relative h-full">
-                                    {/* Carril de edición sin rejillas pesadas */}
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1 border-r border-gray-100/30 pointer-events-none last:border-r-0" />
+                                            <div key={i} className="flex-1 border-r border-gray-100/50 pointer-events-none last:border-r-0" />
                                         ))}
                                     </div>
                                     <ShiftBar
