@@ -165,16 +165,52 @@ export default function ScheduleEditorPage() {
     };
 
     const handleSave = async () => {
-        // Lógica de guardado (Mock)
-        toast.promise(
-            new Promise(resolve => setTimeout(resolve, 1000)),
-            {
-                loading: 'Guardando...',
-                success: 'Horario publicado',
-                error: 'Error al guardar'
-            }
-        );
-        // Aquí iría el insert a Supabase
+        const activeShifts = shifts.filter(s => s.active);
+
+        if (activeShifts.length === 0) {
+            toast.error('No hay turnos activos para guardar');
+            return;
+        }
+
+        const shiftsToInsert = activeShifts.map(shift => {
+            // Convertir fecha y hora a timestamp
+            const startDateTime = new Date(`${date}T${shift.start}:00`);
+            const endDateTime = new Date(`${date}T${shift.end}:00`);
+
+            return {
+                user_id: shift.employeeId,
+                start_time: startDateTime.toISOString(),
+                end_time: endDateTime.toISOString(),
+                activity: activity || null,
+                notes: null,
+                is_published: true
+            };
+        });
+
+        try {
+            // Primero eliminar turnos existentes para esa fecha
+            const startOfDay = new Date(`${date}T00:00:00`).toISOString();
+            const endOfDay = new Date(`${date}T23:59:59`).toISOString();
+
+            await supabase
+                .from('shifts')
+                .delete()
+                .gte('start_time', startOfDay)
+                .lte('start_time', endOfDay);
+
+            // Insertar nuevos turnos
+            const { error } = await supabase
+                .from('shifts')
+                .insert(shiftsToInsert);
+
+            if (error) throw error;
+
+            toast.success(`${activeShifts.length} turno(s) guardado(s)`);
+            router.push('/staff/schedule');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al guardar los turnos');
+        }
     };
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);

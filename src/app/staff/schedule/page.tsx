@@ -53,15 +53,22 @@ export default function StaffSchedulePage() {
                 .eq('id', user.id)
                 .single();
 
-            if (profile) setUserRole(profile.role);
+            const role = profile?.role || 'staff';
+            setUserRole(role);
 
-            // 2. Obtener Turnos
-            const { data, error } = await supabase
+            // 2. Obtener Turnos (Manager ve todos, Staff solo los suyos)
+            let query = supabase
                 .from('shifts')
                 .select('*')
-                .eq('user_id', user.id)
                 .eq('is_published', true)
                 .order('start_time', { ascending: false });
+
+            // Si no es manager, filtrar solo por su user_id
+            if (role !== 'manager') {
+                query = query.eq('user_id', user.id);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             if (data) setShifts(data);
@@ -123,10 +130,10 @@ export default function StaffSchedulePage() {
     if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-10">
+        <div className="min-h-screen bg-[#5B8FB9] pb-10 pt-4">
             {/* CONTENEDOR TIPO TARJETA */}
             <div className="max-w-2xl mx-auto px-4 md:px-0">
-                <div className="bg-white md:rounded-[2.5rem] rounded-b-[2.5rem] shadow-xl border border-gray-100 overflow-hidden min-h-[calc(100vh-2rem)]">
+                <div className="bg-white rounded-[2rem] shadow-2xl border border-white/20 overflow-hidden min-h-[calc(100vh-4rem)]">
 
                     {/* HEADER FIJO DENTRO DE LA TARJETA */}
                     <div className="bg-white sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
