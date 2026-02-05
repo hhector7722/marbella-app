@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
+import MainWrapper from "@/components/MainWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,9 +39,9 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.className} bg-[#5B8FB9]`}>
         <Navbar />
-        <main className="pt-header-safe pb-20 md:pb-0">
+        <MainWrapper>
           {children}
-        </main>
+        </MainWrapper>
         <BottomNavWrapper />
       </body>
     </html>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, BookOpen, Package, TrendingUp, LogOut, User } from 'lucide-react';
+import { Home, BookOpen, Package, TrendingUp, LogOut, User, Users, Clock } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 
@@ -44,15 +44,25 @@ export default function BottomNavAdmin() {
     };
 
     const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path + '/'));
-    const getClass = (path: string) => isActive(path)
-        ? "text-white scale-110 drop-shadow-md"
-        : "text-blue-200 hover:text-white";
+    const getClass = (path: string, isDesktop = false) => {
+        const active = isActive(path);
+        if (isDesktop) {
+            return active
+                ? "bg-white/20 text-white"
+                : "text-blue-200 hover:bg-white/10 hover:text-white";
+        }
+        return active
+            ? "text-white scale-110 drop-shadow-md"
+            : "text-blue-200 hover:text-white";
+    };
 
     const adminItems = [
         { name: 'Admin', href: '/dashboard', icon: Home },
         { name: 'Recetas', href: '/recipes', icon: BookOpen },
-        { name: 'Ingr', href: '/ingredients', icon: Package },
-        { name: 'Treasury', href: '/dashboard/treasury', icon: TrendingUp },
+        { name: 'Ingredientes', href: '/ingredients', icon: Package },
+        { name: 'Tesorería', href: '/dashboard/treasury', icon: TrendingUp },
+        { name: 'Personal', href: '/staff', icon: Users },
+        { name: 'Horas Extra', href: '/dashboard/overtime', icon: Clock },
     ];
 
     return (
@@ -61,8 +71,9 @@ export default function BottomNavAdmin() {
                 <div className="fixed inset-0 z-[90]" onClick={() => setIsMenuOpen(false)} />
             )}
 
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-between px-8 py-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
-                {adminItems.map((item) => (
+            {/* MOBILE: Bottom Bar */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-around items-center px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+                {adminItems.slice(0, 4).map((item) => (
                     <Link key={item.name} href={item.href} className={`flex flex-col items-center transition-all duration-200 ${getClass(item.href)}`}>
                         <item.icon size={20} />
                         <span className="text-[8px] font-bold mt-0.5 uppercase tracking-tighter">{item.name}</span>
@@ -106,6 +117,53 @@ export default function BottomNavAdmin() {
                     </button>
                 </div>
             </nav>
+
+            {/* DESKTOP: Sidebar */}
+            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-[#5B8FB9] flex-col items-center py-6 z-[100] shadow-xl border-r border-white/10">
+                {/* Logo */}
+                <div className="w-12 h-12 mb-8 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <span className="text-white font-black text-lg">M</span>
+                </div>
+
+                {/* Nav Items */}
+                <div className="flex-1 flex flex-col gap-2 w-full px-2">
+                    {adminItems.map((item) => (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 ${getClass(item.href, true)}`}
+                        >
+                            <item.icon size={20} />
+                            <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter">{item.name}</span>
+                        </Link>
+                    ))}
+                </div>
+
+                {/* Profile Button */}
+                <div className="mt-auto flex flex-col gap-2 w-full px-2">
+                    <Link
+                        href="/profile"
+                        className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 ${getClass('/profile', true)}`}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Me" className="w-full h-full object-cover" />
+                            ) : (
+                                <User size={16} className="text-white" />
+                            )}
+                        </div>
+                        <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter text-blue-200">Perfil</span>
+                    </Link>
+
+                    <button
+                        onClick={handleLogout}
+                        className="flex flex-col items-center py-3 rounded-xl transition-all duration-200 text-blue-200 hover:bg-red-500/20 hover:text-red-300"
+                    >
+                        <LogOut size={20} />
+                        <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter">Salir</span>
+                    </button>
+                </div>
+            </aside>
         </>
     );
 }
