@@ -456,10 +456,6 @@ export default function DashboardPage() {
     if (loading) return <div className="p-8 text-white">Cargando...</div>;
 
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
-    const radius = 14;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (laborPercent / 100) * circumference;
-    const percentStrokeColor = '#ffffff';
 
     return (
         <div className="pb-24">
