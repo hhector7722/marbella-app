@@ -22,6 +22,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Optimización UI Móvil: Aumento de altura en navegación inferior (h-20) y soporte para Safe Area.
 - [x] Refinamiento Visual de Horarios: Colores en tiempos (entrada verde/salida roja), orden invertido y uso de solo nombres de pila.
 - [x] Interconectividad Staff: Enlace directo a recetas en el dashboard de personal.
+- [x] Refinamiento Dashboard Admin: Compactación de tarjetas, modo colapsable en caja y esquemas de colores dinámicos para KPIs.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.

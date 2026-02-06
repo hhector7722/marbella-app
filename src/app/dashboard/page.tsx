@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { getISOWeek, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
 const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void }) => {
@@ -117,6 +118,7 @@ export default function DashboardPage() {
 
     // Estado para pagos
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
+    const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -277,7 +279,8 @@ export default function DashboardPage() {
                     vNeta: lastClose.net_sales,
                     ticketMedio: lastClose.tickets_count > 0 ? lastClose.net_sales / lastClose.tickets_count : 0,
                     costeManoObra: laborCost,
-                    porcentajeManoObra: laborPercent
+                    porcentajeManoObra: laborPercent,
+                    laborCostColor: laborPercent > 35 ? 'text-rose-500' : (laborPercent > 30 ? 'text-orange-400' : 'text-emerald-500')
                 });
             }
 
@@ -339,7 +342,7 @@ export default function DashboardPage() {
                     const sunday = addDays(monday, 6);
                     const startStr = format(monday, "d MMM", { locale: es });
                     const endStr = format(sunday, "d MMM", { locale: es });
-                    const titleLabel = `Semana ${weekNum}`;
+                    const titleLabel = `Sem ${weekNum}`;
                     const rangeLabel = `${startStr} a ${endStr}`;
 
                     const prevMonday = addDays(monday, -7);
@@ -463,7 +466,7 @@ export default function DashboardPage() {
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
                 {/* ÚLTIMO CIERRE */}
-                <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden">
+                <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden border border-gray-100">
                     <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                         <div className="flex items-center gap-3">
                             <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600"><CloudSun size={20} /></div>
@@ -471,29 +474,41 @@ export default function DashboardPage() {
                         </div>
                         <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
                     </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    <div className="space-y-3">
                         {/* Facturación */}
-                        <div className="p-4 bg-white rounded-2xl border-2 border-black text-center shadow-sm"><span className="text-[10px] font-bold text-black uppercase block mb-1">Facturación</span><span className="text-xl font-black text-black">{dailyStats?.facturat.toFixed(0)}€</span></div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-base font-bold text-gray-600">Facturación</span>
+                            <span className="text-base font-black text-black">{dailyStats?.facturat.toFixed(0)}€</span>
+                        </div>
 
-                        {/* Venta Neta (Emerald-400 Mate) */}
-                        <div className="p-4 bg-emerald-400 rounded-2xl border border-emerald-400 text-center shadow-sm"><span className="text-[10px] font-bold text-white uppercase block mb-1">Venta Neta</span><span className="text-xl font-black text-white">{dailyStats?.vNeta.toFixed(0)}€</span></div>
+                        {/* Venta Neta */}
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-base font-bold text-gray-600">Venta Neta</span>
+                            <span className="text-base font-black text-black">{dailyStats?.vNeta.toFixed(0)}€</span>
+                        </div>
 
-                        {/* Ticket Medio (Blue-400 Mate) */}
-                        <div className="p-4 bg-blue-400 rounded-2xl border border-blue-400 text-center shadow-sm"><span className="text-[10px] font-bold text-white uppercase block mb-1">Ticket Medio</span><span className="text-xl font-black text-white">{dailyStats?.ticketMedio.toFixed(2)}€</span></div>
+                        {/* Ticket Medio */}
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-base font-bold text-gray-600">Ticket Medio</span>
+                            <span className="text-base font-black text-black">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                        </div>
 
-                        {/* Coste M.Obra (Rose-400 Mate) */}
-                        <div className="p-4 bg-rose-400 rounded-2xl border border-rose-400 text-center relative shadow-sm">
-                            <span className="text-[10px] font-bold text-white uppercase block mb-1 relative z-10">Coste M.Obra</span>
-                            <span className="text-xl font-black text-white relative z-10">{dailyStats?.costeManoObra.toFixed(0)}€</span>
-                            <div className="absolute top-2 right-2 w-8 h-8 z-20">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="3" fill="transparent" opacity="0.3" />
-                                    <circle cx="50%" cy="50%" r={radius} stroke={percentStrokeColor} strokeWidth="3" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-[7px] font-black text-white">{laborPercent.toFixed(0)}%</span>
+                        {/* Coste M.Obra con indicador */}
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100 relative overflow-hidden">
+                            <div className="flex items-center gap-2">
+                                <span className="text-base font-bold text-gray-600">Coste M.Obra</span>
+                                <div className="w-8 h-8 relative shrink-0">
+                                    <svg className="w-full h-full transform -rotate-90">
+                                        <circle cx="50%" cy="50%" r={radius} stroke="#e5e7eb" strokeWidth="2" fill="transparent" />
+                                        <circle cx="50%" cy="50%" r={radius} stroke="currentColor" strokeWidth="2" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className={dailyStats?.laborCostColor} />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className={cn("text-[7px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
+                                    </div>
                                 </div>
                             </div>
+                            <span className={cn("text-base font-black", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
                         </div>
                     </div>
                 </div>
@@ -501,39 +516,46 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     {/* CAJA INICIAL */}
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full border-2 border-emerald-500">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                                <Wallet className="text-emerald-500" size={20} /> Caja Inicial
-                            </h3>
-                            <Link href="/dashboard/treasury" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
-                        </div>
+                    <div className="bg-emerald-500 rounded-[2rem] p-6 shadow-xl flex flex-col h-full border border-emerald-400 text-white">
                         {boxes.filter(b => b.type === 'operational').map(box => (
                             <div key={box.id} className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-black uppercase tracking-wider">Caja Inicial</span>
+                                    <Link href="/dashboard/treasury" className="text-[10px] font-bold text-emerald-100 bg-white/10 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 hover:bg-white/20">Ver más <ArrowRight size={10} /></Link>
+                                </div>
+
                                 <button
                                     onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                    className="w-full flex justify-between items-center p-4 rounded-xl bg-emerald-50 border-2 border-emerald-100 shadow-sm hover:bg-emerald-100 transition-all cursor-pointer group"
+                                    className="w-full flex justify-center p-6 rounded-2xl bg-white/10 border border-white/20 shadow-inner hover:bg-white/20 transition-all cursor-pointer group"
                                 >
-                                    <span className="text-sm font-black text-emerald-800 uppercase tracking-wider">Saldo Actual</span>
-                                    <span className="text-2xl font-black text-emerald-900">{box.current_balance.toFixed(2)}€</span>
+                                    <span className="text-4xl font-black">{box.current_balance.toFixed(2)}€</span>
                                 </button>
 
-                                <div className="pl-4 border-l-2 border-emerald-100 py-1">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-3">Últimos movimientos</p>
-                                    <div className="space-y-2">
-                                        {boxMovements.length === 0 && <p className="text-[10px] text-gray-300 italic">Sin movimientos recientes</p>}
-                                        {boxMovements.map(mov => (
-                                            <div key={mov.id} className="flex justify-between items-center text-xs">
-                                                <div className="flex items-center gap-2 overflow-hidden text-gray-500">
-                                                    {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-red-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
-                                                    <span className="truncate max-w-[150px]">{mov.notes || 'Sin descripción'}</span>
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
+                                        className="w-full flex items-center justify-between text-[10px] font-bold text-emerald-100 uppercase tracking-widest hover:text-white transition-colors"
+                                    >
+                                        Últimos movimientos
+                                        <ChevronDown size={14} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                    </button>
+
+                                    {isMovementsExpanded && (
+                                        <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                            {boxMovements.length === 0 && <p className="text-[10px] text-emerald-200 italic">Sin movimientos recientes</p>}
+                                            {boxMovements.map(mov => (
+                                                <div key={mov.id} className="flex justify-between items-center text-xs bg-white/5 p-2 rounded-lg border border-white/5">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-300 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-300 shrink-0" />}
+                                                        <span className="truncate max-w-[150px] text-emerald-50">{mov.notes || 'Sin descripción'}</span>
+                                                    </div>
+                                                    <span className={`font-bold ${mov.type === 'expense' ? 'text-rose-200' : 'text-emerald-100'}`}>
+                                                        {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
+                                                    </span>
                                                 </div>
-                                                <span className={`font-bold ${mov.type === 'expense' ? 'text-red-500' : 'text-emerald-600'}`}>
-                                                    {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
