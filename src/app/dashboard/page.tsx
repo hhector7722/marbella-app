@@ -280,7 +280,7 @@ export default function DashboardPage() {
                     ticketMedio: lastClose.tickets_count > 0 ? lastClose.net_sales / lastClose.tickets_count : 0,
                     costeManoObra: laborCost,
                     porcentajeManoObra: laborPercent,
-                    laborCostColor: laborPercent > 35 ? 'text-rose-500' : (laborPercent > 30 ? 'text-orange-400' : 'text-emerald-500')
+                    laborCostBg: laborPercent > 35 ? 'bg-rose-500' : (laborPercent > 30 ? 'bg-orange-400' : 'bg-emerald-500')
                 });
             }
 
@@ -467,48 +467,48 @@ export default function DashboardPage() {
 
                 {/* ÚLTIMO CIERRE */}
                 <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden border border-gray-100">
-                    <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600"><CloudSun size={20} /></div>
-                            <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-xs text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
+                            <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
+                            <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
                         </div>
                         <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
                         {/* Facturación */}
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span className="text-base font-bold text-gray-600">Facturación</span>
-                            <span className="text-base font-black text-black">{dailyStats?.facturat.toFixed(0)}€</span>
+                        <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[70px]">
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
+                            <span className="text-xl font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
                         </div>
 
-                        {/* Venta Neta */}
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span className="text-base font-bold text-gray-600">Venta Neta</span>
-                            <span className="text-base font-black text-black">{dailyStats?.vNeta.toFixed(0)}€</span>
+                        {/* Venta Neta (Relleno Verde) */}
+                        <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[70px] text-white">
+                            <span className="text-[10px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
+                            <span className="text-xl font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
                         </div>
 
-                        {/* Ticket Medio */}
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span className="text-base font-bold text-gray-600">Ticket Medio</span>
-                            <span className="text-base font-black text-black">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                        {/* Ticket Medio (Relleno Azul) */}
+                        <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[70px] text-white">
+                            <span className="text-[10px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
+                            <span className="text-xl font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
                         </div>
 
-                        {/* Coste M.Obra con indicador */}
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100 relative overflow-hidden">
-                            <div className="flex items-center gap-2">
-                                <span className="text-base font-bold text-gray-600">Coste M.Obra</span>
+                        {/* Coste M.Obra con indicador (Dinámico) */}
+                        <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[70px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
+                            <div className="flex justify-between items-start">
+                                <span className="text-[10px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
                                 <div className="w-8 h-8 relative shrink-0">
                                     <svg className="w-full h-full transform -rotate-90">
-                                        <circle cx="50%" cy="50%" r={radius} stroke="#e5e7eb" strokeWidth="2" fill="transparent" />
-                                        <circle cx="50%" cy="50%" r={radius} stroke="currentColor" strokeWidth="2" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className={dailyStats?.laborCostColor} />
+                                        <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
+                                        <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
                                     </svg>
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className={cn("text-[7px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
+                                        <span className="text-[7px] font-black text-white">{laborPercent.toFixed(0)}%</span>
                                     </div>
                                 </div>
                             </div>
-                            <span className={cn("text-base font-black", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
+                            <span className="text-xl font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
                         </div>
                     </div>
                 </div>
@@ -516,40 +516,39 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     {/* CAJA INICIAL */}
-                    <div className="bg-emerald-500 rounded-[2rem] p-6 shadow-xl flex flex-col h-full border border-emerald-400 text-white">
+                    <div className="bg-white rounded-[2rem] p-4 shadow-xl flex flex-col h-full border border-gray-100">
                         {boxes.filter(b => b.type === 'operational').map(box => (
-                            <div key={box.id} className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm font-black uppercase tracking-wider">Caja Inicial</span>
-                                    <Link href="/dashboard/treasury" className="text-[10px] font-bold text-emerald-100 bg-white/10 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 hover:bg-white/20">Ver más <ArrowRight size={10} /></Link>
-                                </div>
-
+                            <div key={box.id} className="space-y-3">
                                 <button
                                     onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                    className="w-full flex justify-center p-6 rounded-2xl bg-white/10 border border-white/20 shadow-inner hover:bg-white/20 transition-all cursor-pointer group"
+                                    className="w-full p-4 rounded-2xl bg-emerald-500 border border-emerald-400 shadow-md hover:bg-emerald-600 transition-all cursor-pointer flex flex-col items-center justify-center text-white"
                                 >
-                                    <span className="text-4xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">Caja Inicial</span>
+                                    <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                 </button>
 
-                                <div className="space-y-3">
-                                    <button
-                                        onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
-                                        className="w-full flex items-center justify-between text-[10px] font-bold text-emerald-100 uppercase tracking-widest hover:text-white transition-colors"
-                                    >
-                                        Últimos movimientos
-                                        <ChevronDown size={14} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
-                                    </button>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center px-1">
+                                        <button
+                                            onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
+                                            className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                                        >
+                                            Movimientos
+                                            <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                        </button>
+                                        <Link href="/dashboard/treasury" className="text-[10px] font-bold text-[#36606F] bg-gray-50 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">Ver más</Link>
+                                    </div>
 
                                     {isMovementsExpanded && (
-                                        <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                                            {boxMovements.length === 0 && <p className="text-[10px] text-emerald-200 italic">Sin movimientos recientes</p>}
+                                        <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 py-1">
+                                            {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1">Sin historial</p>}
                                             {boxMovements.map(mov => (
-                                                <div key={mov.id} className="flex justify-between items-center text-xs bg-white/5 p-2 rounded-lg border border-white/5">
-                                                    <div className="flex items-center gap-2 overflow-hidden">
-                                                        {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-300 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-300 shrink-0" />}
-                                                        <span className="truncate max-w-[150px] text-emerald-50">{mov.notes || 'Sin descripción'}</span>
+                                                <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                                    <div className="flex items-center gap-1.5 overflow-hidden">
+                                                        {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
+                                                        <span className="truncate max-w-[120px] text-gray-600">{mov.notes || 'Sin nota'}</span>
                                                     </div>
-                                                    <span className={`font-bold ${mov.type === 'expense' ? 'text-rose-200' : 'text-emerald-100'}`}>
+                                                    <span className={cn("font-bold", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
                                                         {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
                                                     </span>
                                                 </div>

@@ -319,7 +319,7 @@ export default function HistoryPage() {
                                                 </span>
                                             </div>
                                             {week.summary.isPaid && (
-                                                <div className="absolute -bottom-5 -right-2 w-24 h-24 rotate-[-10deg] opacity-70 pointer-events-none z-20">
+                                                <div className="absolute -bottom-2 -right-1 w-24 h-24 rotate-[-10deg] opacity-70 pointer-events-none z-20">
                                                     <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
                                                 </div>
                                             )}
@@ -372,24 +372,24 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 grid grid-cols-4 gap-2 text-xs">
-                                            <div className="flex flex-col items-center border-r border-gray-200">
-                                                <span className="text-[9px] font-bold text-gray-400 uppercase">HORAS</span>
-                                                <span className="font-black text-gray-800 text-sm">{formatValue(week.summary.totalHours)}</span>
+                                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-2 gap-y-2 gap-x-4">
+                                            <div className="flex items-center justify-between border-r border-gray-200 pr-4">
+                                                <span className="text-[9px] font-bold text-gray-400 uppercase">Horas</span>
+                                                <span className="font-black text-gray-800 text-xs">{formatValue(week.summary.totalHours)}</span>
                                             </div>
-                                            <div className="flex flex-col items-center border-r border-gray-200">
-                                                <span className="text-[8px] font-bold text-gray-400 uppercase">BALANCE</span>
-                                                <span className={`font-black text-sm ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatBalance(week.summary.weeklyBalance)}</span>
+                                            <div className="flex items-center justify-between pl-4">
+                                                <span className="text-[9px] font-bold text-gray-400 uppercase">Balance</span>
+                                                <span className={`font-black text-xs ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatBalance(week.summary.weeklyBalance)}</span>
                                             </div>
-                                            <div className="flex flex-col items-center border-r border-gray-200">
-                                                <span className="text-[8px] font-bold text-gray-400 uppercase">PENDIENTE</span>
-                                                <span className={`font-black text-sm ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                    {shouldShowPending(week.summary.startBalance) ? formatBalance(week.summary.startBalance) : '\u00A0'}
+                                            <div className="flex items-center justify-between border-r border-gray-200 pr-4">
+                                                <span className="text-[9px] font-bold text-gray-400 uppercase">Pendiente</span>
+                                                <span className={`font-black text-xs ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {shouldShowPending(week.summary.startBalance) ? formatBalance(week.summary.startBalance) : '0'}
                                                 </span>
                                             </div>
-                                            <div className="flex flex-col items-center">
-                                                <span className="text-[8px] font-bold text-gray-400 uppercase">A COBRAR</span>
-                                                <span className="font-black text-sm text-green-600">{formatMoney(week.summary.estimatedValue)}</span>
+                                            <div className="flex items-center justify-between pl-4">
+                                                <span className="text-[9px] font-bold text-gray-400 uppercase">A Cobrar</span>
+                                                <span className="font-black text-xs text-green-600">{formatMoney(week.summary.estimatedValue)}</span>
                                             </div>
                                         </div>
                                     </div>
