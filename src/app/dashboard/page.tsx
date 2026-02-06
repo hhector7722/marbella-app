@@ -465,138 +465,164 @@ export default function DashboardPage() {
         <div className="pb-24">
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
-                {/* ÚLTIMO CIERRE */}
-                <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden border border-gray-100">
-                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
-                            <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
-                        </div>
-                        <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        {/* Facturación */}
-                        <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[70px]">
-                            <span className="text-[10px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
-                            <span className="text-xl font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
+                {/* FILA 1: ÚLTIMO CIERRE (IZQ) vs TESORERÍA (DER) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                    {/* ÚLTIMO CIERRE */}
+                    <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col h-full">
+                        <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
+                                <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
+                            </div>
+                            <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
                         </div>
 
-                        {/* Venta Neta (Relleno Verde) */}
-                        <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[70px] text-white">
-                            <span className="text-[10px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
-                            <span className="text-xl font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
-                        </div>
+                        <div className="grid grid-cols-2 gap-3 flex-1">
+                            {/* Facturación */}
+                            <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[70px]">
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
+                                <span className="text-xl font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
+                            </div>
 
-                        {/* Ticket Medio (Relleno Azul) */}
-                        <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[70px] text-white">
-                            <span className="text-[10px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
-                            <span className="text-xl font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
-                        </div>
+                            {/* Venta Neta (Relleno Verde) */}
+                            <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[70px] text-white">
+                                <span className="text-[10px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
+                                <span className="text-xl font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
+                            </div>
 
-                        {/* Coste M.Obra con indicador (Dinámico) */}
-                        <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[70px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
-                            <div className="flex justify-between items-start">
-                                <span className="text-[10px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
-                                <div className="w-8 h-8 relative shrink-0">
-                                    <svg className="w-full h-full transform -rotate-90">
-                                        <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
-                                        <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
-                                    </svg>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-[7px] font-black text-white">{laborPercent.toFixed(0)}%</span>
+                            {/* Ticket Medio (Relleno Azul) */}
+                            <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[70px] text-white">
+                                <span className="text-[10px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
+                                <span className="text-xl font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                            </div>
+
+                            {/* Coste M.Obra con indicador (Dinámico) */}
+                            <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[70px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
+                                <div className="flex justify-between items-start">
+                                    <span className="text-[10px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
+                                    <div className="w-8 h-8 relative shrink-0">
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
+                                            <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+                                        </svg>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-[7px] font-black text-white">{laborPercent.toFixed(0)}%</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <span className="text-xl font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
                             </div>
-                            <span className="text-xl font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
+                        </div>
+                    </div>
+
+                    {/* COLUMNA DERECHA: CAJA INICIAL + CAMBIO */}
+                    <div className="flex flex-col gap-6">
+                        {/* CAJA INICIAL */}
+                        <div className="bg-white rounded-[2rem] p-4 shadow-xl flex flex-col border border-gray-100">
+                            {boxes.filter(b => b.type === 'operational').map(box => (
+                                <div key={box.id} className="space-y-3">
+                                    <button
+                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                        className="w-full p-4 rounded-2xl bg-emerald-500 border border-emerald-400 shadow-md hover:bg-emerald-600 transition-all cursor-pointer flex flex-col items-center justify-center text-white"
+                                    >
+                                        <span className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">Caja Inicial</span>
+                                        <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                    </button>
+
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center px-1">
+                                            <button
+                                                onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
+                                                className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                                            >
+                                                Movimientos
+                                                <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                            </button>
+                                            <Link href="/dashboard/treasury" className="text-[10px] font-bold text-[#36606F] bg-gray-50 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">Ver más</Link>
+                                        </div>
+
+                                        {isMovementsExpanded && (
+                                            <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 py-1">
+                                                {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1">Sin historial</p>}
+                                                {boxMovements.map(mov => (
+                                                    <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                                        <div className="flex items-center gap-1.5 overflow-hidden">
+                                                            {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
+                                                            <span className="truncate max-w-[120px] text-gray-600">{mov.notes || 'Sin nota'}</span>
+                                                        </div>
+                                                        <span className={cn("font-bold", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
+                                                            {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* CAJAS DE CAMBIO */}
+                        <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col flex-1 border-2 border-orange-400">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                                    <Wallet className="text-orange-400" size={20} /> Cajas de Cambio
+                                </h3>
+                                <Link href="/dashboard/treasury" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
+                            </div>
+                            <div className="space-y-3 flex-1 overflow-y-auto max-h-[120px] custom-scrollbar pr-1">
+                                {boxes.filter(b => b.type !== 'operational').length === 0 && (
+                                    <div className="flex-1 flex items-center justify-center text-gray-300 text-xs italic">
+                                        No hay otras cajas configuradas
+                                    </div>
+                                )}
+                                {boxes.filter(b => b.type !== 'operational').map(box => (
+                                    <button
+                                        key={box.id}
+                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                        className="w-full flex justify-between items-center p-4 rounded-xl bg-orange-50 border-2 border-orange-100 shadow-sm hover:bg-orange-100 transition-all cursor-pointer group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+                                            <span className="text-sm font-bold text-orange-900">{box.name}</span>
+                                        </div>
+                                        <span className="text-xl font-black text-orange-900">{box.current_balance.toFixed(2)}€</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    {/* CAJA INICIAL */}
-                    <div className="bg-white rounded-[2rem] p-4 shadow-xl flex flex-col h-full border border-gray-100">
-                        {boxes.filter(b => b.type === 'operational').map(box => (
-                            <div key={box.id} className="space-y-3">
-                                <button
-                                    onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                    className="w-full p-4 rounded-2xl bg-emerald-500 border border-emerald-400 shadow-md hover:bg-emerald-600 transition-all cursor-pointer flex flex-col items-center justify-center text-white"
-                                >
-                                    <span className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">Caja Inicial</span>
-                                    <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
-                                </button>
-
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center px-1">
-                                        <button
-                                            onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
-                                            className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
-                                        >
-                                            Movimientos
-                                            <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
-                                        </button>
-                                        <Link href="/dashboard/treasury" className="text-[10px] font-bold text-[#36606F] bg-gray-50 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">Ver más</Link>
-                                    </div>
-
-                                    {isMovementsExpanded && (
-                                        <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 py-1">
-                                            {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1">Sin historial</p>}
-                                            {boxMovements.map(mov => (
-                                                <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
-                                                    <div className="flex items-center gap-1.5 overflow-hidden">
-                                                        {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
-                                                        <span className="truncate max-w-[120px] text-gray-600">{mov.notes || 'Sin nota'}</span>
-                                                    </div>
-                                                    <span className={cn("font-bold", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
-                                                        {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* CAJAS DE CAMBIO */}
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full border-2 border-orange-400">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                                <Wallet className="text-orange-400" size={20} /> Cajas de Cambio
-                            </h3>
-                            <Link href="/dashboard/treasury" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
-                        </div>
-                        <div className="space-y-3 flex-1">
-                            {boxes.filter(b => b.type !== 'operational').length === 0 && (
-                                <div className="flex-1 flex items-center justify-center text-gray-300 text-xs italic">
-                                    No hay otras cajas configuradas
-                                </div>
-                            )}
-                            {boxes.filter(b => b.type !== 'operational').map(box => (
-                                <button
-                                    key={box.id}
-                                    onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                    className="w-full flex justify-between items-center p-4 rounded-xl bg-orange-50 border-2 border-orange-100 shadow-sm hover:bg-orange-100 transition-all cursor-pointer group"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                                        <span className="text-sm font-bold text-orange-900">{box.name}</span>
-                                    </div>
-                                    <span className="text-xl font-black text-orange-900">{box.current_balance.toFixed(2)}€</span>
-                                </button>
-                            ))}
-                        </div>
+                {/* FILA 2: ACCESOS DIRECTOS (IZQ) vs HORAS EXTRAS (DER) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                    {/* BOTONES DE NAVEGACIÓN (2x2) */}
+                    <div className="grid grid-cols-2 gap-4 h-full">
+                        <Link href="/dashboard/history" className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><History size={20} /></div>
+                            <div><span className="block text-sm font-bold text-white leading-tight">Cierres</span><span className="text-[10px] text-blue-100">Histórico</span></div>
+                        </Link>
+                        <Link href="/dashboard/labor" className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><TrendingUp size={20} /></div>
+                            <div><span className="block text-sm font-bold text-white leading-tight">Coste M.O.</span><span className="text-[10px] text-blue-100">Análisis</span></div>
+                        </Link>
+                        <button onClick={() => setIsStaffModalOpen(true)} className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3 w-full text-left">
+                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><Users size={20} /></div>
+                            <div><span className="block text-sm font-bold text-white leading-tight">Plantilla</span><span className="text-[10px] text-blue-100">Datos Staff</span></div>
+                        </button>
+                        <button onClick={() => setIsProductModalOpen(true)} className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3 w-full text-left">
+                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><Package size={20} /></div>
+                            <div><span className="block text-sm font-bold text-white leading-tight">Producto</span><span className="text-[10px] text-blue-100">Gestión Stock</span></div>
+                        </button>
                     </div>
 
                     {/* HORAS EXTRAS */}
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full">
+                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full border border-gray-100">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-bold text-gray-700 flex items-center gap-2"><Clock className="text-orange-500" size={20} /> Horas Extras</h3>
                             <Link href="/dashboard/overtime" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
                         </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1 max-h-[200px]">
                             {overtimeData.length === 0 && <div className="text-center py-10 text-gray-300 text-xs italic">Sin horas registradas esta semana</div>}
                             {overtimeData.map(week => {
                                 const isPaid = isWeekFullyPaid(week);
@@ -629,27 +655,6 @@ export default function DashboardPage() {
                             })}
                         </div>
                     </div>
-                </div>
-
-                {/* FOOTER */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Link href="/dashboard/history" className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center"><History size={20} /></div>
-                        <div><span className="block text-sm font-bold text-white">Cierres</span><span className="text-[10px] text-blue-100">Histórico</span></div>
-                    </Link>
-                    <Link href="/dashboard/labor" className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center"><TrendingUp size={20} /></div>
-                        <div><span className="block text-sm font-bold text-white">Coste M.O.</span><span className="text-[10px] text-blue-100">Análisis</span></div>
-                    </Link>
-                    <button onClick={() => setIsStaffModalOpen(true)} className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3 w-full text-left">
-                        <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center"><Users size={20} /></div>
-                        <div><span className="block text-sm font-bold text-white">Plantilla</span><span className="text-[10px] text-blue-100">Datos Staff</span></div>
-                    </button>
-                    {/* BOTÓN PRODUCTO (NUEVO) */}
-                    <button onClick={() => setIsProductModalOpen(true)} className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3 w-full text-left">
-                        <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center"><Package size={20} /></div>
-                        <div><span className="block text-sm font-bold text-white">Producto</span><span className="text-[10px] text-blue-100">Gestión Stock</span></div>
-                    </button>
                 </div>
             </div>
 
