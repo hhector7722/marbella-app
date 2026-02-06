@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { isSameWeek } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // --- TIPOS ---
 interface DailyLog {
@@ -266,17 +267,23 @@ export default function HistoryPage() {
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
                 {/* FILTRO COMPACTO - SOLO BOTÓN FILTRAR */}
                 <div className="flex items-center justify-end px-1 mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         {/* Botón Filtro */}
                         <button
                             onClick={() => setShowFilter(true)}
-                            className={`p-1.5 rounded-lg transition-all ${isFilterActive ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-400'}`}
+                            className={cn(
+                                "h-12 w-12 flex items-center justify-center rounded-xl transition-all active:scale-95 duration-150",
+                                isFilterActive ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-white border border-zinc-100 text-zinc-400 shadow-sm'
+                            )}
                         >
-                            <Filter size={16} />
+                            <Filter size={20} />
                         </button>
                         {isFilterActive && (
-                            <button onClick={clearFilter} className="p-1.5 bg-red-100 text-red-500 rounded-lg">
-                                <X size={16} />
+                            <button
+                                onClick={clearFilter}
+                                className="h-12 w-12 flex items-center justify-center bg-zinc-100 text-zinc-400 rounded-xl transition-all active:scale-95 duration-150 border border-zinc-200"
+                            >
+                                <X size={20} />
                             </button>
                         )}
                     </div>
@@ -301,10 +308,13 @@ export default function HistoryPage() {
                                             <div className="h-px bg-white/30 flex-1"></div>
                                         </div>
                                     )}
-                                    <div className="bg-white rounded-[2rem] p-4 shadow-xl hover:shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-4 relative" style={{ animationDelay: `${idx * 50}ms` }}>
-                                        <div className="flex justify-between items-end mb-2 px-1">
+                                    <div className={cn(
+                                        "bg-white rounded-2xl p-6 shadow-sm border border-zinc-100",
+                                        "transition-all duration-300 animate-in slide-in-from-bottom-4 relative"
+                                    )} style={{ animationDelay: `${idx * 50}ms` }}>
+                                        <div className="flex justify-between items-end mb-4 px-1">
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">
                                                     SEMANA {week.weekNumber}
                                                 </span>
                                             </div>
@@ -393,17 +403,56 @@ export default function HistoryPage() {
             {showFilter && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white w-full max-w-xs rounded-[2rem] p-6 shadow-2xl transform transition-all scale-100">
-                        <div className="flex justify-between items-center mb-6"><h3 className="text-lg font-black text-gray-800">Filtrar Fecha</h3><button onClick={() => setShowFilter(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-500"><X size={16} /></button></div>
-                        <div className="space-y-4">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-black text-zinc-800">Filtrar Fecha</h3>
+                            <button
+                                onClick={() => setShowFilter(false)}
+                                className="h-10 w-10 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-95"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="space-y-6">
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Año</label>
-                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">{[2024, 2025, 2026, 2027].map(year => (<button key={year} onClick={() => setFilterYear(year)} className={`px-4 py-2 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${filterYear === year ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`}>{year}</button>))}</div>
+                                <label className="block text-xs font-bold text-zinc-400 uppercase mb-3 px-1">Año</label>
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                    {[2024, 2025, 2026, 2027].map(year => (
+                                        <button
+                                            key={year}
+                                            onClick={() => setFilterYear(year)}
+                                            className={cn(
+                                                "h-12 px-5 rounded-xl text-sm font-bold border transition-all active:scale-95 whitespace-nowrap",
+                                                filterYear === year ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-zinc-600 border-zinc-200 hover:border-blue-400'
+                                            )}
+                                        >
+                                            {year}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mes</label>
-                                <div className="grid grid-cols-3 gap-2">{Array.from({ length: 12 }).map((_, i) => (<button key={i} onClick={() => setFilterMonth(i)} className={`py-2 rounded-lg text-xs font-bold border transition-colors capitalize ${filterMonth === i ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-white hover:border-blue-200'}`}>{new Date(0, i).toLocaleDateString('es-ES', { month: 'short' })}</button>))}</div>
+                                <label className="block text-xs font-bold text-zinc-400 uppercase mb-3 px-1">Mes</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {Array.from({ length: 12 }).map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setFilterMonth(i)}
+                                            className={cn(
+                                                "h-12 rounded-xl text-xs font-bold border transition-all active:scale-95 capitalize",
+                                                filterMonth === i ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-white hover:border-blue-200'
+                                            )}
+                                        >
+                                            {new Date(0, i).toLocaleDateString('es-ES', { month: 'short' })}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <button onClick={applyFilter} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mt-4"><Check size={18} /> Aplicar Filtro</button>
+                            <button
+                                onClick={applyFilter}
+                                className="w-full h-14 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"
+                            >
+                                <Check size={20} /> Aplicar Filtro
+                            </button>
                         </div>
                     </div>
                 </div>

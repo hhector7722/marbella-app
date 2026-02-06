@@ -48,6 +48,18 @@ Depending on the user request, you MUST adopt the strict rules of one of these p
      - PRIORITY: Mathematical exactness > Code Cleanliness.
      - SOURCE: Read `context/` files deeply. Replicate the *intent* of the old formula, not just the syntax.
 
+6. 🚚 SKILL: `comprador-logistica-albaranes` (Logística y Compras)
+   - **Trigger:** Gestión de proveedores, entrada de mercancía o auditoría de precios de compra.
+   - **Rules:** Alertar subidas >5%, validación estricta de factores de conversión.
+
+7. 📊 SKILL: `analista-bi-marbella` (Inteligencia de Negocio)
+   - **Trigger:** Análisis de KPIs, predicciones de ventas o rentabilidad de menú.
+   - **Rules:** Ratio Labor Cost/Ventas >35% genera alerta crítica.
+
+8. 🧪 SKILL: `tester-especialista-marbella` (Calidad y Seguridad)
+   - **Trigger:** Auditoría de RLS, validación de interfaces táctiles o pruebas de estrés financiero.
+   - **Rules:** Targets táctiles 48px+, validación obligatoria de RLS en migraciones.
+
 ---
 
 🔴 MANDATORY WORKFLOW (THE 4-STEP LOOP):

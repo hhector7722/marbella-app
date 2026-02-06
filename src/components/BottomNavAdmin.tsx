@@ -72,7 +72,7 @@ export default function BottomNavAdmin() {
             )}
 
             {/* MOBILE: Bottom Bar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-around items-center px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 pb-safe bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-around items-center px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {adminItems.slice(0, 4).map((item) => (
                     <Link key={item.name} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 ${getClass(item.href)}`}>
                         <item.icon size={20} />

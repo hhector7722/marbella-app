@@ -10,7 +10,9 @@ import {
     Users,
     Calendar,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    UserPlus,
+    Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -117,12 +119,14 @@ export default function ScheduleEditorPage() {
     const [activity, setActivity] = useState('');
     const [shifts, setShifts] = useState<any[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
 
     // Estado para detectar cambios sin guardar
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    // Modal de calendario
+    // Modales
     const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
 
     useEffect(() => {
@@ -154,26 +158,17 @@ export default function ScheduleEditorPage() {
                 .gte('start_time', startOfDay)
                 .lte('start_time', endOfDay);
 
-            // 3. Crear estructura con todos los empleados
+            // 3. Crear estructura con empleados que tienen turnos
             const shiftMap = new Map(existingShifts?.map(s => [s.user_id, s]) || []);
 
-            const allShifts = employees?.map(emp => {
+            const activeShifts = employees?.filter(emp => shiftMap.has(emp.id)).map(emp => {
                 const existing = shiftMap.get(emp.id);
-                if (existing) {
-                    return {
-                        employeeId: emp.id,
-                        name: `${emp.first_name} ${emp.last_name || ''}`,
-                        start: new Date(existing.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                        end: new Date(existing.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                        active: true
-                    };
-                }
                 return {
                     employeeId: emp.id,
                     name: `${emp.first_name} ${emp.last_name || ''}`,
-                    start: '09:00',
-                    end: '17:00',
-                    active: false
+                    start: new Date(existing!.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    end: new Date(existing!.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    active: true
                 };
             }) || [];
 
@@ -182,7 +177,8 @@ export default function ScheduleEditorPage() {
                 setActivity(existingShifts[0].activity);
             }
 
-            setShifts(allShifts);
+            setShifts(activeShifts);
+            setAvailableProfiles(employees || []);
             setHasUnsavedChanges(false);
         } catch (error) {
             console.error(error);
@@ -199,15 +195,38 @@ export default function ScheduleEditorPage() {
         setHasUnsavedChanges(true);
     };
 
-    const toggleShiftActive = (index: number) => {
-        const updated = [...shifts];
-        updated[index].active = !updated[index].active;
+    const handleAddEmployee = (profileId: string) => {
+        const profile = availableProfiles.find(p => p.id === profileId);
+        if (!profile) return;
+
+        // Verificar si ya está en la lista
+        if (shifts.some(s => s.employeeId === profileId)) {
+            toast.error('Este empleado ya está en el horario');
+            return;
+        }
+
+        const newShift = {
+            employeeId: profile.id,
+            name: `${profile.first_name} ${profile.last_name || ''}`,
+            start: '09:00',
+            end: '17:00',
+            active: true
+        };
+
+        setShifts([...shifts, newShift]);
+        setHasUnsavedChanges(true);
+        setEditingIndex(shifts.length);
+        setShowAddModal(false);
+    };
+
+    const handleRemoveEmployee = (index: number) => {
+        const updated = shifts.filter((_, i) => i !== index);
         setShifts(updated);
         setHasUnsavedChanges(true);
-        if (updated[index].active) {
-            setEditingIndex(index);
-        } else if (editingIndex === index) {
+        if (editingIndex === index) {
             setEditingIndex(null);
+        } else if (editingIndex !== null && editingIndex > index) {
+            setEditingIndex(editingIndex - 1);
         }
     };
 
@@ -344,6 +363,14 @@ export default function ScheduleEditorPage() {
                     >
                         <Save size={12} /> GUARDAR
                     </button>
+                    {/* Botón Añadir Empleado */}
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 shrink-0"
+                        title="Añadir Empleado"
+                    >
+                        <Plus size={24} strokeWidth={3} />
+                    </button>
                 </div>
             </div>
 
@@ -373,19 +400,26 @@ export default function ScheduleEditorPage() {
                     {/* FILAS DE EMPLEADOS */}
                     <div className="bg-white">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex h-8 md:h-9 transition-colors ${editingIndex === idx ? 'bg-blue-50/50' : ''}`}>
-                                {/* Columna Nombre (Botón de Toggle) */}
-                                <div
-                                    onClick={() => toggleShiftActive(idx)}
-                                    className="w-20 md:w-32 px-3 flex items-center justify-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors shrink-0"
-                                >
-                                    <span className={`font-black text-[9px] md:text-[10px] truncate uppercase tracking-tight transition-colors ${shift.active ? (editingIndex === idx ? 'text-blue-600' : 'text-black') : 'text-gray-300'}`}>
+                            <div key={shift.employeeId} className={`flex h-8 md:h-9 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/50' : ''}`}>
+                                {/* Columna Nombre */}
+                                <div className="w-20 md:w-32 px-3 flex items-center justify-between shrink-0 border-r border-gray-100">
+                                    <span className={`font-black text-[9px] md:text-[10px] truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-blue-600' : 'text-black'}`}>
                                         {shift.name.split(' ')[0]}
                                     </span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                        className="ml-auto w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-700 transition-colors shrink-0 shadow-sm active:scale-90"
+                                        title="Eliminar"
+                                    >
+                                        <X size={14} strokeWidth={4} />
+                                    </button>
                                 </div>
 
-                                {/* Zona de Barras - Siempre editable si está activa */}
-                                <div className="flex-1 relative">
+                                {/* Zona de Barras */}
+                                <div
+                                    className="flex-1 relative cursor-pointer group"
+                                    onClick={() => setEditingIndex(idx)}
+                                >
                                     {/* Guías de fondo */}
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
@@ -404,9 +438,9 @@ export default function ScheduleEditorPage() {
                         ))}
                     </div>
 
-                    {/* FILA DE TOTALES - SIEMPRE VISIBLE - FONDO AMARILLO CLARO */}
+                    {/* FILA DE TOTALES */}
                     <div className="flex bg-yellow-100 border-2 border-yellow-300 rounded-b-xl sticky bottom-0 shadow-inner">
-                        <div className="w-20 md:w-32 p-1 font-black text-black text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0">
+                        <div className="w-20 md:w-32 p-1 font-black text-black text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-yellow-200">
                             SUM
                         </div>
                         <div className="flex-1 relative h-5 md:h-6 flex">
@@ -423,10 +457,10 @@ export default function ScheduleEditorPage() {
                 </div>
             </div>
 
-            {/* BARRA DE EDICIÓN FLOTANTE - SIEMPRE EDITABLE */}
-            {editingIndex !== null && shifts[editingIndex]?.active && (
+            {/* BARRA DE EDICIÓN FLOTANTE */}
+            {editingIndex !== null && shifts[editingIndex] && (
                 <div className="mt-3 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="h-10 relative bg-white/90 rounded-full shadow-lg border border-emerald-400 flex items-center overflow-hidden backdrop-blur-sm">
+                    <div className="h-10 relative bg-white/95 rounded-full shadow-lg border border-emerald-400 flex items-center overflow-hidden backdrop-blur-sm">
                         <div className="flex-1 relative h-full">
                             <div className="absolute inset-0 flex">
                                 {hoursHeader.map((_, i) => (
@@ -456,7 +490,6 @@ export default function ScheduleEditorPage() {
                             </button>
                         </div>
 
-                        {/* Navegación de mes */}
                         <div className="flex items-center justify-between p-4">
                             <button
                                 onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
@@ -475,14 +508,12 @@ export default function ScheduleEditorPage() {
                             </button>
                         </div>
 
-                        {/* Grid de días */}
                         <div className="p-4 pt-0">
                             <div className="grid grid-cols-7 gap-1 mb-2">
                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
                                     <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
                                 ))}
                             </div>
-
                             <div className="grid grid-cols-7 gap-1">
                                 {generateCalendarDays().map((day, i) => (
                                     <button
@@ -503,6 +534,42 @@ export default function ScheduleEditorPage() {
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Añadir Empleado */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowAddModal(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 bg-emerald-500 text-white flex items-center justify-between">
+                            <h3 className="font-black text-sm uppercase tracking-wider">Añadir Staff</h3>
+                            <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                                <X size={18} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto p-2 grid gap-1">
+                            {availableProfiles
+                                .filter(p => !shifts.some(s => s.employeeId === p.id))
+                                .map(profile => (
+                                    <button
+                                        key={profile.id}
+                                        onClick={() => handleAddEmployee(profile.id)}
+                                        className="flex items-center gap-3 p-3 hover:bg-emerald-50 rounded-xl transition-all group text-left border border-transparent hover:border-emerald-100"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                            <UserPlus size={16} />
+                                        </div>
+                                        <span className="font-bold text-gray-700 text-sm">{profile.first_name} {profile.last_name}</span>
+                                    </button>
+                                ))
+                            }
+                            {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).length === 0 && (
+                                <div className="p-8 text-center text-gray-400 text-xs font-medium italic">
+                                    Todos los empleados están en el horario
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

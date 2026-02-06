@@ -13,11 +13,15 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Gestión de Staff:** Listado y detalles de empleados.
 - [x] **Control de Horas:** Sistema de fichaje (`time_logs`) operativo.
 - [x] **Histórico de Extras:** Vista de semanales con lógica de arrastre (Client-side).
-- [x] **Protocolo AI:** Integración de habilidades especializadas en carpeta `.agent`.
-
+- [x] **Protocolo AI:** Integración de habilidades especializadas.
+- [x] **Nuevas Skills:** Creación e integración de `comprador-logistica-albaranes`, `analista-bi-marbella` (alerta ratio 35%) y `tester-especialista-marbella`.
 - [x] Auditoría de Lógica: Comparando reglas `.agent` con implementación actual para evitar regresiones.
 - [x] Refactorización de Utilidades: Centralizando cálculos de dinero y tiempo en Server Actions.
 - [x] Optimización UI Kiosco: Ajustar botones y targets táctiles al estándar de 48px+ en navegación y fichaje.
+- [x] Refinamiento Editor de Horarios: Implementación de inicio selectivo, botones de añadir/eliminar circularmente y modal de selección de personal.
+- [x] Optimización UI Móvil: Aumento de altura en navegación inferior (h-20) y soporte para Safe Area.
+- [x] Refinamiento Visual de Horarios: Colores en tiempos (entrada verde/salida roja), orden invertido y uso de solo nombres de pila.
+- [x] Interconectividad Staff: Enlace directo a recetas en el dashboard de personal.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.

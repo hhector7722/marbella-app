@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Play, Square, CalendarDays,
@@ -13,6 +14,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
 import { differenceInMinutes } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -67,6 +69,7 @@ const roundHoursValue = (hours: number): number => {
 
 export default function StaffDashboard() {
     const supabase = createClient();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
@@ -336,11 +339,22 @@ export default function StaffDashboard() {
     );
 
     const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group">
-            <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white shadow-sm`}>
-                <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+        <button
+            onClick={onClick}
+            className={cn(
+                "flex flex-col items-center justify-center gap-1.5 w-full h-full",
+                "bg-white rounded-2xl shadow-sm border border-zinc-100",
+                "active:scale-95 transition-all duration-150 p-2 group",
+                "min-h-[88px]"
+            )}
+        >
+            <div className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm",
+                color
+            )}>
+                <Icon size={24} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
             </div>
-            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
+            <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">{label}</span>
         </button>
     );
 
@@ -453,16 +467,19 @@ export default function StaffDashboard() {
                 {/* COLUMNA DERECHA */}
                 <div className="space-y-4 md:space-y-6">
                     <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
-                        <button onClick={openConfirmation} disabled={status === 'finished' || actionLoading}
-                            className={`w-full h-12 md:h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-200
-                                ${status === 'idle' ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200' : ''}
-                                ${status === 'working' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' : ''}
-                                ${status === 'finished' ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-100' : ''}
-                            `}>
-                            {actionLoading ? <div className="w-5 h-5 md:w-6 md:h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
-                                <><span className="text-base md:text-xl font-black uppercase tracking-wider">
-                                    {status === 'idle' ? 'FICHAR ENTRADA' : (status === 'working' ? 'FICHAR SALIDA' : 'JORNADA FINALIZADA')}
-                                </span></>
+                        <button
+                            onClick={openConfirmation}
+                            disabled={status === 'finished' || actionLoading}
+                            className={cn(
+                                "w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
+                                status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200",
+                                status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
+                                status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
+                            )}>
+                            {actionLoading ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
+                                <span className="text-xl font-black uppercase tracking-wider">
+                                    {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
+                                </span>
                             )}
                         </button>
                         {status !== 'idle' && (
@@ -513,9 +530,9 @@ export default function StaffDashboard() {
                         <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
                             <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
 
-                            {/* --- BOTÓN RECETAS: GORRO SIN RELLENO Y CONTORNO NEGRO --- */}
+                            {/* --- BOTÓN RECETAS: REDIRECCIONA A /recipes --- */}
                             <button
-                                onClick={() => toast.info("Abriendo recetario...")}
+                                onClick={() => router.push('/recipes')}
                                 className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50"
                             >
                                 <ChefHat
@@ -540,10 +557,23 @@ export default function StaffDashboard() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center">
-                        <h3 className="text-xl font-black text-gray-800 mb-4">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setShowModal(false)} className="py-3 px-4 bg-gray-100 text-gray-600 font-bold rounded-xl">Cancelar</button>
-                            <button onClick={handleClockAction} className="py-3 px-4 bg-blue-600 text-white font-bold rounded-xl">Confirmar</button>
+                        <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleClockAction}
+                                className={cn(
+                                    "h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg",
+                                    modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200"
+                                )}
+                            >
+                                Confirmar
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -569,20 +599,35 @@ export default function StaffDashboard() {
                                 : 'Gestión Stock'}
                         </h3>
 
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {activeMenu === 'info' && !infoSubMenu && (
                                 <>
-                                    <button onClick={() => setInfoSubMenu('contactos')} className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl flex items-center gap-3 transition-colors group">
-                                        <Phone size={20} className="text-gray-400 group-hover:text-blue-500" />
-                                        <span className="font-bold text-gray-600 group-hover:text-blue-700">Contactos de Interés</span>
+                                    <button
+                                        onClick={() => setInfoSubMenu('contactos')}
+                                        className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500">
+                                            <Phone size={20} />
+                                        </div>
+                                        <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Contactos</span>
                                     </button>
-                                    <button onClick={() => setInfoSubMenu('convenio')} className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl flex items-center gap-3 transition-colors group">
-                                        <FileText size={20} className="text-gray-400 group-hover:text-blue-500" />
-                                        <span className="font-bold text-gray-600 group-hover:text-blue-700">Convenio</span>
+                                    <button
+                                        onClick={() => setInfoSubMenu('convenio')}
+                                        className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500">
+                                            <FileText size={20} />
+                                        </div>
+                                        <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Convenio</span>
                                     </button>
-                                    <button onClick={() => setInfoSubMenu('conducta')} className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl flex items-center gap-3 transition-colors group">
-                                        <Scale size={20} className="text-gray-400 group-hover:text-blue-500" />
-                                        <span className="font-bold text-gray-600 group-hover:text-blue-700">Código de Conducta</span>
+                                    <button
+                                        onClick={() => setInfoSubMenu('conducta')}
+                                        className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500">
+                                            <Scale size={20} />
+                                        </div>
+                                        <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Código de Conducta</span>
                                     </button>
                                 </>
                             )}

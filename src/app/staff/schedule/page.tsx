@@ -110,7 +110,7 @@ export default function StaffSchedulePage() {
             .select('*')
             .eq('is_published', true)
             .eq('user_id', userId)
-            .order('start_time', { ascending: false });
+            .order('start_time', { ascending: true });
 
         if (error) console.error('Error fetching shifts:', error);
         if (data) setShifts(data);
@@ -151,11 +151,11 @@ export default function StaffSchedulePage() {
         };
     };
 
-    // Nombre del empleado seleccionado
+    // Nombre del empleado seleccionado (Solo nombre de pila)
     const getSelectedEmployeeName = () => {
         if (!selectedEmployeeId) return 'Mis Turnos';
         const emp = employees.find(e => e.id === selectedEmployeeId);
-        return emp ? `${emp.first_name} ${emp.last_name || ''}` : 'Mis Turnos';
+        return emp ? emp.first_name : 'Mis Turnos';
     };
 
     // Generar días del calendario
@@ -279,9 +279,11 @@ export default function StaffSchedulePage() {
                                                 </div>
                                                 <div className="flex-1 flex items-center gap-3">
                                                     <span className="text-xs font-medium text-gray-500">{shift.activity || 'Turno'}</span>
-                                                    <span className="text-sm font-black text-gray-800">
-                                                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 text-sm font-black">
+                                                        <span className="text-green-600">{formatTime(shift.start_time)}</span>
+                                                        <span className="text-gray-800">-</span>
+                                                        <span className="text-red-500">{formatTime(shift.end_time)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -315,18 +317,20 @@ export default function StaffSchedulePage() {
                                             return (
                                                 <div
                                                     key={shift.id}
-                                                    className={`bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-200 flex items-center gap-3 ${userRole === 'manager' ? 'cursor-pointer hover:border-purple-300 hover:shadow-md active:scale-[0.99]' : ''} transition-all`}
+                                                    className={`bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-100 flex items-center gap-3 ${userRole === 'manager' ? 'cursor-pointer hover:border-purple-300 hover:shadow-md active:scale-[0.99]' : ''} transition-all`}
                                                     onClick={() => userRole === 'manager' && router.push(`/staff/schedule/editor?date=${shiftDate}`)}
                                                 >
-                                                    <div className="bg-gray-100 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-gray-200">
+                                                    <div className="bg-gray-50 rounded-xl px-2.5 py-1.5 text-center min-w-[50px] border border-gray-100">
                                                         <span className="text-lg font-black text-gray-600 leading-none">{dayNumber}</span>
                                                         <span className="block text-[8px] font-bold text-gray-400 uppercase">{monthName}</span>
                                                     </div>
                                                     <div className="flex-1 flex items-center gap-3">
                                                         <span className="text-xs font-medium text-gray-500">{shift.activity || 'Turno'}</span>
-                                                        <span className="text-sm font-black text-gray-800">
-                                                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                                        </span>
+                                                        <div className="flex items-center gap-1.5 text-sm font-black">
+                                                            <span className="text-green-600">{formatTime(shift.start_time)}</span>
+                                                            <span className="text-gray-800">-</span>
+                                                            <span className="text-red-500">{formatTime(shift.end_time)}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
