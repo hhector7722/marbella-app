@@ -8,12 +8,13 @@ import {
     Plus,
     ArrowLeft,
     Users,
-    Calendar,
     ChevronLeft,
     ChevronRight,
     UserPlus,
     Trash2
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -81,29 +82,32 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     return (
         <div
             ref={barRef}
-            className="absolute top-1 bottom-1 bg-emerald-400/30 rounded-full border border-emerald-500/50 shadow-sm flex items-center justify-between group cursor-grab active:cursor-grabbing hover:bg-emerald-400/40 transition-all z-10 touch-none"
+            className="absolute top-1.5 bottom-1.5 bg-emerald-100/50 flex items-center group cursor-grab active:cursor-grabbing hover:bg-emerald-200/60 transition-all z-10 touch-none overflow-hidden"
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
-            {/* Tirador Izquierda */}
-            <div className="w-4 h-full cursor-ew-resize hover:bg-black/10 rounded-l-full flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'left')}>
-                <div className="w-0.5 h-3 bg-white/50 rounded-full" />
+            {/* Tirador Izquierda (transparente) */}
+            <div className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
+
+            {/* Mini-barra Entrada (Verde) */}
+            <div className="absolute left-0 top-0 bottom-0 min-w-[32px] bg-emerald-500 flex items-center justify-center shrink-0 z-20">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-1">
+                    {shift.start}
+                </span>
             </div>
 
-            {/* Hora Entrada (movida hacia la derecha, fuente más grande) */}
-            <span className="absolute left-2.5 text-[9px] md:text-[10px] font-black text-white pointer-events-none select-none drop-shadow-md">
-                {shift.start}
-            </span>
+            {/* Espacio Central */}
+            <div className="flex-1 h-full" />
 
-            {/* Hora Salida (movida hacia la izquierda, fuente más grande) */}
-            <span className="absolute right-2.5 text-[9px] md:text-[10px] font-black text-red-600 pointer-events-none select-none drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
-                {shift.end}
-            </span>
-
-            {/* Tirador Derecha */}
-            <div className="w-4 h-full cursor-ew-resize hover:bg-black/10 rounded-r-full flex items-center justify-center shrink-0" onPointerDown={(e) => handlePointerDown(e, 'right')}>
-                <div className="w-0.5 h-3 bg-white/50 rounded-full" />
+            {/* Mini-barra Salida (Roja) */}
+            <div className="absolute right-0 top-0 bottom-0 min-w-[32px] bg-red-600 flex items-center justify-center shrink-0 z-20">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-1">
+                    {shift.end}
+                </span>
             </div>
+
+            {/* Tirador Derecha (transparente) */}
+            <div className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
         </div>
     );
 };
@@ -345,10 +349,9 @@ export default function ScheduleEditorPage() {
                     {/* Fecha con botón de calendario */}
                     <button
                         onClick={() => setShowCalendarModal(true)}
-                        className="text-black text-[10px] px-3 h-7 rounded-lg font-black bg-white/90 hover:bg-white flex items-center gap-1 transition-colors"
+                        className="text-black text-[10px] px-3 h-7 rounded-lg font-black bg-white/90 hover:bg-white flex items-center gap-1 transition-colors capitalize"
                     >
-                        <Calendar size={12} />
-                        {new Date(date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {date && format(new Date(date), "EEE d 'de' MMM", { locale: es }).replace('.', '')}
                     </button>
                     <input
                         type="text"
@@ -357,35 +360,25 @@ export default function ScheduleEditorPage() {
                         className="text-black text-[10px] px-2 h-7 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-28 md:w-32 font-black bg-white/90"
                         placeholder="Actividad"
                     />
+                    {/* Botón Guardar */}
                     <button
                         onClick={handleSave}
                         className="bg-green-500 hover:bg-green-600 text-white px-3 h-7 rounded-lg font-black flex items-center justify-center gap-1 shadow-md transition-transform active:scale-95 text-[9px] uppercase tracking-wider"
                     >
                         <Save size={12} /> GUARDAR
                     </button>
-                    {/* Botón Añadir Empleado */}
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 shrink-0"
-                        title="Añadir Empleado"
-                    >
-                        <Plus size={24} strokeWidth={3} />
-                    </button>
                 </div>
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-gray-200 shadow-xl bg-white mt-2">
-                <div className="w-full flex flex-col">
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-zinc-200 shadow-xl bg-white mt-1">
+                <div className="w-full flex flex-col relative">
                     {/* ENCABEZADO DE HORAS - ROJO */}
-                    <div className="flex bg-red-500 text-white border-b border-red-600">
-                        <div
-                            className="w-20 md:w-32 p-1 font-black text-[8px] md:text-[10px] flex items-center gap-1 uppercase tracking-tighter shrink-0 cursor-pointer hover:bg-red-600 transition-colors"
-                            onClick={() => setShowCalendarModal(true)}
-                        >
-                            <Calendar size={10} />
+                    <div className="flex bg-red-500 text-white border-b border-red-600 sticky top-0 z-30">
+                        <div className="w-20 md:w-32 p-1 font-black text-[8px] md:text-[10px] flex items-center justify-center uppercase tracking-tighter shrink-0">
+                            TRABAJADOR
                         </div>
-                        <div className="flex-1 relative h-5 flex">
+                        <div className="flex-1 relative h-6 flex">
                             {hoursHeader.map((hour, i) => (
                                 <div
                                     key={hour}
@@ -395,24 +388,36 @@ export default function ScheduleEditorPage() {
                                 </div>
                             ))}
                         </div>
+                        <div className="w-10 md:w-12 shrink-0 border-l border-red-600" />
+                    </div>
+
+                    {/* FILA DE TOTALES - SEGUNDA POSICIÓN FIJA */}
+                    <div className="flex bg-yellow-100 border-b border-yellow-200 sticky top-6 z-20 shadow-sm">
+                        <div className="w-20 md:w-32 p-1 font-black text-black text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-yellow-200">
+                            TOT
+                        </div>
+                        <div className="flex-1 relative h-6 flex">
+                            {totals.map((count, i) => (
+                                <div
+                                    key={i}
+                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-black' : 'text-gray-300'}`}
+                                >
+                                    {count > 0 ? count : ''}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-10 md:w-12 shrink-0 border-l border-yellow-200" />
                     </div>
 
                     {/* FILAS DE EMPLEADOS */}
                     <div className="bg-white">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex h-8 md:h-9 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/50' : ''}`}>
+                            <div key={shift.employeeId} className={`flex h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/20' : ''}`}>
                                 {/* Columna Nombre */}
-                                <div className="w-20 md:w-32 px-3 flex items-center justify-between shrink-0 border-r border-gray-100">
+                                <div className="w-20 md:w-32 px-2 flex items-center shrink-0 border-r border-gray-100 overflow-hidden">
                                     <span className={`font-black text-[9px] md:text-[10px] truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-blue-600' : 'text-black'}`}>
-                                        {shift.name.split(' ')[0]}
+                                        {shift.name}
                                     </span>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                        className="ml-auto w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-700 transition-colors shrink-0 shadow-sm active:scale-90"
-                                        title="Eliminar"
-                                    >
-                                        <X size={14} strokeWidth={4} />
-                                    </button>
                                 </div>
 
                                 {/* Zona de Barras */}
@@ -434,24 +439,29 @@ export default function ScheduleEditorPage() {
                                         />
                                     )}
                                 </div>
+
+                                {/* Columna Eliminar */}
+                                <div className="w-10 md:w-12 flex items-center justify-center border-l border-gray-100">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                        className="w-7 h-7 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shrink-0 active:scale-90"
+                                        title="Eliminar"
+                                    >
+                                        <X size={14} strokeWidth={4} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
-                    </div>
 
-                    {/* FILA DE TOTALES */}
-                    <div className="flex bg-yellow-100 border-2 border-yellow-300 rounded-b-xl sticky bottom-0 shadow-inner">
-                        <div className="w-20 md:w-32 p-1 font-black text-black text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-yellow-200">
-                            SUM
-                        </div>
-                        <div className="flex-1 relative h-5 md:h-6 flex">
-                            {totals.map((count, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-black' : 'text-gray-300'}`}
-                                >
-                                    {count > 0 ? count : ''}
-                                </div>
-                            ))}
+                        {/* Fila Añadir Trabajador - Misma altura que celdas */}
+                        <div className="flex h-9 md:h-10 border-b border-gray-100 group">
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="flex-1 flex items-center justify-center gap-2 bg-emerald-50/30 hover:bg-emerald-50 transition-colors text-emerald-600 group"
+                            >
+                                <Plus size={18} strokeWidth={4} className="group-hover:scale-110 transition-transform" />
+                                <span className="font-black text-[10px] uppercase tracking-wider">Añadir Trabajador</span>
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-05
+**Última actualización:** 2026-02-06
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -24,6 +24,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Interconectividad Staff: Enlace directo a recetas en el dashboard de personal.
 - [x] Refinamiento Dashboard Admin (Batch 2): Cuadrícula 2x2 en cierres, colores restaurados y rediseño de tarjeta de caja inicial.
 - [x] Optimización UI Staff: Resúmenes semanales en formato horizontal compacto y ajuste de posición del sello de pagado.
+- [x] Refinamiento Estético Editor de Horarios: Barras sin contorno con mini-barras para entrada (verde) y salida (roja), fila de totales fija en 2ª posición, columna de eliminación a la derecha e integración de botón "+" como fila.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.
