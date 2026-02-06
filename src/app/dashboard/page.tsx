@@ -466,9 +466,9 @@ export default function DashboardPage() {
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
                 {/* FILA 1: ÚLTIMO CIERRE (IZQ) vs TESORERÍA (DER) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     {/* ÚLTIMO CIERRE */}
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col h-full">
+                    <div className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col">
                         <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
                             <div className="flex items-center gap-3">
                                 <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
@@ -479,38 +479,38 @@ export default function DashboardPage() {
 
                         <div className="grid grid-cols-2 gap-3 flex-1">
                             {/* Facturación */}
-                            <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[70px]">
-                                <span className="text-[10px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
-                                <span className="text-xl font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
+                            <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[50px]">
+                                <span className="text-[9px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
+                                <span className="text-lg font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
                             </div>
 
                             {/* Venta Neta (Relleno Verde) */}
-                            <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[70px] text-white">
-                                <span className="text-[10px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
-                                <span className="text-xl font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
+                            <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[50px] text-white">
+                                <span className="text-[9px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
+                                <span className="text-lg font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
                             </div>
 
                             {/* Ticket Medio (Relleno Azul) */}
-                            <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[70px] text-white">
-                                <span className="text-[10px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
-                                <span className="text-xl font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                            <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[50px] text-white">
+                                <span className="text-[9px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
+                                <span className="text-lg font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
                             </div>
 
                             {/* Coste M.Obra con indicador (Dinámico) */}
-                            <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[70px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
+                            <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[50px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
                                 <div className="flex justify-between items-start">
-                                    <span className="text-[10px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
-                                    <div className="w-8 h-8 relative shrink-0">
+                                    <span className="text-[9px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
+                                    <div className="w-7 h-7 relative shrink-0">
                                         <svg className="w-full h-full transform -rotate-90">
-                                            <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
-                                            <circle cx="50%" cy="50%" r={radius} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+                                            <circle cx="50%" cy="50%" r={11} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
+                                            <circle cx="50%" cy="50%" r={11} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={2 * Math.PI * 11} strokeDashoffset={(2 * Math.PI * 11) - (laborPercent / 100) * (2 * Math.PI * 11)} strokeLinecap="round" />
                                         </svg>
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-[7px] font-black text-white">{laborPercent.toFixed(0)}%</span>
+                                            <span className="text-[6px] font-black text-white">{laborPercent.toFixed(0)}%</span>
                                         </div>
                                     </div>
                                 </div>
-                                <span className="text-xl font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
+                                <span className="text-lg font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
                             </div>
                         </div>
                     </div>
@@ -562,14 +562,7 @@ export default function DashboardPage() {
                             ))}
                         </div>
 
-                        {/* CAJAS DE CAMBIO */}
                         <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col flex-1 border-2 border-orange-400">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                                    <Wallet className="text-orange-400" size={20} /> Cajas de Cambio
-                                </h3>
-                                <Link href="/dashboard/treasury" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
-                            </div>
                             <div className="space-y-3 flex-1 overflow-y-auto max-h-[120px] custom-scrollbar pr-1">
                                 {boxes.filter(b => b.type !== 'operational').length === 0 && (
                                     <div className="flex-1 flex items-center justify-center text-gray-300 text-xs italic">
