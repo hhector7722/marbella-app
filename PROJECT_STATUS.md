@@ -31,6 +31,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Refactorización Galerías (Recetas e Ingredientes): Layout compacto multi-columna y sistema de filtros interactivos mediante popup para Categorías y Proveedores.
 - [x] Refinamiento Staff (Fase 3): Texto centrado en actividad de horarios, barras con extremos redondeados (full-rounded) y barra de edición flotante de mayor altura (h-20) con efecto glassmorphism.
 - [x] Unificación Estética Staff: Sincronización de cabeceras y resúmenes semanales entre Dashboard de Personal e Historial, compactando la información en filas horizontales de alta densidad.
+- [x] Rectificaciones Críticas Dashboard: Restauración de cajas de cambio, corrección de altura de Tesorería, eliminación de marcos naranjas y estabilidad de KPIs en expansión de movimientos.
+- [x] Rediseño Histórico de Extras: Transición al estándar "Vista Marbella Detail" con cabecera sólida, mini-KPIs horizontales y listado expandible de alta densidad.
+- [x] Refinamiento Editor de Horarios: Extensión de marcadores de entrada (verde) y salida (roja) hacia el centro para mejor visibilidad táctil.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.

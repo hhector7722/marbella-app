@@ -133,78 +133,82 @@ export default function RecipesPage() {
                 </div>
 
                 <div className="flex gap-2 items-center relative">
+                    {/* Botón de Filtro Refinado */}
                     {!selectedCategory ? (
                         <button
                             onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                            className="px-5 py-2.5 bg-white/80 hover:bg-white rounded-2xl font-black text-[10px] text-blue-900 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
+                            className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
                         >
-                            Filtrar <ChevronDown size={14} />
+                            Filtrar <ChevronDown size={14} className="text-zinc-400" />
                         </button>
                     ) : (
-                        <div className="flex items-center gap-1 bg-[#5E35B1] rounded-2xl pl-4 pr-1.5 py-1 shadow-md border border-[#5E35B1]">
-                            <span className="text-white font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
+                        <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
+                            <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
                             <button
                                 onClick={() => setSelectedCategory(null)}
-                                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors"
+                                className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
                             >
-                                <X size={14} className="text-rose-400" strokeWidth={4} />
+                                <X size={14} className="text-rose-500" strokeWidth={4} />
                             </button>
                         </div>
                     )}
 
                     {/* Popup de Categorías */}
                     {showCategoryPopup && (
-                        <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
-                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                                <button
-                                    onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
-                                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
-                                >
-                                    Todos
-                                </button>
-                                {uniqueDbCategories.map(cat => (
+                        <>
+                            <div className="fixed inset-0 z-[90]" onClick={() => setShowCategoryPopup(false)} />
+                            <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
                                     <button
-                                        key={cat}
-                                        onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
-                                        className="w-full text-left px-4 py-2.5 hover:bg-[#5E35B1] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-700 transition-colors"
+                                        onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
+                                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
                                     >
-                                        {cat}
+                                        Todos
                                     </button>
-                                ))}
+                                    {uniqueDbCategories.map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
+                                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        </>
                     )}
 
                     <button
                         onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
-                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-red-500 text-white border-red-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
                     >
                         {selectionMode ? 'Cancelar' : 'Seleccionar'}
                     </button>
                 </div>
             </div>
 
-            {/* GRID LIMPIO Y ESPACIADO (gap-6) */}
+            {/* GRID LIMPIO Y COMPACTO (Alineado con Ingredients) */}
             {!loading && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-6 pb-24">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-4 pb-24">
                     {filteredRecipes.map((recipe) => (
                         <div key={recipe.id} className="group relative">
                             {selectionMode && (
-                                <div className="absolute top-2 left-2 z-20">
+                                <div className="absolute top-1 left-1 z-20">
                                     <input type="checkbox" checked={selectedIds.includes(recipe.id)} onChange={() => toggleSelection(recipe.id)} className="w-4 h-4 accent-[#5E35B1] rounded border-2 border-white cursor-pointer shadow-md" />
                                 </div>
                             )}
 
                             <Link href={`/recipes/${recipe.id}`} className="block h-full" onClick={(e) => selectionMode && (e.preventDefault(), toggleSelection(recipe.id))}>
-                                <div className={`bg-white p-2 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col h-full ${selectedIds.includes(recipe.id) ? 'ring-4 ring-[#5E35B1] scale-95' : ''}`}>
-                                    {/* IMAGEN BLANCA SIN BORDE */}
-                                    <div className="w-full h-28 bg-white rounded-lg mb-2 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-                                        {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-6 h-6 text-gray-300" />}
+                                <div className={`bg-white p-1.5 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-full border border-gray-100/50 ${selectedIds.includes(recipe.id) ? 'ring-4 ring-[#5E35B1] scale-95' : ''}`}>
+                                    {/* IMAGEN MÁS PEQUEÑA (Compacta) */}
+                                    <div className="w-full h-20 bg-gray-50 rounded-lg mb-1.5 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                        {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
                                     </div>
                                     {/* DATOS */}
-                                    <div className="flex justify-between items-center gap-2 mt-auto pt-2 border-t border-gray-50">
-                                        <h3 className="text-[10px] font-bold text-gray-800 truncate" title={recipe.name}>{recipe.name}</h3>
-                                        <span className={`text-[11px] font-black whitespace-nowrap ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(2)}€</span>
+                                    <div className="flex justify-between items-center px-0.5 gap-1 mt-auto">
+                                        <h3 className="text-[10px] font-bold text-gray-700 truncate leading-tight" title={recipe.name}>{recipe.name}</h3>
+                                        <span className={`text-[10px] font-black whitespace-nowrap ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>
                                     </div>
                                 </div>
                             </Link>

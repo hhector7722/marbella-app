@@ -90,8 +90,8 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             <div className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
 
             {/* Mini-barra Entrada (Verde) */}
-            <div className="absolute left-0 top-0 bottom-0 min-w-[32px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-1">
+            <div className="absolute left-0 top-0 bottom-0 min-w-[48px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2">
                     {shift.start}
                 </span>
             </div>
@@ -100,8 +100,8 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             <div className="flex-1 h-full" />
 
             {/* Mini-barra Salida (Roja) */}
-            <div className="absolute right-0 top-0 bottom-0 min-w-[32px] bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full">
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-1">
+            <div className="absolute right-0 top-0 bottom-0 min-w-[48px] bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2">
                     {shift.end}
                 </span>
             </div>

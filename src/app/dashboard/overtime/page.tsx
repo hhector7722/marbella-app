@@ -28,6 +28,7 @@ import { useRouter } from 'next/navigation';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getOvertimeData, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
+import { cn } from '@/lib/utils';
 
 export default function OvertimePage() {
     const supabase = createClient();
@@ -169,227 +170,179 @@ export default function OvertimePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+            <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
-            {/* PANEL IZQUIERDO: FILTROS Y RESUMEN */}
-            <div className="w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col p-6 z-10 h-auto md:h-screen sticky top-header-safe">
-                <div className="mb-6">
-                    <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-gray-800 mb-6 text-sm font-bold transition-colors w-fit">
-                        <ArrowLeft size={16} /> Volver
-                    </button>
-
-                    <h1 className="text-2xl font-black text-gray-800 mb-1">Histórico Extras</h1>
-                    <p className="text-xs text-gray-400">Control de nóminas por trabajador</p>
-                </div>
-
-                {/* Filtros */}
-                <div className="bg-gray-50 p-5 rounded-[2rem] border border-gray-100 mb-6 space-y-4">
-                    <div>
-                        <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase mb-2">
-                            <Search size={12} /> Buscar Staff
+                    {/* CABECERA DE LA TARJETA (AZUL MARBELLA) */}
+                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Clock3 className="text-white" size={20} />
+                            <h1 className="text-base font-black text-white uppercase tracking-wider">
+                                Histórico de Extras
+                            </h1>
                         </div>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Nombre del empleado..."
-                                className="w-full bg-white border border-gray-200 rounded-xl p-3 pl-10 text-sm font-bold text-gray-700 outline-none focus:border-[#5B8FB9] transition-all"
-                            />
-                            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
-                            {searchQuery && (
-                                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
-                                    <X size={16} />
-                                </button>
-                            )}
-                        </div>
+                        <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors">
+                            <X size={20} />
+                        </button>
                     </div>
 
-                    <div className="border-t border-gray-100 pt-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase mb-2">
-                            <Filter size={12} /> Periodo
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 block mb-1">Desde</label>
-                                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 block mb-1">Hasta</label>
-                                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500" />
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {PRESETS.map(p => (
-                                <button
-                                    key={p.label}
-                                    onClick={() => applyPreset(p)}
-                                    className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-bold text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-all active:scale-95 shadow-sm"
-                                >
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                    <div className="p-6 md:p-8 flex-1 flex flex-col">
 
-                {/* KPIs */}
-                <div className="space-y-4">
-                    <div className="bg-[#36606F] text-white p-7 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2 opacity-80">
-                                <TrendingUp size={16} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Compromiso Total</span>
-                            </div>
-                            <span className="text-4xl font-black">{summary.totalCost.toFixed(0)}€</span>
-                            <p className="text-[10px] font-bold mt-2 opacity-50 uppercase">Para el periodo seleccionado</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-5 bg-orange-50 rounded-[2rem] border border-orange-100 group">
-                            <div className="flex items-center gap-2 mb-2">
-                                <AlertCircle size={14} className="text-orange-400" />
-                                <span className="text-[10px] font-bold text-orange-400 uppercase block tracking-wider">Excesos</span>
-                            </div>
-                            <span className="text-2xl font-black text-orange-600 group-hover:scale-105 transition-transform inline-block">{summary.totalOvertimeCost.toFixed(0)}€</span>
-                        </div>
-                        <div className="p-5 bg-blue-50 rounded-[2rem] border border-blue-100 group">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Clock3 size={14} className="text-[#5B8FB9]" />
-                                <span className="text-[10px] font-bold text-[#5B8FB9] uppercase block tracking-wider">Producción</span>
-                            </div>
-                            <span className="text-2xl font-black text-[#5B8FB9] group-hover:scale-105 transition-transform inline-block">{summary.totalHours.toFixed(1)}h</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* PANEL DERECHO: LISTA SEMANAL */}
-            <div className="flex-1 bg-gray-50 p-4 md:p-8 overflow-y-auto h-screen">
-                <div className="max-w-3xl mx-auto space-y-4">
-
-                    {loading && <div className="text-center py-10 text-gray-400 text-sm animate-pulse">Calculando nóminas...</div>}
-
-                    {!loading && filteredWeeksData.length === 0 && (
-                        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-                            <p className="text-gray-400 font-bold">Sin resultados.</p>
-                            <p className="text-xs text-gray-300 mt-1">No hay datos que coincidan con la búsqueda.</p>
-                        </div>
-                    )}
-
-                    {filteredWeeksData.map(week => {
-                        const allStaffPaid = week.staff.every(s => s.isPaid);
-                        const paidCount = week.staff.filter(s => s.isPaid).length;
-                        const totalCount = week.staff.length;
-
-                        return (
-                            <div key={week.weekId} className={`bg-white rounded-3xl border transition-all duration-300 overflow-hidden ${week.expanded ? 'ring-2 ring-[#5B8FB9]/20 shadow-xl' : 'border-gray-100 hover:shadow-md'}`}>
-
-                                {/* Cabecera Semana */}
-                                <div
-                                    onClick={() => toggleWeek(week.weekId)}
-                                    className="p-5 flex justify-between items-center cursor-pointer select-none relative"
-                                >
-                                    {/* Fondo sutil si está pagado */}
-                                    {allStaffPaid && <div className="absolute inset-0 bg-green-50/30"></div>}
-
-                                    <div className="flex items-center gap-4 relative z-10">
-                                        <div className={`p-3 rounded-2xl transition-colors ${allStaffPaid ? 'bg-green-100 text-green-600' : (week.expanded ? 'bg-blue-100 text-[#5B8FB9]' : 'bg-gray-100 text-gray-400')}`}>
-                                            <Calendar size={22} />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-lg font-bold text-gray-800">{week.label}</h3>
-                                                {allStaffPaid ? (
-                                                    <span className="px-2 py-0.5 bg-green-500 text-white text-[9px] font-black rounded-full shadow-sm">PAGADA</span>
-                                                ) : (
-                                                    <span className="px-2 py-0.5 bg-orange-400 text-white text-[9px] font-black rounded-full shadow-sm">
-                                                        {paidCount}/{totalCount} PAGADOS
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-gray-400 font-semibold">{week.totalHours.toFixed(1)} horas registradas</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <div className="text-right">
-                                            <span className="text-xs font-bold text-gray-400 uppercase block mb-0.5">Semana</span>
-                                            <span className="text-2xl font-black text-gray-800 block leading-none">{week.totalAmount.toFixed(0)}€</span>
-                                        </div>
-                                        <div className={`p-2 rounded-full transition-all ${week.expanded ? 'bg-gray-100 text-gray-800 rotate-180' : 'text-gray-300'}`}>
-                                            <ChevronDown size={20} />
-                                        </div>
-                                    </div>
+                        {/* FILTROS Y BÚSQUEDA (Layout Compacto) */}
+                        <div className="mb-6 space-y-4">
+                            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                                {/* Buscador */}
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar staff..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                    />
                                 </div>
 
-                                {/* Desglose Empleados */}
-                                {week.expanded && (
-                                    <div className="px-5 pb-5 pt-0 animate-in slide-in-from-top-2 duration-200">
-                                        <div className="border-t border-gray-100 pt-2">
-                                            {/* CABECERA TABLA */}
-                                            <div className="grid grid-cols-12 text-[10px] font-bold text-gray-300 uppercase px-3 py-2">
-                                                <div className="col-span-4">Empleado</div>
-                                                <div className="col-span-5 text-right pr-4">Desglose Horas</div>
-                                                <div className="col-span-3 text-right">Coste Total</div>
-                                            </div>
-
-                                            {/* LISTA STAFF */}
-                                            {week.staff.map((staff, idx) => (
-                                                <div key={idx} className="grid grid-cols-12 items-center p-3 rounded-xl hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
-
-                                                    {/* NOMBRE */}
-                                                    <div className="col-span-4 flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-[#36606F] text-white flex items-center justify-center text-xs font-bold">
-                                                            {staff.name.charAt(0)}
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-sm font-bold text-gray-700 block truncate">{staff.name}</span>
-                                                            <span className="text-[10px] text-gray-400 uppercase">{staff.role}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* DESGLOSE HORAS */}
-                                                    <div className="col-span-5 flex flex-col items-end pr-4">
-                                                        <div className="text-sm font-bold text-gray-600">
-                                                            {staff.totalHours.toFixed(1)}h
-                                                        </div>
-                                                        {staff.overtimeHours > 0 && (
-                                                            <div className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded mt-1">
-                                                                Incluye {staff.overtimeHours.toFixed(1)}h Extras
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* COSTE */}
-                                                    <div className="col-span-3 text-right flex items-center justify-end gap-3">
-                                                        <div className="text-right">
-                                                            <div className={`text-sm font-black ${staff.isPaid ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                                                {staff.totalCost.toFixed(0)}€
-                                                            </div>
-                                                            {staff.overtimeCost > 0 && (
-                                                                <span className="text-[9px] text-red-400 font-bold block">
-                                                                    (Extras: {staff.overtimeCost.toFixed(0)}€)
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <button onClick={(e) => togglePaid(e, week, staff)} className="transition-transform active:scale-90">
-                                                            {staff.isPaid ? (
-                                                                <CheckCircle size={20} className="text-green-500 fill-green-50" />
-                                                            ) : (
-                                                                <Circle size={20} className="text-gray-300 hover:text-gray-400" />
-                                                            )}
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                {/* Fecha Filtro */}
+                                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar shrink-0">
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <div className="flex gap-1">
+                                            {PRESETS.slice(0, 2).map(p => (
+                                                <button
+                                                    key={p.label}
+                                                    onClick={() => applyPreset(p)}
+                                                    className="px-2 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-black text-gray-500 hover:bg-white hover:border-blue-200 transition-all uppercase"
+                                                >
+                                                    {p.label.split(' ')[0]}
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
+                                    <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <button className="h-8 px-3 rounded-lg bg-gray-50 border border-gray-100 text-[10px] font-black text-gray-700 flex items-center gap-1.5">
+                                            <Calendar size={12} className="text-blue-500" />
+                                            {format(new Date(startDate), 'dd MMM', { locale: es })} - {format(new Date(endDate), 'dd MMM', { locale: es })}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
+                        <div className="grid grid-cols-3 gap-3 mb-8">
+                            <div className="bg-[#36606F] py-2.5 px-3 rounded-2xl shadow-sm border border-[#2a4d59] flex flex-col items-center justify-center text-white">
+                                <span className="text-base font-black leading-none mb-0.5">{summary.totalCost.toFixed(0)}€</span>
+                                <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Total Periodo</span>
+                            </div>
+
+                            <div className="bg-orange-500 py-2.5 px-3 rounded-2xl shadow-sm border border-orange-400 flex flex-col items-center justify-center text-white">
+                                <span className="text-base font-black leading-none mb-0.5">{summary.totalOvertimeCost.toFixed(0)}€</span>
+                                <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Excesos</span>
+                            </div>
+
+                            <div className="bg-blue-500 py-2.5 px-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center text-white">
+                                <span className="text-base font-black leading-none mb-0.5">{summary.totalHours.toFixed(0)}h</span>
+                                <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Producción</span>
+                            </div>
+                        </div>
+
+                        {/* LISTADO DE SEMANAS */}
+                        <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+                            <div className="space-y-4 pb-10">
+                                {loading ? (
+                                    <div className="text-center py-20 text-gray-300 font-bold animate-pulse uppercase tracking-widest text-xs">Calculando nóminas...</div>
+                                ) : filteredWeeksData.length === 0 ? (
+                                    <div className="text-center py-20 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-100">
+                                        <p className="text-gray-400 font-bold text-sm">Sin resultados</p>
+                                    </div>
+                                ) : (
+                                    filteredWeeksData.map(week => {
+                                        const allStaffPaid = week.staff.every(s => s.isPaid);
+                                        const paidCount = week.staff.filter(s => s.isPaid).length;
+                                        const totalCount = week.staff.length;
+
+                                        return (
+                                            <div key={week.weekId} className={cn(
+                                                "bg-white rounded-3xl border transition-all duration-300 overflow-hidden",
+                                                week.expanded ? "ring-2 ring-blue-500/10 shadow-lg border-blue-100" : "border-gray-100 hover:shadow-md"
+                                            )}>
+                                                {/* Cabecera Semana */}
+                                                <div
+                                                    onClick={() => toggleWeek(week.weekId)}
+                                                    className="p-4 flex justify-between items-center cursor-pointer select-none"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={cn(
+                                                            "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                                                            allStaffPaid ? "bg-emerald-50 text-emerald-500" : "bg-blue-50 text-blue-500"
+                                                        )}>
+                                                            <Calendar size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className="text-sm font-black text-gray-800 uppercase tracking-tight">{week.label}</h3>
+                                                                {allStaffPaid ? (
+                                                                    <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full">PAGADA</span>
+                                                                ) : (
+                                                                    <span className="bg-orange-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full">{paidCount}/{totalCount} PAGADO</span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[10px] text-gray-400 font-bold uppercase">{week.totalHours.toFixed(1)} horas totales</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-right">
+                                                            <span className="text-lg font-black text-gray-800 leading-none">{week.totalAmount.toFixed(0)}€</span>
+                                                        </div>
+                                                        <ChevronDown size={16} className={cn("text-gray-300 transition-transform", week.expanded && "rotate-180")} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Desglose Empleados */}
+                                                {week.expanded && (
+                                                    <div className="px-4 pb-4 animate-in slide-in-from-top-2">
+                                                        <div className="space-y-2 pt-2 border-t border-gray-50">
+                                                            {week.staff.map((staff, idx) => (
+                                                                <div key={idx} className="bg-gray-50/50 p-3 rounded-2xl flex items-center justify-between group hover:bg-white border border-transparent hover:border-gray-100 transition-all">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-8 h-8 rounded-xl bg-[#36606F] text-white flex items-center justify-center text-[10px] font-black shadow-sm">
+                                                                            {staff.name.charAt(0)}
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="text-xs font-black text-gray-700 block">{staff.name}</span>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="text-[9px] font-bold text-gray-400">{staff.totalHours.toFixed(1)}h</span>
+                                                                                {staff.overtimeHours > 0 && <span className="text-[8px] font-black text-orange-500 bg-orange-100 px-1 rounded uppercase">+{staff.overtimeHours.toFixed(1)} ex</span>}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="text-right">
+                                                                            <span className={cn("text-xs font-black", staff.isPaid ? "text-gray-300 line-through" : "text-gray-800")}>{staff.totalCost.toFixed(0)}€</span>
+                                                                            {staff.overtimeCost > 0 && <span className="block text-[8px] font-bold text-rose-400">Extras: {staff.overtimeCost.toFixed(0)}€</span>}
+                                                                        </div>
+                                                                        <button onClick={(e) => togglePaid(e, week, staff)} className="transition-all active:scale-90">
+                                                                            {staff.isPaid ? (
+                                                                                <CheckCircle2 size={20} className="text-emerald-500 fill-emerald-50" />
+                                                                            ) : (
+                                                                                <Circle size={20} className="text-gray-200 hover:text-blue-500" />
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
-                        );
-                    })}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

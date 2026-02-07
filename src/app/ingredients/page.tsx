@@ -104,13 +104,13 @@ export default function IngredientsPage() {
 
     return (
         // ELIMINADO EL WRAPPER DEL SIDEBAR Y EL FONDO AZUL
-        <div className="p-6 md:p-8 w-full">
+        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
             <div className="mb-8 flex justify-between items-end">
-                <div>
+                <div className="flex items-baseline gap-3">
                     <h1 className="text-3xl font-bold text-white">Ingredientes</h1>
-                    <p className="text-sm text-gray-100">{ingredients.length} items</p>
+                    <p className="text-sm text-blue-100">{ingredients.length} items</p>
                 </div>
             </div>
 
@@ -128,51 +128,55 @@ export default function IngredientsPage() {
                 </div>
 
                 <div className="flex gap-2 items-center relative">
+                    {/* Botón de Filtro Refinado */}
                     {!selectedSupplier ? (
                         <button
                             onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                            className="px-5 py-2.5 bg-white/80 hover:bg-white rounded-2xl font-black text-[10px] text-[#5E35B1] uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
+                            className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
                         >
-                            Filtrar <ChevronDown size={14} />
+                            Filtrar <ChevronDown size={14} className="text-zinc-400" />
                         </button>
                     ) : (
-                        <div className="flex items-center gap-1 bg-[#5E35B1] rounded-2xl pl-4 pr-1.5 py-1 shadow-md border border-[#5E35B1]">
-                            <span className="text-white font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
+                        <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
+                            <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
                             <button
                                 onClick={() => setSelectedSupplier(null)}
-                                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors"
+                                className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
                             >
-                                <X size={14} className="text-rose-400" strokeWidth={4} />
+                                <X size={14} className="text-rose-500" strokeWidth={4} />
                             </button>
                         </div>
                     )}
 
                     {/* Popup de Proveedores */}
                     {showSupplierPopup && (
-                        <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
-                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                                <button
-                                    onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
-                                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
-                                >
-                                    Todos
-                                </button>
-                                {suppliers.filter(s => s !== 'Todos').map(s => (
+                        <>
+                            <div className="fixed inset-0 z-[90]" onClick={() => setShowSupplierPopup(false)} />
+                            <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
                                     <button
-                                        key={s}
-                                        onClick={() => { setSelectedSupplier(s); setShowSupplierPopup(false); }}
-                                        className="w-full text-left px-4 py-2.5 hover:bg-[#5E35B1] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-700 transition-colors"
+                                        onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
+                                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
                                     >
-                                        {s}
+                                        Todos
                                     </button>
-                                ))}
+                                    {suppliers.filter(s => s !== 'Todos').map(s => (
+                                        <button
+                                            key={s}
+                                            onClick={() => { setSelectedSupplier(s); setShowSupplierPopup(false); }}
+                                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        </>
                     )}
 
                     <button
                         onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
-                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-red-500 text-white border-red-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
                     >
                         {selectionMode ? 'Cancelar' : 'Seleccionar'}
                     </button>

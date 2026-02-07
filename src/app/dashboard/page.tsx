@@ -462,12 +462,12 @@ export default function DashboardPage() {
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
                 {/* LAYOUT PRINCIPAL: 2 COLUMNAS VERTICALES EN ESCRITORIO */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div className="flex flex-col md:flex-row gap-6 items-stretch">
 
                     {/* COLUMNA IZQUIERDA: CIERRE + NAV CARDS */}
-                    <div className="space-y-6">
+                    <div className="flex-1 flex flex-col gap-6">
                         {/* ÚLTIMO CIERRE */}
-                        <div id="closure-container" className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col h-full">
+                        <div id="closure-container" className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col flex-1">
                             <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
@@ -535,34 +535,36 @@ export default function DashboardPage() {
                     </div>
 
                     {/* COLUMNA DERECHA: TESORERÍA + HORAS EXTRAS */}
-                    <div className="space-y-6">
-                        {/* SECCIÓN TESORERÍA (CON ALTURA DINÁMICA PERO SIN MARCOS) */}
-                        <div id="treasury-container" className="flex flex-col gap-4">
+                    <div className="flex-1 flex flex-col gap-6">
+                        {/* SECCIÓN TESORERÍA */}
+                        <div id="treasury-container" className="flex flex-col gap-4 flex-1">
                             {/* CAJA INICIAL */}
-                            <div className="bg-emerald-500 rounded-[2rem] p-1 shadow-xl relative overflow-hidden group">
-                                <div className="p-4 flex flex-col">
+                            <div className="bg-white rounded-[2rem] p-1 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col flex-1">
+                                <div className="p-4 flex flex-col flex-1">
                                     <div className="flex justify-between items-center mb-3">
                                         <div className="flex items-center gap-2">
-                                            <div className="p-2 bg-white/20 rounded-xl text-white">
+                                            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
                                                 <Wallet size={16} />
                                             </div>
-                                            <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">Tesorería</span>
+                                            <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Tesorería</span>
                                         </div>
-                                        <Link href="/dashboard/movements" className="text-[10px] font-black text-white bg-white/20 px-3 py-1.5 rounded-full hover:bg-white/30 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight size={10} /></Link>
+                                        <Link href="/dashboard/movements" className="text-[10px] font-black text-[#36606F] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight size={10} /></Link>
                                     </div>
 
                                     {boxes.filter(b => b.type === 'operational').map(box => (
-                                        <div key={box.id} className="space-y-3">
+                                        <div key={box.id} className="flex flex-col flex-1">
+                                            {/* CABECERA BOX: SIEMPRE VISIBLE */}
                                             <button
                                                 onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 shadow-inner hover:bg-white/20 transition-all cursor-pointer flex flex-row items-center justify-between text-white"
+                                                className="w-full px-4 py-3 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-4"
                                             >
                                                 <span className="text-[11px] font-black uppercase tracking-widest">Caja Inicial</span>
                                                 <span className="text-2xl font-black">{box.current_balance.toFixed(2)}€</span>
                                             </button>
 
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-center px-1">
+                                            {/* MOVIMIENTOS: EXPANDIBLES SIN MOVER LA CABECERA */}
+                                            <div className="flex flex-col flex-1 min-h-0">
+                                                <div className="flex justify-between items-center px-1 mb-2">
                                                     <button
                                                         onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
                                                         className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
@@ -570,12 +572,14 @@ export default function DashboardPage() {
                                                         Movimientos
                                                         <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
                                                     </button>
-                                                    <Link href="/dashboard/treasury" className="text-[10px] font-bold text-[#36606F] bg-gray-50 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">Ver más</Link>
                                                 </div>
 
-                                                {isMovementsExpanded && (
-                                                    <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 py-1">
-                                                        {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1">Sin historial</p>}
+                                                <div className={cn(
+                                                    "overflow-hidden transition-all duration-300",
+                                                    isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0"
+                                                )}>
+                                                    <div className="space-y-1 py-1 max-h-[200px] overflow-y-auto no-scrollbar">
+                                                        {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>}
                                                         {boxMovements.map(mov => (
                                                             <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
                                                                 <div className="flex items-center gap-1.5 overflow-hidden">
@@ -588,13 +592,26 @@ export default function DashboardPage() {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
+                            {/* CAJAS DE CAMBIO (RESTORED) */}
+                            <div className="grid grid-cols-2 gap-4 h-24">
+                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
+                                    <button
+                                        key={box.id}
+                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                        className="bg-white rounded-[2rem] p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
+                                    >
+                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cambio {idx + 1}</span>
+                                        <span className="text-lg font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance.toFixed(2)}€</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* HORAS EXTRAS (AQUÍ DER ABAJO) */}
