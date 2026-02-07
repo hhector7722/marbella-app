@@ -363,25 +363,25 @@ export default function StaffDashboard() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-4 gap-2 text-xs">
-                            <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">TOTAL</span>
+                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">Total</span>
                                 <span className="font-black text-gray-800 text-sm">{formatValue(weeklySummary.totalHours)}</span>
                             </div>
-                            <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">EXTRAS</span>
+                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">Extras</span>
                                 <span className="font-black text-sm text-blue-600">{formatValue(weeklySummary.totalExtraHours)}</span>
                             </div>
-                            <div className="flex flex-col items-center border-r border-gray-200">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">PENDIENTE</span>
+                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">Pendiente</span>
                                 <span className={`font-black text-sm ${weeklySummary.pendingHours > 0 ? 'text-green-600' :
                                     weeklySummary.pendingHours < 0 ? 'text-red-500' : 'text-gray-400'
                                     }`}>
                                     {formatValue(weeklySummary.pendingHours)}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">A COBRAR</span>
+                            <div className="flex flex-col items-center px-4 shrink-0">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">A Cobrar</span>
                                 <span className="font-black text-sm text-green-600">{formatMoney(weeklySummary.estimatedPayout)}</span>
                             </div>
                         </div>

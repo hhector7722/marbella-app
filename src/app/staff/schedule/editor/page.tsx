@@ -82,7 +82,7 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     return (
         <div
             ref={barRef}
-            className="absolute top-1.5 bottom-1.5 bg-emerald-100/50 flex items-center group cursor-grab active:cursor-grabbing hover:bg-emerald-200/60 transition-all z-10 touch-none overflow-hidden"
+            className="absolute top-1.5 bottom-1.5 bg-emerald-100/50 flex items-center group cursor-grab active:cursor-grabbing hover:bg-emerald-200/60 transition-all z-10 touch-none overflow-hidden rounded-full"
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => handlePointerDown(e, 'move')}
         >
@@ -90,7 +90,7 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             <div className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
 
             {/* Mini-barra Entrada (Verde) */}
-            <div className="absolute left-0 top-0 bottom-0 min-w-[32px] bg-emerald-500 flex items-center justify-center shrink-0 z-20">
+            <div className="absolute left-0 top-0 bottom-0 min-w-[32px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full">
                 <span className="text-[9px] font-black text-white pointer-events-none select-none px-1">
                     {shift.start}
                 </span>
@@ -100,7 +100,7 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             <div className="flex-1 h-full" />
 
             {/* Mini-barra Salida (Roja) */}
-            <div className="absolute right-0 top-0 bottom-0 min-w-[32px] bg-red-600 flex items-center justify-center shrink-0 z-20">
+            <div className="absolute right-0 top-0 bottom-0 min-w-[32px] bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full">
                 <span className="text-[9px] font-black text-white pointer-events-none select-none px-1">
                     {shift.end}
                 </span>
@@ -357,7 +357,7 @@ export default function ScheduleEditorPage() {
                         type="text"
                         value={activity}
                         onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
-                        className="text-black text-[10px] px-2 h-7 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-28 md:w-32 font-black bg-white/90"
+                        className="text-black text-[10px] px-2 h-7 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-28 md:w-32 font-black bg-white/90 text-center"
                         placeholder="Actividad"
                     />
                     {/* Botón Guardar */}
@@ -469,12 +469,12 @@ export default function ScheduleEditorPage() {
 
             {/* BARRA DE EDICIÓN FLOTANTE */}
             {editingIndex !== null && shifts[editingIndex] && (
-                <div className="mt-3 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="h-10 relative bg-white/95 rounded-full shadow-lg border border-emerald-400 flex items-center overflow-hidden backdrop-blur-sm">
-                        <div className="flex-1 relative h-full">
+                <div className="mt-4 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="h-20 relative bg-transparent flex items-center overflow-hidden">
+                        <div className="flex-1 relative h-full bg-white/20 rounded-full shadow-2xl backdrop-blur-md border border-white/30">
                             <div className="absolute inset-0 flex">
                                 {hoursHeader.map((_, i) => (
-                                    <div key={i} className="flex-1 border-r border-gray-100/30 pointer-events-none last:border-r-0" />
+                                    <div key={i} className="flex-1 border-r border-white/10 pointer-events-none last:border-r-0" />
                                 ))}
                             </div>
                             <ShiftBar
@@ -482,8 +482,11 @@ export default function ScheduleEditorPage() {
                                 onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
                             />
                         </div>
-                        <button onClick={() => setEditingIndex(null)} className="p-2 mr-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
-                            <X size={14} />
+                        <button
+                            onClick={() => setEditingIndex(null)}
+                            className="ml-3 w-12 h-12 flex items-center justify-center bg-white/90 rounded-full shadow-lg hover:bg-white text-gray-500 transition-colors active:scale-95"
+                        >
+                            <X size={20} strokeWidth={3} />
                         </button>
                     </div>
                 </div>

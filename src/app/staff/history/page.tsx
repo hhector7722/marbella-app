@@ -265,23 +265,30 @@ export default function HistoryPage() {
         <div className="pb-10">
 
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
-                {/* FILTRO COMPACTO - SOLO BOTÓN FILTRAR */}
-                <div className="flex items-center justify-end px-1 mb-2">
-                    <div className="flex items-center gap-3">
+                {/* HEADER UNIFICADO */}
+                <div className="flex justify-between items-end mb-4 px-1">
+                    <div>
+                        <h2 className="text-xl md:text-2xl font-bold text-white">Historial de {userName || 'Staff'}</h2>
+                        <p className="text-blue-100 text-xs md:text-sm opacity-80 min-h-[1rem]">
+                            Registros cerrados y balances
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
                         {/* Botón Filtro */}
                         <button
                             onClick={() => setShowFilter(true)}
                             className={cn(
-                                "h-12 w-12 flex items-center justify-center rounded-xl transition-all active:scale-95 duration-150",
-                                isFilterActive ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-white border border-zinc-100 text-zinc-400 shadow-sm'
+                                "h-11 px-4 flex items-center justify-center rounded-xl transition-all active:scale-95 duration-150 gap-2 font-bold text-xs shadow-lg",
+                                isFilterActive ? 'bg-orange-500 text-white shadow-orange-200' : 'bg-white text-zinc-500 shadow-sm border border-zinc-100'
                             )}
                         >
-                            <Filter size={20} />
+                            <Filter size={16} />
+                            {isFilterActive ? 'FILTRADO' : 'FILTRAR'}
                         </button>
                         {isFilterActive && (
                             <button
                                 onClick={clearFilter}
-                                className="h-12 w-12 flex items-center justify-center bg-zinc-100 text-zinc-400 rounded-xl transition-all active:scale-95 duration-150 border border-zinc-200"
+                                className="h-11 w-11 flex items-center justify-center bg-white/20 text-white rounded-xl transition-all active:scale-95 duration-150 backdrop-blur-sm"
                             >
                                 <X size={20} />
                             </button>
@@ -372,24 +379,24 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-2 gap-y-2 gap-x-4">
-                                            <div className="flex items-center justify-between border-r border-gray-200 pr-4">
+                                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+                                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
                                                 <span className="text-[9px] font-bold text-gray-400 uppercase">Horas</span>
-                                                <span className="font-black text-gray-800 text-xs">{formatValue(week.summary.totalHours)}</span>
+                                                <span className="font-black text-gray-800 text-sm">{formatValue(week.summary.totalHours)}</span>
                                             </div>
-                                            <div className="flex items-center justify-between pl-4">
+                                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
                                                 <span className="text-[9px] font-bold text-gray-400 uppercase">Balance</span>
-                                                <span className={`font-black text-xs ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatBalance(week.summary.weeklyBalance)}</span>
+                                                <span className={`font-black text-sm ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatBalance(week.summary.weeklyBalance)}</span>
                                             </div>
-                                            <div className="flex items-center justify-between border-r border-gray-200 pr-4">
+                                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
                                                 <span className="text-[9px] font-bold text-gray-400 uppercase">Pendiente</span>
-                                                <span className={`font-black text-xs ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                <span className={`font-black text-sm ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                                     {shouldShowPending(week.summary.startBalance) ? formatBalance(week.summary.startBalance) : '0'}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center justify-between pl-4">
+                                            <div className="flex flex-col items-center px-4 shrink-0">
                                                 <span className="text-[9px] font-bold text-gray-400 uppercase">A Cobrar</span>
-                                                <span className="font-black text-xs text-green-600">{formatMoney(week.summary.estimatedValue)}</span>
+                                                <span className="font-black text-sm text-green-600">{formatMoney(week.summary.estimatedValue)}</span>
                                             </div>
                                         </div>
                                     </div>
