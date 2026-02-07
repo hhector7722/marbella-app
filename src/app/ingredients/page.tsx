@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Package, Plus, Trash2, Upload, Camera, Loader2, X } from 'lucide-react';
+import { Search, Package, Plus, Trash2, Upload, Camera, Loader2, X, ChevronDown } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
 interface Ingredient {
@@ -23,7 +23,8 @@ export default function IngredientsPage() {
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedSupplier, setSelectedSupplier] = useState<string>('Todos');
+    const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
+    const [showSupplierPopup, setShowSupplierPopup] = useState(false);
     const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
     const [editForm, setEditForm] = useState<Partial<Ingredient>>({});
     const [saving, setSaving] = useState(false);
@@ -97,7 +98,7 @@ export default function IngredientsPage() {
     const suppliers = ['Todos', ...Array.from(new Set(ingredients.map(i => i.supplier).filter(Boolean))) as string[]];
     const filteredIngredients = ingredients.filter(ing => {
         const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesSupplier = selectedSupplier === 'Todos' || ing.supplier === selectedSupplier;
+        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier;
         return matchesSearch && matchesSupplier;
     });
 
@@ -114,16 +115,67 @@ export default function IngredientsPage() {
             </div>
 
             {/* Buscador y Filtros */}
-            <div className="mb-8 space-y-3">
-                <div className="relative max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input type="text" placeholder="Buscar..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-3 py-3 bg-white/90 rounded-2xl outline-none shadow-sm text-sm focus:ring-2 focus:ring-[#7E57C2]" />
+            <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar ingrediente..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1]"
+                    />
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                    {suppliers.map(s => (
-                        <button key={s} onClick={() => setSelectedSupplier(s)} className={`px-3 py-1 rounded-lg font-bold text-[10px] transition uppercase ${selectedSupplier === s ? 'bg-[#5E35B1] text-white shadow' : 'bg-white/60 text-gray-700 hover:bg-white'}`}>{s}</button>
-                    ))}
-                    <button onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]) }} className="ml-auto px-3 py-1 bg-white/80 rounded-lg font-bold border border-white/50 text-gray-700 text-[10px] uppercase">{selectionMode ? 'Cancelar' : 'Seleccionar'}</button>
+
+                <div className="flex gap-2 items-center relative">
+                    {!selectedSupplier ? (
+                        <button
+                            onClick={() => setShowSupplierPopup(!showSupplierPopup)}
+                            className="px-5 py-2.5 bg-white/80 hover:bg-white rounded-2xl font-black text-[10px] text-[#5E35B1] uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
+                        >
+                            Filtrar <ChevronDown size={14} />
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-1 bg-[#5E35B1] rounded-2xl pl-4 pr-1.5 py-1 shadow-md border border-[#5E35B1]">
+                            <span className="text-white font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
+                            <button
+                                onClick={() => setSelectedSupplier(null)}
+                                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors"
+                            >
+                                <X size={14} className="text-rose-400" strokeWidth={4} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Popup de Proveedores */}
+                    {showSupplierPopup && (
+                        <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                <button
+                                    onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
+                                >
+                                    Todos
+                                </button>
+                                {suppliers.filter(s => s !== 'Todos').map(s => (
+                                    <button
+                                        key={s}
+                                        onClick={() => { setSelectedSupplier(s); setShowSupplierPopup(false); }}
+                                        className="w-full text-left px-4 py-2.5 hover:bg-[#5E35B1] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-700 transition-colors"
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
+                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-red-500 text-white border-red-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                    >
+                        {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                    </button>
                 </div>
             </div>
 

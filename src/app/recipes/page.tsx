@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
-import { ChefHat, Search, Plus, Trash2, X } from 'lucide-react';
+import { ChefHat, Search, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 
@@ -25,7 +25,8 @@ export default function RecipesPage() {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [showCategoryPopup, setShowCategoryPopup] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRecipe, setNewRecipe] = useState<any>({ ingredients: [] });
     const [isCreating, setIsCreating] = useState(false);
@@ -94,11 +95,11 @@ export default function RecipesPage() {
         return 'text-red-600';
     };
 
-    const uniqueDbCategories = Array.from(new Set(recipes.map(r => r.category).filter(c => c && c !== 'Todos'))) as string[];
-    const categories = ['Todos', ...uniqueDbCategories];
+    const uniqueDbCategories = Array.from(new Set(recipes.map(r => r.category).filter(Boolean))) as string[];
+
     const filteredRecipes = recipes.filter(recipe => {
         const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory === 'Todos' || recipe.category === selectedCategory;
+        const matchesCategory = !selectedCategory || recipe.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
 
@@ -119,16 +120,67 @@ export default function RecipesPage() {
             </div>
 
             {/* Filtros */}
-            <div className="mb-8 space-y-4">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input type="text" placeholder="Buscar receta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:ring-2 focus:ring-[#5E35B1]" />
+            <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar receta..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1]"
+                    />
                 </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                    {categories.map(category => (
-                        <button key={category} onClick={() => setSelectedCategory(category)} className={`px-4 py-2 rounded-xl font-bold transition-all text-xs uppercase ${selectedCategory === category ? 'bg-[#5E35B1] text-white shadow-md' : 'bg-white/60 text-blue-900 hover:bg-white/80'}`}>{category}</button>
-                    ))}
-                    <button onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }} className={`ml-auto px-4 py-2 rounded-xl text-xs font-bold border transition-all ${selectionMode ? 'bg-red-500 text-white border-red-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}>{selectionMode ? 'CANCELAR' : 'SELECCIONAR'}</button>
+
+                <div className="flex gap-2 items-center relative">
+                    {!selectedCategory ? (
+                        <button
+                            onClick={() => setShowCategoryPopup(!showCategoryPopup)}
+                            className="px-5 py-2.5 bg-white/80 hover:bg-white rounded-2xl font-black text-[10px] text-blue-900 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
+                        >
+                            Filtrar <ChevronDown size={14} />
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-1 bg-[#5E35B1] rounded-2xl pl-4 pr-1.5 py-1 shadow-md border border-[#5E35B1]">
+                            <span className="text-white font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
+                            <button
+                                onClick={() => setSelectedCategory(null)}
+                                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors"
+                            >
+                                <X size={14} className="text-rose-400" strokeWidth={4} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Popup de Categorías */}
+                    {showCategoryPopup && (
+                        <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                <button
+                                    onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
+                                >
+                                    Todos
+                                </button>
+                                {uniqueDbCategories.map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
+                                        className="w-full text-left px-4 py-2.5 hover:bg-[#5E35B1] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-700 transition-colors"
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
+                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-red-500 text-white border-red-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                    >
+                        {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                    </button>
                 </div>
             </div>
 
@@ -174,7 +226,7 @@ export default function RecipesPage() {
             )}
 
             {/* Modal Creación */}
-            <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={categories.filter(c => c !== 'Todos')} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
+            <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={uniqueDbCategories} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
         </div>
     );
 }

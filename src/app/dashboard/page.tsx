@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
-    History, Users, TrendingUp, ChevronDown, Wallet, CloudSun, Calendar,
+    History, Users, TrendingUp, ChevronDown, Wallet, CloudSun, Calendar, Search, Receipt,
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, X, FileText,
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
-    Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart
+    Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
 import { getISOWeek, format, addDays } from 'date-fns';
@@ -461,188 +461,187 @@ export default function DashboardPage() {
         <div className="pb-24">
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
-                {/* FILA 1: ÚLTIMO CIERRE (IZQ) vs TESORERÍA (DER) */}
+                {/* LAYOUT PRINCIPAL: 2 COLUMNAS VERTICALES EN ESCRITORIO */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    {/* ÚLTIMO CIERRE */}
-                    <div className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col">
-                        <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
-                                <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
-                            </div>
-                            <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-3 flex-1">
-                            {/* Facturación */}
-                            <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[50px]">
-                                <span className="text-[9px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
-                                <span className="text-lg font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
-                            </div>
-
-                            {/* Venta Neta (Relleno Verde) */}
-                            <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[50px] text-white">
-                                <span className="text-[9px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
-                                <span className="text-lg font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
-                            </div>
-
-                            {/* Ticket Medio (Relleno Azul) */}
-                            <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[50px] text-white">
-                                <span className="text-[9px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
-                                <span className="text-lg font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
-                            </div>
-
-                            {/* Coste M.Obra con indicador (Dinámico) */}
-                            <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[50px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
-                                <div className="flex justify-between items-start">
-                                    <span className="text-[9px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
-                                    <div className="w-7 h-7 relative shrink-0">
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            <circle cx="50%" cy="50%" r={11} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
-                                            <circle cx="50%" cy="50%" r={11} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={2 * Math.PI * 11} strokeDashoffset={(2 * Math.PI * 11) - (laborPercent / 100) * (2 * Math.PI * 11)} strokeLinecap="round" />
-                                        </svg>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-[6px] font-black text-white">{laborPercent.toFixed(0)}%</span>
-                                        </div>
-                                    </div>
+                    {/* COLUMNA IZQUIERDA: CIERRE + NAV CARDS */}
+                    <div className="space-y-6">
+                        {/* ÚLTIMO CIERRE */}
+                        <div id="closure-container" className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col h-full">
+                            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
+                                    <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
                                 </div>
-                                <span className="text-lg font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
+                                <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* COLUMNA DERECHA: CAJA INICIAL + CAMBIO */}
-                    <div className="flex flex-col gap-6">
-                        {/* CAJA INICIAL */}
-                        <div className="bg-white rounded-[2rem] p-4 shadow-xl flex flex-col border border-gray-100">
-                            {boxes.filter(b => b.type === 'operational').map(box => (
-                                <div key={box.id} className="space-y-3">
-                                    <button
-                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="w-full px-4 py-3 rounded-2xl bg-emerald-500 border border-emerald-400 shadow-md hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white"
-                                    >
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Caja Inicial</span>
-                                        <span className="text-xl font-black">{box.current_balance.toFixed(2)}€</span>
-                                    </button>
+                            <div className="grid grid-cols-2 gap-3 flex-1">
+                                {/* Facturación */}
+                                <div className="flex flex-col justify-center p-3 bg-white rounded-xl border-2 border-zinc-900 shadow-sm min-h-[50px]">
+                                    <span className="text-[9px] font-bold text-zinc-500 uppercase leading-none mb-1">Facturación</span>
+                                    <span className="text-lg font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center px-1">
-                                            <button
-                                                onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
-                                                className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
-                                            >
-                                                Movimientos
-                                                <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
-                                            </button>
-                                            <Link href="/dashboard/treasury" className="text-[10px] font-bold text-[#36606F] bg-gray-50 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">Ver más</Link>
-                                        </div>
+                                {/* Venta Neta (Relleno Verde) */}
+                                <div className="flex flex-col justify-center p-3 bg-emerald-500 rounded-xl shadow-sm min-h-[50px] text-white">
+                                    <span className="text-[9px] font-bold text-emerald-100 uppercase leading-none mb-1">Venta Neta</span>
+                                    <span className="text-lg font-black leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
+                                </div>
 
-                                        {isMovementsExpanded && (
-                                            <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 py-1">
-                                                {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1">Sin historial</p>}
-                                                {boxMovements.map(mov => (
-                                                    <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
-                                                        <div className="flex items-center gap-1.5 overflow-hidden">
-                                                            {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
-                                                            <span className="truncate max-w-[120px] text-gray-600">{mov.notes || 'Sin nota'}</span>
-                                                        </div>
-                                                        <span className={cn("font-bold", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
-                                                            {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
-                                                        </span>
-                                                    </div>
-                                                ))}
+                                {/* Ticket Medio (Relleno Azul) */}
+                                <div className="flex flex-col justify-center p-3 bg-blue-500 rounded-xl shadow-sm min-h-[50px] text-white">
+                                    <span className="text-[9px] font-bold text-blue-100 uppercase leading-none mb-1">Ticket Medio</span>
+                                    <span className="text-lg font-black leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                                </div>
+
+                                {/* Coste M.Obra con indicador (Dinámico) */}
+                                <div className={cn("flex flex-col justify-center p-3 rounded-xl shadow-sm min-h-[50px] text-white relative overflow-hidden", dailyStats?.laborCostBg)}>
+                                    <div className="flex justify-between items-start">
+                                        <span className="text-[9px] font-bold text-white/80 uppercase leading-none mb-1">Coste M.Obra</span>
+                                        <div className="w-7 h-7 relative shrink-0">
+                                            <svg className="w-full h-full transform -rotate-90">
+                                                <circle cx="50%" cy="50%" r={11} stroke="white" strokeWidth="2" fill="transparent" opacity="0.3" />
+                                                <circle cx="50%" cy="50%" r={11} stroke="white" strokeWidth="2" fill="transparent" strokeDasharray={2 * Math.PI * 11} strokeDashoffset={(2 * Math.PI * 11) - (laborPercent / 100) * (2 * Math.PI * 11)} strokeLinecap="round" />
+                                            </svg>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-[6px] font-black text-white">{laborPercent.toFixed(0)}%</span>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
+                                    <span className="text-lg font-black leading-tight">{dailyStats?.costeManoObra.toFixed(0)}€</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* NAV CARDS (IZQUIERDA ABAJO) */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {[
+                                { title: 'Cierres', icon: <Receipt size={18} />, color: 'bg-emerald-50 text-emerald-600', link: '/dashboard/history' },
+                                { title: 'M.O.', icon: <Clock size={18} />, color: 'bg-blue-50 text-blue-600', link: '/dashboard/labor' },
+                                { title: 'Plantilla', icon: <Users size={18} />, color: 'bg-purple-50 text-purple-600', link: '/staff' },
+                                { title: 'Producto', icon: <Search size={18} />, color: 'bg-orange-50 text-orange-600', link: '/ingredients' },
+                            ].map((card, i) => (
+                                <Link
+                                    key={i}
+                                    href={card.link}
+                                    className="bg-white rounded-3xl p-5 shadow-lg border border-gray-50 flex flex-col items-center justify-center gap-3 hover:translate-y-[-4px] transition-all hover:shadow-xl active:scale-95 group"
+                                >
+                                    <div className={`p-3 rounded-2xl ${card.color} group-hover:scale-110 transition-transform`}>{card.icon}</div>
+                                    <span className="text-xs font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
+                                </Link>
                             ))}
                         </div>
+                    </div>
 
-                        <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col flex-1 border-2 border-orange-400">
-                            <div className="space-y-2 flex-1">
-                                {boxes.filter(b => b.type !== 'operational').length === 0 && (
-                                    <div className="flex-1 flex items-center justify-center text-gray-300 text-xs italic">
-                                        No hay otras cajas configuradas
-                                    </div>
-                                )}
-                                {boxes.filter(b => b.type !== 'operational').map(box => (
-                                    <button
-                                        key={box.id}
-                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="w-full flex justify-between items-center p-3 rounded-xl bg-orange-50 border border-orange-100 shadow-sm hover:bg-orange-100 transition-all cursor-pointer group"
-                                    >
+                    {/* COLUMNA DERECHA: TESORERÍA + HORAS EXTRAS */}
+                    <div className="space-y-6">
+                        {/* SECCIÓN TESORERÍA (CON ALTURA DINÁMICA PERO SIN MARCOS) */}
+                        <div id="treasury-container" className="flex flex-col gap-4">
+                            {/* CAJA INICIAL */}
+                            <div className="bg-emerald-500 rounded-[2rem] p-1 shadow-xl relative overflow-hidden group">
+                                <div className="p-4 flex flex-col">
+                                    <div className="flex justify-between items-center mb-3">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                                            <span className="text-[13px] font-bold text-orange-900">{box.name}</span>
-                                        </div>
-                                        <span className="text-lg font-black text-orange-900">{box.current_balance.toFixed(2)}€</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* FILA 2: ACCESOS DIRECTOS (IZQ) vs HORAS EXTRAS (DER) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                    {/* BOTONES DE NAVEGACIÓN (2x2) */}
-                    <div className="grid grid-cols-2 gap-4 h-full">
-                        <Link href="/dashboard/history" className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><History size={20} /></div>
-                            <div><span className="block text-sm font-bold text-white leading-tight">Cierres</span><span className="text-[10px] text-blue-100">Histórico</span></div>
-                        </Link>
-                        <Link href="/dashboard/labor" className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><TrendingUp size={20} /></div>
-                            <div><span className="block text-sm font-bold text-white leading-tight">Coste M.O.</span><span className="text-[10px] text-blue-100">Análisis</span></div>
-                        </Link>
-                        <button onClick={() => setIsStaffModalOpen(true)} className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3 w-full text-left">
-                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><Users size={20} /></div>
-                            <div><span className="block text-sm font-bold text-white leading-tight">Plantilla</span><span className="text-[10px] text-blue-100">Datos Staff</span></div>
-                        </button>
-                        <button onClick={() => setIsProductModalOpen(true)} className="bg-[#5B8FB9] p-4 rounded-2xl shadow-md border border-white hover:brightness-110 transition-all group flex items-center gap-3 w-full text-left">
-                            <div className="w-10 h-10 rounded-full bg-white text-[#5B8FB9] flex items-center justify-center shrink-0"><Package size={20} /></div>
-                            <div><span className="block text-sm font-bold text-white leading-tight">Producto</span><span className="text-[10px] text-blue-100">Gestión Stock</span></div>
-                        </button>
-                    </div>
-
-                    {/* HORAS EXTRAS */}
-                    <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col h-full border border-gray-100">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-gray-700 flex items-center gap-2"><Clock className="text-orange-500" size={20} /> Horas Extras</h3>
-                            <Link href="/dashboard/overtime" className="text-xs font-bold text-[#36606F] hover:bg-gray-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">Ver más <ArrowRight size={12} /></Link>
-                        </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1 max-h-[200px]">
-                            {overtimeData.length === 0 && <div className="text-center py-10 text-gray-300 text-xs italic">Sin horas registradas esta semana</div>}
-                            {overtimeData.map(week => {
-                                const isPaid = isWeekFullyPaid(week);
-                                return (
-                                    <div key={week.weekId} className="rounded-2xl overflow-hidden shadow-sm transition-all duration-300">
-                                        <div onClick={() => toggleWeek(week.weekId)} className="p-3 grid grid-cols-[1fr_auto_1fr] items-center cursor-pointer select-none bg-violet-400 text-white border-violet-400 border-2">
-                                            <div className="flex flex-col justify-self-start"><span className="text-sm font-bold text-white">{week.title} <span className="font-normal opacity-80 text-xs ml-1">- {week.dateRange}</span></span></div>
-                                            <div className="justify-self-center"><ChevronDown size={20} className={`transition-transform duration-200 text-white ${week.expanded ? 'rotate-180' : ''}`} /></div>
-                                            <div className="flex items-center gap-3 justify-self-end">
-                                                <span className="bg-white/20 text-white px-2 py-1 rounded-lg text-xs font-black min-w-[50px] text-center">{week.total.toFixed(0)}€</span>
-                                                {isPaid ? <CheckCircle size={20} className="text-white" fill="#22c55e" /> : <AlertCircle size={20} className="text-white" fill="#fb923c" />}
+                                            <div className="p-2 bg-white/20 rounded-xl text-white">
+                                                <Wallet size={16} />
                                             </div>
+                                            <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">Tesorería</span>
                                         </div>
-                                        {week.expanded && (
-                                            <div className="bg-white p-2 space-y-1 border border-violet-100 border-t-0 rounded-b-2xl">
-                                                {week.staff.map((staff: any, idx: number) => {
-                                                    const rowKey = `${week.weekId}-${staff.id}`;
-                                                    const isRowPaid = paidStatus[rowKey] || false;
-                                                    return (
-                                                        <div key={idx} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg transition-colors border-b last:border-0 border-gray-50">
-                                                            <div className="flex items-center gap-2 pl-2"><span className={`text-sm font-bold ${isRowPaid ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{staff.name}</span></div>
-                                                            <div className="flex items-center gap-4"><span className={`font-bold text-sm ${isRowPaid ? 'text-gray-400' : 'text-gray-900'}`}>{staff.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, staff.id)} className="transition-transform active:scale-90">{isRowPaid ? <CheckCircle2 size={20} className="text-green-500 fill-green-100" /> : <Circle size={20} className="text-gray-300 hover:text-gray-400" />}</button></div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                        <Link href="/dashboard/movements" className="text-[10px] font-black text-white bg-white/20 px-3 py-1.5 rounded-full hover:bg-white/30 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight size={10} /></Link>
                                     </div>
-                                );
-                            })}
+
+                                    {boxes.filter(b => b.type === 'operational').map(box => (
+                                        <div key={box.id} className="space-y-3">
+                                            <button
+                                                onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 shadow-inner hover:bg-white/20 transition-all cursor-pointer flex flex-row items-center justify-between text-white"
+                                            >
+                                                <span className="text-[11px] font-black uppercase tracking-widest">Caja Inicial</span>
+                                                <span className="text-2xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                            </button>
+
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <button
+                                                        onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
+                                                        className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                                                    >
+                                                        Movimientos
+                                                        <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                                    </button>
+                                                    <Link href="/dashboard/treasury" className="text-[10px] font-bold text-[#36606F] bg-gray-50 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">Ver más</Link>
+                                                </div>
+
+                                                {isMovementsExpanded && (
+                                                    <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 py-1">
+                                                        {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1">Sin historial</p>}
+                                                        {boxMovements.map(mov => (
+                                                            <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                                                <div className="flex items-center gap-1.5 overflow-hidden">
+                                                                    {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
+                                                                    <span className="truncate max-w-[120px] text-gray-600">{mov.notes || 'Sin nota'}</span>
+                                                                </div>
+                                                                <span className={cn("font-bold", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
+                                                                    {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                         </div>
+
+                        {/* HORAS EXTRAS (AQUÍ DER ABAJO) */}
+                        <Link href="/dashboard/overtime" className="block">
+                            <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 hover:shadow-2xl transition-all h-full group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-rose-500 mb-1">
+                                            <div className="bg-rose-50 p-1.5 rounded-lg"><Clock size={16} /></div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Horas Extras</span>
+                                        </div>
+                                        <h3 className="text-sm font-bold text-gray-800">Compromiso Staff</h3>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-xl font-black text-[#36606F] group-hover:scale-110 transition-transform block">
+                                            {overtimeData.reduce((acc, curr) => acc + curr.total, 0).toFixed(0)}€
+                                        </span>
+                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Este periodo</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    {overtimeData.slice(0, 3).map((week, i) => {
+                                        const paidCount = week.staff.filter((s: any) => paidStatus[`${week.weekId}-${s.id}`]).length;
+                                        const totalCount = week.staff.length;
+                                        const isPaid = paidCount === totalCount && totalCount > 0;
+
+                                        return (
+                                            <div key={i} className="flex items-center justify-between text-[10px] font-bold py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 px-2 rounded-lg transition-colors">
+                                                <span className="text-gray-500 uppercase tracking-tighter shrink-0">{week.label?.replace('Semana', 'Sem') || week.title?.replace('Semana', 'Sem')}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[#36606F] font-black">{week.total.toFixed(0)}€</span>
+                                                    {isPaid ? (
+                                                        <CheckCircle2 size={12} className="text-emerald-500" />
+                                                    ) : (
+                                                        <div className="flex items-center gap-1 text-orange-400">
+                                                            <div className="w-1 h-1 rounded-full bg-orange-400"></div>
+                                                            <span className="text-[8px]">{paidCount}/{totalCount}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>
