@@ -431,29 +431,29 @@ export default function StaffDashboard() {
                         </div>
 
                         {/* --- GRID DE RESUMEN COMPACTO HORIZONTAL --- */}
-                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 grid grid-cols-2 gap-y-2 gap-x-4">
-                            <div className="flex items-center justify-between border-r border-gray-200 pr-4">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">Horas</span>
-                                <span className="font-black text-gray-800 text-xs">{formatWorked(weeklySummary.totalHours)}</span>
+                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                            <div className="flex flex-col items-center flex-1 border-r border-gray-200">
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none">Horas</span>
+                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none mt-1">{formatWorked(weeklySummary.totalHours)}</span>
                             </div>
 
-                            <div className="flex items-center justify-between pl-4">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">Balance</span>
-                                <span className={`font-black text-xs ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            <div className="flex flex-col items-center flex-1 border-r border-gray-200">
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none">Balance</span>
+                                <span className={`font-black text-[11px] md:text-xs leading-none mt-1 ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                     {formatBalance(weeklySummary.hoursDifference)}
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between border-r border-gray-200 pr-4">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">Pendiente</span>
-                                <span className={`font-black text-xs ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            <div className="flex flex-col items-center flex-1 border-r border-gray-200">
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none">Pendiente</span>
+                                <span className={`font-black text-[11px] md:text-xs leading-none mt-1 ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                     {shouldShowPending(weeklySummary.startBalance) ? formatBalance(weeklySummary.startBalance) : '0'}
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between pl-4">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">A Cobrar</span>
-                                <span className="font-black text-xs text-green-600">
+                            <div className="flex flex-col items-center flex-1">
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none">A Cobrar</span>
+                                <span className="font-black text-[11px] md:text-xs leading-none mt-1 text-green-600">
                                     {formatMoney(weeklySummary.estimatedPayout)}
                                 </span>
                             </div>
