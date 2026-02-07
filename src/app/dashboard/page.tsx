@@ -519,10 +519,10 @@ export default function DashboardPage() {
                                 <div key={box.id} className="space-y-3">
                                     <button
                                         onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="w-full p-4 rounded-2xl bg-emerald-500 border border-emerald-400 shadow-md hover:bg-emerald-600 transition-all cursor-pointer flex flex-col items-center justify-center text-white"
+                                        className="w-full px-4 py-3 rounded-2xl bg-emerald-500 border border-emerald-400 shadow-md hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white"
                                     >
-                                        <span className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">Caja Inicial</span>
-                                        <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Caja Inicial</span>
+                                        <span className="text-xl font-black">{box.current_balance.toFixed(2)}€</span>
                                     </button>
 
                                     <div className="space-y-2">
@@ -559,7 +559,7 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="bg-white rounded-[2rem] p-6 shadow-xl flex flex-col flex-1 border-2 border-orange-400">
-                            <div className="space-y-3 flex-1 overflow-y-auto max-h-[120px] custom-scrollbar pr-1">
+                            <div className="space-y-2 flex-1">
                                 {boxes.filter(b => b.type !== 'operational').length === 0 && (
                                     <div className="flex-1 flex items-center justify-center text-gray-300 text-xs italic">
                                         No hay otras cajas configuradas
@@ -569,13 +569,13 @@ export default function DashboardPage() {
                                     <button
                                         key={box.id}
                                         onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="w-full flex justify-between items-center p-4 rounded-xl bg-orange-50 border-2 border-orange-100 shadow-sm hover:bg-orange-100 transition-all cursor-pointer group"
+                                        className="w-full flex justify-between items-center p-3 rounded-xl bg-orange-50 border border-orange-100 shadow-sm hover:bg-orange-100 transition-all cursor-pointer group"
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                                            <span className="text-sm font-bold text-orange-900">{box.name}</span>
+                                            <span className="text-[13px] font-bold text-orange-900">{box.name}</span>
                                         </div>
-                                        <span className="text-xl font-black text-orange-900">{box.current_balance.toFixed(2)}€</span>
+                                        <span className="text-lg font-black text-orange-900">{box.current_balance.toFixed(2)}€</span>
                                     </button>
                                 ))}
                             </div>

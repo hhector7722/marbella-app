@@ -26,7 +26,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Optimización UI Staff: Resúmenes semanales en formato horizontal compacto y ajuste de posición del sello de pagado.
 - [x] Refinamiento Estético Editor de Horarios: Barras sin contorno con mini-barras para entrada (verde) y salida (roja), fila de totales fija en 2ª posición, columna de eliminación a la derecha e integración de botón "+" como fila.
 - [x] Refactorización Layout Dashboard Admin: Organización por filas en escritorio (Cierre vs Tesorería, Accesos vs Extras) con alturas equilibradas.
-- [x] Refinamiento Dashboard Admin (Round 2): Tarjetas de estadísticas más compactas, independencia de expansión en columnas de tesorería y eliminación de títulos redundantes.
+- [x] Refinamiento Dashboard Admin: Tarjetas de estadísticas compactas, independencia de expansión en columnas y refinamiento de sección Tesorería (Caja Inicial horizontal, cajas de cambio compactas sin scroll).
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.
