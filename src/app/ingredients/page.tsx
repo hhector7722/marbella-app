@@ -107,14 +107,7 @@ export default function IngredientsPage() {
         <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
-            <div className="mb-8 flex justify-between items-end">
-                <div className="flex items-baseline gap-3">
-                    <h1 className="text-3xl font-bold text-white">Ingredientes</h1>
-                    <p className="text-sm text-blue-100">{ingredients.length} items</p>
-                </div>
-            </div>
 
-            {/* Buscador y Filtros */}
             <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="relative w-full sm:max-w-xs">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -127,59 +120,45 @@ export default function IngredientsPage() {
                     />
                 </div>
 
-                <div className="flex gap-2 items-center relative">
-                    {/* Botón de Filtro Refinado */}
-                    {!selectedSupplier ? (
-                        <button
-                            onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                            className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
-                        >
-                            Filtrar <ChevronDown size={14} className="text-zinc-400" />
-                        </button>
-                    ) : (
-                        <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
-                            <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
+                <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
+                    <div className="flex gap-2 items-center">
+                        {/* Botón de Filtro Refinado */}
+                        {!selectedSupplier ? (
                             <button
-                                onClick={() => setSelectedSupplier(null)}
-                                className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
+                                onClick={() => setShowSupplierPopup(!showSupplierPopup)}
+                                className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
                             >
-                                <X size={14} className="text-rose-500" strokeWidth={4} />
+                                Filtrar <ChevronDown size={14} className="text-zinc-400" />
                             </button>
-                        </div>
-                    )}
-
-                    {/* Popup de Proveedores */}
-                    {showSupplierPopup && (
-                        <>
-                            <div className="fixed inset-0 z-[90]" onClick={() => setShowSupplierPopup(false)} />
-                            <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
-                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                                    <button
-                                        onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
-                                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
-                                    >
-                                        Todos
-                                    </button>
-                                    {suppliers.filter(s => s !== 'Todos').map(s => (
-                                        <button
-                                            key={s}
-                                            onClick={() => { setSelectedSupplier(s); setShowSupplierPopup(false); }}
-                                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
-                                </div>
+                        ) : (
+                            <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
+                                <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
+                                <button
+                                    onClick={() => setSelectedSupplier(null)}
+                                    className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
+                                >
+                                    <X size={14} className="text-rose-500" strokeWidth={4} />
+                                </button>
                             </div>
-                        </>
-                    )}
+                        )}
 
-                    <button
-                        onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
-                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
-                    >
-                        {selectionMode ? 'Cancelar' : 'Seleccionar'}
-                    </button>
+                        <button
+                            onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
+                            className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                        >
+                            {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                        </button>
+                    </div>
+
+                    {/* Botón "+" Justificado a la derecha, oculto si hay seleccionados (ya que el floating bar aparece) */}
+                    {selectedIds.length === 0 && (
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
+                        >
+                            <Plus className="w-6 h-6" />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -208,17 +187,6 @@ export default function IngredientsPage() {
                 </div>
             )}
 
-            {/* Floating Action */}
-            {selectedIds.length > 0 ? (
-                <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-[#5E35B1] text-white px-6 py-3 rounded-full shadow-2xl flex gap-4 z-50 animate-in slide-in-from-bottom text-xs items-center">
-                    <span className="font-bold">{selectedIds.length} items</span>
-                    <div className="h-4 w-px bg-white/20"></div>
-                    <button onClick={handleBulkDelete} disabled={isDeleting} className="hover:text-red-200 font-bold flex items-center gap-1 uppercase">{isDeleting ? '...' : <><Trash2 size={14} /> Borrar</>}</button>
-                    <button onClick={() => setSelectedIds([])}><X size={14} /></button>
-                </div>
-            ) : (
-                <button onClick={() => setShowCreateModal(true)} className="fixed bottom-24 md:bottom-8 right-6 w-12 h-12 bg-[#5E35B1] text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition z-40"><Plus size={24} /></button>
-            )}
 
             {/* MODALES */}
             {editingIngredient && (

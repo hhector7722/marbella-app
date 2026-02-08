@@ -108,18 +108,7 @@ export default function RecipesPage() {
         <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
-            {/* Header */}
-            <div className="mb-8 flex justify-between items-end">
-                <div className="flex items-baseline gap-3">
-                    <h1 className="text-3xl font-bold text-white">Recetas</h1>
-                    <p className="text-sm text-blue-100">{recipes.length} disponibles</p>
-                </div>
-                <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-[#4d2c91] transition-all flex items-center gap-2 hover:scale-105">
-                    <Plus className="w-5 h-5" /> <span className="hidden sm:inline">NUEVA RECETA</span>
-                </button>
-            </div>
 
-            {/* Filtros */}
             <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="relative w-full sm:max-w-xs">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -132,58 +121,42 @@ export default function RecipesPage() {
                     />
                 </div>
 
-                <div className="flex gap-2 items-center relative">
-                    {/* Botón de Filtro Refinado */}
-                    {!selectedCategory ? (
-                        <button
-                            onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                            className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
-                        >
-                            Filtrar <ChevronDown size={14} className="text-zinc-400" />
-                        </button>
-                    ) : (
-                        <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
-                            <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
+                <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
+                    <div className="flex gap-2 items-center">
+                        {/* Botón de Filtro Refinado */}
+                        {!selectedCategory ? (
                             <button
-                                onClick={() => setSelectedCategory(null)}
-                                className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
+                                onClick={() => setShowCategoryPopup(!showCategoryPopup)}
+                                className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
                             >
-                                <X size={14} className="text-rose-500" strokeWidth={4} />
+                                Filtrar <ChevronDown size={14} className="text-zinc-400" />
                             </button>
-                        </div>
-                    )}
-
-                    {/* Popup de Categorías */}
-                    {showCategoryPopup && (
-                        <>
-                            <div className="fixed inset-0 z-[90]" onClick={() => setShowCategoryPopup(false)} />
-                            <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-2 animate-in fade-in zoom-in-95 duration-200">
-                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                                    <button
-                                        onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
-                                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400"
-                                    >
-                                        Todos
-                                    </button>
-                                    {uniqueDbCategories.map(cat => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
-                                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))}
-                                </div>
+                        ) : (
+                            <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
+                                <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
+                                <button
+                                    onClick={() => setSelectedCategory(null)}
+                                    className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
+                                >
+                                    <X size={14} className="text-rose-500" strokeWidth={4} />
+                                </button>
                             </div>
-                        </>
-                    )}
+                        )}
 
+                        <button
+                            onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
+                            className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                        >
+                            {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                        </button>
+                    </div>
+
+                    {/* Botón "+" Justificado a la derecha */}
                     <button
-                        onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
-                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
+                        onClick={() => setShowCreateModal(true)}
+                        className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
                     >
-                        {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                        <Plus className="w-6 h-6" />
                     </button>
                 </div>
             </div>
