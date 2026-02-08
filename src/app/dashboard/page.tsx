@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { getISOWeek, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
@@ -524,10 +525,13 @@ export default function DashboardPage() {
                             ].map((card, i) => (
                                 <button
                                     key={i}
-                                    onClick={card.title === 'Plantilla' ? () => setIsStaffModalOpen(true) : undefined}
+                                    onClick={() => {
+                                        if (card.title === 'Plantilla') setIsStaffModalOpen(true);
+                                        else if (card.title === 'Producto') setIsProductModalOpen(true);
+                                    }}
                                     className="bg-white rounded-3xl p-5 shadow-lg border border-gray-50 flex flex-col items-center justify-center gap-3 hover:translate-y-[-4px] transition-all hover:shadow-xl active:scale-95 group w-full"
                                 >
-                                    {card.link && card.title !== 'Plantilla' ? (
+                                    {card.link && card.title !== 'Plantilla' && card.title !== 'Producto' ? (
                                         <Link href={card.link} className="flex flex-col items-center justify-center gap-3">
                                             <div className={`p-3 rounded-2xl ${card.color} group-hover:scale-110 transition-transform`}>{card.icon}</div>
                                             <span className="text-xs font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
@@ -744,35 +748,59 @@ export default function DashboardPage() {
                 )
             }
 
-            {/* MODAL PRODUCTO (NUEVO) */}
+            {/* MODAL PRODUCTO (REFINADO) */}
             {
                 isProductModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-                            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                                <h3 className="font-bold text-lg text-gray-800">Gestión Producto</h3>
-                                <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
+                        <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                            <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
+                                <h3 className="font-black text-xl text-gray-800 uppercase tracking-tight">Producto</h3>
+                                <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm">
+                                    <X size={20} />
+                                </button>
                             </div>
-                            <div className="p-4 grid grid-cols-2 gap-4">
-                                <button onClick={() => router.push('/ingredients')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                    <div className="bg-orange-100 text-orange-600 p-3 rounded-full group-hover:bg-orange-500 group-hover:text-white transition-colors"><Utensils size={24} /></div>
-                                    <span className="font-bold text-orange-900 text-sm">Ingredientes</span>
+
+                            <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30">
+                                <button onClick={() => router.push('/recipes')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                    <div className="bg-red-50 text-red-500 p-3 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-all">
+                                        <ChefHat size={24} />
+                                    </div>
+                                    <span className="font-black text-sm text-gray-700">Recetas</span>
                                 </button>
-                                <button onClick={() => router.push('/recipes')} className="bg-red-50 border-2 border-red-100 hover:border-red-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                    <div className="bg-red-100 text-red-600 p-3 rounded-full group-hover:bg-red-500 group-hover:text-white transition-colors"><ChefHat size={24} /></div>
-                                    <span className="font-bold text-red-900 text-sm">Recetas</span>
+
+                                <button onClick={() => router.push('/ingredients')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                    <div className="bg-orange-50 text-orange-500 p-3 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all">
+                                        <Utensils size={24} />
+                                    </div>
+                                    <span className="font-black text-sm text-gray-700">Ingredientes</span>
                                 </button>
-                                <button onClick={() => console.log('Proveedores')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                    <div className="bg-blue-100 text-blue-600 p-3 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-colors"><Truck size={24} /></div>
-                                    <span className="font-bold text-blue-900 text-sm">Proveedores</span>
+
+                                <button onClick={() => toast.info('Pedidos próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                    <div className="bg-green-50 text-green-500 p-3 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-all">
+                                        <ShoppingCart size={24} />
+                                    </div>
+                                    <span className="font-black text-sm text-gray-700">Pedidos</span>
                                 </button>
-                                <button onClick={() => console.log('Pedidos')} className="bg-green-50 border-2 border-green-100 hover:border-green-400 p-3 rounded-2xl flex flex-col items-center gap-2 group transition-all">
-                                    <div className="bg-green-100 text-green-600 p-3 rounded-full group-hover:bg-green-500 group-hover:text-white transition-colors"><ShoppingCart size={24} /></div>
-                                    <span className="font-bold text-green-900 text-sm">Pedidos</span>
+
+                                <button onClick={() => toast.info('Inventario próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                    <div className="bg-purple-50 text-purple-500 p-3 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-all">
+                                        <ClipboardList size={24} />
+                                    </div>
+                                    <span className="font-black text-sm text-gray-700">Inventario</span>
                                 </button>
-                                <button onClick={() => console.log('Inventario')} className="col-span-2 bg-purple-50 border-2 border-purple-100 hover:border-purple-400 p-3 rounded-2xl flex flex-row items-center justify-center gap-3 group transition-all">
-                                    <div className="bg-purple-100 text-purple-600 p-2 rounded-full group-hover:bg-purple-500 group-hover:text-white transition-colors"><ClipboardList size={24} /></div>
-                                    <span className="font-bold text-purple-900 text-sm">Inventario</span>
+
+                                <button onClick={() => toast.info('Stock próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                    <div className="bg-blue-50 text-blue-500 p-3 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                        <Package size={24} />
+                                    </div>
+                                    <span className="font-black text-sm text-gray-700">Stock</span>
+                                </button>
+
+                                <button onClick={() => toast.info('Proveedores próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                    <div className="bg-zinc-50 text-zinc-500 p-3 rounded-2xl group-hover:bg-zinc-900 group-hover:text-white transition-all">
+                                        <Truck size={24} />
+                                    </div>
+                                    <span className="font-black text-sm text-gray-700">Proveedores</span>
                                 </button>
                             </div>
                         </div>
