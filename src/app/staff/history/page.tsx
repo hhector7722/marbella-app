@@ -265,37 +265,6 @@ export default function HistoryPage() {
         <div className="pb-10">
 
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
-                {/* HEADER UNIFICADO */}
-                <div className="flex justify-between items-end mb-4 px-1">
-                    <div>
-                        <h2 className="text-xl md:text-2xl font-bold text-white">Historial de {userName || 'Staff'}</h2>
-                        <p className="text-blue-100 text-xs md:text-sm opacity-80 min-h-[1rem]">
-                            Registros cerrados y balances
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {/* Botón Filtro */}
-                        <button
-                            onClick={() => setShowFilter(true)}
-                            className={cn(
-                                "h-11 px-4 flex items-center justify-center rounded-xl transition-all active:scale-95 duration-150 gap-2 font-bold text-xs shadow-lg",
-                                isFilterActive ? 'bg-orange-500 text-white shadow-orange-200' : 'bg-white text-zinc-500 shadow-sm border border-zinc-100'
-                            )}
-                        >
-                            <Filter size={16} />
-                            {isFilterActive ? 'FILTRADO' : 'FILTRAR'}
-                        </button>
-                        {isFilterActive && (
-                            <button
-                                onClick={clearFilter}
-                                className="h-11 w-11 flex items-center justify-center bg-white/20 text-white rounded-xl transition-all active:scale-95 duration-150 backdrop-blur-sm"
-                            >
-                                <X size={20} />
-                            </button>
-                        )}
-                    </div>
-                </div>
-
                 {loading ? (
                     <div className="py-10 text-center text-white/50"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>Cargando registros...</div>
                 ) : weeksData.length === 0 ? (
@@ -310,9 +279,31 @@ export default function HistoryPage() {
                             return (
                                 <React.Fragment key={idx}>
                                     {showMonthHeader && (
-                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 py-2 flex items-center gap-3 opacity-70 animate-in fade-in slide-in-from-left-4">
-                                            <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-md whitespace-nowrap">{currentMonthLabel}</span>
-                                            <div className="h-px bg-white/30 flex-1"></div>
+                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 py-2 flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
+                                            {idx === 0 && (
+                                                <div className="flex items-center gap-1.5 mr-1 shrink-0">
+                                                    <button
+                                                        onClick={() => setShowFilter(true)}
+                                                        className={cn(
+                                                            "h-8 px-3 flex items-center justify-center rounded-lg transition-all active:scale-95 duration-150 gap-1.5 font-bold text-[9px] shadow-lg",
+                                                            isFilterActive ? 'bg-orange-500 text-white shadow-orange-200' : 'bg-white text-zinc-500 shadow-sm border border-zinc-100'
+                                                        )}
+                                                    >
+                                                        <Filter size={12} />
+                                                        {isFilterActive ? 'FILTRADO' : 'FILTRAR'}
+                                                    </button>
+                                                    {isFilterActive && (
+                                                        <button
+                                                            onClick={clearFilter}
+                                                            className="h-8 w-8 flex items-center justify-center bg-white/20 text-white rounded-lg transition-all active:scale-95 duration-150 backdrop-blur-sm"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-md whitespace-nowrap opacity-70">{currentMonthLabel}</span>
+                                            <div className="h-px bg-white/30 flex-1 opacity-70"></div>
                                         </div>
                                     )}
                                     <div className={cn(
