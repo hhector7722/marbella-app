@@ -552,54 +552,47 @@ export default function DashboardPage() {
                         {/* SECCIÓN TESORERÍA */}
                         <div id="treasury-container" className="flex flex-col gap-4 flex-1">
                             {/* CAJA INICIAL */}
-                            <div className="bg-white rounded-[2rem] p-1 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col flex-1">
+                            <div className="bg-white rounded-[2.5rem] p-1 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col flex-1">
                                 <div className="p-4 flex flex-col flex-1">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
-                                                <Wallet size={16} />
-                                            </div>
-                                            <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Tesorería</span>
-                                        </div>
-                                        <Link href="/dashboard/movements" className="text-[10px] font-black text-[#36606F] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight size={10} /></Link>
-                                    </div>
-
                                     {boxes.filter(b => b.type === 'operational').map(box => (
                                         <div key={box.id} className="flex flex-col flex-1">
                                             {/* CABECERA BOX: SIEMPRE VISIBLE */}
                                             <button
                                                 onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                                className="w-full px-4 py-3 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-4"
+                                                className="w-full px-5 py-4 rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-6"
                                             >
                                                 <span className="text-[11px] font-black uppercase tracking-widest">Caja Inicial</span>
-                                                <span className="text-2xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                                <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                             </button>
 
-                                            {/* MOVIMIENTOS: EXPANDIBLES SIN MOVER LA CABECERA */}
+                                            {/* MOVIMIENTOS: EXPANDIBLES */}
                                             <div className="flex flex-col flex-1 min-h-0">
-                                                <div className="flex justify-between items-center px-1 mb-2">
+                                                <div className="flex justify-between items-center px-2 mb-3">
                                                     <button
                                                         onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
-                                                        className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                                                        className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
                                                     >
                                                         Movimientos
-                                                        <ChevronDown size={12} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                                        <ChevronDown size={14} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
                                                     </button>
+                                                    <Link href="/dashboard/movements" className="text-[10px] font-black text-[#36606F] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">
+                                                        Ver más <ArrowRight size={10} />
+                                                    </Link>
                                                 </div>
 
                                                 <div className={cn(
                                                     "overflow-hidden transition-all duration-300",
                                                     isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0"
                                                 )}>
-                                                    <div className="space-y-1 py-1 max-h-[200px] overflow-y-auto no-scrollbar">
+                                                    <div className="space-y-2 py-1 max-h-[250px] overflow-y-auto no-scrollbar">
                                                         {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>}
                                                         {boxMovements.map(mov => (
-                                                            <div key={mov.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-xl border border-gray-100">
-                                                                <div className="flex items-center gap-1.5 overflow-hidden">
-                                                                    {mov.type === 'expense' ? <ArrowUpRight size={10} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={10} className="text-emerald-500 shrink-0" />}
-                                                                    <span className="truncate max-w-[120px] text-gray-600">{mov.notes || 'Sin nota'}</span>
+                                                            <div key={mov.id} className="flex justify-between items-center text-[11px] bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
+                                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                                    {mov.type === 'expense' ? <ArrowUpRight size={12} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={12} className="text-emerald-500 shrink-0" />}
+                                                                    <span className="truncate max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span>
                                                                 </div>
-                                                                <span className={cn("font-bold", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
+                                                                <span className={cn("font-black", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
                                                                     {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
                                                                 </span>
                                                             </div>
@@ -612,7 +605,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            {/* CAJAS DE CAMBIO (RESTORED) */}
+                            {/* CAJAS DE CAMBIO */}
                             <div className="grid grid-cols-2 gap-4 h-24">
                                 {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
                                     <button
@@ -627,51 +620,78 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* HORAS EXTRAS (AQUÍ DER ABAJO) */}
-                        <Link href="/dashboard/overtime" className="block">
-                            <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 hover:shadow-2xl transition-all h-full group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <div className="flex items-center gap-2 text-rose-500 mb-1">
-                                            <div className="bg-rose-50 p-1.5 rounded-lg"><Clock size={16} /></div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Horas Extras</span>
-                                        </div>
-                                        <h3 className="text-sm font-bold text-gray-800">Compromiso Staff</h3>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-xl font-black text-[#36606F] group-hover:scale-110 transition-transform block">
-                                            {overtimeData.reduce((acc, curr) => acc + curr.total, 0).toFixed(0)}€
-                                        </span>
-                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Este periodo</span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    {overtimeData.slice(0, 3).map((week, i) => {
-                                        const paidCount = week.staff.filter((s: any) => paidStatus[`${week.weekId}-${s.id}`]).length;
-                                        const totalCount = week.staff.length;
-                                        const isPaid = paidCount === totalCount && totalCount > 0;
-
-                                        return (
-                                            <div key={i} className="flex items-center justify-between text-[10px] font-bold py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 px-2 rounded-lg transition-colors">
-                                                <span className="text-gray-500 uppercase tracking-tighter shrink-0">{week.label?.replace('Semana', 'Sem') || week.title?.replace('Semana', 'Sem')}</span>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[#36606F] font-black">{week.total.toFixed(0)}€</span>
-                                                    {isPaid ? (
-                                                        <CheckCircle2 size={12} className="text-emerald-500" />
-                                                    ) : (
-                                                        <div className="flex items-center gap-1 text-orange-400">
-                                                            <div className="w-1 h-1 rounded-full bg-orange-400"></div>
-                                                            <span className="text-[8px]">{paidCount}/{totalCount}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                        {/* HORAS EXTRAS (RESTAURADO) */}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center px-4">
+                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Horas Extras</h2>
+                                <Link href="/dashboard/overtime" className="text-[10px] font-black text-purple-600 uppercase">Detalle</Link>
                             </div>
-                        </Link>
+
+                            <div className="space-y-4">
+                                {overtimeData.slice(0, 3).map((week) => {
+                                    const isFullyPaid = isWeekFullyPaid(week);
+
+                                    return (
+                                        <div key={week.weekId} className="bg-purple-50/40 rounded-[2rem] shadow-sm border border-purple-100/60 overflow-hidden">
+                                            {/* CABECERA SEMANA */}
+                                            <button
+                                                onClick={() => toggleWeek(week.weekId)}
+                                                className="w-full p-5 flex items-center justify-between text-left group hover:bg-gray-50/50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={cn(
+                                                        "w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110",
+                                                        isFullyPaid ? "bg-emerald-500" : "bg-orange-400"
+                                                    )}>
+                                                        {isFullyPaid ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-gray-800">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase truncate max-w-[120px]">
+                                                            {format(new Date(week.weekId), "d MMM", { locale: es })} a {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex items-center gap-3">
+                                                    <span className="text-xl font-black text-[#5E35B1]">{week.total.toFixed(0)}€</span>
+                                                    <ChevronDown size={18} className={cn("text-gray-300 transition-transform duration-300", week.expanded && "rotate-180")} />
+                                                </div>
+                                            </button>
+
+                                            {/* LISTA TRABAJADORES (EXPANDIBLE) */}
+                                            {week.expanded && (
+                                                <div className="px-5 pb-5 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                    {week.staff.map((s: any) => (
+                                                        <div key={s.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100/50">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
+                                                                    {s.name.charAt(0)}
+                                                                </div>
+                                                                <span className="text-xs font-bold text-gray-700 capitalize">{s.name}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
+                                                                <button
+                                                                    onClick={(e) => togglePaid(e, week.weekId, s.id)}
+                                                                    className={cn(
+                                                                        "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
+                                                                        paidStatus[`${week.weekId}-${s.id}`]
+                                                                            ? "bg-emerald-500 text-white shadow-md"
+                                                                            : "bg-white border-2 border-gray-200 text-transparent"
+                                                                    )}
+                                                                >
+                                                                    <CheckCircle2 size={16} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -37,6 +37,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Selector de Plantilla Admin: Implementación de popup de selección en el dashboard de administración con redirección inteligente a perfiles.
 - [x] Gestión Multidispositivo de Perfiles: Actualización de la vista de perfil para permitir a los gerentes consultar fichas de trabajadores mediante parámetros de URL (`?id=...`).
 - [x] Optimización de Galerías (Recetas e Ingredientes): Eliminación de cabeceras redundantes para priorizar el buscador e integración del botón de creación en la fila de filtros para mayor limpieza visual.
+- [x] Refinamiento Final Dashboard Admin: Tarjeta "Asistencia" vinculada a `/registros`, renombrada tarjeta "M.O." a "Coste Mano Obra" vinculada a `/dashboard/labor`, y rediseño rectangular de selección de plantilla.
+- [x] Gestión de Producto: Modal de gestión con 6 categorías (Recetas, Ingredientes, Pedidos, Inventario, Stock, Proveedores).
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.
