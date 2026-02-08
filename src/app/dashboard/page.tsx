@@ -517,7 +517,7 @@ export default function DashboardPage() {
                         {/* NAV CARDS (IZQUIERDA ABAJO) */}
                         <div className="grid grid-cols-2 gap-4">
                             {[
-                                { title: 'Cierres', icon: <Receipt size={18} />, color: 'bg-emerald-50 text-emerald-600', link: '/dashboard/history' },
+                                { title: 'Asistencia', icon: <ClipboardList size={18} />, color: 'bg-emerald-50 text-emerald-600', link: '/dashboard/history' },
                                 { title: 'M.O.', icon: <Clock size={18} />, color: 'bg-blue-50 text-blue-600', link: '/dashboard/labor' },
                                 { title: 'Plantilla', icon: <Users size={18} />, color: 'bg-purple-50 text-purple-600', link: '/staff' },
                                 { title: 'Producto', icon: <Search size={18} />, color: 'bg-orange-50 text-orange-600', link: '/ingredients' },
