@@ -702,29 +702,41 @@ export default function DashboardPage() {
             {/* MODAL PLANTILLA */}
             {
                 isStaffModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-                            <div className="p-4 border-b flex justify-between items-center bg-gray-50"><h3 className="font-bold text-lg text-gray-800">Menú Plantilla</h3><button onClick={() => setIsStaffModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button></div>
-                            <div className="flex flex-col">
-                                <button onClick={() => router.push('/registros')} className="p-5 text-left hover:bg-blue-50 border-b border-gray-100 flex items-center gap-4 group transition-colors"><div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><FileText size={20} /></div><span className="font-bold text-gray-700 text-lg">Registros</span></button>
-                                <div className="max-h-72 overflow-y-auto bg-gray-50/50">
-                                    <p className="px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-gray-50/95 backdrop-blur">Empleados ({allEmployees.length})</p>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
+                        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
+                                <h3 className="font-black text-xl text-gray-800 uppercase tracking-tight">Plantilla</h3>
+                                <button onClick={() => setIsStaffModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="p-4 bg-gray-50/30">
+                                <p className="px-2 pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    Seleccionar Empleado ({allEmployees.length})
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto no-scrollbar pb-2">
                                     {allEmployees.map((emp) => (
                                         <button
                                             key={emp.id}
                                             onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                            className="w-full p-4 text-left hover:bg-white border-b border-gray-100 flex items-center gap-3 text-gray-700 transition-colors"
+                                            className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#5B8FB9]/30 hover:-translate-y-1 transition-all active:scale-95 flex flex-col items-center gap-3 group"
                                         >
-                                            <div className="w-8 h-8 rounded-full bg-[#5B8FB9] flex items-center justify-center text-xs font-bold text-white shadow-sm">
-                                                {emp.first_name.substring(0, 1).toUpperCase()}
+                                            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-lg font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize">
+                                                {emp.first_name.substring(0, 1)}
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-gray-800">{emp.first_name} {emp.last_name}</span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{emp.role === 'manager' ? 'Gerente' : 'Personal'}</span>
-                                            </div>
+                                            <span className="font-black text-sm text-gray-700 text-center capitalize break-words w-full">
+                                                {emp.first_name}
+                                            </span>
                                         </button>
                                     ))}
-                                    {allEmployees.length === 0 && <div className="p-4 text-center text-sm text-gray-400 italic">No hay empleados cargados</div>}
+
+                                    {allEmployees.length === 0 && (
+                                        <div className="col-span-2 p-8 text-center text-sm text-gray-400 font-bold italic bg-white rounded-3xl border border-dashed border-gray-200">
+                                            No hay empleados cargados
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
