@@ -1,6 +1,31 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { createClient } from "@/utils/supabase/client";
+import {
+    User, Phone, CreditCard, FileText, Copy, Check,
+    Briefcase, Hash, Euro, FileClock, PhoneCall, Mail
+} from 'lucide-react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 
-// ... (rest of the imports)
+// Definimos la interfaz basada en los datos
+interface UserProfile {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string | null;
+    dni: string | null;
+    ss_number: string | null;
+    bank_account: string | null; // IBAN
+    contract_hours: number | null;
+    overtime_rate: number | null;
+    role: string;
+    avatar_url: string | null;
+}
 
 export default function StaffProfilePage() {
     const supabase = createClient();
