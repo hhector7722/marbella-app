@@ -280,35 +280,36 @@ export default function HistoryPage() {
                                 <React.Fragment key={idx}>
                                     {showMonthHeader && (
                                         <div className="col-span-1 md:col-span-2 lg:col-span-3 py-2 flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
+                                            <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-md whitespace-nowrap opacity-70">{currentMonthLabel}</span>
+                                            <div className="h-px bg-white/30 flex-1 opacity-70"></div>
                                             {idx === 0 && (
-                                                <div className="flex items-center gap-1.5 mr-1 shrink-0">
+                                                <div className="flex items-center gap-1.5 ml-1 shrink-0">
                                                     <button
                                                         onClick={() => setShowFilter(true)}
                                                         className={cn(
-                                                            "h-8 px-3 flex items-center justify-center rounded-lg transition-all active:scale-95 duration-150 gap-1.5 font-bold text-[9px] shadow-lg",
+                                                            "h-8 w-8 flex items-center justify-center rounded-lg transition-all active:scale-95 duration-150 shadow-lg",
                                                             isFilterActive ? 'bg-orange-500 text-white shadow-orange-200' : 'bg-white text-zinc-500 shadow-sm border border-zinc-100'
                                                         )}
+                                                        title="Filtrar"
                                                     >
-                                                        <Filter size={12} />
-                                                        {isFilterActive ? 'FILTRADO' : 'FILTRAR'}
+                                                        <Filter size={14} />
                                                     </button>
                                                     {isFilterActive && (
                                                         <button
                                                             onClick={clearFilter}
                                                             className="h-8 w-8 flex items-center justify-center bg-white/20 text-white rounded-lg transition-all active:scale-95 duration-150 backdrop-blur-sm"
+                                                            title="Quitar Filtro"
                                                         >
                                                             <X size={14} />
                                                         </button>
                                                     )}
                                                 </div>
                                             )}
-                                            <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-md whitespace-nowrap opacity-70">{currentMonthLabel}</span>
-                                            <div className="h-px bg-white/30 flex-1 opacity-70"></div>
                                         </div>
                                     )}
                                     <div className={cn(
                                         "bg-white rounded-[2rem] p-4 md:p-6 shadow-xl border border-zinc-100",
-                                        "transition-all duration-300 animate-in slide-in-from-bottom-4 relative"
+                                        "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4"
                                     )} style={{ animationDelay: `${idx * 50}ms` }}>
                                         <div className="flex justify-between items-end mb-2 px-1">
                                             <div className="flex flex-col">
@@ -316,12 +317,12 @@ export default function HistoryPage() {
                                                     {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
                                                 </span>
                                             </div>
-                                            {week.summary.isPaid && (
-                                                <div className="absolute top-2 right-2 w-20 h-20 rotate-[-10deg] opacity-70 pointer-events-none z-20">
-                                                    <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                                                </div>
-                                            )}
                                         </div>
+                                        {week.summary.isPaid && (
+                                            <div className="absolute -bottom-8 -right-6 w-28 h-28 rotate-[-12deg] opacity-80 pointer-events-none z-30 drop-shadow-lg">
+                                                <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
+                                            </div>
+                                        )}
 
                                         <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                             <div className="grid grid-cols-7 border-b border-gray-100">
