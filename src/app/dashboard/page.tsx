@@ -721,12 +721,12 @@ export default function DashboardPage() {
                                         <button
                                             key={emp.id}
                                             onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                            className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#5B8FB9]/30 hover:-translate-y-1 transition-all active:scale-95 flex flex-col items-center gap-3 group"
+                                            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#5B8FB9]/30 transition-all active:scale-95 flex flex-row items-center gap-4 group h-20"
                                         >
-                                            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-lg font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize">
+                                            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-lg font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
                                                 {emp.first_name.substring(0, 1)}
                                             </div>
-                                            <span className="font-black text-sm text-gray-700 text-center capitalize break-words w-full">
+                                            <span className="font-black text-sm text-gray-700 text-left capitalize truncate flex-1">
                                                 {emp.first_name}
                                             </span>
                                         </button>
