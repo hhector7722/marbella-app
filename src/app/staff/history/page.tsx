@@ -319,7 +319,7 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
                                         {week.summary.isPaid && (
-                                            <div className="absolute -bottom-10 -right-10 w-32 h-32 rotate-[-15deg] opacity-80 pointer-events-none z-30 drop-shadow-2xl">
+                                            <div className="absolute -bottom-4 -right-4 w-22 h-22 rotate-[-12deg] opacity-90 pointer-events-none z-30 drop-shadow-xl">
                                                 <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
                                             </div>
                                         )}
