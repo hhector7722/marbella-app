@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     User, Phone, CreditCard, FileText, Copy, Check,
@@ -27,7 +27,7 @@ interface UserProfile {
     avatar_url: string | null;
 }
 
-export default function StaffProfilePage() {
+function ProfileContent() {
     const supabase = createClient();
     const searchParams = useSearchParams();
     const targetId = searchParams.get('id');
@@ -150,7 +150,6 @@ export default function StaffProfilePage() {
                     </div>
                     <h1 className="text-2xl font-black">{fullName}</h1>
 
-                    {/* AQUÍ ESTABA EL ERROR: Corregido </button> por </p> */}
                     <p className="text-blue-100 text-sm bg-blue-800/30 px-3 py-0.5 rounded-full mt-2 capitalize">
                         {profile.role === 'manager' ? 'Gerente' : 'Personal'}
                     </p>
@@ -260,5 +259,18 @@ export default function StaffProfilePage() {
                 </button>
             </div>
         </div>
+    );
+}
+
+export default function StaffProfilePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 border-4 border-[#5B8FB9] border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-500 animate-pulse">Cargando perfil...</p>
+            </div>
+        }>
+            <ProfileContent />
+        </Suspense>
     );
 }
