@@ -522,14 +522,23 @@ export default function DashboardPage() {
                                 { title: 'Plantilla', icon: <Users size={18} />, color: 'bg-purple-50 text-purple-600', link: '/staff' },
                                 { title: 'Producto', icon: <Search size={18} />, color: 'bg-orange-50 text-orange-600', link: '/ingredients' },
                             ].map((card, i) => (
-                                <Link
+                                <button
                                     key={i}
-                                    href={card.link}
-                                    className="bg-white rounded-3xl p-5 shadow-lg border border-gray-50 flex flex-col items-center justify-center gap-3 hover:translate-y-[-4px] transition-all hover:shadow-xl active:scale-95 group"
+                                    onClick={card.title === 'Plantilla' ? () => setIsStaffModalOpen(true) : undefined}
+                                    className="bg-white rounded-3xl p-5 shadow-lg border border-gray-50 flex flex-col items-center justify-center gap-3 hover:translate-y-[-4px] transition-all hover:shadow-xl active:scale-95 group w-full"
                                 >
-                                    <div className={`p-3 rounded-2xl ${card.color} group-hover:scale-110 transition-transform`}>{card.icon}</div>
-                                    <span className="text-xs font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
-                                </Link>
+                                    {card.link && card.title !== 'Plantilla' ? (
+                                        <Link href={card.link} className="flex flex-col items-center justify-center gap-3">
+                                            <div className={`p-3 rounded-2xl ${card.color} group-hover:scale-110 transition-transform`}>{card.icon}</div>
+                                            <span className="text-xs font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
+                                        </Link>
+                                    ) : (
+                                        <>
+                                            <div className={`p-3 rounded-2xl ${card.color} group-hover:scale-110 transition-transform`}>{card.icon}</div>
+                                            <span className="text-xs font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
+                                        </>
+                                    )}
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -700,7 +709,21 @@ export default function DashboardPage() {
                                 <button onClick={() => router.push('/registros')} className="p-5 text-left hover:bg-blue-50 border-b border-gray-100 flex items-center gap-4 group transition-colors"><div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><FileText size={20} /></div><span className="font-bold text-gray-700 text-lg">Registros</span></button>
                                 <div className="max-h-72 overflow-y-auto bg-gray-50/50">
                                     <p className="px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-gray-50/95 backdrop-blur">Empleados ({allEmployees.length})</p>
-                                    {allEmployees.map((emp) => (<button key={emp.id} onClick={() => console.log(`Abrir perfil de ${emp.first_name}`)} className="w-full p-4 text-left hover:bg-white border-b border-gray-100 flex items-center gap-3 text-gray-700 transition-colors"><div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">{emp.first_name.substring(0, 1)}</div><span className="font-semibold">{emp.first_name} {emp.last_name}</span></button>))}
+                                    {allEmployees.map((emp) => (
+                                        <button
+                                            key={emp.id}
+                                            onClick={() => router.push(`/profile?id=${emp.id}`)}
+                                            className="w-full p-4 text-left hover:bg-white border-b border-gray-100 flex items-center gap-3 text-gray-700 transition-colors"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-[#5B8FB9] flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                                                {emp.first_name.substring(0, 1).toUpperCase()}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-gray-800">{emp.first_name} {emp.last_name}</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{emp.role === 'manager' ? 'Gerente' : 'Personal'}</span>
+                                            </div>
+                                        </button>
+                                    ))}
                                     {allEmployees.length === 0 && <div className="p-4 text-center text-sm text-gray-400 italic">No hay empleados cargados</div>}
                                 </div>
                             </div>

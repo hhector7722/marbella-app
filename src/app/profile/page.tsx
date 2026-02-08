@@ -1,53 +1,45 @@
-'use client';
+import { useSearchParams } from 'next/navigation';
 
-import { useEffect, useState } from 'react';
-import { createClient } from "@/utils/supabase/client";
-import {
-    User, Phone, CreditCard, FileText, Copy, Check,
-    Briefcase, Hash, Euro, FileClock, PhoneCall, Mail
-} from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import Image from 'next/image';
-
-// Definimos la interfaz basada en los datos
-interface UserProfile {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone: string | null;
-    dni: string | null;
-    ss_number: string | null;
-    bank_account: string | null; // IBAN
-    contract_hours: number | null;
-    overtime_rate: number | null;
-    role: string;
-    avatar_url: string | null;
-}
+// ... (rest of the imports)
 
 export default function StaffProfilePage() {
     const supabase = createClient();
+    const searchParams = useSearchParams();
+    const targetId = searchParams.get('id');
+
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchProfile();
-    }, []);
+        fetchInitialData();
+    }, [targetId]);
 
-    const fetchProfile = async () => {
+    const fetchInitialData = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 setLoading(false);
                 return;
             }
+            setCurrentUser(user);
 
+            // 1. Fetch current user's profile to check role
+            const { data: currentProfile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            const isManager = currentProfile?.role === 'manager';
+            const effectiveId = (targetId && isManager) ? targetId : user.id;
+
+            // 2. Fetch target profile
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', effectiveId)
                 .single();
 
             if (error) throw error;
