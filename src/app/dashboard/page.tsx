@@ -620,14 +620,14 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* HORAS EXTRAS (RESTAURADO) */}
-                        <div className="flex flex-col gap-3">
-                            <div className="flex justify-between items-center px-4">
+                        {/* HORAS EXTRAS (COMPACTO) */}
+                        <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col gap-6">
+                            <div className="flex justify-between items-center px-1">
                                 <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Horas Extras</h2>
-                                <Link href="/dashboard/overtime" className="text-[10px] font-black text-purple-600 uppercase">Detalle</Link>
+                                <Link href="/dashboard/overtime" className="text-[10px] font-black text-purple-600 uppercase hover:underline transition-all">Ver más</Link>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {overtimeData.slice(0, 3).map((week) => {
                                     const isFullyPaid = isWeekFullyPaid(week);
 
@@ -636,33 +636,34 @@ export default function DashboardPage() {
                                             {/* CABECERA SEMANA */}
                                             <button
                                                 onClick={() => toggleWeek(week.weekId)}
-                                                className="w-full p-5 flex items-center justify-between text-left group hover:bg-gray-50/50 transition-colors"
+                                                className="w-full p-4 flex items-center justify-between text-left group hover:bg-white transition-colors"
                                             >
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-3">
                                                     <div className={cn(
-                                                        "w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110",
+                                                        "w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0",
                                                         isFullyPaid ? "bg-emerald-500" : "bg-orange-400"
                                                     )}>
-                                                        {isFullyPaid ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                                                        {isFullyPaid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                                                     </div>
-                                                    <div>
+                                                    <div className="flex items-center gap-2">
                                                         <h4 className="text-sm font-black text-gray-800">Sem {getISOWeek(new Date(week.weekId))}</h4>
-                                                        <p className="text-[10px] font-bold text-gray-400 uppercase truncate max-w-[120px]">
-                                                            {format(new Date(week.weekId), "d MMM", { locale: es })} a {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
+                                                        <span className="text-gray-300 font-light mx-0.5">•</span>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase pt-0.5">
+                                                            {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right flex items-center gap-3">
-                                                    <span className="text-xl font-black text-[#5E35B1]">{week.total.toFixed(0)}€</span>
-                                                    <ChevronDown size={18} className={cn("text-gray-300 transition-transform duration-300", week.expanded && "rotate-180")} />
+                                                    <span className="text-lg font-black text-[#5E35B1]">{week.total.toFixed(0)}€</span>
+                                                    <ChevronDown size={16} className={cn("text-gray-300 transition-transform duration-300", week.expanded && "rotate-180")} />
                                                 </div>
                                             </button>
 
                                             {/* LISTA TRABAJADORES (EXPANDIBLE) */}
                                             {week.expanded && (
-                                                <div className="px-5 pb-5 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
                                                     {week.staff.map((s: any) => (
-                                                        <div key={s.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100/50">
+                                                        <div key={s.id} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
                                                                     {s.name.charAt(0)}

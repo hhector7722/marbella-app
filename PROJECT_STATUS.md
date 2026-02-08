@@ -35,9 +35,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Rediseño Histórico de Extras: Transición al estándar "Vista Marbella Detail" con cabecera sólida, mini-KPIs horizontales y listado expandible de alta densidad.
 - [x] Refinamiento Editor de Horarios: Extensión de marcadores de entrada (verde) y salida (roja) hacia el centro para mejor visibilidad táctil.
 - [x] Selector de Plantilla Admin: Implementación de popup de selección en el dashboard de administración con redirección inteligente a perfiles.
-- [x] Gestión Multidispositivo de Perfiles: Actualización de la vista de perfil para permitir a los gerentes consultar fichas de trabajadores mediante parámetros de URL (`?id=...`).
-- [x] Optimización de Galerías (Recetas e Ingredientes): Eliminación de cabeceras redundantes para priorizar el buscador e integración del botón de creación en la fila de filtros para mayor limpieza visual.
-- [x] Refinamiento Final Dashboard Admin: Tarjeta "Asistencia" vinculada a `/registros`, renombrada tarjeta "M.O." a "Coste Mano Obra" vinculada a `/dashboard/labor`, y rediseño rectangular de selección de plantilla.
+- [x] Restauración de Horas Extras: Tarjetas moradas por semana, indicadores de estado (verde/naranja) y toggles de pago individuales por trabajador.
+- [x] Refinamiento Caja Inicial: Eliminación de cabecera "Tesorería" y reposicionamiento del acceso "Ver más" junto a Movimientos.
 - [x] Gestión de Producto: Modal de gestión con 6 categorías (Recetas, Ingredientes, Pedidos, Inventario, Stock, Proveedores).
 
 ## 📅 PENDIENTE
