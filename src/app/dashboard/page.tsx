@@ -463,12 +463,12 @@ export default function DashboardPage() {
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
                 {/* LAYOUT PRINCIPAL: 2 COLUMNAS VERTICALES EN ESCRITORIO */}
-                <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                <div className="flex flex-col md:flex-row gap-6 items-start">
 
                     {/* COLUMNA IZQUIERDA: CIERRE + NAV CARDS */}
                     <div className="flex-1 flex flex-col gap-6">
                         {/* ÚLTIMO CIERRE */}
-                        <div id="closure-container" className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col flex-1">
+                        <div id="closure-container" className="bg-white rounded-[2rem] p-5 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col">
                             <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
@@ -548,11 +548,11 @@ export default function DashboardPage() {
                     </div>
 
                     {/* COLUMNA DERECHA: TESORERÍA + HORAS EXTRAS */}
-                    <div className="flex-1 flex flex-col gap-6">
+                    <div className="flex-1 flex flex-col gap-6 w-full">
                         {/* SECCIÓN TESORERÍA */}
-                        <div id="treasury-container" className="flex flex-col gap-4 flex-1">
+                        <div id="treasury-container" className="flex flex-col gap-4">
                             {/* CAJA INICIAL */}
-                            <div className="bg-white rounded-[2.5rem] p-1 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col flex-1">
+                            <div className="bg-white rounded-[2.5rem] p-1 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col">
                                 <div className="p-4 flex flex-col flex-1">
                                     {boxes.filter(b => b.type === 'operational').map(box => (
                                         <div key={box.id} className="flex flex-col flex-1">
