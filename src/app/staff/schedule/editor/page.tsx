@@ -169,7 +169,7 @@ export default function ScheduleEditorPage() {
                 const existing = shiftMap.get(emp.id);
                 return {
                     employeeId: emp.id,
-                    name: `${emp.first_name} ${emp.last_name || ''}`,
+                    name: emp.first_name,
                     start: new Date(existing!.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                     end: new Date(existing!.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                     active: true
@@ -211,7 +211,7 @@ export default function ScheduleEditorPage() {
 
         const newShift = {
             employeeId: profile.id,
-            name: `${profile.first_name} ${profile.last_name || ''}`,
+            name: profile.first_name,
             start: '09:00',
             end: '17:00',
             active: true
@@ -574,7 +574,7 @@ export default function ScheduleEditorPage() {
                                         <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                                             <UserPlus size={16} />
                                         </div>
-                                        <span className="font-bold text-gray-700 text-sm">{profile.first_name} {profile.last_name}</span>
+                                        <span className="font-bold text-gray-700 text-sm">{profile.first_name}</span>
                                     </button>
                                 ))
                             }
