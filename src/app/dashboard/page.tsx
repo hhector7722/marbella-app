@@ -632,11 +632,11 @@ export default function DashboardPage() {
                                     const isFullyPaid = isWeekFullyPaid(week);
 
                                     return (
-                                        <div key={week.weekId} className="bg-purple-50/40 rounded-[2rem] shadow-sm border border-purple-100/60 overflow-hidden">
+                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
                                             {/* CABECERA SEMANA */}
                                             <button
                                                 onClick={() => toggleWeek(week.weekId)}
-                                                className="w-full p-4 flex items-center justify-between text-left group hover:bg-white transition-colors"
+                                                className="w-full p-4 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={cn(
@@ -646,16 +646,15 @@ export default function DashboardPage() {
                                                         {isFullyPaid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <h4 className="text-sm font-black text-gray-800">Sem {getISOWeek(new Date(week.weekId))}</h4>
-                                                        <span className="text-gray-300 font-light mx-0.5">•</span>
-                                                        <p className="text-[10px] font-bold text-gray-400 uppercase pt-0.5">
+                                                        <h4 className="text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                                        <span className="text-purple-300 font-light mx-0.5">•</span>
+                                                        <p className="text-[10px] font-bold text-purple-200 uppercase pt-0.5">
                                                             {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right flex items-center gap-3">
-                                                    <span className="text-lg font-black text-[#5E35B1]">{week.total.toFixed(0)}€</span>
-                                                    <ChevronDown size={16} className={cn("text-gray-300 transition-transform duration-300", week.expanded && "rotate-180")} />
+                                                    <span className="text-lg font-black text-white">{week.total.toFixed(0)}€</span>
                                                 </div>
                                             </button>
 
