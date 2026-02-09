@@ -46,6 +46,7 @@ interface ShiftMock {
     date: Date;
     startTime: string;
     endTime: string;
+    activity?: string;
 }
 
 // --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
@@ -272,7 +273,7 @@ export default function StaffDashboard() {
 
             const { data: realShifts } = await supabase
                 .from('shifts')
-                .select('start_time, end_time')
+                .select('start_time, end_time, activity')
                 .eq('user_id', user.id)
                 .eq('is_published', true)
                 .gte('start_time', new Date().toISOString())
@@ -287,6 +288,7 @@ export default function StaffDashboard() {
                         date: start,
                         startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                         endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                        activity: s.activity || undefined
                     };
                 });
                 setNextShifts(formattedShifts);
@@ -369,9 +371,10 @@ export default function StaffDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                {/* COLUMNA IZQUIERDA */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] p-4 shadow-xl">
+                {/* COLUMNA IZQUIERDA (ANCHO 1) */}
+                <div className="lg:col-span-1 space-y-6">
+                    {/* RESUMEN SEMANAL */}
+                    <div className="bg-white rounded-[2rem] p-4 shadow-xl border border-gray-50">
                         <div className="flex justify-between items-end mb-2 px-1">
                             <div className="flex flex-col">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
@@ -458,11 +461,9 @@ export default function StaffDashboard() {
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* COLUMNA DERECHA */}
-                <div className="space-y-4 md:space-y-6">
-                    <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
+                    {/* TARJETA DE FICHAJE (DEBAJO DEL RESUMEN) */}
+                    <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4 border border-gray-50">
                         <button
                             onClick={openConfirmation}
                             disabled={status === 'finished' || actionLoading}
@@ -491,61 +492,66 @@ export default function StaffDashboard() {
                             </div>
                         )}
                     </div>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-3 md:gap-4 h-[180px] md:h-[200px]">
-                        <div className="bg-white rounded-3xl p-4 shadow-xl h-full flex flex-col overflow-hidden relative border border-gray-50">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-bold text-gray-700 flex items-center gap-2 text-xs">
-                                    <CalendarDays size={16} className="text-purple-500" /> Horarios
-                                </h3>
-                                <Link href="/staff/schedule" className="text-[10px] font-bold text-purple-500 hover:underline">Ver más</Link>
-                            </div>
-                            <div className="space-y-2 flex-1 overflow-y-auto">
-                                {nextShifts.length === 0 ? (
-                                    <div className="h-full flex items-center justify-center">
-                                        <p className="text-[10px] text-gray-400 text-center px-2">No tienes turnos asignados.</p>
-                                    </div>
-                                ) : (
-                                    nextShifts.map((shift, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="bg-white p-1 rounded-lg text-gray-500 font-bold text-[10px] text-center min-w-[30px] shadow-sm">
-                                                <span className="block text-[6px] uppercase">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3)}</span>
-                                                <span className="leading-none text-gray-800">{shift.date.getDate()}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs font-black">
+                {/* COLUMNA DERECHA (ANCHO 2) */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* TARJETA DE HORARIOS (ANCHA) */}
+                    <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[220px]">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-black text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <CalendarDays size={20} className="text-purple-500" /> Próximos Horarios
+                            </h3>
+                            <Link href="/staff/schedule" className="text-xs font-black text-purple-600 hover:underline uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full">Ver más</Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                            {nextShifts.length === 0 ? (
+                                <div className="col-span-1 md:col-span-2 flex items-center justify-center py-10">
+                                    <p className="text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos asignados para los próximos días.</p>
+                                </div>
+                            ) : (
+                                nextShifts.map((shift, idx) => (
+                                    <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:border-purple-200 transition-colors group">
+                                        <div className="bg-white p-2 rounded-xl text-gray-500 font-black text-xs text-center min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
+                                            <span className="block text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                            <span className="leading-none text-lg text-gray-800">{shift.date.getDate()}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{shift.activity || 'Turno'}</span>
+                                            <div className="flex items-center gap-2 text-sm font-black">
                                                 <span className="text-green-600">{shift.startTime}</span>
-                                                <span className="text-gray-800">-</span>
+                                                <span className="text-gray-400 font-light px-1">-</span>
                                                 <span className="text-red-500">{shift.endTime}</span>
                                             </div>
                                         </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
-                            <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
-
-                            {/* --- BOTÓN RECETAS: REDIRECCIONA A /recipes --- */}
-                            <button
-                                onClick={() => router.push('/recipes')}
-                                className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50"
-                            >
-                                <ChefHat
-                                    size={36}
-                                    className="text-black transition-transform group-hover:scale-110 drop-shadow-sm"
-                                    strokeWidth={1.5}
-                                />
-                                <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">
-                                    Recetas
-                                </span>
-                            </button>
-
-                            <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Info Interés" onClick={() => setActiveMenu('info')} />
-                            <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
 
+                    {/* FILA ÚNICA DE ICONOS ACCESO */}
+                    <div className="grid grid-cols-4 gap-4">
+                        <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Videos" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
+
+                        {/* --- BOTÓN RECETAS --- */}
+                        <button
+                            onClick={() => router.push('/recipes')}
+                            className="flex flex-col items-center justify-center gap-2 w-full h-24 bg-white rounded-[2rem] shadow-xl active:scale-95 transition-all p-2 group hover:bg-gray-50 border border-gray-50"
+                        >
+                            <ChefHat
+                                size={32}
+                                className="text-black transition-transform group-hover:scale-110 drop-shadow-sm"
+                                strokeWidth={1.5}
+                            />
+                            <span className="text-[10px] font-black text-gray-500 text-center leading-tight group-hover:text-gray-900 uppercase tracking-tight">
+                                Recetas
+                            </span>
+                        </button>
+
+                        <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Ayuda" onClick={() => setActiveMenu('info')} />
+                        <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                    </div>
                 </div>
             </div>
 
