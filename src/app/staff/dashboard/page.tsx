@@ -332,9 +332,7 @@ export default function StaffDashboard() {
     const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
 
     // --- COMPONENTES VISUALES ---
-
-
-    const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
+    const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string | React.ReactNode, onClick?: () => void, fillWhite?: boolean }) => (
         <button
             onClick={onClick}
             className={cn(
@@ -360,8 +358,6 @@ export default function StaffDashboard() {
 
     return (
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6">
-
-            {/* HEADER ELIMINADO */}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
@@ -489,32 +485,32 @@ export default function StaffDashboard() {
                 </div>
 
                 {/* COLUMNA DERECHA (ANCHO 1) - Horarios e Iconos */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className="lg:col-span-1 grid grid-cols-2 lg:block space-y-0 lg:space-y-6 gap-4">
                     {/* TARJETA DE HORARIOS (Nivel 1) */}
-                    <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[220px]">
+                    <div className="bg-white rounded-[2rem] p-4 lg:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px]">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-black text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                <CalendarDays size={20} className="text-purple-500" /> Próximos Horarios
+                            <h3 className="font-black text-gray-800 flex items-center gap-2 text-[10px] lg:text-sm uppercase tracking-wider">
+                                <CalendarDays size={18} className="text-purple-500 shrink-0" /> <span className="truncate">Próximos Horarios</span>
                             </h3>
-                            <Link href="/staff/schedule" className="text-xs font-black text-purple-600 hover:underline uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full">Ver más</Link>
+                            <Link href="/staff/schedule" className="text-[9px] lg:text-xs font-black text-purple-600 hover:underline uppercase tracking-widest bg-purple-50 px-2 lg:px-3 py-1 rounded-full shrink-0">Ver más</Link>
                         </div>
-                        <div className="grid grid-cols-1 gap-4 flex-1">
+                        <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
                             {nextShifts.length === 0 ? (
-                                <div className="col-span-1 md:col-span-2 flex items-center justify-center py-10">
-                                    <p className="text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos asignados para los próximos días.</p>
+                                <div className="flex items-center justify-center py-6 lg:py-10">
+                                    <p className="text-[9px] lg:text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos.</p>
                                 </div>
                             ) : (
-                                nextShifts.map((shift, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:border-purple-200 transition-colors group">
-                                        <div className="bg-white p-2 rounded-xl text-gray-500 font-black text-xs text-center min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
-                                            <span className="block text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                            <span className="leading-none text-lg text-gray-800">{shift.date.getDate()}</span>
+                                nextShifts.slice(0, 2).map((shift, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:border-purple-200 transition-colors group">
+                                        <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
+                                            <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                            <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
                                         </div>
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{shift.activity || 'Turno'}</span>
-                                            <div className="flex items-center gap-2 text-sm font-black">
+                                        <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden">
+                                            <span className="text-[8px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
+                                            <div className="flex items-center gap-1.5 lg:gap-2 text-[10px] lg:text-sm font-black">
                                                 <span className="text-green-600">{shift.startTime}</span>
-                                                <span className="text-gray-400 font-light px-1">-</span>
+                                                <span className="text-gray-400 font-light">-</span>
                                                 <span className="text-red-500">{shift.endTime}</span>
                                             </div>
                                         </div>
@@ -525,7 +521,7 @@ export default function StaffDashboard() {
                     </div>
 
                     {/* FILA ÚNICA DE ICONOS ACCESO ACCESIBLES */}
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                         <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Guía" onClick={() => toast.info("Abriendo guía...")} fillWhite={true} />
 
                         {/* --- BOTÓN RECETAS --- */}
@@ -543,7 +539,12 @@ export default function StaffDashboard() {
                             </span>
                         </button>
 
-                        <IOSIconBoxed icon={Info} color="bg-blue-500" label="Información" onClick={() => setActiveMenu('info')} />
+                        <IOSIconBoxed
+                            icon={Info}
+                            color="bg-blue-500"
+                            label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
+                            onClick={() => setActiveMenu('info')}
+                        />
                         <IOSIconBoxed icon={Package} color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
                     </div>
                 </div>

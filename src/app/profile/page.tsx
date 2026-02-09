@@ -85,27 +85,27 @@ function ProfileContent() {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
-    // Componente interno para filas de datos
+    // Componente interno para filas de datos mejorado para el estilo corporativo
     const ProfileDataRow = ({ icon: Icon, label, value, action, isCopyable }: any) => (
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors group">
-            <div className="flex items-center gap-4 overflow-hidden">
-                <div className="bg-blue-100/50 p-2.5 rounded-xl text-[#5B8FB9] group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors">
-                    <Icon size={20} strokeWidth={2} />
+        <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/80 transition-all group">
+            <div className="flex items-center gap-5 overflow-hidden">
+                <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
+                    <Icon size={22} strokeWidth={2.5} />
                 </div>
                 <div className="truncate">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">{label}</p>
-                    <p className="text-gray-800 font-semibold text-sm md:text-base truncate">{value || 'No definido'}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-1">{label}</p>
+                    <p className="text-gray-800 font-bold text-sm md:text-base truncate tracking-tight">{value || 'No definido'}</p>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 pl-2 shrink-0">
+            <div className="flex items-center gap-3 pl-2 shrink-0">
                 {isCopyable && value && (
                     <button
                         onClick={() => copyToClipboard(value, label)}
-                        className="text-gray-400 hover:text-[#5B8FB9] p-2 rounded-full hover:bg-blue-100/50 transition-all active:scale-95"
+                        className="text-gray-400 hover:text-[#36606F] w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-[#36606F]/10 transition-all active:scale-90"
                         title={`Copiar ${label}`}
                     >
-                        {copiedField === label ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+                        {copiedField === label ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
                     </button>
                 )}
                 {action}
@@ -115,150 +115,181 @@ function ProfileContent() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-                <div className="w-16 h-16 border-4 border-[#5B8FB9] border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-gray-500 animate-pulse">Cargando perfil...</p>
+            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+                <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando perfil corporativo...</p>
             </div>
         );
     }
 
-    if (!profile) return <div className="p-8 text-center text-gray-500">No se encontró el perfil.</div>;
+    if (!profile) return (
+        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-6">
+            <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-2xl max-w-sm w-full">
+                <User size={48} className="mx-auto text-gray-200 mb-4" />
+                <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Perfil no encontrado</p>
+                <button onClick={() => router.back()} className="mt-6 w-full py-4 bg-[#36606F] text-white rounded-2xl font-black uppercase text-xs tracking-widest">Volver</button>
+            </div>
+        </div>
+    );
 
     const fullName = `${profile.first_name} ${profile.last_name || ''}`;
     const initials = `${profile.first_name.charAt(0)}${profile.last_name?.charAt(0) || ''}`;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-10 rounded-[2.5rem] overflow-hidden border border-gray-100 relative">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+            <div className="max-w-xl mx-auto">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
-            {/* CABECERA AZUL CON AVATAR */}
-            <div className="bg-[#5B8FB9] p-6 pb-16 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-900/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-2xl pointer-events-none"></div>
+                    {/* ENCABEZADO CORPORATIVO SÓLIDO */}
+                    <div className="bg-[#36606F] p-8 pt-10 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
 
-                <div className="relative z-10 flex flex-col items-center text-center">
-                    <div className="w-24 h-24 rounded-full bg-white p-1 shadow-xl mb-4 relative group">
-                        <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center overflow-hidden relative">
-                            {profile.avatar_url ? (
-                                <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
-                            ) : (
-                                <span className="text-[#5B8FB9] text-3xl font-black">{initials}</span>
-                            )}
+                        <div className="relative z-10 flex flex-col items-center text-center">
+                            <div className="w-28 h-28 rounded-[2rem] bg-white p-1.5 shadow-2xl mb-6 relative group transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+                                <div className="w-full h-full rounded-[1.6rem] bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
+                                    {profile.avatar_url ? (
+                                        <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
+                                    ) : (
+                                        <span className="text-[#36606F] text-4xl font-black italic">{initials}</span>
+                                    )}
+                                </div>
+                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white w-10 h-10 rounded-xl border-4 border-white flex items-center justify-center shadow-lg">
+                                    <CheckCircle2 size={16} />
+                                </div>
+                            </div>
+
+                            <h1 className="text-3xl font-black tracking-tighter mb-1">{fullName}</h1>
+                            <div className="flex items-center gap-2">
+                                <span className="bg-white/20 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                                    {profile.role === 'manager' ? 'Executive Manager' : 'Staff Member'}
+                                </span>
+                            </div>
                         </div>
-                        <button className="absolute bottom-0 right-0 bg-[#5B8FB9] text-white p-1.5 rounded-full border-2 border-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                            <User size={14} />
-                        </button>
-                    </div>
-                    <h1 className="text-2xl font-black">{fullName}</h1>
-
-                    <p className="text-blue-100 text-sm bg-blue-800/30 px-3 py-0.5 rounded-full mt-2 capitalize">
-                        {profile.role === 'manager' ? 'Gerente' : 'Personal'}
-                    </p>
-                </div>
-            </div>
-
-            {/* TARJETA DE DATOS PRINCIPAL */}
-            <div className="px-4 -mt-10 relative z-20">
-                <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-
-                    {/* Sección 1: Datos Laborales */}
-                    <div className="p-4 bg-gray-50/50 border-b border-gray-100">
-                        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Información Laboral</h2>
-                    </div>
-                    <div className="divide-y divide-gray-50">
-                        <ProfileDataRow
-                            icon={Briefcase}
-                            label="H. Contrato Semanal"
-                            value={profile.contract_hours ? `${profile.contract_hours}h` : null}
-                        />
-                        <ProfileDataRow
-                            icon={Euro}
-                            label="Precio Hora Extra"
-                            value={profile.overtime_rate ? `${profile.overtime_rate.toFixed(2)}€` : null}
-                        />
-                        <ProfileDataRow
-                            icon={Hash}
-                            label="Nº Seguridad Social"
-                            value={profile.ss_number}
-                            isCopyable
-                        />
-                    </div>
-
-                    {/* Sección 2: Datos Personales y Contacto */}
-                    <div className="p-4 bg-gray-50/50 border-b border-gray-100 mt-2">
-                        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Contacto y Datos</h2>
-                    </div>
-                    <div className="divide-y divide-gray-50">
-                        <ProfileDataRow
-                            icon={Mail}
-                            label="Email Acceso"
-                            value={profile.email}
-                            isCopyable
-                        />
-                        <ProfileDataRow
-                            icon={Phone}
-                            label="Teléfono"
-                            value={profile.phone}
-                            action={profile.phone && (
-                                <a href={`tel:${profile.phone}`} className="bg-green-50 text-green-600 p-2 rounded-full hover:bg-green-500 hover:text-white transition-colors active:scale-95" title="Llamar">
-                                    <PhoneCall size={18} />
-                                </a>
-                            )}
-                        />
-                        <ProfileDataRow
-                            icon={CreditCard}
-                            label="DNI / NIE"
-                            value={profile.dni}
-                            isCopyable
-                        />
-                        <ProfileDataRow
-                            icon={CreditCard}
-                            label="Cuenta Bancaria (IBAN)"
-                            value={profile.bank_account}
-                            isCopyable
-                        />
-                    </div>
-
-                    {/* Sección 3: Documentación */}
-                    <div className="p-4 bg-gray-50/50 border-b border-gray-100 mt-2">
-                        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Documentación</h2>
-                    </div>
-                    <div className="p-4 flex gap-3">
-                        <button
-                            onClick={() => toast.info('Funcionalidad de ver contrato próximamente')}
-                            className="flex-1 flex items-center justify-between p-3 bg-blue-50 rounded-2xl border border-blue-100 hover:bg-blue-100 hover:border-blue-300 transition-all group active:scale-95"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white p-2 rounded-xl text-[#5B8FB9] shadow-sm group-hover:text-blue-600">
-                                    <FileText size={20} />
-                                </div>
-                                <span className="font-bold text-[#5B8FB9] text-sm group-hover:text-blue-700">Contrato</span>
-                            </div>
-                            <div className="text-blue-300 group-hover:text-blue-500"><FileClock size={16} /></div>
-                        </button>
 
                         <button
-                            onClick={() => toast.info('Funcionalidad de ver nóminas próximamente')}
-                            className="flex-1 flex items-center justify-between p-3 bg-blue-50 rounded-2xl border border-blue-100 hover:bg-blue-100 hover:border-blue-300 transition-all group active:scale-95"
+                            onClick={() => router.back()}
+                            className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white p-2 rounded-xl text-[#5B8FB9] shadow-sm group-hover:text-blue-600">
-                                    <FileText size={20} />
-                                </div>
-                                <span className="font-bold text-[#5B8FB9] text-sm group-hover:text-blue-700">Nóminas</span>
+                            <ArrowLeft size={20} />
+                        </button>
+                    </div>
+
+                    {/* KPI MINI ROW - ESTILO CORPORATIVO */}
+                    <div className="grid grid-cols-2 gap-px bg-gray-100 border-b border-gray-100">
+                        <div className="bg-white p-5 flex flex-col items-center justify-center text-center">
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Carga Semanal</span>
+                            <span className="text-lg font-black text-[#36606F]">{profile.contract_hours || 0}h</span>
+                        </div>
+                        <div className="bg-white p-5 flex flex-col items-center justify-center text-center">
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status Laboral</span>
+                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase">Activo</span>
+                        </div>
+                    </div>
+
+                    {/* SECCIONES BENTO DE ALTA DENSIDAD */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+
+                        {/* Grupo 1: Contrato */}
+                        <div>
+                            <div className="px-8 py-5 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Asset Information</h2>
+                                <Briefcase size={14} className="text-gray-300" />
                             </div>
-                            <div className="text-blue-300 group-hover:text-blue-500"><FileClock size={16} /></div>
+                            <div className="divide-y divide-gray-50">
+                                <ProfileDataRow
+                                    icon={Hash}
+                                    label="DNI / NIE Identification"
+                                    value={profile.dni}
+                                    isCopyable
+                                />
+                                <ProfileDataRow
+                                    icon={Euro}
+                                    label="Hourly Premium Rate"
+                                    value={profile.overtime_rate ? `${profile.overtime_rate.toFixed(2)}€ / hora` : null}
+                                />
+                                <ProfileDataRow
+                                    icon={FileClock}
+                                    label="Social Security ID"
+                                    value={profile.ss_number}
+                                    isCopyable
+                                />
+                                <ProfileDataRow
+                                    icon={CreditCard}
+                                    label="Bank Account (IBAN)"
+                                    value={profile.bank_account}
+                                    isCopyable
+                                />
+                            </div>
+                        </div>
+
+                        {/* Grupo 2: Contacto */}
+                        <div className="mt-4">
+                            <div className="px-8 py-5 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Contact Channels</h2>
+                                <Mail size={14} className="text-gray-300" />
+                            </div>
+                            <div className="divide-y divide-gray-50">
+                                <ProfileDataRow
+                                    icon={Mail}
+                                    label="Corporate Email"
+                                    value={profile.email}
+                                    isCopyable
+                                />
+                                <ProfileDataRow
+                                    icon={Phone}
+                                    label="Mobile Phone"
+                                    value={profile.phone}
+                                    action={profile.phone && (
+                                        <a href={`tel:${profile.phone}`} className="bg-emerald-50 text-emerald-600 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-emerald-500 hover:text-white transition-all active:scale-90 shadow-sm" title="Llamar">
+                                            <PhoneCall size={20} />
+                                        </a>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Grupo 3: Documentación Estilo Premium */}
+                        <div className="p-8">
+                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Official Documentation</h2>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => toast.info('Funcionalidad próximamente')}
+                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                >
+                                    <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                        <FileText size={24} />
+                                    </div>
+                                    <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Contrato</span>
+                                </button>
+
+                                <button
+                                    onClick={() => toast.info('Funcionalidad próximamente')}
+                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                >
+                                    <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                        <Euro size={24} />
+                                    </div>
+                                    <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Nóminas</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FOOTER ACCIONES */}
+                    <div className="p-6 bg-gray-50/80 border-t border-gray-100 backdrop-blur-md">
+                        <button
+                            onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login'; }}
+                            className="w-full py-5 text-rose-500 font-black text-xs uppercase tracking-[0.3em] bg-white border-2 border-rose-50 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center gap-3 active:scale-95"
+                        >
+                            Cerrar Sesión Corporativa
                         </button>
                     </div>
                 </div>
-
-                <button
-                    onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login'; }}
-                    className="w-full mt-6 p-3 text-red-500 font-bold text-sm bg-red-50 hover:bg-red-100 rounded-2xl transition-colors flex items-center justify-center gap-2"
-                >
-                    Cerrar Sesión en este dispositivo
-                </button>
             </div>
         </div>
+    );
+}
+
     );
 }
 
