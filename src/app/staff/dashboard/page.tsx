@@ -8,8 +8,9 @@ import {
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
     Info, Package, // Eliminado Sandwich, añadido ChefHat
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
-    ChefHat
+    ChefHat, Calculator
 } from 'lucide-react';
+import CashClosingModal from '@/components/CashClosingModal';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
@@ -74,11 +75,12 @@ export default function StaffDashboard() {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
-    const [userRole, setUserRole] = useState<'staff' | 'manager'>('staff');
+    const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
     const [elapsedTime, setElapsedTime] = useState('00:00');
     const [weekDays, setWeekDays] = useState<DailyLog[]>([]);
+    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
         totalHours: 0, hoursDifference: 0, currentBalance: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
     });
@@ -162,7 +164,7 @@ export default function StaffDashboard() {
                 .single();
 
             if (profile) {
-                setUserRole(profile.role === 'manager' ? 'manager' : 'staff');
+                setUserRole(profile.role as any);
                 if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
                 if (profile.overtime_cost_per_hour !== null) overtimeRate = profile.overtime_cost_per_hour;
                 if (profile.hours_balance !== undefined && profile.hours_balance !== null) historicalBalance = profile.hours_balance;
@@ -546,6 +548,17 @@ export default function StaffDashboard() {
                             onClick={() => setActiveMenu('info')}
                         />
                         <IOSIconBoxed icon={Package} color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+
+                        {/* --- BOTÓN CIERRE (SUPERVISORES) --- */}
+                        {userRole === 'supervisor' && (
+                            <IOSIconBoxed
+                                icon={Calculator}
+                                color="bg-[#36606F]"
+                                label="Cierre"
+                                onClick={() => setIsClosingModalOpen(true)}
+                                fillWhite={true}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
@@ -698,6 +711,12 @@ export default function StaffDashboard() {
                     </div>
                 </div>
             )}
+
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={() => initialize()}
+            />
         </div>
     );
 }

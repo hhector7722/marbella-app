@@ -11,6 +11,7 @@ import {
     Briefcase, Hash, Euro, FileClock, PhoneCall, Mail,
     CheckCircle2, ArrowLeft
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Definimos la interfaz basada en los datos
 interface UserProfile {
@@ -226,9 +227,17 @@ function ProfileContent() {
 
                         {/* Grupo 2: Contacto */}
                         <div className="mt-4">
-                            <div className="px-8 py-5 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Contact Channels</h2>
-                                <Mail size={14} className="text-gray-300" />
+                            <div className="px-8 py-5 bg-[#36606F] text-white flex flex-col items-start justify-center">
+                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Puesto / Rango</span>
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        profile.role === 'manager' ? "bg-rose-400" : profile.role === 'supervisor' ? "bg-orange-400" : "bg-emerald-400"
+                                    )}></div>
+                                    <span className="text-xl font-black text-white capitalize">
+                                        {profile.role === 'manager' ? 'Gerencia' : profile.role === 'supervisor' ? 'Supervisor' : 'Personal'}
+                                    </span>
+                                </div>
                             </div>
                             <div className="divide-y divide-gray-50">
                                 <ProfileDataRow

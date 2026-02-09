@@ -59,12 +59,15 @@ export async function middleware(request: NextRequest) {
         const role = profile?.role;
         const path = request.nextUrl.pathname;
 
-        // 2. Bloquear STAFF entrando a MANAGER (/dashboard)
-        if (role === 'staff' && path === '/dashboard') {
+        // 3. Bloquear STAFF entrando a MANAGER (/dashboard)
+        // Permitir a 'manager' y 'supervisor' entrar a /dashboard
+        if (role === 'staff' && path.startsWith('/dashboard')) {
             return NextResponse.redirect(new URL("/staff/dashboard", request.url));
         }
 
-        // 3. Si está logueado e intenta ir a Login, mandar a Home (que redirige solo)
+        // 4. Bloquear acceso a /staff si no es manager o supervisor (opcional, pero staff debe poder entrar a su zona)
+        // Si un manager entra a /staff, está bien (es el modo staff)
+        // 5. Si está logueado e intenta ir a Login, mandar a Home (que redirige solo)
         if (path.startsWith('/login')) {
             return NextResponse.redirect(new URL("/", request.url));
         }

@@ -14,6 +14,7 @@ import { getISOWeek, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import CashClosingModal from '@/components/CashClosingModal';
 
 // --- CONSTANTES: IMÁGENES DE MONEDAS ---
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -148,6 +149,7 @@ export default function DashboardPage() {
     // Estado para pagos
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
+    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -502,7 +504,15 @@ export default function DashboardPage() {
                                     <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
                                     <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
                                 </div>
-                                <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setIsClosingModalOpen(true)}
+                                        className="text-[10px] font-black bg-[#36606F] text-white px-3 py-1 rounded-full uppercase tracking-widest shadow-sm active:scale-95 transition-all"
+                                    >
+                                        Cierre
+                                    </button>
+                                    <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Histórico</Link>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 flex-1">
@@ -867,6 +877,12 @@ export default function DashboardPage() {
                     </div>
                 )
             }
+
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={() => fetchData()}
+            />
         </div >
     );
 }
