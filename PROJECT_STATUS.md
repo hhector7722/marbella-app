@@ -39,6 +39,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Refinamiento Caja Inicial: Eliminación de cabecera "Tesorería" y reposicionamiento del acceso "Ver más" junto a Movimientos.
 - [x] Gestión de Producto: Modal de gestión con 6 categorías (Recetas, Ingredientes, Pedidos, Inventario, Stock, Proveedores).
 - [x] Consistencia Global UX: Soporte para cierre de modales y popups al realizar click fuera (backdrop) en toda la aplicación.
+- [x] Rediseño Registros: Calendario ultra-moderno integrado directamente sobre fondo azul, con cabecera roja y celdas blancas, unificado en un bloque con esquinas redondeadas.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.

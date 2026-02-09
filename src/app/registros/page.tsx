@@ -281,17 +281,17 @@ export default function RegistrosPage() {
                 </button>
             </div>
 
-            {/* TARJETA CALENDARIO */}
-            <div className="flex-1 bg-white rounded-[2.5rem] shadow-2xl p-6 flex flex-col overflow-hidden border border-white/50">
-                {/* DÍAS SEMANA INTEGRADOS (ESTILO MARBELLA) */}
-                <div className="grid grid-cols-7 mb-4 bg-rose-500 rounded-2xl py-2.5 shadow-md border border-rose-400/30">
+            {/* BLOQUE CALENDARIO INTEGRADO */}
+            <div className="flex-1 flex flex-col overflow-hidden rounded-[3rem] shadow-2xl border border-white/10">
+                {/* DÍAS SEMANA INTEGRADOS (CABECERA ROJA) */}
+                <div className="grid grid-cols-7 bg-rose-500 py-5 shadow-inner border-b border-rose-400/20">
                     {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                        <div key={day} className="text-center text-[11px] font-black text-white uppercase tracking-widest">{day}</div>
+                        <div key={day} className="text-center text-[11px] font-black text-white uppercase tracking-widest drop-shadow-sm">{day}</div>
                     ))}
                 </div>
 
-                {/* CUADRÍCULA CALENDARIO */}
-                <div className="flex-1 grid grid-cols-7 gap-2">
+                {/* CUADRÍCULA CALENDARIO (CELDAS BLANCAS) */}
+                <div className="flex-1 grid grid-cols-7 gap-1 p-1 bg-white/5 backdrop-blur-sm">
                     {calendarDays.map((day: Date) => {
                         const isCurrentMonth = isSameMonth(day, currentDate);
                         let dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
