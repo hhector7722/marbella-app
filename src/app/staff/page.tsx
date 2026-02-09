@@ -460,8 +460,14 @@ export default function StaffDashboard() {
 
             {/* MODALES (Mismo código anterior...) */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center">
+                <div
+                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+                    onClick={() => setShowModal(false)}
+                >
+                    <div
+                        className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <h3 className="text-xl font-black text-gray-800 mb-4">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setShowModal(false)} className="py-3 px-4 bg-gray-100 text-gray-600 font-bold rounded-xl">Cancelar</button>
@@ -472,8 +478,14 @@ export default function StaffDashboard() {
             )}
 
             {activeMenu && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all`}>
+                <div
+                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
+                    onClick={closeMenus}
+                >
+                    <div
+                        className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
 
                         {infoSubMenu ? (
                             <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">

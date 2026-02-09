@@ -407,8 +407,14 @@ export default function HistoryPage() {
             </div>
 
             {showFilter && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-xs rounded-[2rem] p-6 shadow-2xl transform transition-all scale-100">
+                <div
+                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
+                    onClick={() => setShowFilter(false)}
+                >
+                    <div
+                        className="bg-white w-full max-w-xs rounded-[2rem] p-6 shadow-2xl transform transition-all scale-100"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-black text-zinc-800">Filtrar Fecha</h3>
                             <button

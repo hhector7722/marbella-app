@@ -301,8 +301,14 @@ function TreasuryContent() {
 
             {/* --- MODAL PRINCIPAL --- */}
             {selectedBox && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
-                    <div className="bg-white w-full max-w-4xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] animate-in zoom-in-95 duration-200">
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4"
+                    onClick={closeModal}
+                >
+                    <div
+                        className="bg-white w-full max-w-4xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
 
                         {/* Header Modal */}
                         <div className={`p-4 md:p-6 border-b flex justify-between items-center ${selectedBox.type === 'operational' ? 'bg-blue-50' : 'bg-orange-50'}`}>

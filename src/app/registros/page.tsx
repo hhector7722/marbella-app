@@ -348,8 +348,14 @@ export default function RegistrosPage() {
 
             {/* MODAL COMPACTO */}
             {selectedDate && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={handleCloseModal}
+                >
+                    <div
+                        className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
 
                         {/* Cabecera con Botones */}
                         <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">

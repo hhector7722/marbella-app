@@ -699,8 +699,14 @@ export default function DashboardPage() {
             {/* MODAL GESTIÓN DE CAJA */}
             {
                 cashModalMode !== 'none' && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+                        onClick={() => setCashModalMode('none')}
+                    >
+                        <div
+                            className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             {cashModalMode === 'menu' && (
                                 <>
                                     <div className="p-4 border-b flex justify-between items-center bg-gray-50">
@@ -726,8 +732,14 @@ export default function DashboardPage() {
             {/* MODAL PLANTILLA */}
             {
                 isStaffModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
-                        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={() => setIsStaffModalOpen(false)}
+                    >
+                        <div
+                            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200"
+                            onClick={e => e.stopPropagation()}
+                        >
                             <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
                                 <h3 className="font-black text-xl text-gray-800 uppercase tracking-tight">Plantilla</h3>
                                 <button onClick={() => setIsStaffModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm">
