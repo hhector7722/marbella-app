@@ -2,14 +2,15 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import {
-    User, Phone, CreditCard, FileText, Copy, Check,
-    Briefcase, Hash, Euro, FileClock, PhoneCall, Mail
-} from 'lucide-react';
-import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+
+import {
+    User, Phone, CreditCard, FileText, Copy, Check,
+    Briefcase, Hash, Euro, FileClock, PhoneCall, Mail,
+    CheckCircle2, ArrowLeft
+} from 'lucide-react';
 
 // Definimos la interfaz basada en los datos
 interface UserProfile {
@@ -29,6 +30,7 @@ interface UserProfile {
 
 function ProfileContent() {
     const supabase = createClient();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const targetId = searchParams.get('id');
 
@@ -290,15 +292,12 @@ function ProfileContent() {
     );
 }
 
-    );
-}
-
 export default function StaffProfilePage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-                <div className="w-16 h-16 border-4 border-[#5B8FB9] border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-gray-500 animate-pulse">Cargando perfil...</p>
+            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+                <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando perfil corporativo...</p>
             </div>
         }>
             <ProfileContent />

@@ -47,6 +47,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Rediseño Registros: Calendario ultra-moderno integrado directamente sobre fondo azul, con cabecera roja y celdas blancas, unificado en un bloque con esquinas redondeadas.
 - [x] Refactorización Dashboard Staff (Escritorio): Nueva disposición optimizada con Resumen/Fichaje a la izquierda (col-1) y Horarios proactivos/Iconos a la derecha (col-2).
 - [x] Identificación Visual Tesorería: Integración de imágenes de billetes y monedas en todos los formularios de desglose de efectivo (Caja Inicial, Cambio, Arqueo).
+- [x] Rediseño Perfil Corporativo: Transición de `/profile` a una tarjeta de alta densidad con estilo "Vista Marbella Detail", optimizada para táctil y alto contraste.
+- [x] Refinamiento Staff (Móvil): Layout de doble columna en smartphone (Horarios 1/2 e Iconos 1/2) con etiqueta "Info" responsiva.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.
