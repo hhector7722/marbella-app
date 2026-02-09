@@ -320,18 +320,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mt-1">Sigue estas instrucciones para el sobre</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-[#36606F] p-8 rounded-[2.5rem] text-white flex flex-col items-center justify-center relative overflow-hidden shadow-xl">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Banknote size={100} /></div>
-                                    <span className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-2">Retirar al Sobre</span>
-                                    <span className="text-4xl font-black">{cashToWithdraw.toFixed(2)}€</span>
-                                    <span className="text-[10px] text-blue-100 font-bold mt-2 opacity-60">Ventas + Beneficio</span>
+                            <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-50">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Retirar al Sobre</span>
+                                    <span className="text-4xl font-black text-[#36606F]">{cashToWithdraw.toFixed(2)}€</span>
+                                    <span className="text-[9px] text-[#36606F]/50 font-bold mt-1 uppercase">Ventas + Beneficio</span>
                                 </div>
-                                <div className="bg-emerald-500 p-8 rounded-[2.5rem] text-white flex flex-col items-center justify-center relative overflow-hidden shadow-xl">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Store size={100} /></div>
-                                    <span className="text-[10px] font-black text-emerald-100 uppercase tracking-widest mb-2">Dejar en Cajón</span>
-                                    <span className="text-4xl font-black">{cashLeft.toFixed(2)}€</span>
-                                    <span className="text-[10px] text-emerald-100 font-bold mt-2 opacity-60">Fondo Fijo (100€)</span>
+                                <div className="flex flex-col items-center justify-center text-center border-l border-gray-50">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Dejar en Cajón</span>
+                                    <span className="text-4xl font-black text-emerald-500">{cashLeft.toFixed(2)}€</span>
+                                    <span className="text-[9px] text-emerald-500/50 font-bold mt-1 uppercase">Fondo Fijo (100€)</span>
                                 </div>
                             </div>
 

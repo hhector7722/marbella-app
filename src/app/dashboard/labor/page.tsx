@@ -286,21 +286,21 @@ export default function LaborHistoryPage() {
                             </div>
                         </div>
 
-                        {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-emerald-500 py-2 px-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.avgPercentage.toFixed(1)}%</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Eficiencia</span>
+                        {/* KPI SUMMARY CLEAN (Sin tarjetas, solo texto y color) */}
+                        <div className="grid grid-cols-3 gap-2 mb-8 py-6 border-y border-gray-50">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Eficiencia</span>
+                                <span className="text-xl font-black text-emerald-500">{summary.avgPercentage.toFixed(1)}%</span>
                             </div>
 
-                            <div className="bg-rose-500 py-2 px-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.totalCost.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Coste</span>
+                            <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Coste Total</span>
+                                <span className="text-xl font-black text-rose-500">{summary.totalCost.toFixed(0)}€</span>
                             </div>
 
-                            <div className="bg-blue-500 py-2 px-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.totalHours.toFixed(0)}h</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Horas</span>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Horas Totales</span>
+                                <span className="text-xl font-black text-blue-500">{summary.totalHours.toFixed(0)}h</span>
                             </div>
                         </div>
 

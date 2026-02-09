@@ -177,15 +177,15 @@ function ProfileContent() {
                         </button>
                     </div>
 
-                    {/* KPI MINI ROW - ESTILO CORPORATIVO */}
-                    <div className="grid grid-cols-2 gap-px bg-gray-100 border-b border-gray-100">
-                        <div className="bg-white p-5 flex flex-col items-center justify-center text-center">
+                    {/* KPI SUMMARY CLEAN - ESTILO CORPORATIVO */}
+                    <div className="grid grid-cols-2 gap-px py-6 border-b border-gray-50 bg-white">
+                        <div className="flex flex-col items-center justify-center text-center">
                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Carga Semanal</span>
-                            <span className="text-lg font-black text-[#36606F]">{profile.contract_hours || 0}h</span>
+                            <span className="text-xl font-black text-[#36606F]">{profile.contract_hours || 0}h</span>
                         </div>
-                        <div className="bg-white p-5 flex flex-col items-center justify-center text-center">
+                        <div className="flex flex-col items-center justify-center text-center border-l border-gray-50">
                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status Laboral</span>
-                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase">Activo</span>
+                            <span className="text-xs font-black text-emerald-600 uppercase tracking-tighter">Personal Activo</span>
                         </div>
                     </div>
 

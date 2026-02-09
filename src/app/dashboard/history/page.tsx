@@ -220,19 +220,19 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        {/* KPI Cards */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-emerald-500 py-2.5 px-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.avgNetSales.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Venta Media</span>
+                        {/* KPI SUMMARY CLEAN (Sin tarjetas, solo valor y color) */}
+                        <div className="grid grid-cols-3 gap-2 mb-8 py-6 border-y border-gray-50">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Venta Media</span>
+                                <span className="text-xl font-black text-emerald-500">{summary.avgNetSales.toFixed(0)}€</span>
                             </div>
-                            <div className="bg-rose-500 py-2.5 px-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.avgLaborPercent.toFixed(1)}%</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Coste MO</span>
+                            <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Coste MO</span>
+                                <span className="text-xl font-black text-rose-500">{summary.avgLaborPercent.toFixed(1)}%</span>
                             </div>
-                            <div className="bg-blue-500 py-2.5 px-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.totalClosings}</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Cierres</span>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Cierres</span>
+                                <span className="text-xl font-black text-blue-500">{summary.totalClosings}</span>
                             </div>
                         </div>
 

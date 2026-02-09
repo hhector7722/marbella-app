@@ -126,14 +126,14 @@ export default function StaffDashboard() {
         return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
     };
 
-    const formatWorked = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : formatNumber(Math.abs(val));
+    const formatWorked = (val: number) => Math.abs(val) < 0.1 ? ' ' : formatNumber(Math.abs(val));
 
     const formatBalance = (val: number) => {
-        if (Math.abs(val) < 0.1) return '\u00A0';
+        if (Math.abs(val) < 0.1) return ' ';
         return formatNumber(Math.abs(val));
     };
 
-    const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
+    const formatMoney = (val: number) => val > 0.1 ? `${val.toFixed(0)}€` : ' ';
 
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
@@ -440,7 +440,7 @@ export default function StaffDashboard() {
 
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
                                 <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                    {shouldShowPending(weeklySummary.startBalance) ? formatBalance(weeklySummary.startBalance) : '0'}
+                                    {shouldShowPending(weeklySummary.startBalance) ? formatBalance(weeklySummary.startBalance) : ' '}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                             </div>

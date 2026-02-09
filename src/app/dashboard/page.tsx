@@ -753,11 +753,46 @@ export default function DashboardPage() {
                                         </h3>
                                         <button onClick={() => setCashModalMode('none')} className="text-gray-400 hover:text-red-500"><X size={24} /></button>
                                     </div>
-                                    <div className="p-4 grid grid-cols-2 gap-4">
-                                        <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
-                                        <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} /></div><span className="font-bold text-rose-800">Salida</span></button>
-                                        <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
-                                        <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
+                                    <div className="p-6 space-y-1">
+                                        <button
+                                            onClick={() => setCashModalMode('in')}
+                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-emerald-500"
+                                        >
+                                            <div className="bg-emerald-50 text-emerald-500 p-3 rounded-xl group-hover:bg-emerald-100 transition-colors">
+                                                <Plus size={24} strokeWidth={2.5} />
+                                            </div>
+                                            <span className="font-black text-sm tracking-tight text-left uppercase">Entrada</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setCashModalMode('out')}
+                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-rose-500"
+                                        >
+                                            <div className="bg-rose-50 text-rose-500 p-3 rounded-xl group-hover:bg-rose-100 transition-colors">
+                                                <Minus size={24} strokeWidth={2.5} />
+                                            </div>
+                                            <span className="font-black text-sm tracking-tight text-left uppercase">Salida</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setCashModalMode('audit')}
+                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-orange-500"
+                                        >
+                                            <div className="bg-orange-50 text-orange-500 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
+                                                <RefreshCw size={24} strokeWidth={2.5} />
+                                            </div>
+                                            <span className="font-black text-sm tracking-tight text-left uppercase">Arqueo</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => router.push('/dashboard/movements')}
+                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-blue-500"
+                                        >
+                                            <div className="bg-blue-50 text-blue-500 p-3 rounded-xl group-hover:bg-blue-100 transition-colors">
+                                                <History size={24} strokeWidth={2.5} />
+                                            </div>
+                                            <span className="font-black text-sm tracking-tight text-left uppercase">Movimientos</span>
+                                        </button>
                                     </div>
                                 </>
                             )}

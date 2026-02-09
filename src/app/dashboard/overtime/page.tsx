@@ -230,21 +230,21 @@ export default function OvertimePage() {
                             </div>
                         </div>
 
-                        {/* KPI CARDS (Mini tarjetas horizontales sólidas) */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-[#36606F] py-2.5 px-3 rounded-2xl shadow-sm border border-[#2a4d59] flex flex-col items-center justify-center text-white">
-                                <span className="text-base font-black leading-none mb-0.5">{summary.totalCost.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Total Periodo</span>
+                        {/* KPI SUMMARY CLEAN (Sin tarjetas, solo texto y color) */}
+                        <div className="grid grid-cols-3 gap-2 mb-8 py-6 border-y border-gray-50">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Periodo</span>
+                                <span className="text-xl font-black text-[#36606F]">{summary.totalCost.toFixed(0)}€</span>
                             </div>
 
-                            <div className="bg-orange-500 py-2.5 px-3 rounded-2xl shadow-sm border border-orange-400 flex flex-col items-center justify-center text-white">
-                                <span className="text-base font-black leading-none mb-0.5">{summary.totalOvertimeCost.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Excesos</span>
+                            <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Excesos</span>
+                                <span className="text-xl font-black text-orange-500">{summary.totalOvertimeCost.toFixed(0)}€</span>
                             </div>
 
-                            <div className="bg-blue-500 py-2.5 px-3 rounded-2xl shadow-sm border border-blue-400 flex flex-col items-center justify-center text-white">
-                                <span className="text-base font-black leading-none mb-0.5">{summary.totalHours.toFixed(0)}h</span>
-                                <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Producción</span>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Producción</span>
+                                <span className="text-xl font-black text-blue-500">{summary.totalHours.toFixed(0)}h</span>
                             </div>
                         </div>
 

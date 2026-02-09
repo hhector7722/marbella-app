@@ -48,14 +48,14 @@ const formatNumber = (val: number) => {
     return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
 };
 
-const formatValue = (val: number) => Math.abs(val) > 0.1 ? formatNumber(val) : '\u00A0';
+const formatValue = (val: number) => Math.abs(val) > 0.1 ? formatNumber(val) : ' ';
 
 const formatBalance = (val: number) => {
-    if (Math.abs(val) < 0.1) return '\u00A0';
+    if (Math.abs(val) < 0.1) return ' ';
     return formatNumber(Math.abs(val));
 };
 
-const formatMoney = (val: number) => val > 0.1 ? `${val.toFixed(0)}€` : '\u00A0';
+const formatMoney = (val: number) => val > 0.1 ? `${val.toFixed(0)}€` : ' ';
 
 const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
