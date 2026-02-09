@@ -246,62 +246,83 @@ export default function RegistrosPage() {
     };
 
     return (
-        <div className="h-screen w-full flex flex-col bg-white overflow-hidden text-gray-800">
+        <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-8 overflow-hidden text-gray-800">
+            {/* CABECERA NAVEGACIÓN */}
+            <div className="mb-6 flex items-center justify-between px-2">
+                <button
+                    onClick={() => router.back()}
+                    className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl text-white transition-all active:scale-90"
+                >
+                    <ArrowLeft size={20} />
+                </button>
 
+                <div className="flex items-center gap-4 bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md">
+                    <button onClick={prevMonth} className="text-white hover:scale-110 transition-transform"><ChevronLeft size={20} /></button>
+                    <h1 className="text-lg font-black text-white capitalize min-w-[140px] text-center">
+                        {format(currentDate, 'MMMM yyyy', { locale: es })}
+                    </h1>
+                    <button onClick={nextMonth} className="text-white hover:scale-110 transition-transform"><ChevronRight size={20} /></button>
+                </div>
 
-            {/* DÍAS SEMANA */}
-            <div className="flex-none grid grid-cols-7 bg-gradient-to-b from-red-500 to-red-600 border-b border-red-700 shadow-sm z-10">
-                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                    <div key={day} className="py-2 text-center text-xs font-bold text-white uppercase tracking-wider drop-shadow-sm">{day}</div>
-                ))}
+                <div className="w-12"></div> {/* Spacer for balance */}
             </div>
 
-            {/* CALENDARIO */}
-            <div className="flex-1 grid grid-cols-7 grid-rows-5 bg-gray-200 gap-[1px]">
-                {calendarDays.map((day: Date, idx: number) => {
-                    const isCurrentMonth = isSameMonth(day, currentDate);
-                    const dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
-                    const isToday = isSameDay(day, new Date());
+            {/* TARJETA CALENDARIO */}
+            <div className="flex-1 bg-white rounded-[2.5rem] shadow-2xl p-6 flex flex-col overflow-hidden border border-white/50">
+                {/* DÍAS SEMANA INTEGRADOS */}
+                <div className="grid grid-cols-7 mb-4">
+                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
+                        <div key={day} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">{day}</div>
+                    ))}
+                </div>
 
-                    return (
-                        <div
-                            key={day.toISOString()}
-                            onClick={() => handleDayClick(day)}
-                            className={`
-                                relative bg-white p-1 flex flex-col cursor-pointer transition-colors hover:bg-blue-50
-                                ${!isCurrentMonth ? 'bg-gray-50 opacity-60' : ''}
-                                ${isToday ? 'bg-blue-50/30' : ''}
-                            `}
-                        >
-                            <span className={`
-                                text-sm font-bold mb-1 flex items-center justify-center w-6 h-6 rounded-full self-center
-                                ${isToday ? 'bg-[#5B8FB9] text-white' : (isCurrentMonth ? 'text-gray-700' : 'text-gray-400')}
-                            `}>
-                                {format(day, 'd')}
-                            </span>
+                {/* CUADRÍCULA CALENDARIO */}
+                <div className="flex-1 grid grid-cols-7 gap-2">
+                    {calendarDays.map((day: Date) => {
+                        const isCurrentMonth = isSameMonth(day, currentDate);
+                        const dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
+                        const isToday = isSameDay(day, new Date());
 
-                            <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar w-full">
-                                {dayLogs.map((log) => {
-                                    const initial = log.employee_name ? log.employee_name.charAt(0).toUpperCase() : '?';
-                                    return (
-                                        <div key={log.id} className="flex flex-col gap-0.5 w-full">
-                                            <div className="w-full flex items-center gap-1.5 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-md hover:bg-green-100 transition-colors">
-                                                <div className="w-4 h-4 rounded-full bg-green-600 text-white flex items-center justify-center text-[9px] font-bold shrink-0 shadow-sm">{initial}</div>
-                                                <span className="text-[10px] font-mono font-bold text-green-700 truncate">{format(parseISO(log.clock_in), 'HH:mm')}</span>
-                                            </div>
-                                            {log.clock_out && (
-                                                <div className="w-full flex items-center gap-1.5 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded-md hover:bg-red-100 transition-colors">
-                                                    <div className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-bold shrink-0 shadow-sm">{initial}</div>
-                                                    <span className="text-[10px] font-mono font-bold text-red-600 truncate">{format(parseISO(log.clock_out), 'HH:mm')}</span>
+                        return (
+                            <div
+                                key={day.toISOString()}
+                                onClick={() => handleDayClick(day)}
+                                className={`
+                                    relative p-2 rounded-2xl flex flex-col cursor-pointer transition-all border
+                                    ${!isCurrentMonth ? 'bg-gray-50/30 opacity-40 border-transparent pointer-events-none' : 'bg-white border-gray-100 hover:border-[#5B8FB9] hover:shadow-md hover:-translate-y-0.5'}
+                                    ${isToday ? 'ring-2 ring-emerald-400 border-transparent' : ''}
+                                `}
+                            >
+                                <span className={`
+                                    text-xs font-black mb-1.5 flex items-center justify-center w-6 h-6 rounded-lg
+                                    ${isToday ? 'bg-emerald-500 text-white' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400')}
+                                `}>
+                                    {format(day, 'd')}
+                                </span>
+
+                                <div className="flex-1 overflow-y-auto space-y-1 no-scrollbar w-full">
+                                    {dayLogs.map((log) => {
+                                        const initial = log.employee_name ? log.employee_name.charAt(0).toUpperCase() : '?';
+                                        return (
+                                            <div key={log.id} className="flex flex-col gap-0.5 w-full">
+                                                <div className="w-full flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded-lg">
+                                                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px] font-black shrink-0">{initial}</div>
+                                                    <span className="text-[9px] font-black text-emerald-700 truncate">{format(parseISO(log.clock_in), 'HH:mm')}</span>
                                                 </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                {log.clock_out && (
+                                                    <div className="w-full flex items-center gap-1.5 bg-rose-50 border border-rose-100/50 px-1.5 py-0.5 rounded-lg">
+                                                        <div className="w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black shrink-0">{initial}</div>
+                                                        <span className="text-[9px] font-black text-rose-600 truncate">{format(parseISO(log.clock_out), 'HH:mm')}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
 
             {/* MODAL COMPACTO */}

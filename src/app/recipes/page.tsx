@@ -123,14 +123,42 @@ export default function RecipesPage() {
 
                 <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
                     <div className="flex gap-2 items-center">
-                        {/* Botón de Filtro Refinado */}
+                        {/* Botón de Categoría Refinado */}
                         {!selectedCategory ? (
-                            <button
-                                onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                                className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
-                            >
-                                Filtrar <ChevronDown size={14} className="text-zinc-400" />
-                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowCategoryPopup(!showCategoryPopup)}
+                                    className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
+                                >
+                                    Categoría <ChevronDown size={14} className="text-zinc-400" />
+                                </button>
+
+                                {showCategoryPopup && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
+                                        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
+                                            </div>
+                                            <button
+                                                onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
+                                            >
+                                                Todas
+                                            </button>
+                                            {uniqueDbCategories.map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
+                                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         ) : (
                             <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
                                 <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
