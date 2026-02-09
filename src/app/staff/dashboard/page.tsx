@@ -333,12 +333,6 @@ export default function StaffDashboard() {
 
     // --- COMPONENTES VISUALES ---
 
-    const FloatingIconSolid = ({ icon: Icon, colorClass, label, onClick }: { icon: any, colorClass: string, label: string, onClick?: () => void }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50">
-            <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
-            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
-        </button>
-    );
 
     const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
         <button
@@ -371,8 +365,8 @@ export default function StaffDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                {/* COLUMNA IZQUIERDA (ANCHO 1) */}
-                <div className="lg:col-span-1 space-y-6">
+                {/* COLUMNA IZQUIERDA (ANCHO 2) - Resumen y Fichaje */}
+                <div className="lg:col-span-2 space-y-6">
                     {/* RESUMEN SEMANAL */}
                     <div className="bg-white rounded-[2rem] p-4 shadow-xl border border-gray-50">
                         <div className="flex justify-between items-end mb-2 px-1">
@@ -494,9 +488,9 @@ export default function StaffDashboard() {
                     </div>
                 </div>
 
-                {/* COLUMNA DERECHA (ANCHO 2) */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* TARJETA DE HORARIOS (ANCHA) */}
+                {/* COLUMNA DERECHA (ANCHO 1) - Horarios e Iconos */}
+                <div className="lg:col-span-1 space-y-6">
+                    {/* TARJETA DE HORARIOS (Nivel 1) */}
                     <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[220px]">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-black text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider">
@@ -504,7 +498,7 @@ export default function StaffDashboard() {
                             </h3>
                             <Link href="/staff/schedule" className="text-xs font-black text-purple-600 hover:underline uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full">Ver más</Link>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <div className="grid grid-cols-1 gap-4 flex-1">
                             {nextShifts.length === 0 ? (
                                 <div className="col-span-1 md:col-span-2 flex items-center justify-center py-10">
                                     <p className="text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos asignados para los próximos días.</p>
@@ -530,27 +524,27 @@ export default function StaffDashboard() {
                         </div>
                     </div>
 
-                    {/* FILA ÚNICA DE ICONOS ACCESO */}
-                    <div className="grid grid-cols-4 gap-4">
-                        <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Videos" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
+                    {/* FILA ÚNICA DE ICONOS ACCESO ACCESIBLES */}
+                    <div className="grid grid-cols-4 gap-2">
+                        <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Guía" onClick={() => toast.info("Abriendo guía...")} fillWhite={true} />
 
                         {/* --- BOTÓN RECETAS --- */}
                         <button
                             onClick={() => router.push('/recipes')}
-                            className="flex flex-col items-center justify-center gap-2 w-full h-24 bg-white rounded-[2rem] shadow-xl active:scale-95 transition-all p-2 group hover:bg-gray-50 border border-gray-50"
+                            className="flex flex-col items-center justify-center gap-1.5 w-full bg-white rounded-2xl shadow-sm border border-zinc-100 active:scale-95 transition-all p-2 group hover:bg-gray-50 min-h-[88px]"
                         >
                             <ChefHat
-                                size={32}
+                                size={24}
                                 className="text-black transition-transform group-hover:scale-110 drop-shadow-sm"
                                 strokeWidth={1.5}
                             />
-                            <span className="text-[10px] font-black text-gray-500 text-center leading-tight group-hover:text-gray-900 uppercase tracking-tight">
+                            <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">
                                 Recetas
                             </span>
                         </button>
 
-                        <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Ayuda" onClick={() => setActiveMenu('info')} />
-                        <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                        <IOSIconBoxed icon={Info} color="bg-blue-500" label="Información" onClick={() => setActiveMenu('info')} />
+                        <IOSIconBoxed icon={Package} color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
                     </div>
                 </div>
             </div>

@@ -28,12 +28,9 @@ export default function RecipesPage() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [showCategoryPopup, setShowCategoryPopup] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newRecipe, setNewRecipe] = useState<any>({ ingredients: [] });
+    const [newRecipe, setNewRecipe] = useState<any>({ name: '', category: 'Tapas', sale_price: 0, ingredients: [] });
     const [isCreating, setIsCreating] = useState(false);
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [selectionMode, setSelectionMode] = useState(false);
 
     useEffect(() => { fetchRecipes(); fetchIngredients(); }, []);
 
@@ -64,21 +61,6 @@ export default function RecipesPage() {
             toast.success('Receta creada');
             await fetchRecipes(); setShowCreateModal(false); setNewRecipe({ ingredients: [] });
         } catch (error: any) { toast.error('Error: ' + error.message); } finally { setIsCreating(false); }
-    }
-
-    async function handleBulkDelete() {
-        if (selectedIds.length === 0) return;
-        if (!confirm(`¿Eliminar ${selectedIds.length} receta(s)?`)) return;
-        try {
-            setIsDeleting(true);
-            await supabase.from('recipes').delete().in('id', selectedIds);
-            setRecipes(prev => prev.filter(r => !selectedIds.includes(r.id)));
-            setSelectedIds([]); toast.success('Eliminadas');
-        } catch (error: any) { toast.error('Error al eliminar'); } finally { setIsDeleting(false); }
-    }
-
-    function toggleSelection(id: string) {
-        setSelectedIds(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
     }
 
     const getRecipeHealthColor = (recipe: Recipe) => {
@@ -171,12 +153,7 @@ export default function RecipesPage() {
                             </div>
                         )}
 
-                        <button
-                            onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
-                            className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
-                        >
-                            {selectionMode ? 'Cancelar' : 'Seleccionar'}
-                        </button>
+                        {/* Botón Seleccionar Eliminado */}
                     </div>
 
                     {/* Botón "+" Justificado a la derecha */}
@@ -194,16 +171,10 @@ export default function RecipesPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-4 pb-24">
                     {filteredRecipes.map((recipe) => (
                         <div key={recipe.id} className="group relative">
-                            {selectionMode && (
-                                <div className="absolute top-1 left-1 z-20">
-                                    <input type="checkbox" checked={selectedIds.includes(recipe.id)} onChange={() => toggleSelection(recipe.id)} className="w-4 h-4 accent-[#5E35B1] rounded border-2 border-white cursor-pointer shadow-md" />
-                                </div>
-                            )}
-
-                            <Link href={`/recipes/${recipe.id}`} className="block h-full" onClick={(e) => selectionMode && (e.preventDefault(), toggleSelection(recipe.id))}>
-                                <div className={`bg-white p-1.5 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-full border border-gray-100/50 ${selectedIds.includes(recipe.id) ? 'ring-4 ring-[#5E35B1] scale-95' : ''}`}>
+                            <Link href={`/recipes/${recipe.id}`} className="block h-full">
+                                <div className={`bg-white p-1.5 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-full border border-gray-100/50`}>
                                     {/* IMAGEN MÁS PEQUEÑA (Compacta) */}
-                                    <div className="w-full h-20 bg-gray-50 rounded-lg mb-1.5 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                    <div className="w-full h-20 bg-white rounded-lg mb-1.5 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
                                         {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
                                     </div>
                                     {/* DATOS */}
@@ -215,18 +186,6 @@ export default function RecipesPage() {
                             </Link>
                         </div>
                     ))}
-                </div>
-            )}
-
-            {/* Barra Flotante Borrar */}
-            {selectedIds.length > 0 && (
-                <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-[#5E35B1] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 z-50 animate-in slide-in-from-bottom-4">
-                    <span className="text-xs font-bold">{selectedIds.length} seleccionados</span>
-                    <div className="h-4 w-px bg-white/30"></div>
-                    <button onClick={handleBulkDelete} disabled={isDeleting} className="flex items-center gap-1 hover:text-red-200 transition-colors">
-                        <Trash2 className="w-4 h-4" /> <span className="text-xs font-black uppercase">{isDeleting ? '...' : 'Eliminar'}</span>
-                    </button>
-                    <button onClick={() => setSelectedIds([])} className="hover:text-gray-300"><X className="w-4 h-4" /></button>
                 </div>
             )}
 

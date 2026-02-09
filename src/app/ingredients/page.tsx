@@ -34,9 +34,6 @@ export default function IngredientsPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({});
     const [isCreating, setIsCreating] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [selectionMode, setSelectionMode] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
 
     useEffect(() => { fetchIngredients(); fetchSuppliers(); }, []);
@@ -93,15 +90,7 @@ export default function IngredientsPage() {
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
 
-    async function handleBulkDelete() {
-        if (!confirm(`¿Borrar ${selectedIds.length}?`)) return;
-        setIsDeleting(true);
-        await supabase.from('ingredients').delete().in('id', selectedIds);
-        setIngredients(prev => prev.filter(i => !selectedIds.includes(i.id)));
-        setSelectedIds([]); setIsDeleting(false); toast.success('Eliminados');
-    }
-
-    const suppliers = ['Todos', ...Array.from(new Set(ingredients.map(i => i.supplier).filter(Boolean))) as string[]];
+    const suppliersList = Array.from(new Set(ingredients.map(i => i.supplier).filter(Boolean))) as string[];
     const filteredIngredients = ingredients.filter(ing => {
         const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier;
@@ -151,13 +140,13 @@ export default function IngredientsPage() {
                                             >
                                                 Todos
                                             </button>
-                                            {allSuppliers.map(sup => (
+                                            {suppliersList.map(sup => (
                                                 <button
-                                                    key={sup.id}
-                                                    onClick={() => { setSelectedSupplier(sup.name); setShowSupplierPopup(false); }}
+                                                    key={sup}
+                                                    onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
                                                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
                                                 >
-                                                    {sup.name}
+                                                    {sup}
                                                 </button>
                                             ))}
                                         </div>
@@ -176,23 +165,18 @@ export default function IngredientsPage() {
                             </div>
                         )}
 
-                        <button
-                            onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
-                            className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectionMode ? 'bg-rose-500 text-white border-rose-600' : 'bg-white/30 text-white border-white/40 hover:bg-white/40'}`}
-                        >
-                            {selectionMode ? 'Cancelar' : 'Seleccionar'}
-                        </button>
+                        {/* Botón Seleccionar Eliminado */}
                     </div>
 
                     {/* Botón "+" Justificado a la derecha, oculto si hay seleccionados (ya que el floating bar aparece) */}
-                    {selectedIds.length === 0 && (
-                        <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
-                        >
-                            <Plus className="w-6 h-6" />
-                        </button>
-                    )}
+
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </button>
+
                 </div>
             </div>
 
@@ -201,11 +185,7 @@ export default function IngredientsPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredIngredients.map(ing => (
                         <div key={ing.id} className="relative group">
-                            {selectionMode && (
-                                <input type="checkbox" checked={selectedIds.includes(ing.id)} onChange={() => setSelectedIds(p => p.includes(ing.id) ? p.filter(id => id !== ing.id) : [...p, ing.id])} className="absolute top-1 left-1 z-20 w-4 h-4 accent-[#5E35B1] cursor-pointer" />
-                            )}
-
-                            <div onClick={() => !selectionMode && (setEditingIngredient(ing), setEditForm({ ...ing }))} className={`bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col ${selectedIds.includes(ing.id) ? 'ring-4 ring-[#5E35B1] scale-95' : ''}`}>
+                            <div onClick={() => (setEditingIngredient(ing), setEditForm({ ...ing }))} className={`bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col`}>
                                 {/* IMAGEN PEQUEÑA SIN BORDE */}
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                     {ing.image_url ? <img src={ing.image_url} className="w-full h-full object-contain" /> : <Package className="text-gray-200 w-6 h-6" />}
@@ -255,7 +235,21 @@ export default function IngredientsPage() {
                                     <button onClick={() => setIsCustomSupplier(false)} className="text-xs text-red-500 font-bold">X</button>
                                 </div>
                             )}
-                            <button onClick={handleSaveEdit} disabled={saving} className="w-full py-3 bg-[#5E35B1] text-white rounded-xl font-bold">Guardar</button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={async () => {
+                                        if (!confirm('¿Eliminar este ingrediente?')) return;
+                                        await supabase.from('ingredients').delete().eq('id', editingIngredient.id);
+                                        toast.success('Eliminado');
+                                        setEditingIngredient(null);
+                                        fetchIngredients();
+                                    }}
+                                    className="px-4 bg-gray-100 text-gray-400 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                                <button onClick={handleSaveEdit} disabled={saving} className="flex-1 py-3 bg-[#5E35B1] text-white rounded-xl font-bold">Guardar</button>
+                            </div>
                         </div>
                     </div>
                 </div>

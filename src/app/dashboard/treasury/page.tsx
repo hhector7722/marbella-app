@@ -37,6 +37,22 @@ interface Movement {
 
 const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
+const CURRENCY_IMAGES: Record<number, string> = {
+    100: '/currency/100e-Photoroom.png',
+    50: '/currency/50e-Photoroom.png',
+    20: '/currency/20-Photoroom.png',
+    10: '/currency/10e-Photoroom.png',
+    5: '/currency/5eur-Photoroom.png',
+    2: '/currency/2eur-Photoroom.png',
+    1: '/currency/1eur-Photoroom.png',
+    0.50: '/currency/50ct-Photoroom.png',
+    0.20: '/currency/20ct-Photoroom.png',
+    0.10: '/currency/10ct-Photoroom.png',
+    0.05: '/currency/5ct-Photoroom.png',
+    0.02: '/currency/2ct-Photoroom.png',
+    0.01: '/currency/1ct-Photoroom.png',
+};
+
 // Componente Interno (Lógica)
 function TreasuryContent() {
     const supabase = createClient();
@@ -353,10 +369,17 @@ function TreasuryContent() {
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                                     {DENOMINATIONS.map(denom => (
                                                         <div key={denom} className={`p-2 rounded-lg border flex items-center gap-1 ${amountInputs[denom.toString()] ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
-                                                            <span className="text-xs font-bold w-10 text-right">{denom}</span>
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                {CURRENCY_IMAGES[denom] ? (
+                                                                    <img src={CURRENCY_IMAGES[denom]} alt="" className="h-4 w-auto object-contain" />
+                                                                ) : (
+                                                                    <div className="w-6 h-3 bg-gray-100 rounded" />
+                                                                )}
+                                                                <span className="text-[10px] font-bold w-10 text-right">{denom}</span>
+                                                            </div>
                                                             <input
                                                                 type="number" placeholder="0"
-                                                                className="w-full bg-transparent text-center font-bold outline-none"
+                                                                className="w-full bg-transparent text-center font-bold outline-none text-xs"
                                                                 onChange={(e) => {
                                                                     const val = parseInt(e.target.value) || 0;
                                                                     setAmountInputs(p => ({ ...p, [denom.toString()]: val }));
@@ -463,6 +486,11 @@ function TreasuryContent() {
                                         <h4 className="font-bold text-green-600 flex items-center gap-2 border-b pb-2 sticky top-header-safe bg-white z-10"><ArrowDown size={16} /> ENTRA</h4>
                                         {DENOMINATIONS.map(d => (
                                             <div key={d} className="flex items-center gap-2">
+                                                {CURRENCY_IMAGES[d] ? (
+                                                    <img src={CURRENCY_IMAGES[d]} alt="" className="h-5 w-auto object-contain" />
+                                                ) : (
+                                                    <div className="w-8 h-4 bg-gray-100 rounded" />
+                                                )}
                                                 <span className="w-10 text-xs font-bold text-right">{d}</span>
                                                 <input type="number" placeholder="0" className="flex-1 p-2 bg-green-50 rounded-lg text-center font-bold outline-none" onChange={e => setSwapIn(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))} />
                                             </div>
@@ -472,6 +500,11 @@ function TreasuryContent() {
                                         <h4 className="font-bold text-red-600 flex items-center gap-2 border-b pb-2 sticky top-header-safe bg-white z-10"><ArrowUp size={16} /> SALE</h4>
                                         {DENOMINATIONS.map(d => (
                                             <div key={d} className="flex items-center gap-2">
+                                                {CURRENCY_IMAGES[d] ? (
+                                                    <img src={CURRENCY_IMAGES[d]} alt="" className="h-5 w-auto object-contain" />
+                                                ) : (
+                                                    <div className="w-8 h-4 bg-gray-100 rounded" />
+                                                )}
                                                 <span className="w-10 text-xs font-bold text-right">{d}</span>
                                                 <input type="number" placeholder="0" className="flex-1 p-2 bg-red-50 rounded-lg text-center font-bold outline-none" onChange={e => setSwapOut(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))} />
                                             </div>
@@ -507,7 +540,12 @@ function TreasuryContent() {
                                 <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto custom-scrollbar">
                                     {DENOMINATIONS.map(d => (
                                         <div key={d} className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
-                                            <span className="w-10 text-right font-black text-gray-600">{d}€</span>
+                                            {CURRENCY_IMAGES[d] ? (
+                                                <img src={CURRENCY_IMAGES[d]} alt="" className="h-5 w-auto object-contain" />
+                                            ) : (
+                                                <div className="w-8 h-4 bg-gray-100 rounded" />
+                                            )}
+                                            <span className="w-10 text-right font-black text-gray-600">{d}</span>
                                             <input
                                                 type="number"
                                                 className="w-full bg-white p-1 rounded border text-center font-bold"

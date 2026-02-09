@@ -14,6 +14,7 @@ import {
     Filter,
     X
 } from 'lucide-react';
+import { cn } from "@/lib/utils";
 import {
     format,
     startOfMonth,
@@ -96,7 +97,7 @@ export default function RegistrosPage() {
     // --- FILTROS ---
     const [filterStartDate, setFilterStartDate] = useState<string>('');
     const [filterEndDate, setFilterEndDate] = useState<string>('');
-    const [showFilterPopup, setShowFilterPopup] = useState(false);
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
     const isFilterActive = filterStartDate || filterEndDate;
 
     // --- CARGA ---
@@ -256,29 +257,49 @@ export default function RegistrosPage() {
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-8 overflow-hidden text-gray-800">
             {/* CABECERA NAVEGACIÓN */}
-            <div className="mb-6 flex items-center justify-between px-2">
-                <div className="w-12 md:block hidden"></div> {/* Spacer for alignment */}
-
-                <div className="flex items-center gap-4 bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md">
+            <div className="mb-6 flex items-center justify-center px-2">
+                <div className="flex items-center gap-4 bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md relative">
                     <button onClick={prevMonth} className="text-white hover:scale-110 transition-transform"><ChevronLeft size={20} /></button>
-                    <h1 className="text-lg font-black text-white capitalize min-w-[140px] text-center">
-                        {format(currentDate, 'MMMM yyyy', { locale: es })}
-                    </h1>
+
+                    <div className="relative">
+                        <h1
+                            onClick={() => setShowMonthPicker(!showMonthPicker)}
+                            className="text-lg font-black text-white capitalize min-w-[140px] text-center cursor-pointer hover:bg-white/10 px-4 py-1 rounded-xl transition-colors select-none"
+                        >
+                            {format(currentDate, 'MMMM yyyy', { locale: es })}
+                        </h1>
+
+                        {showMonthPicker && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)}></div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white rounded-3xl shadow-2xl border border-gray-100 p-4 z-50 animate-in fade-in zoom-in duration-200">
+                                    <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto no-scrollbar">
+                                        {Array.from({ length: 24 }).map((_, i) => {
+                                            const d = addMonths(startOfMonth(new Date()), i - 12);
+                                            const isCurrent = isSameMonth(d, currentDate);
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => { setCurrentDate(d); setShowMonthPicker(false); }}
+                                                    className={cn(
+                                                        "px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                                                        isCurrent
+                                                            ? "bg-rose-500 text-white shadow-md shadow-rose-200"
+                                                            : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                                                    )}
+                                                >
+                                                    {format(d, 'MMM yyyy', { locale: es })}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
                     <button onClick={nextMonth} className="text-white hover:scale-110 transition-transform"><ChevronRight size={20} /></button>
                 </div>
-
-                {/* BOTÓN FILTRO */}
-                <button
-                    onClick={() => isFilterActive ? (setFilterStartDate(''), setFilterEndDate('')) : setShowFilterPopup(true)}
-                    className={`
-                        p-3 rounded-2xl transition-all active:scale-90 shadow-lg border
-                        ${isFilterActive
-                            ? "bg-white text-rose-500 border-rose-100"
-                            : "bg-white/20 text-white border-white/10 hover:bg-white/30"}
-                    `}
-                >
-                    {isFilterActive ? <X size={20} strokeWidth={3} /> : <Filter size={20} />}
-                </button>
             </div>
 
             {/* BLOQUE CALENDARIO INTEGRADO */}
@@ -291,7 +312,7 @@ export default function RegistrosPage() {
                 </div>
 
                 {/* CUADRÍCULA CALENDARIO (CELDAS BLANCAS) */}
-                <div className="flex-1 grid grid-cols-7 gap-1 p-1 bg-white/5 backdrop-blur-sm">
+                <div className="flex-1 grid grid-cols-7 gap-[1px] bg-white">
                     {calendarDays.map((day: Date) => {
                         const isCurrentMonth = isSameMonth(day, currentDate);
                         let dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
@@ -308,11 +329,11 @@ export default function RegistrosPage() {
                             <div
                                 key={day.toISOString()}
                                 onClick={() => handleDayClick(day)}
-                                className={`
-                                    relative p-2 rounded-2xl flex flex-col cursor-pointer transition-all border
-                                    ${!isCurrentMonth ? 'bg-gray-50/30 opacity-40 border-transparent pointer-events-none' : 'bg-white border-gray-100 hover:border-[#5B8FB9] hover:shadow-md hover:-translate-y-0.5'}
-                                    ${isToday ? 'ring-2 ring-emerald-400 border-transparent' : ''}
-                                `}
+                                className={cn(
+                                    "relative p-2 flex flex-col cursor-pointer transition-all border-b border-r border-gray-100",
+                                    !isCurrentMonth ? "bg-gray-50/50 opacity-40" : "bg-white hover:bg-blue-50/30 hover:z-10",
+                                    isToday && "bg-emerald-50/30"
+                                )}
                             >
                                 <span className={`
                                     text-xs font-black mb-1.5 flex items-center justify-center w-6 h-6 rounded-lg
@@ -466,46 +487,6 @@ export default function RegistrosPage() {
                 </div>
             )}
 
-            {/* POPUP FILTRO POR FECHAS */}
-            {showFilterPopup && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowFilterPopup(false)}>
-                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-black text-[#5B8FB9] uppercase tracking-wider">Filtrar Fechas</h2>
-                            <button onClick={() => setShowFilterPopup(false)} className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"><X size={20} /></button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Desde</label>
-                                <input
-                                    type="date"
-                                    value={filterStartDate}
-                                    onChange={(e) => setFilterStartDate(e.target.value)}
-                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B8FB9] transition-all"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Hasta</label>
-                                <input
-                                    type="date"
-                                    value={filterEndDate}
-                                    onChange={(e) => setFilterEndDate(e.target.value)}
-                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B8FB9] transition-all"
-                                />
-                            </div>
-
-                            <button
-                                onClick={() => setShowFilterPopup(false)}
-                                className="w-full py-4 bg-[#5B8FB9] text-white rounded-2xl font-black uppercase tracking-widest shadow-lg hover:bg-[#4d7a9d] transition-all active:scale-95"
-                            >
-                                Aplicar Filtro
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -15,6 +15,23 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+// --- CONSTANTES: IMÁGENES DE MONEDAS ---
+const CURRENCY_IMAGES: Record<number, string> = {
+    100: '/currency/100e-Photoroom.png',
+    50: '/currency/50e-Photoroom.png',
+    20: '/currency/20-Photoroom.png',
+    10: '/currency/10e-Photoroom.png',
+    5: '/currency/5eur-Photoroom.png',
+    2: '/currency/2eur-Photoroom.png',
+    1: '/currency/1eur-Photoroom.png',
+    0.50: '/currency/50ct-Photoroom.png',
+    0.20: '/currency/20ct-Photoroom.png',
+    0.10: '/currency/10ct-Photoroom.png',
+    0.05: '/currency/5ct-Photoroom.png',
+    0.02: '/currency/2ct-Photoroom.png',
+    0.01: '/currency/1ct-Photoroom.png',
+};
+
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
 const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void }) => {
     const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
@@ -65,16 +82,27 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
                 <div className="grid grid-cols-2 gap-3">
                     {DENOMINATIONS.map(denom => (
                         <div key={denom} className="bg-white p-2 rounded-xl border border-gray-200 flex items-center justify-between shadow-sm">
-                            <span className="font-bold text-gray-700 text-sm w-12 text-right">
-                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}cts`}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                {CURRENCY_IMAGES[denom] ? (
+                                    <img
+                                        src={CURRENCY_IMAGES[denom]}
+                                        alt={`${denom}€`}
+                                        className="h-6 w-auto object-contain shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
+                                )}
+                                <span className="font-bold text-gray-700 text-sm">
+                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}cts`}
+                                </span>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-400">x</span>
                                 <input
                                     type="number"
                                     min="0"
                                     placeholder="0"
-                                    className={`w-16 p-1 text-center font-bold rounded-lg bg-gray-50 border focus:bg-white focus:ring-2 outline-none ${colorClass}`}
+                                    className={`w-14 p-1 text-center font-bold rounded-lg bg-gray-50 border focus:bg-white focus:ring-2 outline-none ${colorClass}`}
                                     onChange={(e) => handleCountChange(denom, e.target.value)}
                                 />
                             </div>
