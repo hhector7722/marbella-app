@@ -10,7 +10,9 @@ import {
     Plus,
     ArrowLeft,
     ArrowRight as ArrowRightIcon,
-    Save
+    Save,
+    Filter,
+    X
 } from 'lucide-react';
 import {
     format,
@@ -90,6 +92,12 @@ export default function RegistrosPage() {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [modalLogs, setModalLogs] = useState<EditingLog[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+    // --- FILTROS ---
+    const [filterStartDate, setFilterStartDate] = useState<string>('');
+    const [filterEndDate, setFilterEndDate] = useState<string>('');
+    const [showFilterPopup, setShowFilterPopup] = useState(false);
+    const isFilterActive = filterStartDate || filterEndDate;
 
     // --- CARGA ---
     useEffect(() => {
@@ -249,12 +257,7 @@ export default function RegistrosPage() {
         <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-8 overflow-hidden text-gray-800">
             {/* CABECERA NAVEGACIÓN */}
             <div className="mb-6 flex items-center justify-between px-2">
-                <button
-                    onClick={() => router.back()}
-                    className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl text-white transition-all active:scale-90"
-                >
-                    <ArrowLeft size={20} />
-                </button>
+                <div className="w-12 md:block hidden"></div> {/* Spacer for alignment */}
 
                 <div className="flex items-center gap-4 bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md">
                     <button onClick={prevMonth} className="text-white hover:scale-110 transition-transform"><ChevronLeft size={20} /></button>
@@ -264,15 +267,26 @@ export default function RegistrosPage() {
                     <button onClick={nextMonth} className="text-white hover:scale-110 transition-transform"><ChevronRight size={20} /></button>
                 </div>
 
-                <div className="w-12"></div> {/* Spacer for balance */}
+                {/* BOTÓN FILTRO */}
+                <button
+                    onClick={() => isFilterActive ? (setFilterStartDate(''), setFilterEndDate('')) : setShowFilterPopup(true)}
+                    className={`
+                        p-3 rounded-2xl transition-all active:scale-90 shadow-lg border
+                        ${isFilterActive
+                            ? "bg-white text-rose-500 border-rose-100"
+                            : "bg-white/20 text-white border-white/10 hover:bg-white/30"}
+                    `}
+                >
+                    {isFilterActive ? <X size={20} strokeWidth={3} /> : <Filter size={20} />}
+                </button>
             </div>
 
             {/* TARJETA CALENDARIO */}
             <div className="flex-1 bg-white rounded-[2.5rem] shadow-2xl p-6 flex flex-col overflow-hidden border border-white/50">
-                {/* DÍAS SEMANA INTEGRADOS */}
-                <div className="grid grid-cols-7 mb-4">
+                {/* DÍAS SEMANA INTEGRADOS (ESTILO MARBELLA) */}
+                <div className="grid grid-cols-7 mb-4 bg-rose-500 rounded-2xl py-2.5 shadow-md border border-rose-400/30">
                     {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                        <div key={day} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">{day}</div>
+                        <div key={day} className="text-center text-[11px] font-black text-white uppercase tracking-widest">{day}</div>
                     ))}
                 </div>
 
@@ -280,8 +294,15 @@ export default function RegistrosPage() {
                 <div className="flex-1 grid grid-cols-7 gap-2">
                     {calendarDays.map((day: Date) => {
                         const isCurrentMonth = isSameMonth(day, currentDate);
-                        const dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
+                        let dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
                         const isToday = isSameDay(day, new Date());
+
+                        // Aplicar filtro de fecha si existe
+                        if (isFilterActive) {
+                            const dayISO = format(day, 'yyyy-MM-dd');
+                            if (filterStartDate && dayISO < filterStartDate) dayLogs = [];
+                            if (filterEndDate && dayISO > filterEndDate) dayLogs = [];
+                        }
 
                         return (
                             <div
@@ -433,6 +454,47 @@ export default function RegistrosPage() {
                                 className="mt-4 w-full py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-sm"
                             >
                                 <Plus size={18} /> Añadir Fichaje
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* POPUP FILTRO POR FECHAS */}
+            {showFilterPopup && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowFilterPopup(false)}>
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-black text-[#5B8FB9] uppercase tracking-wider">Filtrar Fechas</h2>
+                            <button onClick={() => setShowFilterPopup(false)} className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"><X size={20} /></button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Desde</label>
+                                <input
+                                    type="date"
+                                    value={filterStartDate}
+                                    onChange={(e) => setFilterStartDate(e.target.value)}
+                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B8FB9] transition-all"
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Hasta</label>
+                                <input
+                                    type="date"
+                                    value={filterEndDate}
+                                    onChange={(e) => setFilterEndDate(e.target.value)}
+                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B8FB9] transition-all"
+                                />
+                            </div>
+
+                            <button
+                                onClick={() => setShowFilterPopup(false)}
+                                className="w-full py-4 bg-[#5B8FB9] text-white rounded-2xl font-black uppercase tracking-widest shadow-lg hover:bg-[#4d7a9d] transition-all active:scale-95"
+                            >
+                                Aplicar Filtro
                             </button>
                         </div>
                     </div>
