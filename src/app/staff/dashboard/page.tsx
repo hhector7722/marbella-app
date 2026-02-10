@@ -427,29 +427,45 @@ export default function StaffDashboard() {
 
                         <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                {Math.abs(weeklySummary.totalHours) > 0.1 && (
+                                    <>
+                                        <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                    {formatBalance(weeklySummary.hoursDifference)}
-                                </span>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
+                                {Math.abs(weeklySummary.hoursDifference) > 0.1 && (
+                                    <>
+                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {formatBalance(weeklySummary.hoursDifference)}
+                                        </span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                    {shouldShowPending(weeklySummary.startBalance) ? formatBalance(weeklySummary.startBalance) : ' '}
-                                </span>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                {shouldShowPending(weeklySummary.startBalance) && Math.abs(weeklySummary.startBalance) > 0.1 && (
+                                    <>
+                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {formatBalance(weeklySummary.startBalance)}
+                                        </span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-center flex-1">
-                                <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                    {formatMoney(weeklySummary.estimatedPayout)}
-                                </span>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                {weeklySummary.estimatedPayout > 0.1 && (
+                                    <>
+                                        <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                            {formatMoney(weeklySummary.estimatedPayout)}
+                                        </span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -49,8 +49,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Identificación Visual Tesorería: Integración de imágenes de billetes y monedas en todos los formularios de desglose de efectivo (Caja Inicial, Cambio, Arqueo).
 - [x] Rediseño Perfil Corporativo: Transición de `/profile` a una tarjeta de alta densidad con estilo "Vista Marbella Detail", optimizada para táctil y alto contraste.
 - [x] Refinamiento Staff (Móvil): Layout de doble columna en smartphone (Horarios 1/2 e Iconos 1/2) con etiqueta "Info" responsiva.
-- [x] **Rol Supervisor**: Implementación de un rol intermedio con acceso a dashboard y cierres de caja.
 - [x] **Cierre de Caja Moderno**: Nuevo `CashClosingModal` multi-paso con soporte para clima, tickets y arqueo detallado, reemplazando la página legacy.
+- [x] **Resumen Staff Silencioso**: Ocultación automática de valores cero (y sus etiquetas) en los resúmenes semanales para una interfaz más limpia.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.

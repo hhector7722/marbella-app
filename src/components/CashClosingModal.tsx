@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 // --- CONSTANTS ---
 const FIXED_CASH_FUND = 100;
-const BILLS = [500, 200, 100, 50, 20, 10, 5];
+const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -278,35 +278,51 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 </div>
                             </div>
                             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto custom-scrollbar">
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                         <Banknote size={14} /> Billetes
                                     </h4>
-                                    {BILLS.map(bill => (
-                                        <div key={bill} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100 shadow-sm group">
-                                            <div className="w-10 h-6 shrink-0">
-                                                <img src={CURRENCY_IMAGES[bill]} alt={bill + "€"} className="w-full h-full object-contain" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {BILLS.map(bill => (
+                                            <div key={bill} className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm group transition-all hover:border-[#36606F]/30">
+                                                <div className="h-16 w-full flex items-center justify-center">
+                                                    <img src={CURRENCY_IMAGES[bill]} alt={bill + "€"} className="h-full w-auto object-contain drop-shadow-md group-hover:scale-110 transition-transform" />
+                                                </div>
+                                                <div className="flex items-center gap-2 w-full border-t border-gray-50 pt-2 mt-1">
+                                                    <span className="font-black text-gray-800 text-[10px] whitespace-nowrap">{bill}€</span>
+                                                    <input
+                                                        type="number" min="0" placeholder="0"
+                                                        className="w-full bg-gray-50 border border-transparent rounded-lg py-1 text-center font-black text-[#36606F] outline-none focus:bg-white focus:border-blue-200 hover:bg-gray-100 transition-all text-sm"
+                                                        value={counts[bill] || ''}
+                                                        onChange={(e) => updateCount(bill, e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
-                                            <span className="flex-1 font-bold text-gray-700 text-sm">{bill}€</span>
-                                            <input type="number" min="0" placeholder="0" className="w-16 bg-gray-50 border border-transparent rounded-lg py-1.5 text-center font-black text-[#36606F] outline-none focus:bg-white focus:border-blue-200 hover:bg-gray-100 transition-all"
-                                                value={counts[bill] || ''} onChange={(e) => updateCount(bill, e.target.value)} />
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                         <Coins size={14} /> Monedas
                                     </h4>
-                                    {COINS.map(coin => (
-                                        <div key={coin} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100 shadow-sm group">
-                                            <div className="w-10 h-6 shrink-0">
-                                                <img src={CURRENCY_IMAGES[coin]} alt={coin + "€"} className="w-full h-full object-contain" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {COINS.map(coin => (
+                                            <div key={coin} className="flex flex-col items-center gap-2 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm group transition-all hover:border-[#36606F]/30">
+                                                <div className="h-12 w-full flex items-center justify-center">
+                                                    <img src={CURRENCY_IMAGES[coin]} alt={coin + "€"} className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                                                </div>
+                                                <div className="flex items-center gap-2 w-full border-t border-gray-50 pt-2 mt-1">
+                                                    <span className="font-black text-gray-800 text-[10px] whitespace-nowrap">{coin < 1 ? (coin * 100).toFixed(0) + "cts" : coin + "€"}</span>
+                                                    <input
+                                                        type="number" min="0" placeholder="0"
+                                                        className="w-full bg-gray-50 border border-transparent rounded-lg py-1 text-center font-black text-[#36606F] outline-none focus:bg-white focus:border-blue-200 hover:bg-gray-100 transition-all text-sm"
+                                                        value={counts[coin] || ''}
+                                                        onChange={(e) => updateCount(coin, e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
-                                            <span className="flex-1 font-bold text-gray-700 text-xs">{coin < 1 ? (coin * 100).toFixed(0) + "cts" : coin + "€"}</span>
-                                            <input type="number" min="0" placeholder="0" className="w-16 bg-gray-50 border border-transparent rounded-lg py-1.5 text-center font-black text-[#36606F] outline-none focus:bg-white focus:border-blue-200 hover:bg-gray-100 transition-all"
-                                                value={counts[coin] || ''} onChange={(e) => updateCount(coin, e.target.value)} />
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -35,7 +35,7 @@ interface Movement {
     breakdown: Record<string, number>;
 }
 
-const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
@@ -366,25 +366,27 @@ function TreasuryContent() {
 
                                             <div>
                                                 <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Desglose</label>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                                     {DENOMINATIONS.map(denom => (
-                                                        <div key={denom} className={`p-2 rounded-lg border flex items-center gap-1 ${amountInputs[denom.toString()] ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
-                                                            <div className="flex items-center gap-1 shrink-0">
+                                                        <div key={denom} className={`p-3 rounded-2xl border flex flex-col items-center gap-2 group transition-all ${amountInputs[denom.toString()] ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-100 shadow-sm'}`}>
+                                                            <div className="h-12 w-full flex items-center justify-center">
                                                                 {CURRENCY_IMAGES[denom] ? (
-                                                                    <img src={CURRENCY_IMAGES[denom]} alt="" className="h-4 w-auto object-contain" />
+                                                                    <img src={CURRENCY_IMAGES[denom]} alt="" className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
                                                                 ) : (
-                                                                    <div className="w-6 h-3 bg-gray-100 rounded" />
+                                                                    <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
                                                                 )}
-                                                                <span className="text-[10px] font-bold w-10 text-right">{denom}</span>
                                                             </div>
-                                                            <input
-                                                                type="number" placeholder="0"
-                                                                className="w-full bg-transparent text-center font-bold outline-none text-xs"
-                                                                onChange={(e) => {
-                                                                    const val = parseInt(e.target.value) || 0;
-                                                                    setAmountInputs(p => ({ ...p, [denom.toString()]: val }));
-                                                                }}
-                                                            />
+                                                            <div className="w-full flex items-center gap-2 border-t pt-2 mt-1">
+                                                                <span className="text-[10px] font-black w-10 text-right">{denom}€</span>
+                                                                <input
+                                                                    type="number" placeholder="0"
+                                                                    className="w-full bg-transparent text-center font-bold outline-none text-sm"
+                                                                    onChange={(e) => {
+                                                                        const val = parseInt(e.target.value) || 0;
+                                                                        setAmountInputs(p => ({ ...p, [denom.toString()]: val }));
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -485,28 +487,36 @@ function TreasuryContent() {
                                     <div className="space-y-3">
                                         <h4 className="font-bold text-green-600 flex items-center gap-2 border-b pb-2 sticky top-header-safe bg-white z-10"><ArrowDown size={16} /> ENTRA</h4>
                                         {DENOMINATIONS.map(d => (
-                                            <div key={d} className="flex items-center gap-2">
-                                                {CURRENCY_IMAGES[d] ? (
-                                                    <img src={CURRENCY_IMAGES[d]} alt="" className="h-5 w-auto object-contain" />
-                                                ) : (
-                                                    <div className="w-8 h-4 bg-gray-100 rounded" />
-                                                )}
-                                                <span className="w-10 text-xs font-bold text-right">{d}</span>
-                                                <input type="number" placeholder="0" className="flex-1 p-2 bg-green-50 rounded-lg text-center font-bold outline-none" onChange={e => setSwapIn(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))} />
+                                            <div key={d} className="flex flex-col items-center gap-1 bg-white p-3 rounded-2xl border border-green-50 shadow-sm group">
+                                                <div className="h-10 w-full flex items-center justify-center">
+                                                    {CURRENCY_IMAGES[d] ? (
+                                                        <img src={CURRENCY_IMAGES[d]} alt="" className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                                                    ) : (
+                                                        <div className="w-8 h-4 bg-gray-100 rounded" />
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1 w-full border-t border-green-50 pt-1 mt-1">
+                                                    <span className="w-8 text-[9px] font-black text-right text-green-700">{d}</span>
+                                                    <input type="number" placeholder="0" className="flex-1 p-1 bg-green-50/50 rounded-lg text-center font-bold outline-none text-xs" onChange={e => setSwapIn(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))} />
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                     <div className="space-y-3">
                                         <h4 className="font-bold text-red-600 flex items-center gap-2 border-b pb-2 sticky top-header-safe bg-white z-10"><ArrowUp size={16} /> SALE</h4>
                                         {DENOMINATIONS.map(d => (
-                                            <div key={d} className="flex items-center gap-2">
-                                                {CURRENCY_IMAGES[d] ? (
-                                                    <img src={CURRENCY_IMAGES[d]} alt="" className="h-5 w-auto object-contain" />
-                                                ) : (
-                                                    <div className="w-8 h-4 bg-gray-100 rounded" />
-                                                )}
-                                                <span className="w-10 text-xs font-bold text-right">{d}</span>
-                                                <input type="number" placeholder="0" className="flex-1 p-2 bg-red-50 rounded-lg text-center font-bold outline-none" onChange={e => setSwapOut(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))} />
+                                            <div key={d} className="flex flex-col items-center gap-1 bg-white p-3 rounded-2xl border border-red-50 shadow-sm group">
+                                                <div className="h-10 w-full flex items-center justify-center">
+                                                    {CURRENCY_IMAGES[d] ? (
+                                                        <img src={CURRENCY_IMAGES[d]} alt="" className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                                                    ) : (
+                                                        <div className="w-8 h-4 bg-gray-100 rounded" />
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1 w-full border-t border-red-50 pt-1 mt-1">
+                                                    <span className="w-8 text-[9px] font-black text-right text-red-700">{d}</span>
+                                                    <input type="number" placeholder="0" className="flex-1 p-1 bg-red-50/50 rounded-lg text-center font-bold outline-none text-xs" onChange={e => setSwapOut(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))} />
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -539,19 +549,23 @@ function TreasuryContent() {
                                 </div>
                                 <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto custom-scrollbar">
                                     {DENOMINATIONS.map(d => (
-                                        <div key={d} className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
-                                            {CURRENCY_IMAGES[d] ? (
-                                                <img src={CURRENCY_IMAGES[d]} alt="" className="h-5 w-auto object-contain" />
-                                            ) : (
-                                                <div className="w-8 h-4 bg-gray-100 rounded" />
-                                            )}
-                                            <span className="w-10 text-right font-black text-gray-600">{d}</span>
-                                            <input
-                                                type="number"
-                                                className="w-full bg-white p-1 rounded border text-center font-bold"
-                                                value={editInventory[d.toString()] ?? 0}
-                                                onChange={e => setEditInventory(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))}
-                                            />
+                                        <div key={d} className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm group transition-all">
+                                            <div className="h-12 w-full flex items-center justify-center">
+                                                {CURRENCY_IMAGES[d] ? (
+                                                    <img src={CURRENCY_IMAGES[d]} alt="" className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                                                ) : (
+                                                    <div className="w-8 h-4 bg-gray-100 rounded" />
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 w-full border-t pt-2 mt-1">
+                                                <span className="w-10 text-right font-black text-[10px] text-gray-600">{d}€</span>
+                                                <input
+                                                    type="number"
+                                                    className="w-full bg-gray-50 p-1.5 rounded-lg border-none text-center font-bold text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                                                    value={editInventory[d.toString()] ?? 0}
+                                                    onChange={e => setEditInventory(p => ({ ...p, [d.toString()]: parseInt(e.target.value) || 0 }))}
+                                                />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

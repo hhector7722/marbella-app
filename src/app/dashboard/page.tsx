@@ -35,7 +35,7 @@ const CURRENCY_IMAGES: Record<number, string> = {
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
 const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void }) => {
-    const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+    const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
     const [counts, setCounts] = useState<Record<number, number>>({});
     const [notes, setNotes] = useState('');
 
@@ -80,31 +80,31 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="bg-white p-2 rounded-xl border border-gray-200 flex items-center justify-between shadow-sm">
-                            <div className="flex items-center gap-2">
+                        <div key={denom} className="bg-white p-3 rounded-2xl border border-gray-200 flex flex-col items-center gap-2 shadow-sm group">
+                            <div className="h-16 w-full flex items-center justify-center">
                                 {CURRENCY_IMAGES[denom] ? (
                                     <img
                                         src={CURRENCY_IMAGES[denom]}
                                         alt={`${denom}€`}
-                                        className="h-6 w-auto object-contain shrink-0"
+                                        className="h-full w-auto object-contain drop-shadow-md group-hover:scale-110 transition-transform"
                                     />
                                 ) : (
-                                    <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
+                                    <div className="w-12 h-6 bg-gray-100 rounded animate-pulse" />
                                 )}
-                                <span className="font-bold text-gray-700 text-sm">
-                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}cts`}
-                                </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-400">x</span>
+                            <div className="w-full flex items-center gap-2 border-t pt-2 mt-1">
+                                <span className="font-black text-gray-800 text-[10px] whitespace-nowrap">
+                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                </span>
                                 <input
                                     type="number"
                                     min="0"
-                                    placeholder="0"
-                                    className={`w-14 p-1 text-center font-bold rounded-lg bg-gray-50 border focus:bg-white focus:ring-2 outline-none ${colorClass}`}
+                                    value={counts[denom] || ''}
                                     onChange={(e) => handleCountChange(denom, e.target.value)}
+                                    placeholder="0"
+                                    className="w-full bg-gray-50 border-none rounded-lg p-1.5 text-center font-bold text-sm outline-none focus:ring-2 focus:ring-blue-100"
                                 />
                             </div>
                         </div>
