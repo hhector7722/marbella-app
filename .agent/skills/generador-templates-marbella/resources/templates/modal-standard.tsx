@@ -33,21 +33,20 @@ export default function StandardModal({
                 className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
             >
-                {/* HEADER */}
-                <div className="bg-[#36606F] p-8 pb-10 text-white relative">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-6 right-6 p-2 hover:bg-white/20 rounded-full transition-colors active:scale-90"
-                    >
-                        <X size={20} />
-                    </button>
-
-                    <div className="flex flex-col items-center text-center mt-2">
-                        <h2 className="text-2xl font-black tracking-tight leading-none uppercase italic">{title}</h2>
+                {/* HEADER (Detail View Style) */}
+                <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative">
+                    <div className="flex flex-col">
+                        <h2 className="text-lg font-black tracking-wider uppercase leading-none">{title}</h2>
                         {subtitle && (
-                            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mt-2">{subtitle}</p>
+                            <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mt-1">{subtitle}</p>
                         )}
                     </div>
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                    >
+                        <X size={20} strokeWidth={3} />
+                    </button>
                 </div>
 
                 {/* OPTIONS LIST (Floating Style - No BG/Border) */}

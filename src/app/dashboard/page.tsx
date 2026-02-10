@@ -14,7 +14,6 @@ import { getISOWeek, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import CashClosingModal from '@/components/CashClosingModal';
 
 // --- CONSTANTES: IMÁGENES DE MONEDAS ---
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -35,7 +34,7 @@ const CURRENCY_IMAGES: Record<number, string> = {
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
 const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void }) => {
-    const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+    const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
     const [counts, setCounts] = useState<Record<number, number>>({});
     const [notes, setNotes] = useState('');
 
@@ -55,14 +54,19 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
 
     return (
         <div className="flex flex-col h-full">
-            <div className={`p-4 text-white flex justify-between items-center ${bgClass}`}>
+            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                 <div>
-                    <h3 className="text-lg font-bold">{isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')} - {boxName}</h3>
-                    <p className="text-white/80 text-xs">Introduce el desglose</p>
+                    <h3 className="text-lg font-black uppercase tracking-wider">{isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')}</h3>
+                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
                 </div>
-                <div className="text-right">
-                    <span className="block text-[10px] uppercase opacity-80">Total</span>
-                    <span className="text-2xl font-black">{total.toFixed(2)}€</span>
+                <div className="flex items-center gap-6">
+                    <div className="text-right hidden sm:block">
+                        <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black">Total Acumulado</span>
+                        <span className="text-xl font-black">{total.toFixed(2)}€</span>
+                    </div>
+                    <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                        <X size={20} strokeWidth={3} />
+                    </button>
                 </div>
             </div>
 
@@ -80,31 +84,31 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
                     {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="bg-white p-3 rounded-2xl border border-gray-200 flex flex-col items-center gap-2 shadow-sm group">
-                            <div className="h-16 w-full flex items-center justify-center">
+                        <div key={denom} className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center gap-1 group transition-all hover:border-[#36606F]/50">
+                            <div className="h-8 w-full flex items-center justify-center">
                                 {CURRENCY_IMAGES[denom] ? (
                                     <img
                                         src={CURRENCY_IMAGES[denom]}
                                         alt={`${denom}€`}
-                                        className="h-full w-auto object-contain drop-shadow-md group-hover:scale-110 transition-transform"
+                                        className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
                                     />
                                 ) : (
-                                    <div className="w-12 h-6 bg-gray-100 rounded animate-pulse" />
+                                    <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
                                 )}
                             </div>
-                            <div className="w-full flex items-center gap-2 border-t pt-2 mt-1">
-                                <span className="font-black text-gray-800 text-[10px] whitespace-nowrap">
-                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                </span>
+                            <span className="font-black text-gray-400 text-[8px] uppercase tracking-tighter">
+                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                            </span>
+                            <div className="w-full flex items-center gap-1">
                                 <input
                                     type="number"
                                     min="0"
                                     value={counts[denom] || ''}
                                     onChange={(e) => handleCountChange(denom, e.target.value)}
                                     placeholder="0"
-                                    className="w-full bg-gray-50 border-none rounded-lg p-1.5 text-center font-bold text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                                    className="w-full bg-gray-50 border-none rounded-lg p-1 text-center font-black text-[#36606F] outline-none text-[10px] focus:ring-1 focus:ring-blue-200"
                                 />
                             </div>
                         </div>
@@ -149,7 +153,6 @@ export default function DashboardPage() {
     // Estado para pagos
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
-    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -504,15 +507,7 @@ export default function DashboardPage() {
                                     <div className="bg-blue-50 p-2 rounded-xl text-blue-600"><CloudSun size={18} /></div>
                                     <div><h3 className="text-sm font-bold text-gray-800">Último Cierre</h3><p className="text-[10px] text-gray-400 capitalize">{dailyStats?.fullDate}</p></div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => setIsClosingModalOpen(true)}
-                                        className="text-[10px] font-black bg-[#36606F] text-white px-3 py-1 rounded-full uppercase tracking-widest shadow-sm active:scale-95 transition-all"
-                                    >
-                                        Cierre
-                                    </button>
-                                    <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Histórico</Link>
-                                </div>
+                                <Link href="/dashboard/history" className="text-xs font-bold text-[#36606F]">Ver más</Link>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 flex-1">
@@ -747,52 +742,24 @@ export default function DashboardPage() {
                         >
                             {cashModalMode === 'menu' && (
                                 <>
-                                    <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                                        <h3 className="font-bold text-lg text-gray-800">
-                                            Gestión {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
-                                        </h3>
-                                        <button onClick={() => setCashModalMode('none')} className="text-gray-400 hover:text-red-500"><X size={24} /></button>
+                                    <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                        <div className="flex flex-col">
+                                            <h3 className="text-lg font-black uppercase tracking-wider leading-none">
+                                                Gestión de Caja
+                                            </h3>
+                                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                                {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                            <X size={20} strokeWidth={3} />
+                                        </button>
                                     </div>
-                                    <div className="p-6 space-y-1">
-                                        <button
-                                            onClick={() => setCashModalMode('in')}
-                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-emerald-500"
-                                        >
-                                            <div className="bg-emerald-50 text-emerald-500 p-3 rounded-xl group-hover:bg-emerald-100 transition-colors">
-                                                <Plus size={24} strokeWidth={2.5} />
-                                            </div>
-                                            <span className="font-black text-sm tracking-tight text-left uppercase">Entrada</span>
-                                        </button>
-
-                                        <button
-                                            onClick={() => setCashModalMode('out')}
-                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-rose-500"
-                                        >
-                                            <div className="bg-rose-50 text-rose-500 p-3 rounded-xl group-hover:bg-rose-100 transition-colors">
-                                                <Minus size={24} strokeWidth={2.5} />
-                                            </div>
-                                            <span className="font-black text-sm tracking-tight text-left uppercase">Salida</span>
-                                        </button>
-
-                                        <button
-                                            onClick={() => setCashModalMode('audit')}
-                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-orange-500"
-                                        >
-                                            <div className="bg-orange-50 text-orange-500 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
-                                                <RefreshCw size={24} strokeWidth={2.5} />
-                                            </div>
-                                            <span className="font-black text-sm tracking-tight text-left uppercase">Arqueo</span>
-                                        </button>
-
-                                        <button
-                                            onClick={() => router.push('/dashboard/movements')}
-                                            className="w-full flex items-center gap-5 p-4 rounded-2xl transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-blue-500"
-                                        >
-                                            <div className="bg-blue-50 text-blue-500 p-3 rounded-xl group-hover:bg-blue-100 transition-colors">
-                                                <History size={24} strokeWidth={2.5} />
-                                            </div>
-                                            <span className="font-black text-sm tracking-tight text-left uppercase">Movimientos</span>
-                                        </button>
+                                    <div className="p-4 grid grid-cols-2 gap-4">
+                                        <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
+                                        <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} /></div><span className="font-bold text-rose-800">Salida</span></button>
+                                        <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
+                                        <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
                                     </div>
                                 </>
                             )}
@@ -813,10 +780,15 @@ export default function DashboardPage() {
                             className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
-                                <h3 className="font-black text-xl text-gray-800 uppercase tracking-tight">Plantilla</h3>
-                                <button onClick={() => setIsStaffModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm">
-                                    <X size={20} />
+                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                <div className="flex flex-col">
+                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                        Seleccionar Empleado ({allEmployees.length})
+                                    </p>
+                                </div>
+                                <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                    <X size={20} strokeWidth={3} />
                                 </button>
                             </div>
 
@@ -858,10 +830,15 @@ export default function DashboardPage() {
                 isProductModalOpen && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
                         <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-                            <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
-                                <h3 className="font-black text-xl text-gray-800 uppercase tracking-tight">Producto</h3>
-                                <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm">
-                                    <X size={20} />
+                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                <div className="flex flex-col">
+                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                        Gestión de Artículos
+                                    </p>
+                                </div>
+                                <button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                    <X size={20} strokeWidth={3} />
                                 </button>
                             </div>
 
@@ -912,12 +889,6 @@ export default function DashboardPage() {
                     </div>
                 )
             }
-
-            <CashClosingModal
-                isOpen={isClosingModalOpen}
-                onClose={() => setIsClosingModalOpen(false)}
-                onSuccess={() => fetchData()}
-            />
         </div >
     );
 }

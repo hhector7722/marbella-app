@@ -42,6 +42,8 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
     const barRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragType, setDragType] = useState<'move' | 'left' | 'right' | null>(null);
+    const [dragStartShift, setDragStartShift] = useState<{ start: string, end: string } | null>(null);
+    const [dragStartPercent, setDragStartPercent] = useState<number>(0);
 
     const leftPos = timeToPercent(shift.start);
     const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
@@ -51,19 +53,39 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         setIsDragging(true);
         setDragType(type);
+        setDragStartShift({ start: shift.start, end: shift.end });
+
+        const parentRect = (e.currentTarget.parentElement || e.currentTarget).getBoundingClientRect();
+        const relativePercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
+        setDragStartPercent(relativePercent);
     };
 
     useEffect(() => {
         const handlePointerMove = (e: PointerEvent) => {
-            if (!isDragging || !barRef.current) return;
+            if (!isDragging || !barRef.current || !dragStartShift) return;
             const parentRect = barRef.current.parentElement!.getBoundingClientRect();
-            const relativePercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
-            const rawTime = percentToTime(Math.max(0, Math.min(relativePercent, 100)));
+            const currentPercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
 
             if (dragType === 'left') {
+                const rawTime = percentToTime(Math.max(0, Math.min(currentPercent, 100)));
                 if (timeToPercent(rawTime) < timeToPercent(shift.end)) onUpdate({ ...shift, start: rawTime });
             } else if (dragType === 'right') {
+                const rawTime = percentToTime(Math.max(0, Math.min(currentPercent, 100)));
                 if (timeToPercent(rawTime) > timeToPercent(shift.start)) onUpdate({ ...shift, end: rawTime });
+            } else if (dragType === 'move') {
+                const diffPercent = currentPercent - dragStartPercent;
+                const startPct = timeToPercent(dragStartShift.start);
+                const endPct = timeToPercent(dragStartShift.end);
+                const duration = endPct - startPct;
+
+                let newStartPct = Math.max(0, Math.min(startPct + diffPercent, 100 - duration));
+                const newStart = percentToTime(newStartPct);
+                const actualStartPct = timeToPercent(newStart);
+                const newEnd = percentToTime(actualStartPct + duration);
+
+                if (newStart !== shift.start) {
+                    onUpdate({ ...shift, start: newStart, end: newEnd });
+                }
             }
         };
 
@@ -495,11 +517,14 @@ export default function ScheduleEditorPage() {
             {/* MODAL: Calendario */}
             {showCalendarModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
-                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                            <h3 className="font-bold text-gray-800">Seleccionar Fecha</h3>
-                            <button onClick={() => setShowCalendarModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
-                                <X size={20} className="text-gray-400" />
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                            <div className="flex flex-col">
+                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Calendario</h3>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Fecha</p>
+                            </div>
+                            <button onClick={() => setShowCalendarModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                <X size={20} strokeWidth={3} />
                             </button>
                         </div>
 
@@ -555,11 +580,14 @@ export default function ScheduleEditorPage() {
             {/* MODAL: Añadir Empleado */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowAddModal(false)}>
-                    <div className="bg-white rounded-2xl w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 bg-emerald-500 text-white flex items-center justify-between">
-                            <h3 className="font-black text-sm uppercase tracking-wider">Añadir Staff</h3>
-                            <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                                <X size={18} strokeWidth={3} />
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                            <div className="flex flex-col">
+                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Añadir Staff</h3>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Plantilla Marbella</p>
+                            </div>
+                            <button onClick={() => setShowAddModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                <X size={20} strokeWidth={3} />
                             </button>
                         </div>
                         <div className="max-h-64 overflow-y-auto p-2 grid gap-1">
