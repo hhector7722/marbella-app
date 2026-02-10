@@ -205,7 +205,7 @@ export default function StaffSchedulePage() {
                                     <ArrowLeft size={20} className="text-gray-600" />
                                 </Link>
                                 <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                                    <Calendar className="text-purple-600" size={24} />
+                                    <Calendar className="text-purple-600" size={24} fill="currentColor" />
                                     {getSelectedEmployeeName()}
                                 </h1>
                             </div>
@@ -218,7 +218,7 @@ export default function StaffSchedulePage() {
                                         onClick={() => setShowEmployeeModal(true)}
                                         className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2.5 rounded-xl transition-all active:scale-95"
                                     >
-                                        <Users size={20} />
+                                        <Users size={20} fill="currentColor" />
                                     </button>
 
                                     {/* Botón + (abre calendario) */}
@@ -226,7 +226,7 @@ export default function StaffSchedulePage() {
                                         onClick={() => setShowCalendarModal(true)}
                                         className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
                                     >
-                                        <Plus size={20} strokeWidth={3} />
+                                        <Plus size={20} strokeWidth={3} fill="currentColor" />
                                     </button>
                                 </div>
                             )}
@@ -258,7 +258,7 @@ export default function StaffSchedulePage() {
                                 {upcomingShifts.length === 0 ? (
                                     <div className="text-center py-20 bg-gray-25 rounded-[2rem] border border-dashed border-gray-100">
                                         <div className="bg-green-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CheckCircle2 className="text-green-500" size={40} />
+                                            <CheckCircle2 className="text-green-500" size={40} fill="currentColor" />
                                         </div>
                                         <h3 className="font-black text-gray-700">¡Todo despejado!</h3>
                                         <p className="text-xs text-gray-400 mt-2 max-w-[200px] mx-auto">No hay turnos programados próximamente.</p>

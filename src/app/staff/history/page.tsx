@@ -48,14 +48,11 @@ const formatNumber = (val: number) => {
     return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
 };
 
-const formatValue = (val: number) => Math.abs(val) > 0.1 ? formatNumber(val) : ' ';
+const formatValue = (val: number) => formatNumber(val);
 
-const formatBalance = (val: number) => {
-    if (Math.abs(val) < 0.1) return ' ';
-    return formatNumber(Math.abs(val));
-};
+const formatBalance = (val: number) => formatNumber(Math.abs(val));
 
-const formatMoney = (val: number) => val > 0.1 ? `${val.toFixed(0)}€` : ' ';
+const formatMoney = (val: number) => `${val.toFixed(0)}€`;
 
 const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
@@ -268,7 +265,7 @@ export default function HistoryPage() {
                 {loading ? (
                     <div className="py-10 text-center text-white/50"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>Cargando registros...</div>
                 ) : weeksData.length === 0 ? (
-                    <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto"><Calendar size={40} className="mx-auto mb-2 opacity-50" /><p>No hay registros cerrados este mes</p></div>
+                    <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto"><Calendar size={40} fill="currentColor" className="mx-auto mb-2 opacity-50" /><p>No hay registros cerrados este mes</p></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
                         {weeksData.map((week, idx) => {
@@ -292,7 +289,7 @@ export default function HistoryPage() {
                                                         )}
                                                         title="Filtrar"
                                                     >
-                                                        <Filter size={14} />
+                                                        <Filter size={14} fill="currentColor" />
                                                     </button>
                                                     {isFilterActive && (
                                                         <button
@@ -373,45 +370,29 @@ export default function HistoryPage() {
 
                                         <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                {Math.abs(week.summary.totalHours) > 0.1 && (
-                                                    <>
-                                                        <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
-                                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                                    </>
-                                                )}
+                                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                             </div>
 
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                {Math.abs(week.summary.weeklyBalance) > 0.1 && (
-                                                    <>
-                                                        <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                            {formatBalance(week.summary.weeklyBalance)}
-                                                        </span>
-                                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
-                                                    </>
-                                                )}
+                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {formatBalance(week.summary.weeklyBalance)}
+                                                </span>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
                                             </div>
 
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                {shouldShowPending(week.summary.startBalance) && Math.abs(week.summary.startBalance) > 0.1 && (
-                                                    <>
-                                                        <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                            {formatBalance(week.summary.startBalance)}
-                                                        </span>
-                                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                                    </>
-                                                )}
+                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {formatBalance(week.summary.startBalance)}
+                                                </span>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                             </div>
 
                                             <div className="flex flex-col items-center flex-1 shrink-0">
-                                                {week.summary.estimatedValue > 0.1 && (
-                                                    <>
-                                                        <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                                            {formatMoney(week.summary.estimatedValue)}
-                                                        </span>
-                                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
-                                                    </>
-                                                )}
+                                                <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                                    {formatMoney(week.summary.estimatedValue)}
+                                                </span>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
                                             </div>
                                         </div>
                                     </div>
@@ -479,7 +460,7 @@ export default function HistoryPage() {
                                 onClick={applyFilter}
                                 className="w-full h-14 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"
                             >
-                                <Check size={20} /> Aplicar Filtro
+                                <Check size={20} fill="currentColor" /> Aplicar Filtro
                             </button>
                         </div>
                     </div>

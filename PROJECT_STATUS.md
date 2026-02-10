@@ -50,7 +50,10 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Rediseño Perfil Corporativo: Transición de `/profile` a una tarjeta de alta densidad con estilo "Vista Marbella Detail", optimizada para táctil y alto contraste.
 - [x] Refinamiento Staff (Móvil): Layout de doble columna en smartphone (Horarios 1/2 e Iconos 1/2) con etiqueta "Info" responsiva.
 - [x] **Cierre de Caja Moderno**: Nuevo `CashClosingModal` multi-paso con soporte para clima, tickets y arqueo detallado, reemplazando la página legacy.
-- [x] **Resumen Staff Silencioso**: Ocultación automática de valores cero (y sus etiquetas) en los resúmenes semanales para una interfaz más limpia.
+- [x] **Gestión Staff Transparente**: Restauración de etiquetas y visualización de valores cero en resúmenes semanales para trazabilidad total.
+- [x] **Refinamiento Dashboard Admin**: Tarjetas de "Último Cierre" con diseño minimalista sin relleno, valores flotantes y acentos de color tipográficos.
+- [x] **Consistencia Estética (Iconografía)**: Estandarización de iconos de navegación y acción a estilo "solid-fill" en Navbar, Dashboard, Histórico y Horarios.
+- [x] **Corrección de Estabilidad Dashboard**: Resolución de errores de sintaxis JSX y balanceo de etiquetas en el panel de administración principal.
 
 ## 📅 PENDIENTE
 - [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.

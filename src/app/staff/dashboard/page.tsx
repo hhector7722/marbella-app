@@ -126,14 +126,11 @@ export default function StaffDashboard() {
         return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
     };
 
-    const formatWorked = (val: number) => Math.abs(val) < 0.1 ? ' ' : formatNumber(Math.abs(val));
+    const formatWorked = (val: number) => formatNumber(Math.abs(val));
 
-    const formatBalance = (val: number) => {
-        if (Math.abs(val) < 0.1) return ' ';
-        return formatNumber(Math.abs(val));
-    };
+    const formatBalance = (val: number) => formatNumber(Math.abs(val));
 
-    const formatMoney = (val: number) => val > 0.1 ? `${val.toFixed(0)}€` : ' ';
+    const formatMoney = (val: number) => `${val.toFixed(0)}€`;
 
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
@@ -334,7 +331,7 @@ export default function StaffDashboard() {
     const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
 
     // --- COMPONENTES VISUALES ---
-    const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string | React.ReactNode, onClick?: () => void, fillWhite?: boolean }) => (
+    const IOSIconBoxed = ({ icon: Icon, color, label, onClick }: { icon: any, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
             onClick={onClick}
             className={cn(
@@ -348,7 +345,7 @@ export default function StaffDashboard() {
                 "w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm",
                 color
             )}>
-                <Icon size={24} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+                <Icon size={24} fill="currentColor" strokeWidth={2.5} />
             </div>
             <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">{label}</span>
         </button>
@@ -427,45 +424,29 @@ export default function StaffDashboard() {
 
                         <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                {Math.abs(weeklySummary.totalHours) > 0.1 && (
-                                    <>
-                                        <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                    </>
-                                )}
+                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                             </div>
 
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                {Math.abs(weeklySummary.hoursDifference) > 0.1 && (
-                                    <>
-                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                            {formatBalance(weeklySummary.hoursDifference)}
-                                        </span>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
-                                    </>
-                                )}
+                                <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {formatBalance(weeklySummary.hoursDifference)}
+                                </span>
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
                             </div>
 
                             <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                {shouldShowPending(weeklySummary.startBalance) && Math.abs(weeklySummary.startBalance) > 0.1 && (
-                                    <>
-                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                            {formatBalance(weeklySummary.startBalance)}
-                                        </span>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                    </>
-                                )}
+                                <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {formatBalance(weeklySummary.startBalance)}
+                                </span>
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                             </div>
 
                             <div className="flex flex-col items-center flex-1">
-                                {weeklySummary.estimatedPayout > 0.1 && (
-                                    <>
-                                        <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                            {formatMoney(weeklySummary.estimatedPayout)}
-                                        </span>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
-                                    </>
-                                )}
+                                <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                    {formatMoney(weeklySummary.estimatedPayout)}
+                                </span>
+                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
                             </div>
                         </div>
                     </div>
@@ -540,7 +521,7 @@ export default function StaffDashboard() {
 
                     {/* FILA ÚNICA DE ICONOS ACCESO ACCESIBLES */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Guía" onClick={() => toast.info("Abriendo guía...")} fillWhite={true} />
+                        <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Guía" onClick={() => toast.info("Abriendo guía...")} />
 
                         {/* --- BOTÓN RECETAS --- */}
                         <button
@@ -549,6 +530,7 @@ export default function StaffDashboard() {
                         >
                             <ChefHat
                                 size={24}
+                                fill="currentColor"
                                 className="text-black transition-transform group-hover:scale-110 drop-shadow-sm"
                                 strokeWidth={1.5}
                             />
@@ -572,7 +554,6 @@ export default function StaffDashboard() {
                                 color="bg-[#36606F]"
                                 label="Cierre"
                                 onClick={() => setIsClosingModalOpen(true)}
-                                fillWhite={true}
                             />
                         )}
                     </div>

@@ -83,7 +83,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-3 h-8 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95 group"
                     >
                         <span className="text-[9px] font-black tracking-[0.15em] text-white">IA</span>
-                        <MessageSquare size={16} className="text-white group-hover:scale-110 transition-transform" strokeWidth={2.5} />
+                        <MessageSquare size={16} fill="currentColor" className="text-white group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                     </button>
                 </div>
             </div>
