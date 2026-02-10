@@ -627,35 +627,35 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1">
-                                <div className="flex flex-col justify-center px-1 md:px-2">
-                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5 md:mb-1.5">Facturación</span>
-                                    <span className="text-lg md:text-2xl font-black text-black leading-none">{dailyStats?.facturat.toFixed(0)}€</span>
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <span className="text-lg md:text-2xl font-black text-black leading-none">{dailyStats?.facturat > 0 ? `${dailyStats.facturat.toFixed(0)}€` : ' '}</span>
+                                    <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Facturación</span>
                                 </div>
 
-                                <div className="flex flex-col justify-center px-1 md:px-2">
-                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5 md:mb-1.5">Venta Neta</span>
-                                    <span className="text-lg md:text-2xl font-black text-emerald-600 leading-none">{dailyStats?.vNeta.toFixed(0)}€</span>
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <span className="text-lg md:text-2xl font-black text-emerald-600 leading-none">{dailyStats?.vNeta > 0 ? `${dailyStats.vNeta.toFixed(0)}€` : ' '}</span>
+                                    <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span>
                                 </div>
 
-                                <div className="flex flex-col justify-center px-1 md:px-2">
-                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5 md:mb-1.5">Ticket Medio</span>
-                                    <span className="text-lg md:text-2xl font-black text-blue-600 leading-none">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <span className="text-lg md:text-2xl font-black text-blue-600 leading-none">{dailyStats?.ticketMedio > 0 ? `${dailyStats.ticketMedio.toFixed(2)}€` : ' '}</span>
+                                    <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span>
                                 </div>
 
-                                <div className="flex flex-col justify-center px-1 md:px-2 relative">
-                                    <div className="flex justify-between items-start mb-0.5 md:mb-1.5">
-                                        <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Coste M.Obra</span>
-                                        <div className="w-6 h-6 md:w-8 md:h-8 relative shrink-0 -mt-0.5 md:-mt-1">
+                                <div className="flex flex-col items-center justify-center text-center relative">
+                                    <span className={cn("text-lg md:text-2xl font-black leading-none", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra > 0 ? `${dailyStats.costeManoObra.toFixed(0)}€` : ' '}</span>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest">M.Obra</span>
+                                        <div className="w-5 h-5 md:w-6 md:h-6 relative shrink-0">
                                             <svg className="w-full h-full transform -rotate-90">
                                                 <circle cx="50%" cy="50%" r="40%" stroke="#f4f4f5" strokeWidth="12%" fill="transparent" />
                                                 <circle cx="50%" cy="50%" r="40%" stroke="currentColor" strokeWidth="12%" fill="transparent" strokeDasharray={2 * Math.PI * 12} strokeDashoffset={(2 * Math.PI * 12) - (laborPercent / 100) * (2 * Math.PI * 12)} strokeLinecap="round" className={dailyStats?.laborCostColor} />
                                             </svg>
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className={cn("text-[6px] md:text-[7px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
+                                                <span className={cn("text-[5px] md:text-[6px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <span className={cn("text-lg md:text-2xl font-black leading-none", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
                                 </div>
                             </div>
                         </div>
@@ -668,10 +668,10 @@ export default function DashboardPage() {
                                     <div key={box.id} className="flex flex-col h-full">
                                         <button
                                             onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                            className="w-full px-6 py-4 md:py-8 rounded-2xl md:rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-4 md:mb-6 active:scale-95"
+                                            className="w-full px-6 py-3 md:py-4 rounded-2xl md:rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 md:mb-4 active:scale-95"
                                         >
                                             <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
-                                            <span className="text-2xl md:text-4xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                            <span className="text-xl md:text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                         </button>
 
                                         <div className="flex flex-col flex-1 min-h-0">
@@ -713,15 +713,15 @@ export default function DashboardPage() {
                             </div>
 
                             {/* FILA DE CAMBIOS */}
-                            <div className="grid grid-cols-2 gap-4 md:gap-6 h-16 md:h-28">
+                            <div className="grid grid-cols-2 gap-4 md:gap-6 h-12 md:h-16">
                                 {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
                                     <button
                                         key={box.id}
                                         onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
+                                        className="bg-white rounded-2xl md:rounded-[1.5rem] p-1.5 md:p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
                                     >
-                                        <span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1 md:mb-1.5">Cambio {idx + 1}</span>
-                                        <span className="text-sm md:text-xl font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance.toFixed(2)}€</span>
+                                        <span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">Cambio {idx + 1}</span>
+                                        <span className="text-xs md:text-lg font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span>
                                     </button>
                                 ))}
                             </div>
@@ -774,7 +774,7 @@ export default function DashboardPage() {
                                         <div key={week.weekId} className="bg-[#5E35B1] rounded-2xl md:rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
                                             <button
                                                 onClick={() => toggleWeek(week.weekId)}
-                                                className="w-full p-2.5 md:p-4 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
+                                                className="w-full p-2 md:p-3 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
                                             >
                                                 <div className="flex items-center gap-2 md:gap-3">
                                                     <div className={cn(
