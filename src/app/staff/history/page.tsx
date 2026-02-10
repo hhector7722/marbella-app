@@ -52,7 +52,10 @@ const formatValue = (val: number) => formatNumber(val);
 
 const formatBalance = (val: number) => formatNumber(val); // formatBalance used formatNumber already
 
-const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : ' ';
+const formatMoney = (val: number) => {
+    if (Math.abs(val) < 0.1) return " ";
+    return `${val.toFixed(0)}€`;
+};
 
 const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 

@@ -723,7 +723,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* BLOQUE 3: ICONOS DE ACCESO (Inferior Izquierda) */}
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-4 gap-3">
                             {[
                                 { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
                                 { title: 'Coste Mano Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
@@ -737,12 +737,12 @@ export default function DashboardPage() {
                                         else if (card.title === 'Producto') setIsProductModalOpen(true);
                                         else if (card.link) router.push(card.link);
                                     }}
-                                    className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-3 active:scale-95 transition-all group hover:bg-gray-50/50"
+                                    className="bg-white rounded-[2rem] p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50"
                                 >
                                     <div className="w-16 h-16 flex items-center justify-center transition-transform group-hover:scale-110">
                                         <img src={card.img} alt={card.title} className="w-full h-full object-contain" />
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
+                                    <span className="text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-1">{card.title}</span>
                                 </button>
                             ))}
                         </div>

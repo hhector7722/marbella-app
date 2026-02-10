@@ -122,15 +122,18 @@ export default function StaffDashboard() {
 
     // --- HELPERS VISUALES ---
     const formatNumber = (val: number) => {
-        if (Math.abs(val) < 0.1) return '0';
+        if (Math.abs(val) < 0.1) return " ";
         return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
     };
 
     const formatWorked = (val: number) => formatNumber(Math.abs(val));
 
-    const formatBalance = (val: number) => formatNumber(Math.abs(val));
+    const formatBalance = (val: number) => formatNumber(val);
 
-    const formatMoney = (val: number) => `${val.toFixed(0)}€`;
+    const formatMoney = (val: number) => {
+        if (Math.abs(val) < 0.1) return " ";
+        return `${val.toFixed(0)}€`;
+    };
 
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
