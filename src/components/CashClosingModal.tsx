@@ -279,27 +279,27 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     <div className="text-lg font-bold text-gray-500">{expectedCash.toFixed(2)}€</div>
                                 </div>
                             </div>
-                            <div className="p-4 flex flex-col gap-4">
-                                <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
+                            <div className="p-4 flex flex-col gap-8">
+                                <div className="grid grid-cols-4 md:grid-cols-5 gap-8">
                                     {BILLS.map(bill => (
-                                        <div key={bill} className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center gap-1 group transition-all hover:border-[#36606F]/50">
-                                            <div className="h-8 w-full flex items-center justify-center">
-                                                <img src={CURRENCY_IMAGES[bill]} alt={bill + "€"} className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                                        <div key={bill} className="flex flex-col items-center gap-2 group transition-all">
+                                            <div className="h-16 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                                <img src={CURRENCY_IMAGES[bill]} alt={bill + "€"} className="h-full w-auto object-contain drop-shadow-md" />
                                             </div>
-                                            <span className="font-black text-gray-400 text-[8px] uppercase tracking-tighter">{bill}€</span>
+                                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{bill}€</span>
                                             <input type="number" min="0" placeholder="0"
-                                                className="w-full bg-gray-50 border-none rounded-lg p-1 text-center font-black text-[#36606F] outline-none text-[10px] focus:ring-1 focus:ring-blue-200"
+                                                className="w-full bg-white/50 border border-gray-200 rounded-xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-2 focus:ring-[#36606F]/20"
                                                 value={counts[bill] || ''} onChange={(e) => updateCount(bill, e.target.value)} />
                                         </div>
                                     ))}
                                     {COINS.map(coin => (
-                                        <div key={coin} className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center gap-1 group transition-all hover:border-[#36606F]/50">
-                                            <div className="h-8 w-full flex items-center justify-center">
-                                                <img src={CURRENCY_IMAGES[coin]} alt={coin + "€"} className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                                        <div key={coin} className="flex flex-col items-center gap-2 group transition-all">
+                                            <div className="h-12 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                                <img src={CURRENCY_IMAGES[coin]} alt={coin + "€"} className="h-full w-auto object-contain drop-shadow-md" />
                                             </div>
-                                            <span className="font-black text-gray-400 text-[8px] uppercase tracking-tighter">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
+                                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
                                             <input type="number" min="0" placeholder="0"
-                                                className="w-full bg-gray-50 border-none rounded-lg p-1 text-center font-black text-[#36606F] outline-none text-[10px] focus:ring-1 focus:ring-blue-200"
+                                                className="w-full bg-white/50 border border-gray-200 rounded-xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-2 focus:ring-[#36606F]/20"
                                                 value={counts[coin] || ''} onChange={(e) => updateCount(coin, e.target.value)} />
                                         </div>
                                     ))}
