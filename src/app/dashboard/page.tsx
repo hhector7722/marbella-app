@@ -7,8 +7,10 @@ import {
     History, Users, TrendingUp, ChevronDown, Wallet, CloudSun, Calendar, Search, Receipt,
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, X, FileText,
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
-    Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft
+    Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
+    PlusCircle
 } from 'lucide-react';
+import CashClosingModal from '@/components/CashClosingModal';
 import Link from 'next/link';
 import { getISOWeek, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -83,35 +85,41 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
                     </div>
                 )}
 
-                <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
-                    {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center gap-1 group transition-all hover:border-[#36606F]/50">
-                            <div className="h-8 w-full flex items-center justify-center">
-                                {CURRENCY_IMAGES[denom] ? (
-                                    <img
-                                        src={CURRENCY_IMAGES[denom]}
-                                        alt={`${denom}€`}
-                                        className="h-full w-auto object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
+                <div className="grid grid-cols-4 md:grid-cols-5 gap-6">
+                    {DENOMINATIONS.map(denom => {
+                        const isBill = denom >= 5;
+                        return (
+                            <div key={denom} className="flex flex-col items-center gap-2 group transition-all">
+                                <div className={cn(
+                                    "w-full flex items-center justify-center transition-transform group-hover:scale-110",
+                                    isBill ? "h-16" : "h-12"
+                                )}>
+                                    {CURRENCY_IMAGES[denom] ? (
+                                        <img
+                                            src={CURRENCY_IMAGES[denom]}
+                                            alt={`${denom}€`}
+                                            className="h-full w-auto object-contain drop-shadow-md"
+                                        />
+                                    ) : (
+                                        <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
+                                    )}
+                                </div>
+                                <span className="font-black text-gray-400 text-[9px] uppercase tracking-widest">
+                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                </span>
+                                <div className="w-full max-w-[60px]">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={counts[denom] || ''}
+                                        onChange={(e) => handleCountChange(denom, e.target.value)}
+                                        placeholder="0"
+                                        className="w-full bg-white/50 border border-gray-200 rounded-xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-2 focus:ring-[#36606F]/20 transition-all"
                                     />
-                                ) : (
-                                    <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
-                                )}
+                                </div>
                             </div>
-                            <span className="font-black text-gray-400 text-[8px] uppercase tracking-tighter">
-                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                            </span>
-                            <div className="w-full flex items-center gap-1">
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={counts[denom] || ''}
-                                    onChange={(e) => handleCountChange(denom, e.target.value)}
-                                    placeholder="0"
-                                    className="w-full bg-gray-50 border-none rounded-lg p-1 text-center font-black text-[#36606F] outline-none text-[10px] focus:ring-1 focus:ring-blue-200"
-                                />
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
@@ -151,52 +159,60 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string
             </div>
 
             <div className="flex-1 overflow-y-auto bg-gray-50 custom-scrollbar">
-                <div className="p-4 grid grid-cols-1 gap-2">
-                    {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-[#36606F]/30">
-                            {/* ENTRADA */}
-                            <div className="flex flex-col items-center">
-                                <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter mb-1">ENTRA</span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={inCounts[denom] || ''}
-                                    onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                                    placeholder="0"
-                                    className="w-full bg-emerald-50/50 border-none rounded-xl p-2 text-center font-black text-emerald-600 outline-none text-xs focus:ring-1 focus:ring-emerald-200"
-                                />
-                            </div>
-
-                            {/* VALOR / IMAGEN */}
-                            <div className="flex flex-col items-center justify-center gap-1 min-w-[50px]">
-                                {CURRENCY_IMAGES[denom] ? (
-                                    <img
-                                        src={CURRENCY_IMAGES[denom]}
-                                        alt={`${denom}€`}
-                                        className="h-6 w-auto object-contain drop-shadow-sm"
+                <div className="p-4 grid grid-cols-1 gap-4">
+                    {DENOMINATIONS.map(denom => {
+                        const isBill = denom >= 5;
+                        return (
+                            <div key={denom} className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 p-2 transition-all">
+                                {/* ENTRADA */}
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2">ENTRA</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={inCounts[denom] || ''}
+                                        onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                                        placeholder="0"
+                                        className="w-full bg-emerald-50/50 border-2 border-transparent focus:border-emerald-200 rounded-2xl p-3 text-center font-black text-emerald-600 outline-none text-sm transition-all shadow-sm"
                                     />
-                                ) : (
-                                    <div className="w-8 h-4 bg-gray-100 rounded" />
-                                )}
-                                <span className="font-black text-gray-400 text-[8px]">
-                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                </span>
-                            </div>
+                                </div>
 
-                            {/* SALIDA */}
-                            <div className="flex flex-col items-center">
-                                <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter mb-1">SALE</span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={outCounts[denom] || ''}
-                                    onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                                    placeholder="0"
-                                    className="w-full bg-rose-50/50 border-none rounded-xl p-2 text-center font-black text-rose-600 outline-none text-xs focus:ring-1 focus:ring-rose-200"
-                                />
+                                {/* VALOR / IMAGEN */}
+                                <div className="flex flex-col items-center justify-center gap-2 min-w-[80px]">
+                                    <div className={cn(
+                                        "flex items-center justify-center",
+                                        isBill ? "h-16" : "h-12"
+                                    )}>
+                                        {CURRENCY_IMAGES[denom] ? (
+                                            <img
+                                                src={CURRENCY_IMAGES[denom]}
+                                                alt={`${denom}€`}
+                                                className="h-full w-auto object-contain drop-shadow-md"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-6 bg-gray-100 rounded" />
+                                        )}
+                                    </div>
+                                    <span className="font-black text-gray-400 text-[10px] tracking-widest uppercase">
+                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                    </span>
+                                </div>
+
+                                {/* SALIDA */}
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2">SALE</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={outCounts[denom] || ''}
+                                        onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                                        placeholder="0"
+                                        className="w-full bg-rose-50/50 border-2 border-transparent focus:border-rose-200 rounded-2xl p-3 text-center font-black text-rose-600 outline-none text-sm transition-all shadow-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
@@ -256,6 +272,7 @@ export default function DashboardPage() {
     // Estado para pagos
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
+    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -579,409 +596,418 @@ export default function DashboardPage() {
             <div className="pb-24">
                 <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
 
-                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
-                        {/* COLUMNA IZQUIERDA: CIERRE + NAV CARDS */}
-                        <div className="flex-1 flex flex-col gap-6">
-                            {/* ÚLTIMO CIERRE */}
-                            <div id="closure-container" className="flex flex-col mb-2">
-                                <div className="flex justify-between items-center mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-md"><CloudSun size={20} fill="currentColor" /></div>
-                                        <div><h3 className="text-sm font-black text-white uppercase tracking-wider">Último Cierre</h3><p className="text-[10px] text-white/50 font-bold capitalize">{dailyStats?.fullDate}</p></div>
+                        {/* BLOQUE 1: ÚLTIMO CIERRE (Superior Izquierda) */}
+                        <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col min-h-[380px]">
+                            <div className="flex justify-between items-center mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-md">
+                                        <CloudSun size={20} fill="currentColor" />
                                     </div>
-                                    <Link href="/dashboard/history" className="text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors">Ver más</Link>
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4 flex-1">
-                                <div className="flex flex-col justify-center p-3 rounded-2xl bg-gray-50/50">
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase leading-none mb-1">Facturación</span>
-                                    <span className="text-xl font-black text-black leading-tight">{dailyStats?.facturat.toFixed(0)}€</span>
-                                </div>
-
-                                <div className="flex flex-col justify-center p-3 rounded-2xl bg-emerald-50/30">
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase leading-none mb-1">Venta Neta</span>
-                                    <span className="text-xl font-black text-emerald-600 leading-tight">{dailyStats?.vNeta.toFixed(0)}€</span>
-                                </div>
-
-                                <div className="flex flex-col justify-center p-3 rounded-2xl bg-blue-50/30">
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase leading-none mb-1">Ticket Medio</span>
-                                    <span className="text-xl font-black text-blue-600 leading-tight">{dailyStats?.ticketMedio.toFixed(2)}€</span>
-                                </div>
-
-                                <div className="flex flex-col justify-center p-3 rounded-2xl bg-gray-50/50 relative">
-                                    <div className="flex justify-between items-start">
-                                        <span className="text-[9px] font-bold text-zinc-400 uppercase leading-none mb-1">Coste M.Obra</span>
-                                        <div className="w-6 h-6 relative shrink-0">
-                                            <svg className="w-full h-full transform -rotate-90">
-                                                <circle cx="50%" cy="50%" r={9} stroke="#e4e4e7" strokeWidth="2" fill="transparent" />
-                                                <circle cx="50%" cy="50%" r={9} stroke="currentColor" strokeWidth="2" fill="transparent" strokeDasharray={2 * Math.PI * 9} strokeDashoffset={(2 * Math.PI * 9) - (laborPercent / 100) * (2 * Math.PI * 9)} strokeLinecap="round" className={dailyStats?.laborCostColor} />
-                                            </svg>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className={cn("text-[6px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className={cn("text-xl font-black leading-tight", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
-                                </div>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setIsClosingModalOpen(true)}
+                                    className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-all active:scale-90"
+                                >
+                                    <Plus size={20} strokeWidth={3} />
+                                </button>
+                                <Link href="/dashboard/history" className="text-[10px] font-black text-blue-600/40 uppercase tracking-widest hover:text-blue-600 transition-colors">Ver más</Link>
                             </div>
                         </div>
 
-                        {/* NAV CARDS (IZQUIERDA ABAJO) */}
-                        <div className="grid grid-cols-2 gap-4">
-                            {[
-                                { title: 'Asistencia', icon: <ClipboardList size={22} fill="currentColor" />, color: 'bg-emerald-500 text-white', link: '/registros' },
-                                { title: 'Coste Mano Obra', icon: <Clock size={22} fill="currentColor" />, color: 'bg-blue-500 text-white', link: '/dashboard/labor' },
-                                { title: 'Plantilla', icon: <Users size={22} fill="currentColor" />, color: 'bg-purple-500 text-white', link: '/staff' },
-                                { title: 'Producto', icon: <Search size={22} fill="currentColor" />, color: 'bg-orange-500 text-white', link: '/ingredients' },
-                            ].map((card, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        if (card.title === 'Plantilla') setIsStaffModalOpen(true);
-                                        else if (card.title === 'Producto') setIsProductModalOpen(true);
-                                        else if (card.link) router.push(card.link);
-                                    }}
-                                    className="flex flex-col items-center justify-center gap-2 active:scale-95 transition-all group"
-                                >
-                                    <div className={`w-20 h-20 rounded-[2rem] ${card.color} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
-                                        {card.icon}
+                        <div className="grid grid-cols-2 gap-y-10 gap-x-4 flex-1">
+                            <div className="flex flex-col justify-center px-2">
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Facturación</span>
+                                <span className="text-2xl font-black text-black leading-none">{dailyStats?.facturat.toFixed(0)}€</span>
+                            </div>
+
+                            <div className="flex flex-col justify-center px-2">
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5 transition-colors">Venta Neta</span>
+                                <span className="text-2xl font-black text-emerald-600 leading-none">{dailyStats?.vNeta.toFixed(0)}€</span>
+                            </div>
+
+                            <div className="flex flex-col justify-center px-2">
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Ticket Medio</span>
+                                <span className="text-2xl font-black text-blue-600 leading-none">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                            </div>
+
+                            <div className="flex flex-col justify-center px-2 relative">
+                                <div className="flex justify-between items-start mb-1.5">
+                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Coste M.Obra</span>
+                                    <div className="w-8 h-8 relative shrink-0 -mt-1">
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle cx="50%" cy="50%" r={12} stroke="#f4f4f5" strokeWidth="3" fill="transparent" />
+                                            <circle cx="50%" cy="50%" r={12} stroke="currentColor" strokeWidth="3" fill="transparent" strokeDasharray={2 * Math.PI * 12} strokeDashoffset={(2 * Math.PI * 12) - (laborPercent / 100) * (2 * Math.PI * 12)} strokeLinecap="round" className={dailyStats?.laborCostColor} />
+                                        </svg>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className={cn("text-[7px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
+                                        </div>
                                     </div>
-                                    <span className="text-[10px] font-black text-white uppercase tracking-wider opacity-80">{card.title}</span>
+                                </div>
+                                <span className={cn("text-2xl font-black leading-none", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* BLOQUE 2: TESORERÍA (Superior Derecha) */}
+                    <div className="space-y-6 flex flex-col min-h-[380px]">
+                        {/* CAJA INICIAL */}
+                        <div className="bg-white rounded-[2.5rem] p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
+                            {boxes.filter(b => b.type === 'operational').map(box => (
+                                <div key={box.id} className="flex flex-col h-full">
+                                    <button
+                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                        className="w-full px-6 py-8 rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-6 active:scale-95"
+                                    >
+                                        <span className="text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
+                                        <span className="text-4xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                    </button>
+
+                                    <div className="flex flex-col flex-1 min-h-0">
+                                        <div className="flex justify-between items-center px-2 mb-3">
+                                            <button
+                                                onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
+                                                className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                                            >
+                                                Movimientos
+                                                <ChevronDown size={14} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                            </button>
+                                            <Link href="/dashboard/movements" className="text-[10px] font-black text-[#36606F] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">
+                                                Ver más <ArrowRight size={10} />
+                                            </Link>
+                                        </div>
+
+                                        <div className={cn(
+                                            "overflow-hidden transition-all duration-300",
+                                            isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0"
+                                        )}>
+                                            <div className="space-y-2 py-1 max-h-[140px] overflow-y-auto no-scrollbar">
+                                                {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>}
+                                                {boxMovements.map(mov => (
+                                                    <div key={mov.id} className="flex justify-between items-center text-[11px] bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
+                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                            {mov.type === 'expense' ? <ArrowUpRight size={12} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={12} className="text-emerald-500 shrink-0" />}
+                                                            <span className="truncate max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span>
+                                                        </div>
+                                                        <span className={cn("font-black", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
+                                                            {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* FILA DE CAMBIOS */}
+                        <div className="grid grid-cols-2 gap-6 h-28">
+                            {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
+                                <button
+                                    key={box.id}
+                                    onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
+                                    className="bg-white rounded-[2rem] p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
+                                >
+                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Cambio {idx + 1}</span>
+                                    <span className="text-xl font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance.toFixed(2)}€</span>
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* COLUMNA DERECHA: TESORERÍA + HORAS EXTRAS */}
-                    <div className="flex-1 flex flex-col gap-6 w-full">
-                        {/* SECCIÓN TESORERÍA */}
-                        <div id="treasury-container" className="flex flex-col gap-4">
-                            {/* CAJA INICIAL */}
-                            <div className="bg-white rounded-[2.5rem] p-1 shadow-xl relative overflow-hidden border border-gray-100 flex flex-col">
-                                <div className="p-4 flex flex-col flex-1">
-                                    {boxes.filter(b => b.type === 'operational').map(box => (
-                                        <div key={box.id} className="flex flex-col flex-1">
-                                            <button
-                                                onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                                className="w-full px-5 py-4 rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-6"
-                                            >
-                                                <span className="text-[11px] font-black uppercase tracking-widest">Caja Inicial</span>
-                                                <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
-                                            </button>
-
-                                            <div className="flex flex-col flex-1 min-h-0">
-                                                <div className="flex justify-between items-center px-2 mb-3">
-                                                    <button
-                                                        onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
-                                                        className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
-                                                    >
-                                                        Movimientos
-                                                        <ChevronDown size={14} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
-                                                    </button>
-                                                    <Link href="/dashboard/movements" className="text-[10px] font-black text-[#36606F] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">
-                                                        Ver más <ArrowRight size={10} />
-                                                    </Link>
-                                                </div>
-
-                                                <div className={cn(
-                                                    "overflow-hidden transition-all duration-300",
-                                                    isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0"
-                                                )}>
-                                                    <div className="space-y-2 py-1 max-h-[250px] overflow-y-auto no-scrollbar">
-                                                        {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>}
-                                                        {boxMovements.map(mov => (
-                                                            <div key={mov.id} className="flex justify-between items-center text-[11px] bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
-                                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                                    {mov.type === 'expense' ? <ArrowUpRight size={12} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={12} className="text-emerald-500 shrink-0" />}
-                                                                    <span className="truncate max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span>
-                                                                </div>
-                                                                <span className={cn("font-black", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
-                                                                    {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                    {/* BLOQUE 3: ICONOS DE ACCESO (Inferior Izquierda) */}
+                    <div className="grid grid-cols-2 gap-6">
+                        {[
+                            { title: 'Asistencia', icon: <ClipboardList size={22} fill="currentColor" />, color: 'bg-emerald-500', link: '/registros' },
+                            { title: 'Coste Mano Obra', icon: <Clock size={22} fill="currentColor" />, color: 'bg-blue-500', link: '/dashboard/labor' },
+                            { title: 'Plantilla', icon: <Users size={22} fill="currentColor" />, color: 'bg-purple-500', link: '/staff' },
+                            { title: 'Producto', icon: <Search size={22} fill="currentColor" />, color: 'bg-orange-500', link: '/ingredients' },
+                        ].map((card, i) => (
+                            <button
+                                key={i}
+                                onClick={() => {
+                                    if (card.title === 'Plantilla') setIsStaffModalOpen(true);
+                                    else if (card.title === 'Producto') setIsProductModalOpen(true);
+                                    else if (card.link) router.push(card.link);
+                                }}
+                                className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-3 active:scale-95 transition-all group hover:bg-gray-50/50"
+                            >
+                                <div className={`w-16 h-16 rounded-[1.8rem] ${card.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                                    {card.icon}
                                 </div>
-                            </div>
+                                <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
+                            </button>
+                        ))}
+                    </div>
 
-                            <div className="grid grid-cols-2 gap-4 h-24">
-                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                    <button
-                                        key={box.id}
-                                        onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="bg-white rounded-[2rem] p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
-                                    >
-                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cambio {idx + 1}</span>
-                                        <span className="text-lg font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance.toFixed(2)}€</span>
-                                    </button>
-                                ))}
-                            </div>
+                    {/* BLOQUE 4: HORAS EXTRAS (Inferior Derecha) */}
+                    <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col gap-6">
+                        <div className="flex justify-between items-center px-1">
+                            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Horas Extras</h2>
+                            <Link href="/dashboard/overtime" className="text-[10px] font-black text-purple-600 uppercase hover:underline transition-all">Ver más</Link>
                         </div>
 
-                        {/* HORAS EXTRAS (COMPACTO) */}
-                        <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col gap-6">
-                            <div className="flex justify-between items-center px-1">
-                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Horas Extras</h2>
-                                <Link href="/dashboard/overtime" className="text-[10px] font-black text-purple-600 uppercase hover:underline transition-all">Ver más</Link>
-                            </div>
+                        <div className="space-y-4 max-h-[350px] overflow-y-auto no-scrollbar pr-1">
+                            {overtimeData.slice(0, 3).map((week) => {
+                                const isFullyPaid = isWeekFullyPaid(week);
 
-                            <div className="space-y-3">
-                                {overtimeData.slice(0, 3).map((week) => {
-                                    const isFullyPaid = isWeekFullyPaid(week);
-
-                                    return (
-                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
-                                            <button
-                                                onClick={() => toggleWeek(week.weekId)}
-                                                className="w-full p-4 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0",
-                                                        isFullyPaid ? "bg-emerald-500" : "bg-orange-400"
-                                                    )}>
-                                                        {isFullyPaid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h4 className="text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4>
-                                                        <span className="text-purple-300 font-light mx-0.5">•</span>
-                                                        <p className="text-[10px] font-bold text-purple-200 uppercase pt-0.5">
-                                                            {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
-                                                        </p>
-                                                    </div>
+                                return (
+                                    <div key={week.weekId} className="bg-[#5E35B1] rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
+                                        <button
+                                            onClick={() => toggleWeek(week.weekId)}
+                                            className="w-full p-4 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(
+                                                    "w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0",
+                                                    isFullyPaid ? "bg-emerald-500" : "bg-orange-400"
+                                                )}>
+                                                    {isFullyPaid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                                                 </div>
-                                                <div className="text-right flex items-center gap-3">
-                                                    <span className="text-lg font-black text-white">{week.total.toFixed(0)}€</span>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                                    <span className="text-purple-300 font-light mx-0.5">•</span>
+                                                    <p className="text-[10px] font-bold text-purple-200 uppercase pt-0.5">
+                                                        {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
+                                                    </p>
                                                 </div>
-                                            </button>
+                                            </div>
+                                            <div className="text-right flex items-center gap-3">
+                                                <span className="text-lg font-black text-white">{week.total.toFixed(0)}€</span>
+                                            </div>
+                                        </button>
 
-                                            {week.expanded && (
-                                                <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                                    {week.staff.map((s: any) => (
-                                                        <div key={s.id} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
-                                                                    {s.name.charAt(0)}
-                                                                </div>
-                                                                <span className="text-xs font-bold text-gray-700 capitalize">{s.name}</span>
+                                        {week.expanded && (
+                                            <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                {week.staff.map((s: any) => (
+                                                    <div key={s.id} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
+                                                                {s.name.charAt(0)}
                                                             </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
-                                                                <button
-                                                                    onClick={(e) => togglePaid(e, week.weekId, s.id)}
-                                                                    className={cn(
-                                                                        "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
-                                                                        paidStatus[`${week.weekId}-${s.id}`]
-                                                                            ? "bg-emerald-500 text-white shadow-md"
-                                                                            : "bg-white border-2 border-gray-200 text-transparent"
-                                                                    )}
-                                                                >
-                                                                    <CheckCircle2 size={16} />
-                                                                </button>
-                                                            </div>
+                                                            <span className="text-xs font-bold text-gray-700 capitalize">{s.name}</span>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
+                                                            <button
+                                                                onClick={(e) => togglePaid(e, week.weekId, s.id)}
+                                                                className={cn(
+                                                                    "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
+                                                                    paidStatus[`${week.weekId}-${s.id}`]
+                                                                        ? "bg-emerald-500 text-white shadow-md"
+                                                                        : "bg-white border-2 border-gray-200 text-transparent"
+                                                                )}
+                                                            >
+                                                                <CheckCircle2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
             </div>
+        </div >
 
-            {/* MODAL GESTIÓN DE CAJA */}
-            {cashModalMode !== 'none' && (
+            {/* MODAL GESTIÓN DE CAJA */ }
+    {
+        cashModalMode !== 'none' && (
+            <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+                onClick={() => setCashModalMode('none')}
+            >
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-                    onClick={() => setCashModalMode('none')}
+                    className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <div
-                        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {cashModalMode === 'menu' && (
-                            <>
-                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                                    <div className="flex flex-col">
-                                        <h3 className="text-lg font-black uppercase tracking-wider leading-none">
-                                            Gestión de Caja
-                                        </h3>
-                                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                            {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
-                                        </p>
+                    {cashModalMode === 'menu' && (
+                        <>
+                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                <div className="flex flex-col">
+                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">
+                                        Gestión de Caja
+                                    </h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                        {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
+                                    </p>
+                                </div>
+                                <button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
+                            <div className="p-4 grid grid-cols-2 gap-4">
+                                {selectedBox?.type === 'change' ? (
+                                    <>
+                                        <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                            <div className="bg-orange-500 text-white p-4 rounded-full group-hover:scale-110 transition-transform">
+                                                <ArrowRightLeft size={32} strokeWidth={3} />
+                                            </div>
+                                            <span className="font-black text-xl text-orange-800">Cambiar</span>
+                                            <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
+                                        </button>
+                                        <button onClick={() => setCashModalMode('audit')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                            <div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
+                                                <RefreshCw size={24} fill="currentColor" strokeWidth={3} />
+                                            </div>
+                                            <span className="font-bold text-blue-800">Arqueo</span>
+                                        </button>
+                                        <button onClick={() => router.push('/dashboard/movements')} className="bg-gray-50 border-2 border-gray-100 hover:border-gray-500 hover:bg-gray-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                            <div className="bg-gray-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
+                                                <History size={24} fill="currentColor" strokeWidth={3} />
+                                            </div>
+                                            <span className="font-bold text-gray-800">Movimientos</span>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
+                                        <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-rose-800">Salida</span></button>
+                                        <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
+                                        <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
+                                    </>
+                                )}
+                            </div>
+                        </>
+                    )}
+                    {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
+                        <CashDenominationForm
+                            type={cashModalMode as 'in' | 'out' | 'audit'}
+                            boxName={selectedBox?.name || 'Caja'}
+                            onCancel={() => setCashModalMode('menu')}
+                            onSubmit={handleCashTransaction}
+                        />
+                    )}
+                    {cashModalMode === 'swap' && (
+                        <SwapDenominationForm
+                            boxName={selectedBox?.name || 'Caja'}
+                            onCancel={() => setCashModalMode('menu')}
+                            onSubmit={handleCashTransaction}
+                        />
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    {/* MODAL PLANTILLA */ }
+    {
+        isStaffModalOpen && (
+            <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                onClick={() => setIsStaffModalOpen(false)}
+            >
+                <div
+                    className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
+                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                Seleccionar Empleado ({allEmployees.length})
+                            </p>
+                        </div>
+                        <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
+
+                    <div className="p-4 bg-gray-50/30">
+                        <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto no-scrollbar pb-2 pt-2">
+                            {allEmployees.map((emp) => (
+                                <button
+                                    key={emp.id}
+                                    onClick={() => router.push(`/profile?id=${emp.id}`)}
+                                    className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#5B8FB9]/30 transition-all active:scale-90 flex flex-row items-center gap-4 group h-20"
+                                >
+                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-lg font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
+                                        {emp.first_name.substring(0, 1)}
                                     </div>
-                                    <button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                        <X size={20} strokeWidth={3} />
-                                    </button>
-                                </div>
-                                <div className="p-4 grid grid-cols-2 gap-4">
-                                    {selectedBox?.type === 'change' ? (
-                                        <>
-                                            <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                <div className="bg-orange-500 text-white p-4 rounded-full group-hover:scale-110 transition-transform">
-                                                    <ArrowRightLeft size={32} strokeWidth={3} />
-                                                </div>
-                                                <span className="font-black text-xl text-orange-800">Cambiar</span>
-                                                <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
-                                            </button>
-                                            <button onClick={() => setCashModalMode('audit')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                <div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
-                                                    <RefreshCw size={24} fill="currentColor" strokeWidth={3} />
-                                                </div>
-                                                <span className="font-bold text-blue-800">Arqueo</span>
-                                            </button>
-                                            <button onClick={() => router.push('/dashboard/movements')} className="bg-gray-50 border-2 border-gray-100 hover:border-gray-500 hover:bg-gray-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                <div className="bg-gray-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
-                                                    <History size={24} fill="currentColor" strokeWidth={3} />
-                                                </div>
-                                                <span className="font-bold text-gray-800">Movimientos</span>
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
-                                            <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-rose-800">Salida</span></button>
-                                            <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
-                                            <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                        {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
-                            <CashDenominationForm
-                                type={cashModalMode as 'in' | 'out' | 'audit'}
-                                boxName={selectedBox?.name || 'Caja'}
-                                onCancel={() => setCashModalMode('menu')}
-                                onSubmit={handleCashTransaction}
-                            />
-                        )}
-                        {cashModalMode === 'swap' && (
-                            <SwapDenominationForm
-                                boxName={selectedBox?.name || 'Caja'}
-                                onCancel={() => setCashModalMode('menu')}
-                                onSubmit={handleCashTransaction}
-                            />
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL PLANTILLA */}
-            {isStaffModalOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-                    onClick={() => setIsStaffModalOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                            <div className="flex flex-col">
-                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                    Seleccionar Empleado ({allEmployees.length})
-                                </p>
-                            </div>
-                            <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                <X size={20} strokeWidth={3} />
-                            </button>
-                        </div>
-
-                        <div className="p-4 bg-gray-50/30">
-                            <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto no-scrollbar pb-2 pt-2">
-                                {allEmployees.map((emp) => (
-                                    <button
-                                        key={emp.id}
-                                        onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                        className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#5B8FB9]/30 transition-all active:scale-90 flex flex-row items-center gap-4 group h-20"
-                                    >
-                                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-lg font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
-                                            {emp.first_name.substring(0, 1)}
-                                        </div>
-                                        <span className="font-black text-sm text-gray-700 text-left capitalize truncate flex-1">
-                                            {emp.first_name}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
+                                    <span className="font-black text-sm text-gray-700 text-left capitalize truncate flex-1">
+                                        {emp.first_name}
+                                    </span>
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+        )
+    }
 
-            {/* MODAL PRODUCTO */}
-            {isProductModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                            <div className="flex flex-col">
-                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                    Gestión de Artículos
-                                </p>
+    {/* MODAL PRODUCTO */ }
+    {
+        isProductModalOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
+                <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                    <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3>
+                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                Gestión de Artículos
+                            </p>
+                        </div>
+                        <button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
+
+                    <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30">
+                        <button onClick={() => router.push('/recipes')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                            <div className="bg-red-50 text-red-500 p-3 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-all">
+                                <ChefHat size={24} fill="currentColor" />
                             </div>
-                            <button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                <X size={20} strokeWidth={3} />
-                            </button>
-                        </div>
+                            <span className="font-black text-sm text-gray-700">Recetas</span>
+                        </button>
 
-                        <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30">
-                            <button onClick={() => router.push('/recipes')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                <div className="bg-red-50 text-red-500 p-3 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-all">
-                                    <ChefHat size={24} fill="currentColor" />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">Recetas</span>
-                            </button>
+                        <button onClick={() => router.push('/ingredients')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                            <div className="bg-orange-50 text-orange-500 p-3 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all">
+                                <Utensils size={24} fill="currentColor" />
+                            </div>
+                            <span className="font-black text-sm text-gray-700">Ingredientes</span>
+                        </button>
 
-                            <button onClick={() => router.push('/ingredients')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                <div className="bg-orange-50 text-orange-500 p-3 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all">
-                                    <Utensils size={24} fill="currentColor" />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">Ingredientes</span>
-                            </button>
+                        <button onClick={() => toast.info('Pedidos próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                            <div className="bg-green-50 text-green-500 p-3 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-all">
+                                <ShoppingCart size={24} fill="currentColor" />
+                            </div>
+                            <span className="font-black text-sm text-gray-700">Pedidos</span>
+                        </button>
 
-                            <button onClick={() => toast.info('Pedidos próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                <div className="bg-green-50 text-green-500 p-3 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-all">
-                                    <ShoppingCart size={24} fill="currentColor" />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">Pedidos</span>
-                            </button>
+                        <button onClick={() => toast.info('Inventario próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                            <div className="bg-purple-50 text-purple-500 p-3 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-all">
+                                <ClipboardList size={24} fill="currentColor" />
+                            </div>
+                            <span className="font-black text-sm text-gray-700">Inventario</span>
+                        </button>
 
-                            <button onClick={() => toast.info('Inventario próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                <div className="bg-purple-50 text-purple-500 p-3 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-all">
-                                    <ClipboardList size={24} fill="currentColor" />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">Inventario</span>
-                            </button>
+                        <button onClick={() => toast.info('Stock próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                            <div className="bg-blue-50 text-blue-500 p-3 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                <Package size={24} fill="currentColor" />
+                            </div>
+                            <span className="font-black text-sm text-gray-700">Stock</span>
+                        </button>
 
-                            <button onClick={() => toast.info('Stock próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                <div className="bg-blue-50 text-blue-500 p-3 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                    <Package size={24} fill="currentColor" />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">Stock</span>
-                            </button>
-
-                            <button onClick={() => toast.info('Proveedores próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                <div className="bg-zinc-50 text-zinc-500 p-3 rounded-2xl group-hover:bg-zinc-900 group-hover:text-white transition-all">
-                                    <Truck size={24} fill="currentColor" />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">Proveedores</span>
-                            </button>
-                        </div>
+                        <button onClick={() => toast.info('Proveedores próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                            <div className="bg-zinc-50 text-zinc-500 p-3 rounded-2xl group-hover:bg-zinc-900 group-hover:text-white transition-all">
+                                <Truck size={24} fill="currentColor" />
+                            </div>
+                            <span className="font-black text-sm text-gray-700">Proveedores</span>
+                        </button>
                     </div>
                 </div>
-            )}
+            </div>
+        )
+    }
         </>
     );
 }

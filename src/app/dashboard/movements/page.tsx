@@ -200,19 +200,24 @@ export default function MovementsPage() {
                             </div>
                         </div>
 
-                        {/* KPI Cards */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
-                            <div className="bg-emerald-500 py-2.5 px-3 rounded-2xl shadow-sm border border-emerald-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">+{summary.income.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Entradas</span>
+                        {/* Clean KPI Summary */}
+                        <div className="grid grid-cols-3 gap-8 py-6 px-4 border-b border-gray-100 mb-8">
+                            <div className="flex flex-col items-center">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Entradas</span>
+                                <span className="text-2xl font-black text-emerald-500">+{summary.income.toFixed(0)}€</span>
                             </div>
-                            <div className="bg-rose-500 py-2.5 px-3 rounded-2xl shadow-sm border border-rose-400 flex flex-col items-center justify-center">
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">-{summary.expense.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Salidas</span>
+                            <div className="flex flex-col items-center border-x border-gray-50">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Salidas</span>
+                                <span className="text-2xl font-black text-rose-500">-{summary.expense.toFixed(0)}€</span>
                             </div>
-                            <div className={`py-2.5 px-3 rounded-2xl shadow-sm border flex flex-col items-center justify-center ${summary.balance >= 0 ? 'bg-blue-500 border-blue-400' : 'bg-orange-500 border-orange-400'}`}>
-                                <span className="text-white text-[11px] font-black leading-none mb-0.5">{summary.balance.toFixed(0)}€</span>
-                                <span className="text-[7px] font-bold text-white/80 uppercase tracking-tighter">Neto</span>
+                            <div className="flex flex-col items-center">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Balance Neto</span>
+                                <span className={cn(
+                                    "text-2xl font-black",
+                                    summary.balance >= 0 ? "text-[#36606F]" : "text-orange-500"
+                                )}>
+                                    {summary.balance.toFixed(0)}€
+                                </span>
                             </div>
                         </div>
 

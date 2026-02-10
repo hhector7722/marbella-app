@@ -56,9 +56,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Corrección de Estabilidad Dashboard**: Resolución de errores de sintaxis JSX y balanceo de etiquetas en el panel de administración principal.
 
 ## 📅 PENDIENTE
-- [ ] **Migración Completa a Server Actions:** Seguir moviendo lógica de otras páginas si es necesario.
-- [ ] **Validación RLS:** Revisar políticas de seguridad en tablas críticas (`weekly_snapshots`, `time_logs`).
-- [ ] **Mejora Bento Grid:** Aplicar estilos visuales más consistentes en el resto de dashboards.
+- [x] **Refactorización Layout Dashboard Admin**: Disposición en cuadrícula 2x2 con Cierre y Tesorería arriba, e Iconos y Horas Extras abajo.
+- [x] **Unificación Estética Cierre**: Resumen de facturación integrado en un único bloque blanco sin tarjetas internas para mayor claridad.
+- [x] **Optimización Tesorería**: Reorganización de cajas de cambio en fila y caja inicial expandida.
 
 ---
 
