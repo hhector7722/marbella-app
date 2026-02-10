@@ -247,10 +247,14 @@ export default function StaffDashboard() {
     const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
 
     // --- COMPONENTE VISUAL MEJORADO PARA LINK/BUTTON ---
-    const FloatingIconSolid = ({ icon: Icon, colorClass, label, onClick, href }: { icon: any, colorClass: string, label: string, onClick?: () => void, href?: string }) => {
+    const FloatingIconSolid = ({ icon: Icon, img, colorClass, label, onClick, href }: { icon?: any, img?: string, colorClass: string, label: string, onClick?: () => void, href?: string }) => {
         const InnerContent = () => (
             <div className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50 cursor-pointer">
-                <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
+                {img ? (
+                    <img src={img} alt={label} className="w-9 h-9 object-contain transition-transform group-hover:scale-110" />
+                ) : (
+                    <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
+                )}
                 <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
             </div>
         );
@@ -270,10 +274,14 @@ export default function StaffDashboard() {
         );
     };
 
-    const IOSIconBoxed = ({ icon: Icon, color, label, onClick, fillWhite = false }: { icon: any, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
+    const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick, fillWhite = false }: { icon?: any, img?: string, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
         <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group">
-            <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white shadow-sm`}>
-                <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+            <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white shadow-sm overflow-hidden`}>
+                {img ? (
+                    <img src={img} alt={label} className="w-6 h-6 object-contain brightness-0 invert" />
+                ) : (
+                    <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+                )}
             </div>
             <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
         </button>
@@ -445,13 +453,12 @@ export default function StaffDashboard() {
                         </div>
 
                         <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
-                            <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Instrucciones" onClick={() => toast.info("Abriendo videos...")} fillWhite={true} />
+                            <IOSIconBoxed img="/icons/guide.png" color="bg-red-600" label="Guia" onClick={() => toast.info("Abriendo videos...")} />
 
-                            {/* AQUÍ ESTÁ EL CAMBIO: Se usa href para navegar a /recipes */}
-                            <FloatingIconSolid icon={Sandwich} colorClass="text-red-500" label="Recetas" href="/recipes" />
+                            <FloatingIconSolid img="/icons/recipes.png" colorClass="text-red-500" label="Recetas" href="/recipes" />
 
-                            <FloatingIconSolid icon={Info} colorClass="text-blue-500" label="Info Interés" onClick={() => setActiveMenu('info')} />
-                            <FloatingIconSolid icon={Package} colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                            <FloatingIconSolid img="/icons/information.png" colorClass="text-blue-500" label="Información" onClick={() => setActiveMenu('info')} />
+                            <FloatingIconSolid img="/icons/suppliers.png" colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
                         </div>
                     </div>
 

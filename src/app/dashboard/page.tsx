@@ -725,10 +725,10 @@ export default function DashboardPage() {
                         {/* BLOQUE 3: ICONOS DE ACCESO (Inferior Izquierda) */}
                         <div className="grid grid-cols-2 gap-6">
                             {[
-                                { title: 'Asistencia', icon: <ClipboardList size={22} fill="currentColor" />, color: 'bg-emerald-500', link: '/registros' },
-                                { title: 'Coste Mano Obra', icon: <Clock size={22} fill="currentColor" />, color: 'bg-blue-500', link: '/dashboard/labor' },
-                                { title: 'Plantilla', icon: <Users size={22} fill="currentColor" />, color: 'bg-purple-500', link: '/staff' },
-                                { title: 'Producto', icon: <Search size={22} fill="currentColor" />, color: 'bg-orange-500', link: '/ingredients' },
+                                { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
+                                { title: 'Coste Mano Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
+                                { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
+                                { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
                             ].map((card, i) => (
                                 <button
                                     key={i}
@@ -739,8 +739,8 @@ export default function DashboardPage() {
                                     }}
                                     className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-3 active:scale-95 transition-all group hover:bg-gray-50/50"
                                 >
-                                    <div className={`w-16 h-16 rounded-[1.8rem] ${card.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                                        {card.icon}
+                                    <div className={`w-16 h-16 rounded-[1.8rem] ${card.color} p-3 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                                        <img src={card.img} alt={card.title} className="w-full h-full object-contain brightness-0 invert" />
                                     </div>
                                     <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
                                 </button>

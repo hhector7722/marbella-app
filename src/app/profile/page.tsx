@@ -153,7 +153,7 @@ function ProfileContent() {
                                     {profile.avatar_url ? (
                                         <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
                                     ) : (
-                                        <span className="text-[#36606F] text-4xl font-black italic">{initials}</span>
+                                        <img src="/icons/profile.png" alt={fullName} className="w-full h-full object-cover" />
                                     )}
                                 </div>
                                 <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white w-10 h-10 rounded-xl border-4 border-white flex items-center justify-center shadow-lg">
