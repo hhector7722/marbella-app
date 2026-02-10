@@ -54,6 +54,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Dashboard Admin**: Tarjetas de "Último Cierre" con diseño minimalista sin relleno, valores flotantes y acentos de color tipográficos.
 - [x] **Consistencia Estética (Iconografía)**: Estandarización de iconos de navegación y acción a estilo "solid-fill" en Navbar, Dashboard, Histórico y Horarios.
 - [x] **Corrección de Estabilidad Dashboard**: Resolución de errores de sintaxis JSX y balanceo de etiquetas en el panel de administración principal.
+- [x] **Regla Zero-Display Global**: Implementación de norma para ocultar valores cero en vistas de lectura, con soporte en el protocolo de arquitectura y `lib/utils.ts`.
 - [x] **Refactorización Layout Dashboard Admin**: Disposición en cuadrícula 2x2 con Cierre y Tesorería arriba, e Iconos y Horas Extras abajo.
 - [x] **Unificación Estética Cierre**: Resumen de facturación integrado en un único bloque blanco sin tarjetas internas para mayor claridad.
 - [x] **Optimización Tesorería**: Reorganización de cajas de cambio en fila y caja inicial expandida.

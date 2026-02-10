@@ -150,6 +150,20 @@ const handleSubmit = async () => {
 
 ---
 
+### 6. 🚫 REGLA ZERO-DISPLAY
+
+**REGLA:** En vistas de lectura, resúmenes o dashboards (NO formularios), los valores iguales a `0` o `"0"` nunca deben mostrarse. Deben sustituirse por un espacio vacío `" "`.
+
+```tsx
+// ❌ PROHIBIDO: Mostrar ceros en resúmenes
+<span>{totalHours}h</span> // Si totalHours es 0, se vería "0h"
+
+// ✅ OBLIGATORIO: Usar formatDisplayValue o condicional
+<span>{totalHours === 0 ? " " : `${totalHours}h`}</span>
+```
+
+---
+
 > [!WARNING]
 > **Violación de Reglas:** Si detectas código que viole estas reglas, **detente inmediatamente** y corrige antes de continuar. No hay excepciones.
 

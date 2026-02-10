@@ -91,3 +91,4 @@ For every task in this project, you must strictly follow this execution order:
 - Never use inline CSS styles (always Tailwind).
 - Never skip RLS policies on new tables.
 - **Never assume standard "9-to-5" rules for overtime (Always check `AcumulaHoras`).**
+- **REGLA ZERO-DISPLAY:** En vistas de lectura (no formularios), cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
