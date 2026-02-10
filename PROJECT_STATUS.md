@@ -66,6 +66,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Integración Herencia Iconográfica**: Migración de iconos Lucide a PNG personalizados en Dashboard, Staff y Perfil para identidad corporativa (Refinado: eliminación de marcos/filtros).
 - [x] **Cumplimiento Regla Zero-Display (Final)**: Aplicación estricta y verificada de ocultación de valores cero en las vistas de personal (Dashboard e Historial) y refuerzo de la utilidad global en `lib/utils.ts`.
 - [x] **Optimización de Accesos Admin**: Reducción al 50% de los contenedores de aplicaciones en el dashboard administrativo, organizados en una única fila compacta con iconos centrados.
+- [x] **Optimización de Rendimiento y Carga de Iconos**: Sustitución de etiquetas `<img>` por el componente `Image` de Next.js en dashboards y navegación para mejorar la velocidad de carga y prevenir saltos de diseño (Layout Shift).
+- [x] **Compactación Dashboard Admin (Smartphone)**: Reducción del 50% en la altura de contenedores clave (Cierres, Tesorería, Extras) y ajuste de iconos cuadrados para máxima eficiencia vertical.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

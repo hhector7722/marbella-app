@@ -16,6 +16,7 @@ import { getISOWeek, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 // --- CONSTANTES: IMÁGENES DE MONEDAS ---
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -95,9 +96,11 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
                                     isBill ? "h-24" : "h-20"
                                 )}>
                                     {CURRENCY_IMAGES[denom] ? (
-                                        <img
+                                        <Image
                                             src={CURRENCY_IMAGES[denom]}
                                             alt={`${denom}€`}
+                                            width={80}
+                                            height={96}
                                             className="h-full w-auto object-contain drop-shadow-md"
                                         />
                                     ) : (
@@ -184,9 +187,11 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string
                                         isBill ? "h-16" : "h-12"
                                     )}>
                                         {CURRENCY_IMAGES[denom] ? (
-                                            <img
+                                            <Image
                                                 src={CURRENCY_IMAGES[denom]}
                                                 alt={`${denom}€`}
+                                                width={96}
+                                                height={96}
                                                 className={cn("h-full w-auto object-contain drop-shadow-md", isBill ? "h-24" : "h-20")}
                                             />
                                         ) : (
@@ -599,87 +604,87 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
                         {/* BLOQUE 1: ÚLTIMO CIERRE (Superior Izquierda) */}
-                        <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col min-h-[380px]">
-                            <div className="flex justify-between items-center mb-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-md">
-                                        <CloudSun size={20} fill="currentColor" />
+                        <div className="bg-white rounded-[2.5rem] p-4 md:p-6 shadow-xl border border-gray-100 flex flex-col md:min-h-[380px]">
+                            <div className="flex justify-between items-center mb-4 md:mb-8">
+                                <div className="flex items-center gap-2 md:gap-3">
+                                    <div className="bg-blue-600 text-white p-2 md:p-2.5 rounded-xl md:rounded-2xl shadow-md">
+                                        <CloudSun className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">Último Cierre</h3>
-                                        <p className="text-[10px] text-gray-400 font-bold capitalize">{dailyStats?.fullDate}</p>
+                                        <h3 className="text-[10px] md:text-sm font-black text-gray-800 uppercase tracking-wider">Último Cierre</h3>
+                                        <p className="text-[8px] md:text-[10px] text-gray-400 font-bold capitalize">{dailyStats?.fullDate}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 md:gap-4">
                                     <button
                                         onClick={() => setIsClosingModalOpen(true)}
-                                        className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-all active:scale-90"
+                                        className="p-2 md:p-3 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl hover:bg-blue-100 transition-all active:scale-90"
                                     >
-                                        <Plus size={20} strokeWidth={3} />
+                                        <Plus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
                                     </button>
-                                    <Link href="/dashboard/history" className="text-[10px] font-black text-blue-600/40 uppercase tracking-widest hover:text-blue-600 transition-colors">Ver más</Link>
+                                    <Link href="/dashboard/history" className="text-[8px] md:text-[10px] font-black text-blue-600/40 uppercase tracking-widest hover:text-blue-600 transition-colors">Ver más</Link>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-y-10 gap-x-4 flex-1">
-                                <div className="flex flex-col justify-center px-2">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Facturación</span>
-                                    <span className="text-2xl font-black text-black leading-none">{dailyStats?.facturat.toFixed(0)}€</span>
+                            <div className="grid grid-cols-2 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1">
+                                <div className="flex flex-col justify-center px-1 md:px-2">
+                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5 md:mb-1.5">Facturación</span>
+                                    <span className="text-lg md:text-2xl font-black text-black leading-none">{dailyStats?.facturat.toFixed(0)}€</span>
                                 </div>
 
-                                <div className="flex flex-col justify-center px-2">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5 transition-colors">Venta Neta</span>
-                                    <span className="text-2xl font-black text-emerald-600 leading-none">{dailyStats?.vNeta.toFixed(0)}€</span>
+                                <div className="flex flex-col justify-center px-1 md:px-2">
+                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5 md:mb-1.5">Venta Neta</span>
+                                    <span className="text-lg md:text-2xl font-black text-emerald-600 leading-none">{dailyStats?.vNeta.toFixed(0)}€</span>
                                 </div>
 
-                                <div className="flex flex-col justify-center px-2">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Ticket Medio</span>
-                                    <span className="text-2xl font-black text-blue-600 leading-none">{dailyStats?.ticketMedio.toFixed(2)}€</span>
+                                <div className="flex flex-col justify-center px-1 md:px-2">
+                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5 md:mb-1.5">Ticket Medio</span>
+                                    <span className="text-lg md:text-2xl font-black text-blue-600 leading-none">{dailyStats?.ticketMedio.toFixed(2)}€</span>
                                 </div>
 
-                                <div className="flex flex-col justify-center px-2 relative">
-                                    <div className="flex justify-between items-start mb-1.5">
-                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Coste M.Obra</span>
-                                        <div className="w-8 h-8 relative shrink-0 -mt-1">
+                                <div className="flex flex-col justify-center px-1 md:px-2 relative">
+                                    <div className="flex justify-between items-start mb-0.5 md:mb-1.5">
+                                        <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Coste M.Obra</span>
+                                        <div className="w-6 h-6 md:w-8 md:h-8 relative shrink-0 -mt-0.5 md:-mt-1">
                                             <svg className="w-full h-full transform -rotate-90">
-                                                <circle cx="50%" cy="50%" r={12} stroke="#f4f4f5" strokeWidth="3" fill="transparent" />
-                                                <circle cx="50%" cy="50%" r={12} stroke="currentColor" strokeWidth="3" fill="transparent" strokeDasharray={2 * Math.PI * 12} strokeDashoffset={(2 * Math.PI * 12) - (laborPercent / 100) * (2 * Math.PI * 12)} strokeLinecap="round" className={dailyStats?.laborCostColor} />
+                                                <circle cx="50%" cy="50%" r="40%" stroke="#f4f4f5" strokeWidth="12%" fill="transparent" />
+                                                <circle cx="50%" cy="50%" r="40%" stroke="currentColor" strokeWidth="12%" fill="transparent" strokeDasharray={2 * Math.PI * 12} strokeDashoffset={(2 * Math.PI * 12) - (laborPercent / 100) * (2 * Math.PI * 12)} strokeLinecap="round" className={dailyStats?.laborCostColor} />
                                             </svg>
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className={cn("text-[7px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
+                                                <span className={cn("text-[6px] md:text-[7px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <span className={cn("text-2xl font-black leading-none", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
+                                    <span className={cn("text-lg md:text-2xl font-black leading-none", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra.toFixed(0)}€</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* BLOQUE 2: TESORERÍA (Superior Derecha) */}
-                        <div className="space-y-6 flex flex-col min-h-[380px]">
+                        <div className="space-y-4 md:space-y-6 flex flex-col md:min-h-[380px]">
                             {/* CAJA INICIAL */}
                             <div className="bg-white rounded-[2.5rem] p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
                                 {boxes.filter(b => b.type === 'operational').map(box => (
                                     <div key={box.id} className="flex flex-col h-full">
                                         <button
                                             onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                            className="w-full px-6 py-8 rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-6 active:scale-95"
+                                            className="w-full px-6 py-4 md:py-8 rounded-2xl md:rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-4 md:mb-6 active:scale-95"
                                         >
-                                            <span className="text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
-                                            <span className="text-4xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
+                                            <span className="text-2xl md:text-4xl font-black">{box.current_balance.toFixed(2)}€</span>
                                         </button>
 
                                         <div className="flex flex-col flex-1 min-h-0">
-                                            <div className="flex justify-between items-center px-2 mb-3">
+                                            <div className="flex justify-between items-center px-1 md:px-2 mb-2 md:mb-3">
                                                 <button
                                                     onClick={() => setIsMovementsExpanded(!isMovementsExpanded)}
-                                                    className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                                                    className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
                                                 >
                                                     Movimientos
-                                                    <ChevronDown size={14} className={cn("transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
+                                                    <ChevronDown className={cn("w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
                                                 </button>
-                                                <Link href="/dashboard/movements" className="text-[10px] font-black text-[#36606F] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">
-                                                    Ver más <ArrowRight size={10} />
+                                                <Link href="/dashboard/movements" className="text-[8px] md:text-[10px] font-black text-[#36606F] bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">
+                                                    Ver más <ArrowRight className="w-2 h-2 md:w-2.5 md:h-2.5" />
                                                 </Link>
                                             </div>
 
@@ -687,13 +692,13 @@ export default function DashboardPage() {
                                                 "overflow-hidden transition-all duration-300",
                                                 isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0"
                                             )}>
-                                                <div className="space-y-2 py-1 max-h-[140px] overflow-y-auto no-scrollbar">
-                                                    {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>}
+                                                <div className="space-y-1.5 md:space-y-2 py-1 max-h-[100px] md:max-h-[140px] overflow-y-auto no-scrollbar">
+                                                    {boxMovements.length === 0 && <p className="text-[8px] md:text-[9px] text-gray-300 italic px-1 text-center py-2 md:py-4">Sin historial reciente</p>}
                                                     {boxMovements.map(mov => (
-                                                        <div key={mov.id} className="flex justify-between items-center text-[11px] bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
-                                                            <div className="flex items-center gap-2 overflow-hidden">
-                                                                {mov.type === 'expense' ? <ArrowUpRight size={12} className="text-rose-400 shrink-0" /> : <ArrowDownLeft size={12} className="text-emerald-500 shrink-0" />}
-                                                                <span className="truncate max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span>
+                                                        <div key={mov.id} className="flex justify-between items-center text-[9px] md:text-[11px] bg-gray-50 p-2 md:p-3 rounded-xl md:rounded-2xl border border-gray-100/50">
+                                                            <div className="flex items-center gap-1.5 md:gap-2 overflow-hidden">
+                                                                {mov.type === 'expense' ? <ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-2.5 h-2.5 md:w-3 md:h-3 text-emerald-500 shrink-0" />}
+                                                                <span className="truncate max-w-[100px] md:max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span>
                                                             </div>
                                                             <span className={cn("font-black", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
                                                                 {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
@@ -708,22 +713,22 @@ export default function DashboardPage() {
                             </div>
 
                             {/* FILA DE CAMBIOS */}
-                            <div className="grid grid-cols-2 gap-6 h-28">
+                            <div className="grid grid-cols-2 gap-4 md:gap-6 h-16 md:h-28">
                                 {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
                                     <button
                                         key={box.id}
                                         onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }}
-                                        className="bg-white rounded-[2rem] p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
+                                        className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"
                                     >
-                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Cambio {idx + 1}</span>
-                                        <span className="text-xl font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance.toFixed(2)}€</span>
+                                        <span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1 md:mb-1.5">Cambio {idx + 1}</span>
+                                        <span className="text-sm md:text-xl font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance.toFixed(2)}€</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         {/* BLOQUE 3: ICONOS DE ACCESO (Inferior Izquierda) */}
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-4 gap-2 md:gap-3">
                             {[
                                 { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
                                 { title: 'Coste Mano Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
@@ -737,75 +742,82 @@ export default function DashboardPage() {
                                         else if (card.title === 'Producto') setIsProductModalOpen(true);
                                         else if (card.link) router.push(card.link);
                                     }}
-                                    className="bg-white rounded-[2rem] p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50"
+                                    className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"
                                 >
-                                    <div className="w-16 h-16 flex items-center justify-center transition-transform group-hover:scale-110">
-                                        <img src={card.img} alt={card.title} className="w-full h-full object-contain" />
+                                    <div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110">
+                                        <Image
+                                            src={card.img}
+                                            alt={card.title}
+                                            width={64}
+                                            height={64}
+                                            priority={true}
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
-                                    <span className="text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-1">{card.title}</span>
+                                    <span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span>
                                 </button>
                             ))}
                         </div>
 
                         {/* BLOQUE 4: HORAS EXTRAS (Inferior Derecha) */}
-                        <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col gap-6">
+                        <div className="bg-white rounded-[2.5rem] p-4 md:p-6 shadow-xl border border-gray-100 flex flex-col gap-4 md:gap-6">
                             <div className="flex justify-between items-center px-1">
-                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Horas Extras</h2>
-                                <Link href="/dashboard/overtime" className="text-[10px] font-black text-purple-600 uppercase hover:underline transition-all">Ver más</Link>
+                                <h2 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest">Horas Extras</h2>
+                                <Link href="/dashboard/overtime" className="text-[8px] md:text-[10px] font-black text-purple-600 uppercase hover:underline transition-all">Ver más</Link>
                             </div>
 
-                            <div className="space-y-4 max-h-[350px] overflow-y-auto no-scrollbar pr-1">
+                            <div className="space-y-3 md:space-y-4 max-h-[250px] md:max-h-[350px] overflow-y-auto no-scrollbar pr-1">
                                 {overtimeData.slice(0, 3).map((week) => {
                                     const isFullyPaid = isWeekFullyPaid(week);
 
                                     return (
-                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
+                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-2xl md:rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
                                             <button
                                                 onClick={() => toggleWeek(week.weekId)}
-                                                className="w-full p-4 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
+                                                className="w-full p-2.5 md:p-4 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"
                                             >
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2 md:gap-3">
                                                     <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0",
+                                                        "w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0",
                                                         isFullyPaid ? "bg-emerald-500" : "bg-orange-400"
                                                     )}>
-                                                        {isFullyPaid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                                                        {isFullyPaid ? <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /> : <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h4 className="text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                                        <h4 className="text-xs md:text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4>
                                                         <span className="text-purple-300 font-light mx-0.5">•</span>
-                                                        <p className="text-[10px] font-bold text-purple-200 uppercase pt-0.5">
+                                                        <p className="text-[8px] md:text-[10px] font-bold text-purple-200 uppercase pt-0.5">
                                                             {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="text-right flex items-center gap-3">
-                                                    <span className="text-lg font-black text-white">{week.total.toFixed(0)}€</span>
+                                                <div className="text-right flex items-center gap-2 md:gap-3">
+                                                    <span className="text-sm md:text-lg font-black text-white">{week.total.toFixed(0)}€</span>
                                                 </div>
                                             </button>
 
                                             {week.expanded && (
-                                                <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                <div className="px-2.5 md:px-4 pb-2.5 md:pb-4 pt-1 space-y-1.5 md:space-y-2 animate-in slide-in-from-top-2 duration-300">
                                                     {week.staff.map((s: any) => (
-                                                        <div key={s.id} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
+                                                        <div key={s.id} className="flex items-center justify-between p-2 md:p-3 bg-white/60 rounded-xl md:rounded-2xl border border-purple-100/30">
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-[10px] md:text-xs font-black capitalize">
                                                                     {s.name.charAt(0)}
                                                                 </div>
-                                                                <span className="text-xs font-bold text-gray-700 capitalize">{s.name}</span>
+                                                                <span className="text-[10px] md:text-xs font-bold text-gray-700 capitalize">{s.name}</span>
                                                             </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <span className="text-[10px] md:text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
                                                                 <button
                                                                     onClick={(e) => togglePaid(e, week.weekId, s.id)}
                                                                     className={cn(
-                                                                        "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
+                                                                        "w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
                                                                         paidStatus[`${week.weekId}-${s.id}`]
                                                                             ? "bg-emerald-500 text-white shadow-md"
-                                                                            : "bg-white border-2 border-gray-200 text-transparent"
+                                                                            : "bg-white border md:border-2 border-gray-200 text-transparent"
                                                                     )}
                                                                 >
-                                                                    <CheckCircle2 size={16} />
+                                                                    <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1005,6 +1017,13 @@ export default function DashboardPage() {
                     </div>
                 )
             }
+
+            {/* MODAL CIERRE DE CAJA */}
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={fetchData}
+            />
         </>
     );
 }

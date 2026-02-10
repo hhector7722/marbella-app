@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
 import { cn, formatDisplayValue } from '@/lib/utils';
+import Image from 'next/image';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -252,7 +253,14 @@ export default function StaffDashboard() {
         const InnerContent = () => (
             <div className="flex flex-col items-center justify-center gap-1.5 w-full h-full active:scale-95 transition-transform p-2 group hover:bg-gray-50/50 cursor-pointer">
                 {img ? (
-                    <img src={img} alt={label} className="w-12 h-12 object-contain transition-transform group-hover:scale-110" />
+                    <Image
+                        src={img}
+                        alt={label}
+                        width={48}
+                        height={48}
+                        priority={true}
+                        className="w-12 h-12 object-contain transition-transform group-hover:scale-110"
+                    />
                 ) : (
                     <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
                 )}
@@ -279,7 +287,14 @@ export default function StaffDashboard() {
         <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full active:scale-95 transition-transform p-2 group">
             <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
                 {img ? (
-                    <img src={img} alt={label} className="w-full h-full object-contain transition-transform group-hover:scale-110" />
+                    <Image
+                        src={img}
+                        alt={label}
+                        width={48}
+                        height={48}
+                        priority={true}
+                        className="w-full h-full object-contain transition-transform group-hover:scale-110"
+                    />
                 ) : (
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
                         <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, LogOut, User, Calendar, Clock } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
+import Image from 'next/image';
 import { toast } from 'sonner';
 
 export default function BottomNavStaff() {
@@ -105,7 +106,13 @@ export default function BottomNavStaff() {
                     >
                         <div className="w-6 h-6 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden mb-1">
                             {avatarUrl ? (
-                                <img src={avatarUrl} alt="Me" className="w-full h-full object-cover" />
+                                <Image
+                                    src={avatarUrl}
+                                    alt="Me"
+                                    width={24}
+                                    height={24}
+                                    className="w-full h-full object-cover"
+                                />
                             ) : (
                                 <User size={14} className="text-white" />
                             )}
@@ -139,7 +146,13 @@ export default function BottomNavStaff() {
                     >
                         <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
                             {avatarUrl ? (
-                                <img src={avatarUrl} alt="Me" className="w-full h-full object-cover" />
+                                <Image
+                                    src={avatarUrl}
+                                    alt="Me"
+                                    width={32}
+                                    height={32}
+                                    className="w-full h-full object-cover"
+                                />
                             ) : (
                                 <User size={16} className="text-white" />
                             )}

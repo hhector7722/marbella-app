@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 // --- CONSTANTS ---
 const FIXED_CASH_FUND = 100;
@@ -284,7 +285,13 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     {BILLS.map(bill => (
                                         <div key={bill} className="flex flex-col items-center gap-2 group transition-all">
                                             <div className="h-24 w-full flex items-center justify-center transition-transform group-hover:scale-110">
-                                                <img src={CURRENCY_IMAGES[bill]} alt={bill + "€"} className="h-full w-auto object-contain drop-shadow-md" />
+                                                <Image
+                                                    src={CURRENCY_IMAGES[bill]}
+                                                    alt={bill + "€"}
+                                                    width={80}
+                                                    height={96}
+                                                    className="h-full w-auto object-contain drop-shadow-md"
+                                                />
                                             </div>
                                             <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{bill}€</span>
                                             <input type="number" min="0" placeholder="0"
@@ -295,7 +302,13 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     {COINS.map(coin => (
                                         <div key={coin} className="flex flex-col items-center gap-2 group transition-all">
                                             <div className="h-20 w-full flex items-center justify-center transition-transform group-hover:scale-110">
-                                                <img src={CURRENCY_IMAGES[coin]} alt={coin + "€"} className="h-full w-auto object-contain drop-shadow-md" />
+                                                <Image
+                                                    src={CURRENCY_IMAGES[coin]}
+                                                    alt={coin + "€"}
+                                                    width={64}
+                                                    height={80}
+                                                    className="h-full w-auto object-contain drop-shadow-md"
+                                                />
                                             </div>
                                             <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
                                             <input type="number" min="0" placeholder="0"
