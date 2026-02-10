@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { isSameWeek } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatDisplayValue } from '@/lib/utils';
 
 // --- TIPOS ---
 interface DailyLog {
@@ -43,16 +43,16 @@ const roundHoursValue = (hours: number): number => {
 
 // --- HELPERS VISUALES ---
 const formatNumber = (val: number) => {
-    if (Math.abs(val) < 0.1) return '0';
+    if (Math.abs(val) < 0.1) return ' ';
     const rounded = Math.round(val * 2) / 2;
     return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
 };
 
 const formatValue = (val: number) => formatNumber(val);
 
-const formatBalance = (val: number) => formatNumber(Math.abs(val));
+const formatBalance = (val: number) => formatNumber(val); // formatBalance used formatNumber already
 
-const formatMoney = (val: number) => `${val.toFixed(0)}€`;
+const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : ' ';
 
 const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 

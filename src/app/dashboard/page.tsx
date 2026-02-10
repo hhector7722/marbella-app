@@ -739,8 +739,8 @@ export default function DashboardPage() {
                                     }}
                                     className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-3 active:scale-95 transition-all group hover:bg-gray-50/50"
                                 >
-                                    <div className={`w-16 h-16 rounded-[1.8rem] ${card.color} p-3 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                                        <img src={card.img} alt={card.title} className="w-full h-full object-contain brightness-0 invert" />
+                                    <div className="w-16 h-16 flex items-center justify-center transition-transform group-hover:scale-110">
+                                        <img src={card.img} alt={card.title} className="w-full h-full object-contain" />
                                     </div>
                                     <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{card.title}</span>
                                 </button>

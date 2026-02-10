@@ -58,7 +58,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refactorización Layout Dashboard Admin**: Disposición en cuadrícula 2x2 con Cierre y Tesorería arriba, e Iconos y Horas Extras abajo.
 - [x] **Unificación Estética Cierre**: Resumen de facturación integrado en un único bloque blanco sin tarjetas internas para mayor claridad.
 - [x] **Optimización Tesorería**: Reorganización de cajas de cambio en fila y caja inicial expandida.
-- [x] **Integración Herencia Iconográfica**: Migración de iconos Lucide a PNG personalizados en Dashboard, Staff y Perfil para identidad corporativa.
+- [x] **Integración Herencia Iconográfica**: Migración de iconos Lucide a PNG personalizados en Dashboard, Staff y Perfil para identidad corporativa (Refinado: eliminación de marcos/filtros).
+- [x] **Cumplimiento Regla Zero-Display**: Aplicación estricta de ocultación de valores cero en las vistas de personal (Dashboard e Historial).
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

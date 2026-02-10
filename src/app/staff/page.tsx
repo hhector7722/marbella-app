@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
+import { cn } from '@/lib/utils';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -98,8 +99,8 @@ export default function StaffDashboard() {
     }, [status, todayLog]);
 
     // Helpers
-    const formatValue = (val: number) => Math.abs(val) < 0.1 ? '\u00A0' : Math.abs(val).toFixed(0);
-    const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : '\u00A0';
+    const formatValue = (val: number) => Math.abs(val) < 0.1 ? " " : Math.abs(val).toFixed(0);
+    const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : " ";
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
         return cleaned.startsWith('34') ? `+${cleaned}` : `+34${cleaned}`;
@@ -249,9 +250,9 @@ export default function StaffDashboard() {
     // --- COMPONENTE VISUAL MEJORADO PARA LINK/BUTTON ---
     const FloatingIconSolid = ({ icon: Icon, img, colorClass, label, onClick, href }: { icon?: any, img?: string, colorClass: string, label: string, onClick?: () => void, href?: string }) => {
         const InnerContent = () => (
-            <div className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group hover:bg-gray-50 cursor-pointer">
+            <div className="flex flex-col items-center justify-center gap-1.5 w-full h-full active:scale-95 transition-transform p-2 group hover:bg-gray-50/50 cursor-pointer">
                 {img ? (
-                    <img src={img} alt={label} className="w-9 h-9 object-contain transition-transform group-hover:scale-110" />
+                    <img src={img} alt={label} className="w-12 h-12 object-contain transition-transform group-hover:scale-110" />
                 ) : (
                     <Icon size={36} className={`${colorClass} drop-shadow-sm transition-transform group-hover:scale-110`} fill="currentColor" stroke="white" strokeWidth={1.5} />
                 )}
@@ -275,12 +276,14 @@ export default function StaffDashboard() {
     };
 
     const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick, fillWhite = false }: { icon?: any, img?: string, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full bg-white rounded-2xl shadow-md active:scale-95 transition-transform p-2 group">
-            <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white shadow-sm overflow-hidden`}>
+        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full active:scale-95 transition-transform p-2 group">
+            <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
                 {img ? (
-                    <img src={img} alt={label} className="w-6 h-6 object-contain brightness-0 invert" />
+                    <img src={img} alt={label} className="w-full h-full object-contain transition-transform group-hover:scale-110" />
                 ) : (
-                    <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
+                        <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+                    </div>
                 )}
             </div>
             <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
