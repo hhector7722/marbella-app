@@ -492,7 +492,7 @@ export default function StaffDashboard() {
                     <div className="bg-white rounded-[2rem] p-4 lg:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px]">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-black text-gray-800 flex items-center gap-2 text-[10px] lg:text-sm uppercase tracking-wider">
-                                <CalendarDays size={18} className="text-purple-500 shrink-0" /> <span className="truncate">Próximos Horarios</span>
+                                <CalendarDays size={18} className="text-purple-500 shrink-0" /> <span className="truncate">Horarios</span>
                             </h3>
                             <Link href="/staff/schedule" className="text-[9px] lg:text-xs font-black text-purple-600 hover:underline uppercase tracking-widest bg-purple-50 px-2 lg:px-3 py-1 rounded-full shrink-0">Ver más</Link>
                         </div>
