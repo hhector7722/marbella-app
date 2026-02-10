@@ -11,7 +11,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
-import { cn } from '@/lib/utils';
+import { cn, formatDisplayValue } from '@/lib/utils';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -99,7 +99,7 @@ export default function StaffDashboard() {
     }, [status, todayLog]);
 
     // Helpers
-    const formatValue = (val: number) => Math.abs(val) < 0.1 ? " " : Math.abs(val).toFixed(0);
+    const formatValue = (val: number) => formatDisplayValue(Math.abs(val) < 0.1 ? 0 : Math.round(val));
     const formatMoney = (val: number) => val > 0 ? `${val.toFixed(0)}€` : " ";
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');

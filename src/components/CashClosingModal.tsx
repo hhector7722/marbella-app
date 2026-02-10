@@ -159,7 +159,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-[2.5rem] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
                 {/* Header (Detail View Style) */}
                 <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
@@ -280,10 +280,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 </div>
                             </div>
                             <div className="p-4 flex flex-col gap-8">
-                                <div className="grid grid-cols-4 md:grid-cols-5 gap-8">
+                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-8">
                                     {BILLS.map(bill => (
                                         <div key={bill} className="flex flex-col items-center gap-2 group transition-all">
-                                            <div className="h-16 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <div className="h-24 w-full flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <img src={CURRENCY_IMAGES[bill]} alt={bill + "€"} className="h-full w-auto object-contain drop-shadow-md" />
                                             </div>
                                             <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{bill}€</span>
@@ -294,7 +294,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     ))}
                                     {COINS.map(coin => (
                                         <div key={coin} className="flex flex-col items-center gap-2 group transition-all">
-                                            <div className="h-12 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <div className="h-20 w-full flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <img src={CURRENCY_IMAGES[coin]} alt={coin + "€"} className="h-full w-auto object-contain drop-shadow-md" />
                                             </div>
                                             <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>

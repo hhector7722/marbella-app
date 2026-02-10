@@ -56,7 +56,7 @@ export default function LoginPage() {
                 <div className="flex flex-col items-center mb-10">
                     <div className="relative w-32 h-32 mb-4 bg-white rounded-full p-2 border border-gray-100">
                         <Image
-                            src="/logo-white.png"
+                            src="/icons/logo-white.png"
                             alt="Logo"
                             fill
                             className="object-contain"

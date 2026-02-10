@@ -85,14 +85,14 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in
                     </div>
                 )}
 
-                <div className="grid grid-cols-4 md:grid-cols-5 gap-6">
+                <div className="grid grid-cols-5 gap-6">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
                             <div key={denom} className="flex flex-col items-center gap-2 group transition-all">
                                 <div className={cn(
                                     "w-full flex items-center justify-center transition-transform group-hover:scale-110",
-                                    isBill ? "h-16" : "h-12"
+                                    isBill ? "h-24" : "h-20"
                                 )}>
                                     {CURRENCY_IMAGES[denom] ? (
                                         <img
@@ -187,7 +187,7 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string
                                             <img
                                                 src={CURRENCY_IMAGES[denom]}
                                                 alt={`${denom}€`}
-                                                className="h-full w-auto object-contain drop-shadow-md"
+                                                className={cn("h-full w-auto object-contain drop-shadow-md", isBill ? "h-24" : "h-20")}
                                             />
                                         ) : (
                                             <div className="w-10 h-6 bg-gray-100 rounded" />
@@ -829,7 +829,7 @@ export default function DashboardPage() {
                         onClick={() => setCashModalMode('none')}
                     >
                         <div
-                            className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {cashModalMode === 'menu' && (
@@ -851,31 +851,37 @@ export default function DashboardPage() {
                                         {selectedBox?.type === 'change' ? (
                                             <>
                                                 <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                    <div className="bg-orange-500 text-white p-4 rounded-full group-hover:scale-110 transition-transform">
-                                                        <ArrowRightLeft size={32} strokeWidth={3} />
-                                                    </div>
+                                                    <ArrowRightLeft size={48} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-black text-xl text-orange-800">Cambiar</span>
                                                     <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
                                                 </button>
                                                 <button onClick={() => setCashModalMode('audit')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                    <div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
-                                                        <RefreshCw size={24} fill="currentColor" strokeWidth={3} />
-                                                    </div>
+                                                    <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-bold text-blue-800">Arqueo</span>
                                                 </button>
                                                 <button onClick={() => router.push('/dashboard/movements')} className="bg-gray-50 border-2 border-gray-100 hover:border-gray-500 hover:bg-gray-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                    <div className="bg-gray-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
-                                                        <History size={24} fill="currentColor" strokeWidth={3} />
-                                                    </div>
+                                                    <History size={32} fill="currentColor" strokeWidth={3} className="text-gray-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-bold text-gray-800">Movimientos</span>
                                                 </button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-emerald-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Plus size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-emerald-800">Entrada</span></button>
-                                                <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-rose-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><Minus size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-rose-800">Salida</span></button>
-                                                <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-orange-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><RefreshCw size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-orange-800">Arqueo</span></button>
-                                                <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group"><div className="bg-blue-500 text-white p-3 rounded-full group-hover:scale-110 transition-transform"><History size={24} fill="currentColor" strokeWidth={3} /></div><span className="font-bold text-blue-800">Movimientos</span></button>
+                                                <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                    <Plus size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                                                    <span className="font-bold text-emerald-800">Entrada</span>
+                                                </button>
+                                                <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                    <Minus size={32} fill="currentColor" strokeWidth={3} className="text-rose-500 group-hover:scale-110 transition-transform" />
+                                                    <span className="font-bold text-rose-800">Salida</span>
+                                                </button>
+                                                <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                    <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                                                    <span className="font-bold text-orange-800">Arqueo</span>
+                                                </button>
+                                                <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                    <History size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                                                    <span className="font-bold text-blue-800">Movimientos</span>
+                                                </button>
                                             </>
                                         )}
                                     </div>
@@ -966,44 +972,32 @@ export default function DashboardPage() {
 
                             <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30">
                                 <button onClick={() => router.push('/recipes')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <div className="bg-red-50 text-red-500 p-3 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-all">
-                                        <ChefHat size={24} fill="currentColor" />
-                                    </div>
+                                    <ChefHat size={32} fill="currentColor" className="text-red-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Recetas</span>
                                 </button>
 
                                 <button onClick={() => router.push('/ingredients')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <div className="bg-orange-50 text-orange-500 p-3 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-all">
-                                        <Utensils size={24} fill="currentColor" />
-                                    </div>
+                                    <Utensils size={32} fill="currentColor" className="text-orange-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Ingredientes</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Pedidos próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <div className="bg-green-50 text-green-500 p-3 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-all">
-                                        <ShoppingCart size={24} fill="currentColor" />
-                                    </div>
+                                    <ShoppingCart size={32} fill="currentColor" className="text-emerald-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Pedidos</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Inventario próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <div className="bg-purple-50 text-purple-500 p-3 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-all">
-                                        <ClipboardList size={24} fill="currentColor" />
-                                    </div>
+                                    <ClipboardList size={32} fill="currentColor" className="text-purple-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Inventario</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Stock próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <div className="bg-blue-50 text-blue-500 p-3 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                        <Package size={24} fill="currentColor" />
-                                    </div>
+                                    <Package size={32} fill="currentColor" className="text-blue-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Stock</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Proveedores próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <div className="bg-zinc-50 text-zinc-500 p-3 rounded-2xl group-hover:bg-zinc-900 group-hover:text-white transition-all">
-                                        <Truck size={24} fill="currentColor" />
-                                    </div>
+                                    <Truck size={32} fill="currentColor" className="text-zinc-500 group-hover:scale-900 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Proveedores</span>
                                 </button>
                             </div>

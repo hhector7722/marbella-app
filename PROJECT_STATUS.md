@@ -58,6 +58,11 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refactorización Layout Dashboard Admin**: Disposición en cuadrícula 2x2 con Cierre y Tesorería arriba, e Iconos y Horas Extras abajo.
 - [x] **Unificación Estética Cierre**: Resumen de facturación integrado en un único bloque blanco sin tarjetas internas para mayor claridad.
 - [x] **Optimización Tesorería**: Reorganización de cajas de cambio en fila y caja inicial expandida.
+- [x] **Restauración de Identidad Visual**: Corrección de ruta del logotipo (`/icons/logo-white.png`) en Login y Navbar.
+- [x] **Regla de Iconos Flotantes**: Eliminación de tarjetas de fondo en iconos de modales (Dashboard y Producto) para un diseño más limpio.
+- [x] **Cumplimiento Zero-Display (Staff)**: Aplicación de la norma en el resumen semanal del dashboard de personal.
+- [x] **Optimización UI Gestión de Caja**: Imágenes de moneda agrandadas (h-24/h-20), modales ensanchados (max-w-2xl/4xl) y layouts sin scroll para arqueos, entradas/salidas, cambios y cierre.
+- [x] **Disparador de Cierre de Caja**: Conexión del botón "+" de "Último Cierre" con el `CashClosingModal` para gestión proactiva desde el dashboard.
 - [x] **Integración Herencia Iconográfica**: Migración de iconos Lucide a PNG personalizados en Dashboard, Staff y Perfil para identidad corporativa (Refinado: eliminación de marcos/filtros).
 - [x] **Cumplimiento Regla Zero-Display**: Aplicación estricta de ocultación de valores cero en las vistas de personal (Dashboard e Historial).
 

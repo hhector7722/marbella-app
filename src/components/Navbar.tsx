@@ -52,7 +52,7 @@ export default function Navbar() {
                     )}
                     <div className="flex items-center gap-2">
                         <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0">
-                            <Image src="/logo-white.png" alt="Logo" fill className="object-contain" priority />
+                            <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
                         </div>
                         <span className="text-white text-[8px] md:text-[10px] font-black leading-none uppercase tracking-wider whitespace-nowrap">
                             {userData ? `Hola, ${userData.name}` : 'Cargando...'}
