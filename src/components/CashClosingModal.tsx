@@ -322,23 +322,24 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                             <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-50">
                                 <div className="flex flex-col items-center justify-center text-center">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Retirar</span>
-                                    <span className="text-4xl font-black text-[#36606F]">{cashToWithdraw.toFixed(2)}€</span>
+                                    <span className="text-3xl font-black text-[#36606F]">{cashToWithdraw.toFixed(2)}€</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center text-center border-l border-gray-50">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Fondo de caja</span>
-                                    <span className="text-4xl font-black text-emerald-500">{cashLeft.toFixed(2)}€</span>
+                                    <span className="text-3xl font-black text-emerald-500">{cashLeft.toFixed(2)}€</span>
                                 </div>
                             </div>
 
-                            {cashLeft < FIXED_CASH_FUND && (
-                                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4 text-amber-800 animate-pulse">
-                                    <AlertTriangle className="shrink-0" size={24} />
-                                    <div>
-                                        <p className="text-xs font-black uppercase tracking-tight">Fondo Insuficiente</p>
-                                        <p className="text-[10px] font-bold opacity-80">No hay suficiente efectivo para completar el fondo de {FIXED_CASH_FUND}€. Faltan {(FIXED_CASH_FUND - cashLeft).toFixed(2)}€.</p>
-                                    </div>
-                                </div>
-                            )}
+                            <div className="flex flex-col items-center justify-center pt-4 border-t border-gray-50/50">
+                                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Descuadre</span>
+                                <span className={cn(
+                                    "text-xl font-black",
+                                    difference === 0 ? "text-emerald-500" : "text-rose-500"
+                                )}>
+                                    {difference === 0 ? "0.00€" : `${difference > 0 ? '+' : ''}${difference.toFixed(2)}€`}
+                                </span>
+                            </div>
+
 
                         </div>
                     )}
@@ -368,7 +369,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     >
                         {loading ? <Loader2 className="animate-spin" /> : (
                             <>
-                                {step === 'summary' ? '' : <ArrowRight size={20} />}
+                                {step === 'summary' ? '' : ''}
                                 {step === 'summary' ? 'Confirmar Cierre' : (step === 'count' ? 'Ver Resumen' : 'Siguiente')}
                             </>
                         )}
