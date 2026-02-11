@@ -116,7 +116,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             const { data: closing, error } = await supabase
                 .from('cash_closings')
                 .insert({
-                    user_id: user?.id, // Standard field for project
+                    opened_by: user?.id,
+                    closed_by: user?.id, // Standard fields for project
                     closed_at: new Date().toISOString(),
                     net_sales: netSalesCalculated,
                     sales_card: tpvData.cardSales,

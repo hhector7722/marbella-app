@@ -69,7 +69,10 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Optimización de Rendimiento y Carga de Iconos**: Sustitución de etiquetas `<img>` por el componente `Image` de Next.js en dashboards y navegación para mejorar la velocidad de carga y prevenir saltos de diseño (Layout Shift).
 - [x] **Compactación Dashboard Admin (Smartphone)**: Reducción del 50% en la altura de contenedores clave (Cierres, Tesorería, Extras) y ajuste de iconos cuadrados para máxima eficiencia vertical.
 - [x] **Refinamiento Staff Dashboard**: Simplificación de etiquetas ("Horarios" en lugar de "Próximos Horarios") para una interfaz más limpia.
-- [x] **Rediseño Modal de Cierre**: Simplificación total del modal de arqueo, eliminando secciones redundantes (No Efectivo, Descuadres) y optimizando el conteo de billetes.
+- [x] **Rediseño Modal de Cierre**: Simplificación total del modal de arqueo e implementación de persistencia real en la tabla `cash_closings` (Corregido error de columnas `opened_by`/`closed_by`).
+- [x] **Persistencia y Cálculo de Venta Neta**: Integración de lógica de inserción en base de datos con cálculo automático de neto (IVA 10%) para estadísticas históricas.
+- [x] **Refinamiento Modal de Cambios**: Títulos dinámicos y botones flotantes para una estética minimalista.
+- [x] **Estandarización de Resúmenes Staff**: Unificación de resúmenes semanales con alturas fijas para garantizar la inmovilidad de etiquetas bajo la regla Zero-Display.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
