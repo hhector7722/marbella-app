@@ -15,6 +15,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Histórico de Extras:** Vista de semanales con lógica de arrastre (Client-side).
 - [x] **Protocolo AI:** Integración de habilidades especializadas.
 - [x] **Nuevas Skills:** Creación e integración de `comprador-logistica-albaranes`, `analista-bi-marbella` (alerta ratio 35%) y `tester-especialista-marbella`.
+- [x] **Refactorización Radical de Tesorería**: Esquema unificado en `treasury_log`, eliminación de 5 tablas legacy, automatización total mediante triggers, consolidación de 3 cajas (Operativa, Cambio 1, Cambio 2) y vistas de desglose de inventario.
 - [x] Auditoría de Lógica: Comparando reglas `.agent` con implementación actual para evitar regresiones.
 - [x] Refactorización de Utilidades: Centralizando cálculos de dinero y tiempo en Server Actions.
 - [x] Optimización UI Kiosco: Ajustar botones y targets táctiles al estándar de 48px+ en navegación y fichaje.
@@ -75,7 +76,6 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Estandarización de Resúmenes Staff**: Unificación de resúmenes semanales con alturas fijas para garantizar la inmovilidad de etiquetas bajo la regla Zero-Display.
 
 ## 📅 PENDIENTE
-- [x] **Refactorización Radical de Tesorería**: Esquema unificado en `treasury_log`, eliminación de 5 tablas legacy, automatización de arqueo mediante triggers y gestión de 3 cajas maestras (Operativa, Cambio 1, Cambio 2).
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

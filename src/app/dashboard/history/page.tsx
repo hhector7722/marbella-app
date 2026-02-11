@@ -346,6 +346,22 @@ export default function HistoryPage() {
                                     </div>
                                 </div>
 
+                                {selectedClosing.breakdown && Object.keys(selectedClosing.breakdown).length > 0 && (
+                                    <div>
+                                        <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4 border-b pb-2">Desglose de Arqueo</h3>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {Object.entries(selectedClosing.breakdown)
+                                                .sort(([a], [b]) => parseFloat(b) - parseFloat(a))
+                                                .map(([den, qty]) => (
+                                                    <div key={den} className="flex flex-col items-center p-2 bg-gray-50 rounded-xl">
+                                                        <span className="text-[8px] font-black text-gray-400">{parseFloat(den) < 1 ? (parseFloat(den) * 100).toFixed(0) + 'c' : den + '€'}</span>
+                                                        <span className="text-xs font-black text-[#36606F]">x{qty as number}</span>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {selectedClosing.notes && (
                                     <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-[11px] font-bold text-amber-700 italic">
                                         "{selectedClosing.notes}"
