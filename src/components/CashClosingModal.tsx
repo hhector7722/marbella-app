@@ -110,13 +110,15 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
+            // Calculate Net Sales (Excluding 10% IVA as expected by Dashboard)
+            const netSalesCalculated = totalSalesGross / 1.10;
+
             const { data: closing, error } = await supabase
                 .from('cash_closings')
                 .insert({
-                    opened_by: user?.id,
-                    closed_by: user?.id,
+                    user_id: user?.id, // Standard field for project
                     closed_at: new Date().toISOString(),
-                    net_sales: totalSalesGross,
+                    net_sales: netSalesCalculated,
                     sales_card: tpvData.cardSales,
                     sales_pending: tpvData.pendingSales,
                     debt_recovered: tpvData.debtRecovered,
@@ -132,7 +134,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error inserting closing:", error);
+                throw new Error(`Error al guardar el cierre: ${error.message}`);
+            }
 
             // Insert breakdown
             const countEntries = Object.entries(counts).map(([denomination, count]) => ({
@@ -143,14 +148,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             })).filter(item => item.quantity > 0);
 
             if (countEntries.length > 0) {
-                await supabase.from('cash_counts').insert(countEntries);
+                const { error: countError } = await supabase.from('cash_counts').insert(countEntries);
+                if (countError) console.error("Error inserting counts:", countError);
             }
 
             toast.success("Cierre completado con éxito");
-            if (onSuccess) onSuccess();
+            if (onSuccess) await onSuccess();
             onClose();
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("FinalizeClose error:", error);
+            toast.error(error.message || "Error desconocido al cerrar caja");
         } finally {
             setLoading(false);
         }
