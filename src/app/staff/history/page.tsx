@@ -373,28 +373,36 @@ export default function HistoryPage() {
 
                                         <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
+                                                <div className="h-4 flex items-center">
+                                                    <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
+                                                </div>
                                                 <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                             </div>
 
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                    {formatBalance(week.summary.weeklyBalance)}
-                                                </span>
+                                                <div className="h-4 flex items-center">
+                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                        {formatBalance(week.summary.weeklyBalance)}
+                                                    </span>
+                                                </div>
                                                 <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
                                             </div>
 
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                    {formatBalance(week.summary.startBalance)}
-                                                </span>
+                                                <div className="h-4 flex items-center">
+                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                        {formatBalance(week.summary.startBalance)}
+                                                    </span>
+                                                </div>
                                                 <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                             </div>
 
                                             <div className="flex flex-col items-center flex-1 shrink-0">
-                                                <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                                    {formatMoney(week.summary.estimatedValue)}
-                                                </span>
+                                                <div className="h-4 flex items-center">
+                                                    <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                                        {formatMoney(week.summary.estimatedValue)}
+                                                    </span>
+                                                </div>
                                                 <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
                                             </div>
                                         </div>
