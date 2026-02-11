@@ -873,21 +873,21 @@ export default function DashboardPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => setCashModalMode('in')} className="bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-500 hover:bg-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                <button onClick={() => setCashModalMode('in')} className="bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
                                                     <Plus size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-bold text-emerald-800">Entrada</span>
+                                                    <span className="font-black text-emerald-800">Entrada</span>
                                                 </button>
-                                                <button onClick={() => setCashModalMode('out')} className="bg-rose-50 border-2 border-rose-100 hover:border-rose-500 hover:bg-rose-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                <button onClick={() => setCashModalMode('out')} className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
                                                     <Minus size={32} fill="currentColor" strokeWidth={3} className="text-rose-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-bold text-rose-800">Salida</span>
+                                                    <span className="font-black text-rose-800">Salida</span>
                                                 </button>
-                                                <button onClick={() => setCashModalMode('audit')} className="bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                <button onClick={() => setCashModalMode('audit')} className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
                                                     <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-bold text-orange-800">Arqueo</span>
+                                                    <span className="font-black text-orange-800">Arqueo</span>
                                                 </button>
-                                                <button onClick={() => router.push('/dashboard/movements')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+                                                <button onClick={() => router.push('/dashboard/movements')} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
                                                     <History size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-bold text-blue-800">Movimientos</span>
+                                                    <span className="font-black text-blue-800">Movimientos</span>
                                                 </button>
                                             </>
                                         )}
@@ -943,12 +943,12 @@ export default function DashboardPage() {
                                         <button
                                             key={emp.id}
                                             onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#5B8FB9]/30 transition-all active:scale-90 flex flex-row items-center gap-4 group h-20"
+                                            className="bg-transparent p-4 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-row items-center gap-4 group h-20"
                                         >
                                             <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-lg font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
                                                 {emp.first_name.substring(0, 1)}
                                             </div>
-                                            <span className="font-black text-sm text-gray-700 text-left capitalize truncate flex-1">
+                                            <span className="font-black text-sm text-gray-700 text-left capitalize truncate flex-1 leading-none">
                                                 {emp.first_name}
                                             </span>
                                         </button>
@@ -978,33 +978,33 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30">
-                                <button onClick={() => router.push('/recipes')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                <button onClick={() => router.push('/recipes')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-red-50/30 transition-all active:scale-95">
                                     <ChefHat size={32} fill="currentColor" className="text-red-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Recetas</span>
                                 </button>
 
-                                <button onClick={() => router.push('/ingredients')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                <button onClick={() => router.push('/ingredients')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-orange-50/30 transition-all active:scale-95">
                                     <Utensils size={32} fill="currentColor" className="text-orange-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Ingredientes</span>
                                 </button>
 
-                                <button onClick={() => toast.info('Pedidos próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                <button onClick={() => toast.info('Pedidos próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-emerald-50/30 transition-all active:scale-95">
                                     <ShoppingCart size={32} fill="currentColor" className="text-emerald-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Pedidos</span>
                                 </button>
 
-                                <button onClick={() => toast.info('Inventario próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                <button onClick={() => toast.info('Inventario próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-purple-50/30 transition-all active:scale-95">
                                     <ClipboardList size={32} fill="currentColor" className="text-purple-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Inventario</span>
                                 </button>
 
-                                <button onClick={() => toast.info('Stock próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
+                                <button onClick={() => toast.info('Stock próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-blue-50/30 transition-all active:scale-95">
                                     <Package size={32} fill="currentColor" className="text-blue-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Stock</span>
                                 </button>
 
-                                <button onClick={() => toast.info('Proveedores próximamente')} className="bg-white border border-gray-100 p-4 rounded-3xl flex flex-col items-center gap-3 group shadow-sm hover:shadow-md transition-all active:scale-95">
-                                    <Truck size={32} fill="currentColor" className="text-zinc-500 group-hover:scale-900 transition-all" />
+                                <button onClick={() => toast.info('Proveedores próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-zinc-100/30 transition-all active:scale-95">
+                                    <Truck size={32} fill="currentColor" className="text-zinc-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Proveedores</span>
                                 </button>
                             </div>
