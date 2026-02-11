@@ -86,14 +86,14 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                     </div>
                 )}
 
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-12 gap-x-4 p-2">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-4 gap-x-2 p-1">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
-                            <div key={denom} className="flex flex-col items-center gap-3 group transition-all">
+                            <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
                                 <div className={cn(
                                     "w-full flex items-center justify-center transition-transform group-hover:scale-110",
-                                    isBill ? "h-20" : "h-16"
+                                    isBill ? "h-14" : "h-10"
                                 )}>
                                     {CURRENCY_IMAGES[denom] ? (
                                         <Image
@@ -101,17 +101,17 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                                             alt={`${denom}€`}
                                             width={140}
                                             height={140}
-                                            className="h-full w-auto object-contain drop-shadow-xl"
+                                            className="h-full w-auto object-contain drop-shadow-lg"
                                         />
                                     ) : (
                                         <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
                                     )}
                                 </div>
                                 <div className="text-center w-full">
-                                    <span className="font-black text-gray-500 text-[10px] uppercase tracking-widest block mb-1">
+                                    <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
                                         {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                     </span>
-                                    <div className="w-full max-w-[70px] mx-auto flex flex-col items-center gap-1">
+                                    <div className="w-full max-w-[60px] mx-auto flex flex-col items-center gap-0.5">
                                         <input
                                             type="number"
                                             min="0"
@@ -119,7 +119,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                                             onChange={(e) => handleCountChange(denom, e.target.value)}
                                             placeholder="0"
                                             className={cn(
-                                                "w-full bg-white border-2 rounded-2xl p-2 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
+                                                "w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
                                                 type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0)
                                                     ? "border-rose-400 text-rose-600 focus:ring-rose-100"
                                                     : "border-transparent focus:border-[#36606F]/20 text-[#36606F] focus:ring-[#36606F]/5"
@@ -127,9 +127,6 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                                         />
                                         {type === 'out' && (availableStock[denom] || 0) > 0 && (
                                             <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
-                                        )}
-                                        {type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) && (
-                                            <span className="text-[7px] font-black text-rose-500 uppercase leading-none">Sin Stock</span>
                                         )}
                                     </div>
                                 </div>
@@ -181,72 +178,64 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-gray-50 custom-scrollbar p-2">
-                <div className="grid grid-cols-1 gap-4">
+            <div className="flex-1 overflow-y-auto bg-gray-50 p-2">
+                <div className="grid grid-cols-1 gap-1">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
-                            <div key={denom} className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 p-4">
+                            <div key={denom} className="grid grid-cols-[80px_1fr_1fr] items-center gap-2 p-2 bg-white rounded-xl border border-gray-100">
+                                {/* VALOR / IMAGEN */}
+                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                    <div className={cn(
+                                        "flex items-center justify-center transition-transform hover:scale-110",
+                                        isBill ? "h-8" : "h-6"
+                                    )}>
+                                        {CURRENCY_IMAGES[denom] ? (
+                                            <Image
+                                                src={CURRENCY_IMAGES[denom]}
+                                                alt={`${denom}€`}
+                                                width={60}
+                                                height={60}
+                                                className="h-full w-auto object-contain drop-shadow-md"
+                                            />
+                                        ) : (
+                                            <div className="w-4 h-2 bg-gray-100 rounded animate-pulse" />
+                                        )}
+                                    </div>
+                                    <span className="font-black text-gray-500 text-[8px] uppercase tracking-widest">
+                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                    </span>
+                                </div>
+
                                 {/* ENTRADA */}
-                                <div className="flex flex-col items-center">
-                                    <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-2">ENTRA</span>
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest">ENTRA</span>
                                     <input
                                         type="number"
                                         min="0"
                                         value={inCounts[denom] || ''}
                                         onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                                         placeholder="0"
-                                        className="w-full bg-white border-2 border-emerald-100 focus:border-emerald-300 rounded-2xl p-3 text-center font-black text-emerald-600 outline-none text-sm transition-all shadow-sm"
+                                        className="w-full bg-emerald-50/30 border border-emerald-100 focus:border-emerald-300 rounded-lg p-1.5 text-center font-black text-emerald-600 outline-none text-xs transition-all"
                                     />
                                 </div>
 
-                                {/* VALOR / IMAGEN */}
-                                <div className="flex flex-col items-center justify-center gap-3 min-w-[100px]">
-                                    <div className={cn(
-                                        "flex items-center justify-center transition-transform hover:scale-110",
-                                        isBill ? "h-20" : "h-14"
-                                    )}>
-                                        {CURRENCY_IMAGES[denom] ? (
-                                            <Image
-                                                src={CURRENCY_IMAGES[denom]}
-                                                alt={`${denom}€`}
-                                                width={120}
-                                                height={120}
-                                                className="h-full w-auto object-contain drop-shadow-xl"
-                                            />
-                                        ) : (
-                                            <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
-                                        )}
-                                    </div>
-                                    <span className="font-black text-gray-500 text-[10px] uppercase tracking-widest">
-                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                    </span>
-                                </div>
-
                                 {/* SALIDA */}
-                                <div className="flex flex-col items-center">
-                                    <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-2">SALE</span>
-                                    <div className="flex flex-col items-center gap-1 w-full max-w-[80px]">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={outCounts[denom] || ''}
-                                            onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                                            placeholder="0"
-                                            className={cn(
-                                                "w-full bg-white border-2 rounded-2xl p-3 text-center font-black outline-none text-sm transition-all shadow-sm",
-                                                (outCounts[denom] || 0) > (availableStock[denom] || 0)
-                                                    ? "border-rose-400 text-rose-700"
-                                                    : "border-rose-100 focus:border-rose-300 text-rose-600"
-                                            )}
-                                        />
-                                        {(availableStock[denom] || 0) > 0 && (
-                                            <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="text-[7px] font-black text-rose-400 uppercase tracking-widest">SALE</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={outCounts[denom] || ''}
+                                        onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                                        placeholder="0"
+                                        className={cn(
+                                            "w-full bg-rose-50/30 border rounded-lg p-1.5 text-center font-black outline-none text-xs transition-all",
+                                            (outCounts[denom] || 0) > (availableStock[denom] || 0)
+                                                ? "border-rose-400 text-rose-700"
+                                                : "border-rose-100 focus:border-rose-300 text-rose-600"
                                         )}
-                                        {(outCounts[denom] || 0) > (availableStock[denom] || 0) && (
-                                            <span className="text-[7px] font-black text-rose-500 uppercase leading-none text-center">Sin Stock</span>
-                                        )}
-                                    </div>
+                                    />
                                 </div>
                             </div>
                         );
@@ -315,9 +304,9 @@ const BoxInventoryView = ({ boxName, inventory, onBack }: { boxName: string, inv
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <div className="grid grid-cols-2 gap-3">
                     {inventory.sort((a, b) => b.denomination - a.denomination).map((item, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center justify-between shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 flex items-center justify-center">
+                        <div key={idx} className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 flex items-center justify-center">
                                     <Image
                                         src={CURRENCY_IMAGES[item.denomination]}
                                         alt={`${item.denomination}€`}

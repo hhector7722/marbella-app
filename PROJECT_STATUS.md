@@ -76,6 +76,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Estandarización de Resúmenes Staff**: Unificación de resúmenes semanales con alturas fijas para garantizar la inmovilidad de etiquetas bajo la regla Zero-Display.
 - [x] **Unificación Estética de Tesorería (Floating UI)**: Eliminación de billetes de 500/200€, implementación de imágenes premium agrandadas y diseño sin tarjetas en todos los formularios de caja y cierre.
 - [x] **Configuración de Icono PWA**: Corrección de rutas de iconos en `manifest.json` y `layout.tsx` para apuntar correctamente a `/icons/logo-white.png`, asegurando la imagen correcta al "añadir a pantalla de inicio".
+- [x] **Optimización de Modales de Tesorería**: Compactación radical de los formularios de Entrada, Salida, Arqueo y Cambios para eliminar el scroll. Rediseño del formulario de cambios a layout horizontal y homogeneización de tamaños de valores en toda la gestión de efectivo.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
