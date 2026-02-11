@@ -89,17 +89,20 @@ export default function MovementsPage() {
             }
 
             const { data } = await supabase
-                .from('treasury_movements')
+                .from('treasury_log')
                 .select('*')
-                .or(`source_box_id.eq.${box.id},destination_box_id.eq.${box.id}`)
+                .eq('box_id', box.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .order('created_at', { ascending: false });
 
             if (data) {
-                setMovements(data);
-                const inc = data.filter(m => m.type === 'income').reduce((sum, m) => sum + m.amount, 0);
-                const exp = data.filter(m => m.type === 'expense').reduce((sum, m) => sum + m.amount, 0);
+                setMovements(data.map((m: any) => ({
+                    ...m,
+                    type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' : 'expense'
+                })));
+                const inc = data.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
+                const exp = data.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
                 setSummary({
                     income: inc,
                     expense: exp,

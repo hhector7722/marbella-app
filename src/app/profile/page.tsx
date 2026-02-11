@@ -162,11 +162,6 @@ function ProfileContent() {
                             </div>
 
                             <h1 className="text-3xl font-black tracking-tighter mb-1">{fullName}</h1>
-                            <div className="flex items-center gap-2">
-                                <span className="bg-white/20 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
-                                    {profile.role === 'manager' ? 'Executive Manager' : 'Staff Member'}
-                                </span>
-                            </div>
                         </div>
 
                         <button
@@ -177,91 +172,48 @@ function ProfileContent() {
                         </button>
                     </div>
 
-                    {/* KPI SUMMARY CLEAN - ESTILO CORPORATIVO */}
-                    <div className="grid grid-cols-2 gap-px py-6 border-b border-gray-50 bg-white">
-                        <div className="flex flex-col items-center justify-center text-center">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Carga Semanal</span>
-                            <span className="text-xl font-black text-[#36606F]">{profile.contract_hours || 0}h</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center text-center border-l border-gray-50">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status Laboral</span>
-                            <span className="text-xs font-black text-emerald-600 uppercase tracking-tighter">Personal Activo</span>
-                        </div>
-                    </div>
-
                     {/* SECCIONES BENTO DE ALTA DENSIDAD */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
 
-                        {/* Grupo 1: Contrato */}
-                        <div>
-                            <div className="px-8 py-5 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Asset Information</h2>
-                                <Briefcase size={14} className="text-gray-300" />
-                            </div>
-                            <div className="divide-y divide-gray-50">
-                                <ProfileDataRow
-                                    icon={Hash}
-                                    label="DNI / NIE Identification"
-                                    value={profile.dni}
-                                    isCopyable
-                                />
-                                <ProfileDataRow
-                                    icon={Euro}
-                                    label="Hourly Premium Rate"
-                                    value={profile.overtime_rate ? `${profile.overtime_rate.toFixed(2)}€ / hora` : null}
-                                />
-                                <ProfileDataRow
-                                    icon={FileClock}
-                                    label="Social Security ID"
-                                    value={profile.ss_number}
-                                    isCopyable
-                                />
-                                <ProfileDataRow
-                                    icon={CreditCard}
-                                    label="Bank Account (IBAN)"
-                                    value={profile.bank_account}
-                                    isCopyable
-                                />
-                            </div>
+                        {/* Grupo 1: Datos Identificativos */}
+                        <div className="divide-y divide-gray-50">
+                            <ProfileDataRow
+                                icon={Hash}
+                                label="DNI / NIE"
+                                value={profile.dni}
+                                isCopyable
+                            />
+                            <ProfileDataRow
+                                icon={CreditCard}
+                                label="Cuenta Bancaria (IBAN)"
+                                value={profile.bank_account}
+                                isCopyable
+                            />
                         </div>
 
                         {/* Grupo 2: Contacto */}
-                        <div className="mt-4">
-                            <div className="px-8 py-5 bg-[#36606F] text-white flex flex-col items-start justify-center">
-                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Puesto / Rango</span>
-                                <div className="flex items-center gap-2">
-                                    <div className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        profile.role === 'manager' ? "bg-rose-400" : profile.role === 'supervisor' ? "bg-orange-400" : "bg-emerald-400"
-                                    )}></div>
-                                    <span className="text-xl font-black text-white capitalize">
-                                        {profile.role === 'manager' ? 'Gerencia' : profile.role === 'supervisor' ? 'Supervisor' : 'Personal'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="divide-y divide-gray-50">
-                                <ProfileDataRow
-                                    icon={Mail}
-                                    label="Corporate Email"
-                                    value={profile.email}
-                                    isCopyable
-                                />
-                                <ProfileDataRow
-                                    icon={Phone}
-                                    label="Mobile Phone"
-                                    value={profile.phone}
-                                    action={profile.phone && (
-                                        <a href={`tel:${profile.phone}`} className="bg-emerald-50 text-emerald-600 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-emerald-500 hover:text-white transition-all active:scale-90 shadow-sm" title="Llamar">
-                                            <PhoneCall size={20} />
-                                        </a>
-                                    )}
-                                />
-                            </div>
+                        <div className="divide-y divide-gray-50 border-t border-gray-100">
+                            <ProfileDataRow
+                                icon={Mail}
+                                label="Email"
+                                value={profile.email}
+                                isCopyable
+                            />
+                            <ProfileDataRow
+                                icon={Phone}
+                                label="Teléfono Móvil"
+                                value={profile.phone}
+                                action={profile.phone && (
+                                    <a href={`tel:${profile.phone}`} className="bg-emerald-50 text-emerald-600 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-emerald-500 hover:text-white transition-all active:scale-90 shadow-sm" title="Llamar">
+                                        <PhoneCall size={20} />
+                                    </a>
+                                )}
+                            />
                         </div>
 
                         {/* Grupo 3: Documentación Estilo Premium */}
                         <div className="p-8">
-                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Official Documentation</h2>
+                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Documentación Oficial</h2>
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => toast.info('Funcionalidad próximamente')}

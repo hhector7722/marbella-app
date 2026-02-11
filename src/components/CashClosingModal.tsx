@@ -113,11 +113,19 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             // Calculate Net Sales (Excluding 10% IVA as expected by Dashboard)
             const netSalesCalculated = totalSalesGross / 1.10;
 
+            // 1. Prepare breakdown for the new unified treasury logic
+            const breakdownJson: Record<string, number> = {};
+            Object.entries(counts).forEach(([denomination, count]) => {
+                if (count > 0) {
+                    breakdownJson[denomination] = count;
+                }
+            });
+
             const { data: closing, error } = await supabase
                 .from('cash_closings')
                 .insert({
                     opened_by: user?.id,
-                    closed_by: user?.id, // Standard fields for project
+                    closed_by: user?.id,
                     closed_at: new Date().toISOString(),
                     net_sales: netSalesCalculated,
                     sales_card: tpvData.cardSales,
@@ -130,7 +138,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     cash_left: cashLeft,
                     weather: tpvData.weather,
                     tickets_count: tpvData.ticketsCount,
-                    notes: `TPV1: ${tpvData.tpv1.toFixed(2)}€ | TPV2: ${tpvData.tpv2.toFixed(2)}€`
+                    notes: `TPV1: ${tpvData.tpv1.toFixed(2)}€ | TPV2: ${tpvData.tpv2.toFixed(2)}€`,
+                    breakdown: breakdownJson // New column for automated treasury logging
                 })
                 .select()
                 .single();
@@ -140,18 +149,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                 throw new Error(`Error al guardar el cierre: ${error.message}`);
             }
 
-            // Insert breakdown
-            const countEntries = Object.entries(counts).map(([denomination, count]) => ({
-                closing_id: closing.id,
-                denomination: parseFloat(denomination),
-                quantity: count,
-                total_amount: parseFloat(denomination) * count
-            })).filter(item => item.quantity > 0);
-
-            if (countEntries.length > 0) {
-                const { error: countError } = await supabase.from('cash_counts').insert(countEntries);
-                if (countError) console.error("Error inserting counts:", countError);
-            }
+            // Legacy individual cash_counts insert is now removed as it's handled by DB trigger
+            // moving the cash_withdrawn amount to the operational box via treasury_log.
 
             toast.success("Cierre completado con éxito");
             if (onSuccess) await onSuccess();

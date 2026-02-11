@@ -435,7 +435,7 @@ export default function DashboardPage() {
                 setBoxes(sorted);
                 const opBox = sorted.find(b => b.type === 'operational');
                 if (opBox) {
-                    const { data: moves } = await supabase.from('treasury_movements').select('*').or(`source_box_id.eq.${opBox.id},destination_box_id.eq.${opBox.id}`).order('created_at', { ascending: false }).limit(3);
+                    const { data: moves } = await supabase.from('treasury_log').select('*').eq('box_id', opBox.id).order('created_at', { ascending: false }).limit(3);
                     setBoxMovements(moves || []);
                 }
             }
@@ -563,28 +563,33 @@ export default function DashboardPage() {
             if (!selectedBox) return;
 
             if (cashModalMode === 'audit') {
-                await supabase.from('cash_boxes').update({ current_balance: total }).eq('id', selectedBox.id);
+                await supabase.from('treasury_log').insert({
+                    box_id: selectedBox.id,
+                    type: 'ADJUSTMENT',
+                    amount: total,
+                    breakdown: breakdown,
+                    notes: 'Arqueo de caja'
+                });
             } else if (cashModalMode === 'swap') {
                 const inBreakdown = breakdown;
                 const outBreakdown = notesOrOutBreakdown;
 
-                await supabase.from('treasury_movements').insert({
+                await supabase.from('treasury_log').insert({
+                    box_id: selectedBox.id,
+                    type: 'SWAP',
                     amount: total,
-                    type: 'swap',
-                    notes: `Cambio: Entra ${total.toFixed(2)}€`,
-                    source_box_id: selectedBox.id,
-                    destination_box_id: selectedBox.id,
-                    breakdown: { in: inBreakdown, out: outBreakdown }
+                    breakdown: { in: inBreakdown, out: outBreakdown },
+                    notes: `Cambio: Entra ${total.toFixed(2)}€`
                 });
             } else {
-                const type = cashModalMode === 'in' ? 'income' : 'expense';
-                await supabase.from('treasury_movements').insert({
-                    amount: total, type: type, notes: notesOrOutBreakdown as string,
-                    source_box_id: type === 'expense' ? selectedBox.id : null,
-                    destination_box_id: type === 'income' ? selectedBox.id : null,
+                const type = cashModalMode === 'in' ? 'IN' : 'OUT';
+                await supabase.from('treasury_log').insert({
+                    box_id: selectedBox.id,
+                    type: type,
+                    amount: total,
+                    breakdown: breakdown,
+                    notes: notesOrOutBreakdown as string
                 });
-                const newBalance = type === 'income' ? selectedBox.current_balance + total : selectedBox.current_balance - total;
-                await supabase.from('cash_boxes').update({ current_balance: newBalance }).eq('id', selectedBox.id);
             }
             setCashModalMode('none');
             setSelectedBox(null);
@@ -697,11 +702,11 @@ export default function DashboardPage() {
                                                     {boxMovements.map(mov => (
                                                         <div key={mov.id} className="flex justify-between items-center text-[9px] md:text-[11px] bg-gray-50 p-2 md:p-3 rounded-xl md:rounded-2xl border border-gray-100/50">
                                                             <div className="flex items-center gap-1.5 md:gap-2 overflow-hidden">
-                                                                {mov.type === 'expense' ? <ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-2.5 h-2.5 md:w-3 md:h-3 text-emerald-500 shrink-0" />}
+                                                                {mov.type === 'OUT' ? <ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-2.5 h-2.5 md:w-3 md:h-3 text-emerald-500 shrink-0" />}
                                                                 <span className="truncate max-w-[100px] md:max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span>
                                                             </div>
-                                                            <span className={cn("font-black", mov.type === 'expense' ? 'text-rose-500' : 'text-emerald-600')}>
-                                                                {mov.type === 'expense' ? '-' : '+'}{mov.amount.toFixed(2)}€
+                                                            <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>
+                                                                {mov.type === 'OUT' ? '-' : '+'}{mov.amount.toFixed(2)}€
                                                             </span>
                                                         </div>
                                                     ))}

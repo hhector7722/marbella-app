@@ -75,6 +75,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Estandarización de Resúmenes Staff**: Unificación de resúmenes semanales con alturas fijas para garantizar la inmovilidad de etiquetas bajo la regla Zero-Display.
 
 ## 📅 PENDIENTE
+- [x] **Refactorización Radical de Tesorería**: Esquema unificado en `treasury_log`, eliminación de 5 tablas legacy, automatización de arqueo mediante triggers y gestión de 3 cajas maestras (Operativa, Cambio 1, Cambio 2).
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
