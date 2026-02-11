@@ -211,6 +211,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 </div>
                             </div>
 
+                            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <CloudSun className="text-blue-500" size={20} />
+                                    <span className="text-[10px] font-black text-blue-900 uppercase">Clima</span>
+                                </div>
+                                <select
+                                    className="bg-white border border-blue-200 rounded-lg px-3 py-1.5 text-xs font-bold text-blue-900 outline-none"
+                                    value={tpvData.weather}
+                                    onChange={e => setTpvData({ ...tpvData, weather: e.target.value })}
+                                >
+                                    {['Soleado', 'Nublado', 'Lluvia', 'Frio', 'Calor', 'Evento'].map(w => (
+                                        <option key={w} value={w}>{w}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
                                 <div className="space-y-4">
                                     <div>
@@ -227,7 +243,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><ArchiveRestore size={12} /> Cobros pendientes</label>
+                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><ArchiveRestore size={12} /> Cobros</label>
                                         <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#36606F]"
                                             value={tpvData.debtRecovered || ''} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
                                     </div>
@@ -239,21 +255,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <CloudSun className="text-blue-500" size={20} />
-                                    <span className="text-[10px] font-black text-blue-900 uppercase">Clima del Día</span>
-                                </div>
-                                <select
-                                    className="bg-white border border-blue-200 rounded-lg px-3 py-1.5 text-xs font-bold text-blue-900 outline-none"
-                                    value={tpvData.weather}
-                                    onChange={e => setTpvData({ ...tpvData, weather: e.target.value })}
-                                >
-                                    {['Soleado', 'Nublado', 'Lluvia', 'Frio', 'Calor', 'Evento'].map(w => (
-                                        <option key={w} value={w}>{w}</option>
-                                    ))}
-                                </select>
-                            </div>
                         </div>
                     )}
 
