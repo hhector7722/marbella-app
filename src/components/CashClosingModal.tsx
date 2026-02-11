@@ -14,7 +14,7 @@ import Image from 'next/image';
 
 // --- CONSTANTS ---
 const FIXED_CASH_FUND = 100;
-const BILLS = [500, 200, 100, 50, 20, 10, 5];
+const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -170,7 +170,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                             <span className="text-[9px] font-black uppercase tracking-[0.2em]">Cierre de Caja Diaria</span>
                         </div>
                         <div className="flex items-center gap-4 mt-1">
-                            <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'tpv_data' ? 'text-white' : 'text-white/40')}>1. Ventas</div>
+                            <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'tpv_data' ? 'text-white' : 'text-white/40')}>1. Datos</div>
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'count' ? 'text-white' : 'text-white/40')}>2. Arqueo</div>
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
                         </div>
@@ -186,7 +186,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                         <div className="p-8 space-y-6">
                             <div className="grid grid-cols-2 gap-4 p-5 bg-gray-50 rounded-[2rem] border border-gray-100">
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">TPV 2 (Principal)</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">TPV 2</label>
                                     <input
                                         type="number"
                                         className="w-full text-2xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-[#36606F] outline-none transition-colors"
@@ -196,10 +196,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">TPV 1 (Auxiliar)</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">TPV 1</label>
                                     <input
                                         type="number"
-                                        className="w-full text-2xl font-black text-gray-400 bg-transparent border-b-2 border-gray-100 focus:border-[#36606F] outline-none transition-colors"
+                                        className="w-full text-2xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-[#36606F] outline-none transition-colors"
                                         placeholder="0.00"
                                         value={tpvData.tpv1 || ''}
                                         onChange={e => setTpvData({ ...tpvData, tpv1: parseFloat(e.target.value) || 0 })}
@@ -211,40 +211,30 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> No Efectivo
-                                    </h4>
-                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
-                                        <div>
-                                            <label className="flex items-center gap-2 text-[9px] font-black text-rose-500 uppercase mb-1"><CreditCard size={12} /> Tarjeta</label>
-                                            <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-rose-300"
-                                                value={tpvData.cardSales || ''} onChange={e => setTpvData({ ...tpvData, cardSales: parseFloat(e.target.value) || 0 })} />
-                                        </div>
-                                        <div>
-                                            <label className="flex items-center gap-2 text-[9px] font-black text-orange-500 uppercase mb-1"><UserMinus size={12} /> Pendiente</label>
-                                            <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-orange-300"
-                                                value={tpvData.pendingSales || ''} onChange={e => setTpvData({ ...tpvData, pendingSales: parseFloat(e.target.value) || 0 })} />
-                                        </div>
+                                    <div>
+                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><CreditCard size={12} /> Tarjeta</label>
+                                        <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#36606F]"
+                                            value={tpvData.cardSales || ''} onChange={e => setTpvData({ ...tpvData, cardSales: parseFloat(e.target.value) || 0 })} />
+                                    </div>
+                                    <div>
+                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><UserMinus size={12} /> Pendiente</label>
+                                        <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#36606F]"
+                                            value={tpvData.pendingSales || ''} onChange={e => setTpvData({ ...tpvData, pendingSales: parseFloat(e.target.value) || 0 })} />
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Extras y Datos
-                                    </h4>
-                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
-                                        <div>
-                                            <label className="flex items-center gap-2 text-[9px] font-black text-emerald-600 uppercase mb-1"><ArchiveRestore size={12} /> Deuda Recuperada</label>
-                                            <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-emerald-300"
-                                                value={tpvData.debtRecovered || ''} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
-                                        </div>
-                                        <div>
-                                            <label className="flex items-center gap-2 text-[9px] font-black text-[#36606F] uppercase mb-1"><Receipt size={12} /> Nº Tickets</label>
-                                            <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-blue-300"
-                                                value={tpvData.ticketsCount || ''} onChange={e => setTpvData({ ...tpvData, ticketsCount: parseInt(e.target.value) || 0 })} />
-                                        </div>
+                                    <div>
+                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><ArchiveRestore size={12} /> Cobros pendientes</label>
+                                        <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#36606F]"
+                                            value={tpvData.debtRecovered || ''} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
+                                    </div>
+                                    <div>
+                                        <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><Receipt size={12} /> Nº Tickets</label>
+                                        <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#36606F]"
+                                            value={tpvData.ticketsCount || ''} onChange={e => setTpvData({ ...tpvData, ticketsCount: parseInt(e.target.value) || 0 })} />
                                     </div>
                                 </div>
                             </div>
@@ -325,20 +315,17 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     {step === 'summary' && (
                         <div className="p-8 space-y-8 animate-in slide-in-from-bottom-4 duration-300">
                             <div className="text-center">
-                                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Acción de Caja</h3>
-                                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mt-1">Sigue estas instrucciones para el sobre</p>
+                                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Cierre de Caja</h3>
                             </div>
 
                             <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-50">
                                 <div className="flex flex-col items-center justify-center text-center">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Retirar al Sobre</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Retirar</span>
                                     <span className="text-4xl font-black text-[#36606F]">{cashToWithdraw.toFixed(2)}€</span>
-                                    <span className="text-[9px] text-[#36606F]/50 font-bold mt-1 uppercase">Ventas + Beneficio</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center text-center border-l border-gray-50">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Dejar en Cajón</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Fondo de caja</span>
                                     <span className="text-4xl font-black text-emerald-500">{cashLeft.toFixed(2)}€</span>
-                                    <span className="text-[9px] text-emerald-500/50 font-bold mt-1 uppercase">Fondo Fijo (100€)</span>
                                 </div>
                             </div>
 
@@ -352,26 +339,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 </div>
                             )}
 
-                            <div className={cn(
-                                "p-6 rounded-[2rem] border-2 flex justify-between items-center",
-                                difference === 0 ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"
-                            )}>
-                                <div className="flex items-center gap-4">
-                                    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-sm", difference === 0 ? "bg-emerald-500" : "bg-rose-500")}>
-                                        {difference === 0 ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resultado</span>
-                                        <h4 className={cn("text-lg font-black", difference === 0 ? "text-emerald-700" : "text-rose-700")}>
-                                            {difference === 0 ? "Cuadre Perfecto" : `Descuadre ${difference > 0 ? '+' : ''}${difference.toFixed(2)}€`}
-                                        </h4>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-[10px] font-bold text-gray-400">Teórico: {expectedCash.toFixed(2)}€</div>
-                                    <div className="text-[10px] font-bold text-gray-400">Físico: {totalCounted.toFixed(2)}€</div>
-                                </div>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -400,7 +367,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     >
                         {loading ? <Loader2 className="animate-spin" /> : (
                             <>
-                                {step === 'summary' ? <Save size={20} /> : <ArrowRight size={20} />}
+                                {step === 'summary' ? '' : <ArrowRight size={20} />}
                                 {step === 'summary' ? 'Confirmar Cierre' : (step === 'count' ? 'Ver Resumen' : 'Siguiente')}
                             </>
                         )}
