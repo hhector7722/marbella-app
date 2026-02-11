@@ -36,7 +36,7 @@ const CURRENCY_IMAGES: Record<number, string> = {
 };
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
-const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts = {} }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void, initialCounts?: any }) => {
+const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts = {}, availableStock = {} }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void, initialCounts?: any, availableStock?: Record<number, number> }) => {
     const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
     const [notes, setNotes] = useState('');
@@ -110,15 +110,26 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                                 <span className="font-black text-gray-400 text-[9px] uppercase tracking-widest">
                                     {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                 </span>
-                                <div className="w-full max-w-[60px]">
+                                <div className="w-full max-w-[60px] flex flex-col items-center gap-1">
                                     <input
                                         type="number"
                                         min="0"
                                         value={counts[denom] || ''}
                                         onChange={(e) => handleCountChange(denom, e.target.value)}
                                         placeholder="0"
-                                        className="w-full bg-white/50 border border-gray-200 rounded-xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-2 focus:ring-[#36606F]/20 transition-all"
+                                        className={cn(
+                                            "w-full bg-white/50 border rounded-xl p-2 text-center font-black outline-none text-xs focus:ring-2 transition-all",
+                                            type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0)
+                                                ? "border-rose-500 text-rose-600 focus:ring-rose-200"
+                                                : "border-gray-200 text-[#36606F] focus:ring-[#36606F]/20"
+                                        )}
                                     />
+                                    {type === 'out' && (availableStock[denom] || 0) > 0 && (
+                                        <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
+                                    )}
+                                    {type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) && (
+                                        <span className="text-[7px] font-black text-rose-500 uppercase">Sin Stock</span>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -130,7 +141,13 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                 <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
                 <button
                     onClick={() => onSubmit(total, counts, notes)}
-                    className={cn("flex-1 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2", bgClass)}
+                    disabled={type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
+                    className={cn(
+                        "flex-1 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all",
+                        type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))
+                            ? "bg-gray-300 opacity-50 cursor-not-allowed"
+                            : bgClass
+                    )}
                 >
                     <Save size={18} />
                     {isAudit ? 'Ajustar' : 'Confirmar'}
@@ -140,7 +157,8 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
     );
 };
 
-const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string, onSubmit: (total: number, inBreakdown: any, outBreakdown: any) => void, onCancel: () => void }) => {
+// --- COMPONENTE INTERNO: FORMULARIO DE INTERCAMBIO (SWAP) ---
+const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {} }: { boxName: string, onSubmit: (total: number, inBreakdown: any, outBreakdown: any) => void, onCancel: () => void, availableStock?: Record<number, number> }) => {
     const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
     const [inCounts, setInCounts] = useState<Record<number, number>>({});
     const [outCounts, setOutCounts] = useState<Record<number, number>>({});
@@ -212,8 +230,19 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string
                                         value={outCounts[denom] || ''}
                                         onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                                         placeholder="0"
-                                        className="w-full bg-rose-50/50 border-2 border-transparent focus:border-rose-200 rounded-2xl p-3 text-center font-black text-rose-600 outline-none text-sm transition-all shadow-sm"
+                                        className={cn(
+                                            "w-full border-2 rounded-2xl p-3 text-center font-black outline-none text-sm transition-all shadow-sm",
+                                            (outCounts[denom] || 0) > (availableStock[denom] || 0)
+                                                ? "bg-rose-100 border-rose-300 text-rose-700"
+                                                : "bg-rose-50/50 border-transparent focus:border-rose-200 text-rose-600"
+                                        )}
                                     />
+                                    {(availableStock[denom] || 0) > 0 && (
+                                        <span className="text-[7px] font-bold text-gray-400 uppercase mt-1">Disp: {availableStock[denom]}</span>
+                                    )}
+                                    {(outCounts[denom] || 0) > (availableStock[denom] || 0) && (
+                                        <span className="text-[7px] font-black text-rose-500 uppercase mt-0.5">Stock Insuficiente</span>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -227,8 +256,10 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string
                         <span className="block text-[8px] font-black text-emerald-500 uppercase">Entra</span>
                         <span className="text-xl font-black text-gray-800">{totalIn.toFixed(2)}€</span>
                     </div>
-                    <div className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase transition-all", isBalanced ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
-                        {isBalanced ? "Equilibrado" : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}
+                    <div className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase transition-all",
+                        isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700") : "bg-rose-100 text-rose-700"
+                    )}>
+                        {isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "Stock Insuficiente" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}
                     </div>
                     <div className="text-center">
                         <span className="block text-[8px] font-black text-rose-500 uppercase">Sale</span>
@@ -239,10 +270,12 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel }: { boxName: string
                     <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
                     <button
                         onClick={() => onSubmit(totalIn, inCounts, outCounts as any)}
-                        disabled={!isBalanced}
+                        disabled={!isBalanced || Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0))}
                         className={cn(
                             "flex-1 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all",
-                            isBalanced ? "bg-[#36606F] scale-100" : "bg-gray-300 scale-95 cursor-not-allowed opacity-50"
+                            (isBalanced && !Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)))
+                                ? "bg-[#36606F] scale-100"
+                                : "bg-gray-300 scale-95 cursor-not-allowed opacity-50"
                         )}
                     >
                         <ArrowRightLeft size={18} strokeWidth={3} />
@@ -329,6 +362,7 @@ export default function DashboardPage() {
     const [cashModalMode, setCashModalMode] = useState<'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory'>('none');
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
+    const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
 
     // Estado para pagos
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
@@ -921,7 +955,17 @@ export default function DashboardPage() {
                                         {selectedBox?.type === 'change' ? (
                                             <>
                                                 <>
-                                                    <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
+                                                    <button
+                                                        onClick={async () => {
+                                                            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
+                                                            const initial: any = {};
+                                                            data?.forEach(d => initial[d.denomination] = d.quantity);
+                                                            setBoxInventoryMap(initial);
+                                                            setBoxInventory(data || []);
+                                                            setCashModalMode('swap');
+                                                        }}
+                                                        className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                    >
                                                         <ArrowRightLeft size={48} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
                                                         <span className="font-black text-xl text-orange-800">Cambiar</span>
                                                         <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
@@ -931,7 +975,8 @@ export default function DashboardPage() {
                                                             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
                                                             const initial: any = {};
                                                             data?.forEach(d => initial[d.denomination] = d.quantity);
-                                                            setBoxInventory(initial);
+                                                            setBoxInventoryMap(initial);
+                                                            setBoxInventory(data || []);
                                                             setCashModalMode('audit');
                                                         }}
                                                         className="col-span-2 bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
@@ -958,7 +1003,17 @@ export default function DashboardPage() {
                                                     <Plus size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-black text-emerald-800">Entrada</span>
                                                 </button>
-                                                <button onClick={() => setCashModalMode('out')} className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
+                                                <button
+                                                    onClick={async () => {
+                                                        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
+                                                        const initial: any = {};
+                                                        data?.forEach(d => initial[d.denomination] = d.quantity);
+                                                        setBoxInventoryMap(initial);
+                                                        setBoxInventory(data || []);
+                                                        setCashModalMode('out');
+                                                    }}
+                                                    className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                >
                                                     <Minus size={32} fill="currentColor" strokeWidth={3} className="text-rose-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-black text-rose-800">Salida</span>
                                                 </button>
@@ -967,7 +1022,8 @@ export default function DashboardPage() {
                                                         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
                                                         const initial: any = {};
                                                         data?.forEach(d => initial[d.denomination] = d.quantity);
-                                                        setBoxInventory(initial);
+                                                        setBoxInventoryMap(initial);
+                                                        setBoxInventory(data || []);
                                                         setCashModalMode('audit');
                                                     }}
                                                     className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
@@ -999,7 +1055,8 @@ export default function DashboardPage() {
                                 <CashDenominationForm
                                     type={cashModalMode as 'in' | 'out' | 'audit'}
                                     boxName={selectedBox?.name || 'Caja'}
-                                    initialCounts={cashModalMode === 'audit' ? boxInventory : {}}
+                                    initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
+                                    availableStock={boxInventoryMap}
                                     onCancel={() => setCashModalMode('menu')}
                                     onSubmit={handleCashTransaction}
                                 />
@@ -1007,6 +1064,7 @@ export default function DashboardPage() {
                             {cashModalMode === 'swap' && (
                                 <SwapDenominationForm
                                     boxName={selectedBox?.name || 'Caja'}
+                                    availableStock={boxInventoryMap}
                                     onCancel={() => setCashModalMode('menu')}
                                     onSubmit={handleCashTransaction}
                                 />
