@@ -37,7 +37,7 @@ const CURRENCY_IMAGES: Record<number, string> = {
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
 const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts = {}, availableStock = {} }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void, initialCounts?: any, availableStock?: Record<number, number> }) => {
-    const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+    const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
     const [notes, setNotes] = useState('');
 
@@ -55,7 +55,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
     const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
             <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                 <div>
                     <h3 className="text-lg font-black uppercase tracking-wider">{isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')}</h3>
@@ -74,62 +74,64 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
 
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {!isAudit && (
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Concepto / Motivo</label>
+                    <div className="px-2">
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto / Motivo</label>
                         <input
                             type="text"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Ej. Cambio banco, Pago proveedor..."
-                            className="w-full p-3 rounded-xl border border-gray-300 focus:border-blue-500 outline-none"
+                            className="w-full p-3 rounded-2xl border-2 border-transparent focus:border-[#36606F]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300"
                         />
                     </div>
                 )}
 
-                <div className="grid grid-cols-5 gap-6">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-12 gap-x-4 p-2">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
-                            <div key={denom} className="flex flex-col items-center gap-2 group transition-all">
+                            <div key={denom} className="flex flex-col items-center gap-3 group transition-all">
                                 <div className={cn(
                                     "w-full flex items-center justify-center transition-transform group-hover:scale-110",
-                                    isBill ? "h-24" : "h-20"
+                                    isBill ? "h-20" : "h-16"
                                 )}>
                                     {CURRENCY_IMAGES[denom] ? (
                                         <Image
                                             src={CURRENCY_IMAGES[denom]}
                                             alt={`${denom}€`}
-                                            width={80}
-                                            height={96}
-                                            className="h-full w-auto object-contain drop-shadow-md"
+                                            width={140}
+                                            height={140}
+                                            className="h-full w-auto object-contain drop-shadow-xl"
                                         />
                                     ) : (
                                         <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
                                     )}
                                 </div>
-                                <span className="font-black text-gray-400 text-[9px] uppercase tracking-widest">
-                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                </span>
-                                <div className="w-full max-w-[60px] flex flex-col items-center gap-1">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={counts[denom] || ''}
-                                        onChange={(e) => handleCountChange(denom, e.target.value)}
-                                        placeholder="0"
-                                        className={cn(
-                                            "w-full bg-white/50 border rounded-xl p-2 text-center font-black outline-none text-xs focus:ring-2 transition-all",
-                                            type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0)
-                                                ? "border-rose-500 text-rose-600 focus:ring-rose-200"
-                                                : "border-gray-200 text-[#36606F] focus:ring-[#36606F]/20"
+                                <div className="text-center w-full">
+                                    <span className="font-black text-gray-500 text-[10px] uppercase tracking-widest block mb-1">
+                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                    </span>
+                                    <div className="w-full max-w-[70px] mx-auto flex flex-col items-center gap-1">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={counts[denom] || ''}
+                                            onChange={(e) => handleCountChange(denom, e.target.value)}
+                                            placeholder="0"
+                                            className={cn(
+                                                "w-full bg-white border-2 rounded-2xl p-2 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
+                                                type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0)
+                                                    ? "border-rose-400 text-rose-600 focus:ring-rose-100"
+                                                    : "border-transparent focus:border-[#36606F]/20 text-[#36606F] focus:ring-[#36606F]/5"
+                                            )}
+                                        />
+                                        {type === 'out' && (availableStock[denom] || 0) > 0 && (
+                                            <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
                                         )}
-                                    />
-                                    {type === 'out' && (availableStock[denom] || 0) > 0 && (
-                                        <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
-                                    )}
-                                    {type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) && (
-                                        <span className="text-[7px] font-black text-rose-500 uppercase">Sin Stock</span>
-                                    )}
+                                        {type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) && (
+                                            <span className="text-[7px] font-black text-rose-500 uppercase leading-none">Sin Stock</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -138,19 +140,19 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
             </div>
 
             <div className="p-4 bg-white border-t flex gap-3">
-                <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
+                <button onClick={onCancel} className="flex-1 py-4 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 rounded-2xl transition-all active:scale-95">Cancelar</button>
                 <button
                     onClick={() => onSubmit(total, counts, notes)}
                     disabled={type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
                     className={cn(
-                        "flex-1 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all",
+                        "flex-1 py-4 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
                         type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))
-                            ? "bg-gray-300 opacity-50 cursor-not-allowed"
-                            : bgClass
+                            ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
+                            : bgClass + " hover:brightness-110 shadow-emerald-200"
                     )}
                 >
-                    <Save size={18} />
-                    {isAudit ? 'Ajustar' : 'Confirmar'}
+                    <Save size={18} strokeWidth={3} />
+                    {isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación'}
                 </button>
             </div>
         </div>
@@ -179,70 +181,72 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-gray-50 custom-scrollbar">
-                <div className="p-4 grid grid-cols-1 gap-4">
+            <div className="flex-1 overflow-y-auto bg-gray-50 custom-scrollbar p-2">
+                <div className="grid grid-cols-1 gap-4">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
-                            <div key={denom} className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 p-2 transition-all">
+                            <div key={denom} className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 p-4">
                                 {/* ENTRADA */}
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2">ENTRA</span>
+                                    <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-2">ENTRA</span>
                                     <input
                                         type="number"
                                         min="0"
                                         value={inCounts[denom] || ''}
                                         onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                                         placeholder="0"
-                                        className="w-full bg-emerald-50/50 border-2 border-transparent focus:border-emerald-200 rounded-2xl p-3 text-center font-black text-emerald-600 outline-none text-sm transition-all shadow-sm"
+                                        className="w-full bg-white border-2 border-emerald-100 focus:border-emerald-300 rounded-2xl p-3 text-center font-black text-emerald-600 outline-none text-sm transition-all shadow-sm"
                                     />
                                 </div>
 
                                 {/* VALOR / IMAGEN */}
-                                <div className="flex flex-col items-center justify-center gap-2 min-w-[80px]">
+                                <div className="flex flex-col items-center justify-center gap-3 min-w-[100px]">
                                     <div className={cn(
-                                        "flex items-center justify-center",
-                                        isBill ? "h-16" : "h-12"
+                                        "flex items-center justify-center transition-transform hover:scale-110",
+                                        isBill ? "h-20" : "h-14"
                                     )}>
                                         {CURRENCY_IMAGES[denom] ? (
                                             <Image
                                                 src={CURRENCY_IMAGES[denom]}
                                                 alt={`${denom}€`}
-                                                width={96}
-                                                height={96}
-                                                className={cn("h-full w-auto object-contain drop-shadow-md", isBill ? "h-24" : "h-20")}
+                                                width={120}
+                                                height={120}
+                                                className="h-full w-auto object-contain drop-shadow-xl"
                                             />
                                         ) : (
-                                            <div className="w-10 h-6 bg-gray-100 rounded" />
+                                            <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
                                         )}
                                     </div>
-                                    <span className="font-black text-gray-400 text-[10px] tracking-widest uppercase">
+                                    <span className="font-black text-gray-500 text-[10px] uppercase tracking-widest">
                                         {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                     </span>
                                 </div>
 
                                 {/* SALIDA */}
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2">SALE</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={outCounts[denom] || ''}
-                                        onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                                        placeholder="0"
-                                        className={cn(
-                                            "w-full border-2 rounded-2xl p-3 text-center font-black outline-none text-sm transition-all shadow-sm",
-                                            (outCounts[denom] || 0) > (availableStock[denom] || 0)
-                                                ? "bg-rose-100 border-rose-300 text-rose-700"
-                                                : "bg-rose-50/50 border-transparent focus:border-rose-200 text-rose-600"
+                                    <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-2">SALE</span>
+                                    <div className="flex flex-col items-center gap-1 w-full max-w-[80px]">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={outCounts[denom] || ''}
+                                            onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                                            placeholder="0"
+                                            className={cn(
+                                                "w-full bg-white border-2 rounded-2xl p-3 text-center font-black outline-none text-sm transition-all shadow-sm",
+                                                (outCounts[denom] || 0) > (availableStock[denom] || 0)
+                                                    ? "border-rose-400 text-rose-700"
+                                                    : "border-rose-100 focus:border-rose-300 text-rose-600"
+                                            )}
+                                        />
+                                        {(availableStock[denom] || 0) > 0 && (
+                                            <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
                                         )}
-                                    />
-                                    {(availableStock[denom] || 0) > 0 && (
-                                        <span className="text-[7px] font-bold text-gray-400 uppercase mt-1">Disp: {availableStock[denom]}</span>
-                                    )}
-                                    {(outCounts[denom] || 0) > (availableStock[denom] || 0) && (
-                                        <span className="text-[7px] font-black text-rose-500 uppercase mt-0.5">Stock Insuficiente</span>
-                                    )}
+                                        {(outCounts[denom] || 0) > (availableStock[denom] || 0) && (
+                                            <span className="text-[7px] font-black text-rose-500 uppercase leading-none text-center">Sin Stock</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -250,42 +254,43 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 </div>
             </div>
 
-            <div className="p-4 bg-white border-t space-y-3">
-                <div className="flex items-center justify-between px-2">
+            <div className="p-4 bg-white border-t space-y-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center justify-between px-6 bg-gray-50 p-4 rounded-3xl border border-gray-100">
                     <div className="text-center">
-                        <span className="block text-[8px] font-black text-emerald-500 uppercase">Entra</span>
-                        <span className="text-xl font-black text-gray-800">{totalIn.toFixed(2)}€</span>
+                        <span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Total Entra</span>
+                        <span className="text-xl font-black text-emerald-800">{totalIn.toFixed(2)}€</span>
                     </div>
-                    <div className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase transition-all",
-                        isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700") : "bg-rose-100 text-rose-700"
+                    <div className={cn("px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm",
+                        isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700"
                     )}>
-                        {isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "Stock Insuficiente" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}
+                        {isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}
                     </div>
                     <div className="text-center">
-                        <span className="block text-[8px] font-black text-rose-500 uppercase">Sale</span>
-                        <span className="text-xl font-black text-gray-800">{totalOut.toFixed(2)}€</span>
+                        <span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Total Sale</span>
+                        <span className="text-xl font-black text-rose-800">{totalOut.toFixed(2)}€</span>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
+                <div className="flex gap-3">
+                    <button onClick={onCancel} className="flex-1 py-4 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 rounded-2xl transition-all active:scale-95">Cancelar</button>
                     <button
                         onClick={() => onSubmit(totalIn, inCounts, outCounts as any)}
                         disabled={!isBalanced || Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0))}
                         className={cn(
-                            "flex-1 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all",
+                            "flex-1 py-4 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
                             (isBalanced && !Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)))
-                                ? "bg-[#36606F] scale-100"
-                                : "bg-gray-300 scale-95 cursor-not-allowed opacity-50"
+                                ? "bg-[#36606F] shadow-[#36606F]/20"
+                                : "bg-gray-300 cursor-not-allowed shadow-none opacity-50"
                         )}
                     >
                         <ArrowRightLeft size={18} strokeWidth={3} />
-                        Confirmar
+                        Confirmar Cambio
                     </button>
                 </div>
             </div>
         </div>
     );
 };
+
 
 const BoxInventoryView = ({ boxName, inventory, onBack }: { boxName: string, inventory: any[], onBack: () => void }) => {
     const total = inventory.reduce((sum, item) => sum + (item.denomination * item.quantity), 0);

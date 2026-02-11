@@ -278,40 +278,44 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     <div className="text-lg font-bold text-gray-500">{expectedCash.toFixed(2)}€</div>
                                 </div>
                             </div>
-                            <div className="p-4 flex flex-col gap-8">
-                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-8">
+                            <div className="p-4 flex flex-col gap-12">
+                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-12 gap-x-6">
                                     {BILLS.map(bill => (
-                                        <div key={bill} className="flex flex-col items-center gap-2 group transition-all">
-                                            <div className="h-24 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                        <div key={bill} className="flex flex-col items-center gap-3 group transition-all">
+                                            <div className="h-20 w-full flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <Image
                                                     src={CURRENCY_IMAGES[bill]}
                                                     alt={bill + "€"}
-                                                    width={80}
-                                                    height={96}
-                                                    className="h-full w-auto object-contain drop-shadow-md"
+                                                    width={120}
+                                                    height={120}
+                                                    className="h-full w-auto object-contain drop-shadow-xl"
                                                 />
                                             </div>
-                                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{bill}€</span>
-                                            <input type="number" min="0" placeholder="0"
-                                                className="w-full bg-white/50 border border-gray-200 rounded-xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-2 focus:ring-[#36606F]/20"
-                                                value={counts[bill] || ''} onChange={(e) => updateCount(bill, e.target.value)} />
+                                            <div className="text-center w-full">
+                                                <span className="font-black text-gray-500 text-[10px] uppercase tracking-widest block mb-1">{bill}€</span>
+                                                <input type="number" min="0" placeholder="0"
+                                                    className="w-full bg-white border-2 border-transparent focus:border-[#36606F]/20 rounded-2xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-4 focus:ring-[#36606F]/5 transition-all shadow-sm"
+                                                    value={counts[bill] || ''} onChange={(e) => updateCount(bill, e.target.value)} />
+                                            </div>
                                         </div>
                                     ))}
                                     {COINS.map(coin => (
-                                        <div key={coin} className="flex flex-col items-center gap-2 group transition-all">
-                                            <div className="h-20 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                        <div key={coin} className="flex flex-col items-center gap-3 group transition-all">
+                                            <div className="h-16 w-full flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <Image
                                                     src={CURRENCY_IMAGES[coin]}
                                                     alt={coin + "€"}
-                                                    width={64}
-                                                    height={80}
-                                                    className="h-full w-auto object-contain drop-shadow-md"
+                                                    width={100}
+                                                    height={100}
+                                                    className="h-full w-auto object-contain drop-shadow-xl"
                                                 />
                                             </div>
-                                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
-                                            <input type="number" min="0" placeholder="0"
-                                                className="w-full bg-white/50 border border-gray-200 rounded-xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-2 focus:ring-[#36606F]/20"
-                                                value={counts[coin] || ''} onChange={(e) => updateCount(coin, e.target.value)} />
+                                            <div className="text-center w-full">
+                                                <span className="font-black text-gray-500 text-[10px] uppercase tracking-widest block mb-1">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
+                                                <input type="number" min="0" placeholder="0"
+                                                    className="w-full bg-white border-2 border-transparent focus:border-[#36606F]/20 rounded-2xl p-2 text-center font-black text-[#36606F] outline-none text-xs focus:ring-4 focus:ring-[#36606F]/5 transition-all shadow-sm"
+                                                    value={counts[coin] || ''} onChange={(e) => updateCount(coin, e.target.value)} />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

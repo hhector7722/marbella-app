@@ -74,6 +74,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Persistencia y Cálculo de Venta Neta**: Integración de lógica de inserción en base de datos con cálculo automático de neto (IVA 10%) para estadísticas históricas.
 - [x] **Refinamiento Modal de Cambios**: Títulos dinámicos y botones flotantes para una estética minimalista.
 - [x] **Estandarización de Resúmenes Staff**: Unificación de resúmenes semanales con alturas fijas para garantizar la inmovilidad de etiquetas bajo la regla Zero-Display.
+- [x] **Unificación Estética de Tesorería (Floating UI)**: Eliminación de billetes de 500/200€, implementación de imágenes premium agrandadas y diseño sin tarjetas en todos los formularios de caja y cierre.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
