@@ -849,11 +849,8 @@ export default function DashboardPage() {
                                     <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                                         <div className="flex flex-col">
                                             <h3 className="text-lg font-black uppercase tracking-wider leading-none">
-                                                Gestión de Caja
+                                                {selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}
                                             </h3>
-                                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                                {selectedBox?.type === 'operational' ? 'Caja Inicial' : selectedBox?.name}
-                                            </p>
                                         </div>
                                         <button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
                                             <X size={20} strokeWidth={3} />
@@ -862,19 +859,17 @@ export default function DashboardPage() {
                                     <div className="p-4 grid grid-cols-2 gap-4">
                                         {selectedBox?.type === 'change' ? (
                                             <>
-                                                <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-orange-50 border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-100 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                    <ArrowRightLeft size={48} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-black text-xl text-orange-800">Cambiar</span>
-                                                    <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
-                                                </button>
-                                                <button onClick={() => setCashModalMode('audit')} className="bg-blue-50 border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                    <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-bold text-blue-800">Arqueo</span>
-                                                </button>
-                                                <button onClick={() => router.push('/dashboard/movements')} className="bg-gray-50 border-2 border-gray-100 hover:border-gray-500 hover:bg-gray-100 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-                                                    <History size={32} fill="currentColor" strokeWidth={3} className="text-gray-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-bold text-gray-800">Movimientos</span>
-                                                </button>
+                                                <>
+                                                    <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
+                                                        <ArrowRightLeft size={48} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                                                        <span className="font-black text-xl text-orange-800">Cambiar</span>
+                                                        <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
+                                                    </button>
+                                                    <button onClick={() => setCashModalMode('audit')} className="col-span-2 bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
+                                                        <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                                                        <span className="font-bold text-blue-800">Arqueo</span>
+                                                    </button>
+                                                </>
                                             </>
                                         ) : (
                                             <>
