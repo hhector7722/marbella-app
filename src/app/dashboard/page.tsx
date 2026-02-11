@@ -36,9 +36,9 @@ const CURRENCY_IMAGES: Record<number, string> = {
 };
 
 // --- COMPONENTE INTERNO: FORMULARIO DE CAJA ---
-const CashDenominationForm = ({ type, boxName, onSubmit, onCancel }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void }) => {
+const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts = {} }: { type: 'in' | 'out' | 'audit', boxName: string, onSubmit: (total: number, breakdown: any, notes: string) => void, onCancel: () => void, initialCounts?: any }) => {
     const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
-    const [counts, setCounts] = useState<Record<number, number>>({});
+    const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
     const [notes, setNotes] = useState('');
 
     const calculateTotal = () => {
@@ -926,7 +926,16 @@ export default function DashboardPage() {
                                                         <span className="font-black text-xl text-orange-800">Cambiar</span>
                                                         <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
                                                     </button>
-                                                    <button onClick={() => setCashModalMode('audit')} className="col-span-2 bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
+                                                    <button
+                                                        onClick={async () => {
+                                                            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
+                                                            const initial: any = {};
+                                                            data?.forEach(d => initial[d.denomination] = d.quantity);
+                                                            setBoxInventory(initial);
+                                                            setCashModalMode('audit');
+                                                        }}
+                                                        className="col-span-2 bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                    >
                                                         <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
                                                         <span className="font-bold text-blue-800">Arqueo</span>
                                                     </button>
@@ -953,7 +962,16 @@ export default function DashboardPage() {
                                                     <Minus size={32} fill="currentColor" strokeWidth={3} className="text-rose-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-black text-rose-800">Salida</span>
                                                 </button>
-                                                <button onClick={() => setCashModalMode('audit')} className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
+                                                <button
+                                                    onClick={async () => {
+                                                        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
+                                                        const initial: any = {};
+                                                        data?.forEach(d => initial[d.denomination] = d.quantity);
+                                                        setBoxInventory(initial);
+                                                        setCashModalMode('audit');
+                                                    }}
+                                                    className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                >
                                                     <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
                                                     <span className="font-black text-orange-800">Arqueo</span>
                                                 </button>
@@ -981,6 +999,7 @@ export default function DashboardPage() {
                                 <CashDenominationForm
                                     type={cashModalMode as 'in' | 'out' | 'audit'}
                                     boxName={selectedBox?.name || 'Caja'}
+                                    initialCounts={cashModalMode === 'audit' ? boxInventory : {}}
                                     onCancel={() => setCashModalMode('menu')}
                                     onSubmit={handleCashTransaction}
                                 />
