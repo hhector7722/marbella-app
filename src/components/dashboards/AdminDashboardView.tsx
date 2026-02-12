@@ -97,44 +97,45 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
     const totalIn = DENOMINATIONS.reduce((acc, val) => acc + (val * (inCounts[val] || 0)), 0);
     const totalOut = DENOMINATIONS.reduce((acc, val) => acc + (val * (outCounts[val] || 0)), 0);
     const isBalanced = totalIn > 0 && Math.abs(totalIn - totalOut) < 0.001;
+    const hasStockIssue = Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0));
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#36606F] px-6 py-2 flex justify-between items-center text-white shrink-0">
                 <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p></div>
                 <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto bg-gray-50 p-1.5 no-scrollbar">
-                <div className="grid grid-cols-1 gap-1">
+            <div className="flex-1 overflow-y-auto bg-gray-50/50 p-2 no-scrollbar">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="grid grid-cols-[80px_1fr_1fr] items-center gap-1.5 p-1.5 bg-white rounded-xl border border-gray-100">
-                            <div className="flex flex-col items-center justify-center gap-0.5">
-                                <div className={cn("flex items-center justify-center transition-transform hover:scale-110", denom >= 5 ? "h-8" : "h-6")}>
-                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={60} height={60} className="h-full w-auto object-contain drop-shadow-md" />
+                        <div key={denom} className="bg-white rounded-2xl border border-gray-100 p-2 flex flex-col items-center gap-1.5 shadow-sm">
+                            <div className="h-10 md:h-12 flex items-center justify-center transition-transform hover:scale-105">
+                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={80} height={80} className="h-full w-auto object-contain drop-shadow-md" />
+                            </div>
+                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
+                            <div className="grid grid-cols-2 gap-1 w-full mt-0.5">
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[6px] font-black text-emerald-500 uppercase tracking-tighter">ENTRA</span>
+                                    <input type="number" min="0" value={inCounts[denom] || ''} onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-emerald-50/50 border border-emerald-100 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
                                 </div>
-                                <span className="font-black text-gray-500 text-[8px] uppercase tracking-widest">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-0.5">
-                                <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest leading-none">ENTRA</span>
-                                <input type="number" min="0" value={inCounts[denom] || ''} onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
-                            </div>
-                            <div className="flex flex-col items-center gap-0.5">
-                                <span className="text-[7px] font-black text-rose-400 uppercase tracking-widest leading-none">SALE</span>
-                                <input type="number" min="0" value={outCounts[denom] || ''} onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-full bg-rose-50/30 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all", (outCounts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-700" : "border-rose-100 focus:border-rose-300 text-rose-600")} />
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[6px] font-black text-rose-500 uppercase tracking-tighter">SALE</span>
+                                    <input type="number" min="0" value={outCounts[denom] || ''} onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-full bg-rose-50/50 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all", (outCounts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-700 shadow-inner" : "border-rose-100 focus:border-rose-300 text-rose-600")} />
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
-            <div className="p-3 bg-white border-t gap-2.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0 space-y-3">
-                <div className="flex items-center justify-between px-6 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
-                    <div className="text-center"><span className="block text-[7px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Total Entra</span><span className="text-lg font-black text-emerald-800">{totalIn.toFixed(2)}€</span></div>
-                    <div className={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm", isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700")}>{isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}</div>
-                    <div className="text-center"><span className="block text-[7px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Total Sale</span><span className="text-lg font-black text-rose-800">{totalOut.toFixed(2)}€</span></div>
+            <div className="p-3 bg-white border-t shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0 space-y-2">
+                <div className="flex items-center justify-between px-6 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                    <div className="text-center"><span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Entra</span><span className="text-lg font-black text-emerald-800 leading-none">{totalIn.toFixed(2)}€</span></div>
+                    <div className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm", isBalanced ? (hasStockIssue ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700")}>{isBalanced ? (hasStockIssue ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}</div>
+                    <div className="text-center"><span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Sale</span><span className="text-lg font-black text-rose-800 leading-none">{totalOut.toFixed(2)}€</span></div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
-                    <button onClick={() => onSubmit(totalIn, inCounts, outCounts as any)} disabled={!isBalanced || Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0))} className={cn("flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0))) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={16} strokeWidth={3} />Confirmar Cambio</button>
+                    <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
+                    <button onClick={() => onSubmit(totalIn, inCounts, outCounts as any)} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={18} strokeWidth={3} />Confirmar Cambio</button>
                 </div>
             </div>
         </div>
@@ -480,7 +481,7 @@ export default function AdminDashboardView() {
             </div >
             {cashModalMode !== 'none' && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
-                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", cashModalMode === 'swap' ? "max-w-4xl" : "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                         {cashModalMode === 'menu' && (
                             <>
                                 <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>

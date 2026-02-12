@@ -531,7 +531,7 @@ export default function StaffDashboardView() {
                             <h3 className="font-black text-gray-800 flex items-center gap-2 text-[10px] lg:text-sm uppercase tracking-wider">
                                 <CalendarDays size={18} className="text-purple-500 shrink-0" /> <span className="truncate">Horarios</span>
                             </h3>
-                            <Link href="/staff/schedule" className="text-[9px] lg:text-xs font-black text-purple-600 hover:underline uppercase tracking-widest bg-purple-50 px-2 lg:px-3 py-1 rounded-full shrink-0">Ver más</Link>
+                            <Link href="/staff/schedule" className="text-[9px] lg:text-xs font-black text-purple-600 hover:underline uppercase tracking-widest px-2 lg:px-3 py-1 rounded-full shrink-0">Ver más</Link>
                         </div>
                         <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
                             {nextShifts.length === 0 ? (
@@ -540,7 +540,7 @@ export default function StaffDashboardView() {
                                 </div>
                             ) : (
                                 nextShifts.slice(0, 2).map((shift, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-gray-50/50 rounded-2xl border border-gray-100 group-hover/card:border-purple-200 transition-colors group">
+                                    <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group">
                                         <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
                                             <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
                                             <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
@@ -609,7 +609,7 @@ export default function StaffDashboardView() {
 
             {activeMenu && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all max-h-[85vh] flex flex-col`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-xs')} rounded-[2rem] p-6 shadow-2xl relative transition-all max-h-[85vh] flex flex-col`} onClick={(e) => e.stopPropagation()}>
                         {infoSubMenu && (
                             <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
                                 <ArrowLeft size={16} />
@@ -729,42 +729,42 @@ export default function StaffDashboardView() {
                 };
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={() => setShowSwapModal(false)}>
-                        <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-                            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                        <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-6 py-2 flex justify-between items-center text-white shrink-0">
                                 <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p></div>
                                 <button onClick={() => setShowSwapModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
                             </div>
-                            <div className="flex-1 overflow-y-auto bg-gray-50 p-1.5 no-scrollbar">
-                                <div className="grid grid-cols-1 gap-1">
+                            <div className="flex-1 overflow-y-auto bg-gray-50/50 p-2 no-scrollbar">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                     {DENOMINATIONS.map(denom => (
-                                        <div key={denom} className="grid grid-cols-[80px_1fr_1fr] items-center gap-1.5 p-1.5 bg-white rounded-xl border border-gray-100">
-                                            <div className="flex flex-col items-center justify-center gap-0.5">
-                                                <div className={cn("flex items-center justify-center transition-transform hover:scale-110", denom >= 5 ? "h-8" : "h-6")}>
-                                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={60} height={60} className="h-full w-auto object-contain drop-shadow-md" />
+                                        <div key={denom} className="bg-white rounded-2xl border border-gray-100 p-2 flex flex-col items-center gap-1.5 shadow-sm">
+                                            <div className="h-10 md:h-12 flex items-center justify-center transition-transform hover:scale-105">
+                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={80} height={80} className="h-full w-auto object-contain drop-shadow-md" />
+                                            </div>
+                                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
+                                            <div className="grid grid-cols-2 gap-1 w-full mt-0.5">
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="text-[6px] font-black text-emerald-500 uppercase tracking-tighter">ENTRA</span>
+                                                    <input type="number" min="0" value={swapInCounts[denom] || ''} onChange={(e) => setSwapInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-emerald-50/50 border border-emerald-100 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
                                                 </div>
-                                                <span className="font-black text-gray-500 text-[8px] uppercase tracking-widest">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest leading-none">ENTRA</span>
-                                                <input type="number" min="0" value={swapInCounts[denom] || ''} onChange={(e) => setSwapInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
-                                            </div>
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="text-[7px] font-black text-rose-400 uppercase tracking-widest leading-none">SALE</span>
-                                                <input type="number" min="0" value={swapOutCounts[denom] || ''} onChange={(e) => setSwapOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-full bg-rose-50/30 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all", (swapOutCounts[denom] || 0) > (changeBoxInventoryMap[denom] || 0) ? "border-rose-400 text-rose-700" : "border-rose-100 focus:border-rose-300 text-rose-600")} />
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="text-[6px] font-black text-rose-500 uppercase tracking-tighter">SALE</span>
+                                                    <input type="number" min="0" value={swapOutCounts[denom] || ''} onChange={(e) => setSwapOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-full bg-rose-50/50 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all", (swapOutCounts[denom] || 0) > (changeBoxInventoryMap[denom] || 0) ? "border-rose-400 text-rose-700 shadow-inner" : "border-rose-100 focus:border-rose-300 text-rose-600")} />
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            <div className="p-3 bg-white border-t gap-2.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0 space-y-3">
-                                <div className="flex items-center justify-between px-6 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
-                                    <div className="text-center"><span className="block text-[7px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Total Entra</span><span className="text-lg font-black text-emerald-800">{totalIn.toFixed(2)}€</span></div>
-                                    <div className={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm", isBalanced ? (hasStockIssue ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700")}>{isBalanced ? (hasStockIssue ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}</div>
-                                    <div className="text-center"><span className="block text-[7px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Total Sale</span><span className="text-lg font-black text-rose-800">{totalOut.toFixed(2)}€</span></div>
+                            <div className="p-3 bg-white border-t shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0 space-y-2">
+                                <div className="flex items-center justify-between px-6 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                                    <div className="text-center"><span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Entra</span><span className="text-lg font-black text-emerald-800 leading-none">{totalIn.toFixed(2)}€</span></div>
+                                    <div className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm", isBalanced ? (hasStockIssue ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700")}>{isBalanced ? (hasStockIssue ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}</div>
+                                    <div className="text-center"><span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Sale</span><span className="text-lg font-black text-rose-800 leading-none">{totalOut.toFixed(2)}€</span></div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setShowSwapModal(false)} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
-                                    <button onClick={handleSwapSubmit} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={16} strokeWidth={3} />Confirmar Cambio</button>
+                                    <button onClick={() => setShowSwapModal(false)} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
+                                    <button onClick={handleSwapSubmit} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={18} strokeWidth={3} />Confirmar Cambio</button>
                                 </div>
                             </div>
                         </div>

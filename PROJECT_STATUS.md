@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-07
+**Última actualización:** 2026-02-12
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -100,6 +100,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento UI Staff (Fase 4)**: Unificación estética del calendario de Registros con Historial (mini-bandas de gradiente).
 - [x] **Acceso Directo "Cambiar"**: Vinculación directa del icono de cambio al modal de swap de "Cambio 1" en el panel de personal.
 - [x] **Rediseño "Gestión Stock" Staff**: Modal de pedidos rediseñado con iconografía PNG estilo Admin e integración de sección "Proveedores".
+- [x] **Rediseño Modales de Cambio**: Transformación a cuadrícula de 4 columnas con imágenes de moneda agrandadas y inputs "ENTRA/SALE" en paralelo para eliminar el desplazamiento vertical.
+- [x] **Refinamiento Estético Staff (Floating UI)**: Eliminación de fondos en tarjetas de turnos en el dashboard de personal para lograr un efecto de flotado directo sobre el fondo blanco.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
