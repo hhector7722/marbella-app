@@ -348,15 +348,6 @@ export default function DashboardPage() {
     const [boxes, setBoxes] = useState<any[]>([]);
     const [boxMovements, setBoxMovements] = useState<any[]>([]);
     const [overtimeData, setOvertimeData] = useState<any[]>([]);
-    const [userRole, setUserRole] = useState<string | null>(null);
-
-    // NAVEGACIÓN POR GESTOS (Swipe a la derecha para volver a Staff)
-    useSwipeNavigation({
-        onSwipeRight: () => {
-            if (userRole === 'manager') router.push('/staff/dashboard');
-        }
-    });
-
     // Estados de UI
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -386,6 +377,7 @@ export default function DashboardPage() {
             }
         }
     });
+
 
     const toggleWeek = (weekId: string) => {
         setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
@@ -507,11 +499,8 @@ export default function DashboardPage() {
                 });
             }
 
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-                if (profile) setUserRole(profile.role);
-            }
+            // User role is already fetched at the start of fetchData
+
 
             const { data: allBoxes } = await supabase.from('cash_boxes').select('*').order('name');
             if (allBoxes) {
