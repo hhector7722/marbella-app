@@ -13,7 +13,7 @@ export default function BottomNavStaff() {
     const router = useRouter();
     const supabase = createClient();
 
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [userData, setUserData] = useState<{ name: string; role: string; avatar_url: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     if (pathname === '/login') return null;
@@ -24,10 +24,16 @@ export default function BottomNavStaff() {
             if (user) {
                 const { data } = await supabase
                     .from('profiles')
-                    .select('avatar_url')
+                    .select('first_name, role, avatar_url')
                     .eq('id', user.id)
                     .single();
-                if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+                if (data) {
+                    setUserData({
+                        name: data.first_name || 'Empleado',
+                        role: data.role || 'staff',
+                        avatar_url: data.avatar_url || null
+                    });
+                }
             }
         }
         loadProfile();
@@ -57,17 +63,19 @@ export default function BottomNavStaff() {
             : "text-blue-200 hover:text-white";
     };
 
+    const isAdmin = userData?.role === 'manager' || userData?.role === 'supervisor';
+
     const staffItems: { name: string; href: string; icon: any }[] = [
         { name: 'Horarios', href: '/staff/schedule', icon: Calendar },
         { name: 'Asistencia', href: '/staff/history', icon: Clock },
-        { name: 'Inicio', href: '/staff/dashboard', icon: Home },
+        { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
         { name: 'Perfil', href: '/profile', icon: User },
         {
-            name: 'Configuración', href: '/staff/account', icon: () => (
+            name: 'Cuenta', href: '/profile', icon: () => (
                 <div className="w-6 h-6 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
-                    {avatarUrl ? (
+                    {userData?.avatar_url ? (
                         <Image
-                            src={avatarUrl}
+                            src={userData.avatar_url}
                             alt="Me"
                             width={24}
                             height={24}
@@ -105,9 +113,9 @@ export default function BottomNavStaff() {
                         >
                             {typeof item.icon === 'function' ? (
                                 <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
-                                    {avatarUrl ? (
+                                    {userData?.avatar_url ? (
                                         <Image
-                                            src={avatarUrl}
+                                            src={userData.avatar_url}
                                             alt="Me"
                                             width={32}
                                             height={32}

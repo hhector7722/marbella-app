@@ -9,11 +9,6 @@ export default function BottomNavWrapper() {
 
     if (pathname === '/login') return null;
 
-    if (pathname.startsWith('/staff')) {
-        return <BottomNavStaff />;
-    }
-
-    // Por defecto mostramos Admin para dashboard, recipes, ingredients, profile, etc.
-    // Esto evita que se mezclen iconos.
-    return <BottomNavAdmin />;
+    // Usamos el menú de Staff para todos (Staff y Admin)
+    return <BottomNavStaff />;
 }

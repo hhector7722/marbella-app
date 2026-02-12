@@ -95,6 +95,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Actualización Estética Producto**: Sustitución de iconos Lucide por imágenes PNG premium en el modal de gestión de artículos del dashboard administrativo.
 - [x] **Mejora UX Staff Dashboard**: Contenedor de "Horarios" ahora es clicable íntegramente para un acceso más ágil a la agenda.
 - [x] **Refactorización Recetas (Gallery View)**: Unificación estética de `/recipes` con el estándar de alta densidad, fondo azul Marbella y mantenimiento de lógica de color por food cost.
+- [x] **Unificación de Navegación**: Implementación de una única barra de menú (inferior móvil/lateral escritorio) basada en la versión de personal para todos los roles, con redirección inteligente del botón Inicio.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
