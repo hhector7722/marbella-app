@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
 import { differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
@@ -369,7 +370,7 @@ export default function StaffDashboard() {
     const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
 
     // --- COMPONENTES VISUALES ---
-    const IOSIconBoxed = ({ icon: Icon, color, label, onClick }: { icon: any, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
+    const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
             onClick={onClick}
             className={cn(
@@ -379,11 +380,20 @@ export default function StaffDashboard() {
                 "min-h-[88px]"
             )}
         >
-            <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm",
-                color
-            )}>
-                <Icon size={24} fill="currentColor" strokeWidth={2.5} />
+            <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
+                {img ? (
+                    <Image
+                        src={img}
+                        alt={typeof label === 'string' ? label : 'Icon'}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-contain transition-transform group-hover:scale-110"
+                    />
+                ) : (
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
+                        <Icon size={24} fill="currentColor" strokeWidth={2.5} />
+                    </div>
+                )}
             </div>
             <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">{label}</span>
         </button>
@@ -567,31 +577,22 @@ export default function StaffDashboard() {
 
                     {/* FILA ÚNICA DE ICONOS ACCESO ACCESIBLES */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <IOSIconBoxed icon={PlayIcon} color="bg-red-600" label="Guía" onClick={() => toast.info("Abriendo guía...")} />
-
-                        {/* --- BOTÓN RECETAS --- */}
-                        <button
-                            onClick={() => router.push('/recipes')}
-                            className="flex flex-col items-center justify-center gap-1.5 w-full bg-white rounded-2xl shadow-sm border border-zinc-100 active:scale-95 transition-all p-2 group hover:bg-gray-50 min-h-[88px]"
-                        >
-                            <ChefHat
-                                size={24}
-                                fill="currentColor"
-                                className="text-black transition-transform group-hover:scale-110 drop-shadow-sm"
-                                strokeWidth={1.5}
-                            />
-                            <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">
-                                Recetas
-                            </span>
-                        </button>
+                        <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={() => toast.info("Abriendo guía...")} />
 
                         <IOSIconBoxed
-                            icon={Info}
+                            img="/icons/recipes.png"
+                            color="bg-white"
+                            label="Recetas"
+                            onClick={() => router.push('/recipes')}
+                        />
+
+                        <IOSIconBoxed
+                            img="/icons/information.png"
                             color="bg-blue-500"
                             label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
                             onClick={() => setActiveMenu('info')}
                         />
-                        <IOSIconBoxed icon={Package} color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                        <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
 
                         {/* --- BOTÓN CIERRE (SUPERVISORES) --- */}
                         {userRole === 'supervisor' && (

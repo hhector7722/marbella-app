@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from 'next/navigation';
 import {
     Play, Square, CheckCircle2, CalendarDays, AlertCircle, MapPin, ShieldAlert,
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
@@ -51,6 +52,7 @@ interface ShiftMock {
 
 export default function StaffDashboard() {
     const supabase = createClient();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
 
@@ -328,25 +330,32 @@ export default function StaffDashboard() {
         );
     };
 
-    const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick, fillWhite = false }: { icon?: any, img?: string, color: string, label: string, onClick?: () => void, fillWhite?: boolean }) => (
-        <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 w-full h-full active:scale-95 transition-transform p-2 group">
+    const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
+        <button
+            onClick={onClick}
+            className={cn(
+                "flex flex-col items-center justify-center gap-1.5 w-full h-full",
+                "bg-white rounded-2xl shadow-sm border border-zinc-100",
+                "active:scale-95 transition-all duration-150 p-2 group",
+                "min-h-[88px]"
+            )}
+        >
             <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
                 {img ? (
                     <Image
                         src={img}
-                        alt={label}
+                        alt={typeof label === 'string' ? label : 'Icon'}
                         width={48}
                         height={48}
-                        priority={true}
                         className="w-full h-full object-contain transition-transform group-hover:scale-110"
                     />
                 ) : (
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
-                        <Icon size={20} strokeWidth={fillWhite ? 0 : 2.5} fill={fillWhite ? "white" : "none"} />
+                        <Icon size={24} fill="currentColor" strokeWidth={2.5} />
                     </div>
                 )}
             </div>
-            <span className="text-[9px] font-bold text-gray-600 text-center leading-tight group-hover:text-gray-900">{label}</span>
+            <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">{label}</span>
         </button>
     );
 
@@ -515,20 +524,26 @@ export default function StaffDashboard() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
-                            <IOSIconBoxed img="/icons/guide.png" color="bg-red-600" label="Guia" onClick={() => toast.info("Abriendo videos...")} />
+                        <div className="grid grid-cols-2 gap-2 flex-1">
+                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={() => toast.info("Abriendo guía...")} />
+                            <IOSIconBoxed img="/icons/recipes.png" color="bg-zinc-800" label="Receptes" onClick={() => router.push('/recipes')} />
+                        </div>
 
-                            <FloatingIconSolid img="/icons/recipes.png" colorClass="text-red-500" label="Recetas" href="/recipes" />
-
-                            <FloatingIconSolid img="/icons/information.png" colorClass="text-blue-500" label="Información" onClick={() => setActiveMenu('info')} />
-                            <FloatingIconSolid img="/icons/suppliers.png" colorClass="text-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                        <div className="grid grid-cols-2 gap-2 flex-1">
+                            <IOSIconBoxed
+                                img="/icons/information.png"
+                                color="bg-blue-500"
+                                label={<><span className="hidden sm:inline">Informació</span><span className="inline sm:hidden">Info</span></>}
+                                onClick={() => setActiveMenu('info')}
+                            />
+                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Comandes" onClick={() => setActiveMenu('pedidos')} />
                         </div>
                     </div>
-
                 </div>
+
             </div>
 
-            {/* MODALES (Mismo código anterior...) */}
+            {/* MODALES */}
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
@@ -574,7 +589,6 @@ export default function StaffDashboard() {
                         </h3>
 
                         <div className="space-y-3">
-                            {/* ... Contenido de menús ... */}
                             {activeMenu === 'info' && !infoSubMenu && (
                                 <>
                                     <button onClick={() => setInfoSubMenu('contactos')} className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl flex items-center gap-3 transition-colors group">

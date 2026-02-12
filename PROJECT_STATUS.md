@@ -81,6 +81,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Agrupación de Semanas ISO**: Corrección del sistema de agrupación de semanas en el dashboard de extras para utilizar el estándar ISO (Lunes a Domingo).
 - [x] **Propagación y Recálculo V3**: Implementación de lógica de servidor para propagar balances semanales, respetando contratos históricos y corrigiendo el balance de Managers (Extras-only). Lógica asimétrica de deuda indestructible.
 - [x] **Geofencing (GPS) Restricción:** Implementación de validación por radio de 50m para fichajes de staff y auditoría silenciosa para managers.
+- [x] **Refinamiento Visual Staff:** Actualización de iconos a versiones PNG premium y cambio de etiqueta "Guía" por "Cambiar".
 - [x] **Optimización UI Móvil (Caja/Personal):** Compactación de modales de tesorería y registros para mejor accesibilidad táctil sin sacrificar legibilidad.
 
 
