@@ -1174,32 +1174,44 @@ export default function DashboardPage() {
 
                             <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                                 <button onClick={() => router.push('/recipes')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-red-50/30 transition-all active:scale-95">
-                                    <ChefHat size={32} fill="currentColor" className="text-red-500 group-hover:scale-110 transition-all" />
+                                    <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                        <Image src="/icons/recipes.png" alt="Recetas" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
                                     <span className="font-black text-sm text-gray-700">Recetas</span>
                                 </button>
 
                                 <button onClick={() => router.push('/ingredients')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-orange-50/30 transition-all active:scale-95">
-                                    <Utensils size={32} fill="currentColor" className="text-orange-500 group-hover:scale-110 transition-all" />
+                                    <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                        <Image src="/icons/ingrediente.png" alt="Ingredientes" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
                                     <span className="font-black text-sm text-gray-700">Ingredientes</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Pedidos próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-emerald-50/30 transition-all active:scale-95">
-                                    <ShoppingCart size={32} fill="currentColor" className="text-emerald-500 group-hover:scale-110 transition-all" />
+                                    <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                        <Image src="/icons/shipment.png" alt="Pedidos" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
                                     <span className="font-black text-sm text-gray-700">Pedidos</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Inventario próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-purple-50/30 transition-all active:scale-95">
-                                    <ClipboardList size={32} fill="currentColor" className="text-purple-500 group-hover:scale-110 transition-all" />
+                                    <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                        <Image src="/icons/inventory.png" alt="Inventario" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
                                     <span className="font-black text-sm text-gray-700">Inventario</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Stock próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-blue-50/30 transition-all active:scale-95">
-                                    <Package size={32} fill="currentColor" className="text-blue-500 group-hover:scale-110 transition-all" />
+                                    <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                        <Image src="/icons/productes.png" alt="Stock" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
                                     <span className="font-black text-sm text-gray-700">Stock</span>
                                 </button>
 
                                 <button onClick={() => toast.info('Proveedores próximamente')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-zinc-100/30 transition-all active:scale-95">
-                                    <Truck size={32} fill="currentColor" className="text-zinc-500 group-hover:scale-110 transition-all" />
+                                    <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                        <Image src="/icons/suplier.png" alt="Proveedores" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
                                     <span className="font-black text-sm text-gray-700">Proveedores</span>
                                 </button>
                             </div>

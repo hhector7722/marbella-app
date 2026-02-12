@@ -562,7 +562,10 @@ export default function StaffDashboard() {
                 {/* COLUMNA DERECHA (ANCHO 1) - Horarios e Iconos */}
                 <div className="lg:col-span-1 grid grid-cols-2 lg:block space-y-0 lg:space-y-6 gap-4">
                     {/* TARJETA DE HORARIOS (Nivel 1) */}
-                    <div className="bg-white rounded-[2rem] p-4 lg:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px]">
+                    <div
+                        onClick={() => router.push('/staff/schedule')}
+                        className="bg-white rounded-[2rem] p-4 lg:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px] cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                    >
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-black text-gray-800 flex items-center gap-2 text-[10px] lg:text-sm uppercase tracking-wider">
                                 <CalendarDays size={18} className="text-purple-500 shrink-0" /> <span className="truncate">Horarios</span>
@@ -576,7 +579,7 @@ export default function StaffDashboard() {
                                 </div>
                             ) : (
                                 nextShifts.slice(0, 2).map((shift, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:border-purple-200 transition-colors group">
+                                    <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-gray-50/50 rounded-2xl border border-gray-100 group-hover/card:border-purple-200 transition-colors group">
                                         <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
                                             <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
                                             <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>

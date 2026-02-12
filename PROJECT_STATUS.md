@@ -92,6 +92,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 ## 📅 PENDIENTE
 - [x] **Refinamiento Estético Horarios V4**: Unificación de la cabecera de horarios con el estándar "Vista Marbella Detail" (Azul Sólido) y reestructuración del editor (Totales al final, botón añadir verde premium).
 - [x] **Refinamiento Barra de Edición**: Implementación de tiradores independientes de entrada/salida (48px targets), eliminación de movimiento en bloque en edición y diseño flotante ultra-compacto integrado con color de totales.
+- [x] **Actualización Estética Producto**: Sustitución de iconos Lucide por imágenes PNG premium en el modal de gestión de artículos del dashboard administrativo.
+- [x] **Mejora UX Staff Dashboard**: Contenedor de "Horarios" ahora es clicable íntegramente para un acceso más ágil a la agenda.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

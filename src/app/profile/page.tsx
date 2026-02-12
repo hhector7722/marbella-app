@@ -238,15 +238,6 @@ function ProfileContent() {
                         </div>
                     </div>
 
-                    {/* FOOTER ACCIONES */}
-                    <div className="p-6 bg-gray-50/80 border-t border-gray-100 backdrop-blur-md">
-                        <button
-                            onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login'; }}
-                            className="w-full py-5 text-rose-500 font-black text-xs uppercase tracking-[0.3em] bg-white border-2 border-rose-50 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center gap-3 active:scale-95"
-                        >
-                            Cerrar Sesión Corporativa
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
