@@ -234,7 +234,8 @@ export default function StaffDashboard() {
 
             const daysStructure: DailyLog[] = [];
             let totalWeekHours = 0;
-            const DAILY_LIMIT = 8;
+            let currentAccumulated = 0;
+            const effContract = (isManager || isFixedSalary) ? 0 : contractHours;
 
             for (let i = 0; i < 7; i++) {
                 const currentDay = new Date(monday); currentDay.setDate(monday.getDate() + i);
@@ -252,9 +253,14 @@ export default function StaffDashboard() {
 
                     // APLICAR REDONDEO 20/40 TAMBIÉN AL MOSTRAR
                     hours = dayLog.total_hours ? roundHoursValue(dayLog.total_hours) : 0;
-
                     totalWeekHours += hours;
-                    if (hours > DAILY_LIMIT) dayExtras = hours - DAILY_LIMIT;
+
+                    // NUEVA LÓGICA DE EXTRAS ACUMULADAS
+                    const newAccumulated = currentAccumulated + hours;
+                    if (newAccumulated > effContract) {
+                        dayExtras = (currentAccumulated >= effContract) ? hours : (newAccumulated - effContract);
+                    }
+                    currentAccumulated = newAccumulated;
                 }
                 daysStructure.push({
                     date: currentDay, dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i], dayNumber: currentDay.getDate(),

@@ -155,6 +155,8 @@ export default function HistoryPage() {
 
                 const weekDays: DailyLog[] = [];
                 let weekTotalHours = 0;
+                let currentAccumulated = 0;
+                const effContract = (isManager || isFixedSalary) ? 0 : contractHours;
                 let hasFutureDays = true;
 
                 for (let i = 0; i < 7; i++) {
@@ -166,19 +168,24 @@ export default function HistoryPage() {
                         return ld.getDate() === d.getDate() && ld.getMonth() === d.getMonth();
                     });
 
-                    let h = 0, cin = '', cout = '';
+                    let h = 0, cin = '', cout = '', dayExtras = 0;
                     if (log) {
                         const inD = new Date(log.clock_in); cin = inD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                         if (log.clock_out) { const outD = new Date(log.clock_out); cout = outD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
                         h = log.total_hours ? roundHoursValue(log.total_hours) : 0;
                         weekTotalHours += h;
-                    }
 
-                    const dailyExtras = Math.max(0, h - 8);
+                        // NUEVA LÓGICA DE EXTRAS ACUMULADAS
+                        const newAccumulated = currentAccumulated + h;
+                        if (newAccumulated > effContract) {
+                            dayExtras = (currentAccumulated >= effContract) ? h : (newAccumulated - effContract);
+                        }
+                        currentAccumulated = newAccumulated;
+                    }
 
                     weekDays.push({
                         date: d, dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i], dayNumber: d.getDate(),
-                        hasLog: !!log, clockIn: cin, clockOut: cout, totalHours: h, extraHours: dailyExtras, isToday: false
+                        hasLog: !!log, clockIn: cin, clockOut: cout, totalHours: h, extraHours: dayExtras, isToday: false
                     });
                 }
 
