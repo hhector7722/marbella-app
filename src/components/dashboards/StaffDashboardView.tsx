@@ -406,7 +406,7 @@ export default function StaffDashboardView() {
                                     {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                 </span>
                             </div>
-                            <Link href="/staff/history" className="text-xs font-bold text-[#36606F] flex items-center gap-1 hover:underline">
+                            <Link href="/staff/history" className="text-xs font-bold text-[#5B8FB9] flex items-center gap-1 hover:underline">
                                 Histórico <ArrowRight size={12} />
                             </Link>
                         </div>
@@ -587,7 +587,7 @@ export default function StaffDashboardView() {
                         {userRole === 'supervisor' && (
                             <IOSIconBoxed
                                 icon={Calculator}
-                                color="bg-[#36606F]"
+                                color="bg-[#5B8FB9]"
                                 label="Cierre"
                                 onClick={() => setIsClosingModalOpen(true)}
                             />
@@ -628,16 +628,16 @@ export default function StaffDashboardView() {
                                 <div className="p-8 space-y-2 overflow-y-auto">
                                     {!infoSubMenu && (
                                         <>
-                                            <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#36606F]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#36606F]"><Phone size={24} strokeWidth={2.5} /></div>
+                                            <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Phone size={24} strokeWidth={2.5} /></div>
                                                 <span className="font-bold text-base tracking-tight text-left flex-1">Contactos</span>
                                             </button>
-                                            <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#36606F]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#36606F]"><FileText size={24} strokeWidth={2.5} /></div>
+                                            <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><FileText size={24} strokeWidth={2.5} /></div>
                                                 <span className="font-bold text-base tracking-tight text-left flex-1">Convenio</span>
                                             </button>
-                                            <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#36606F]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#36606F]"><Scale size={24} strokeWidth={2.5} /></div>
+                                            <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Scale size={24} strokeWidth={2.5} /></div>
                                                 <span className="font-bold text-base tracking-tight text-left flex-1">Código de Conducta</span>
                                             </button>
                                         </>
@@ -673,7 +673,7 @@ export default function StaffDashboardView() {
                         )}
                         {activeMenu === 'pedidos' && (
                             <>
-                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
                                     <div className="flex flex-col">
                                         <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
                                         <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
@@ -781,7 +781,7 @@ export default function StaffDashboardView() {
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={() => setShowSwapModal(false)}>
                         <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
+                            <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white shrink-0">
                                 <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p></div>
                                 <button onClick={() => setShowSwapModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
                             </div>
@@ -816,7 +816,7 @@ export default function StaffDashboardView() {
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => setShowSwapModal(false)} className="flex-1 py-3.5 text-gray-500 font-black uppercase tracking-widest text-xs hover:bg-gray-200 rounded-xl transition-all active:scale-95 bg-gray-100">Cancelar</button>
-                                    <button onClick={handleSwapSubmit} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3.5 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={18} strokeWidth={3} />Confirmar Cambio</button>
+                                    <button onClick={handleSwapSubmit} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3.5 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#5B8FB9] shadow-[#5B8FB9]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={18} strokeWidth={3} />Confirmar Cambio</button>
                                 </div>
                             </div>
                         </div>

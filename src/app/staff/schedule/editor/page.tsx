@@ -374,7 +374,7 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="p-8 text-center text-white font-bold">Cargando editor...</div>;
 
     return (
-        <div className="min-h-screen bg-[#36606F] flex flex-col p-2 md:p-4 gap-2">
+        <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-4 gap-2">
 
             {/* CABECERA ULTRA-COMPACTA */}
             <div className="flex justify-center w-full">
@@ -470,8 +470,8 @@ export default function ScheduleEditorPage() {
                         ))}
 
                         {/* FILA DE TOTALES - DESPUÉS DE LOS TRABAJADORES */}
-                        <div className="flex bg-[#36606F] border-b border-[#36606F]/50">
-                            <div className="w-20 md:w-32 p-1 font-black text-white text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-[#36606F]/50">
+                        <div className="flex bg-[#5B8FB9] border-b border-[#5B8FB9]/50">
+                            <div className="w-20 md:w-32 p-1 font-black text-white text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-[#5B8FB9]/50">
                                 TOT
                             </div>
                             <div className="flex-1 relative h-6 flex">
@@ -484,7 +484,7 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="w-10 md:w-12 shrink-0 border-l border-[#36606F]/50" />
+                            <div className="w-10 md:w-12 shrink-0 border-l border-[#5B8FB9]/50" />
                         </div>
 
                         {/* Fila Añadir Trabajador - Relleno verde font blanco */}
@@ -510,7 +510,7 @@ export default function ScheduleEditorPage() {
                                 shift={shifts[editingIndex]}
                                 onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
                                 allowMove={false}
-                                barClass="bg-[#36606F] border border-white/10 shadow-lg"
+                                barClass="bg-[#5B8FB9] border border-white/10 shadow-lg"
                             />
                         </div>
                         <button
@@ -528,7 +528,7 @@ export default function ScheduleEditorPage() {
             {showCalendarModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
                             <div className="flex flex-col">
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Calendario</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Fecha</p>
@@ -591,7 +591,7 @@ export default function ScheduleEditorPage() {
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowAddModal(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
                             <div className="flex flex-col">
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Añadir Staff</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Plantilla Marbella</p>

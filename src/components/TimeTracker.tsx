@@ -130,7 +130,7 @@ export default function TimeTracker() {
     if (loading) return <div className="h-48 bg-white/10 animate-pulse rounded-[2rem]"></div>;
 
     return (
-        <div className={`rounded-[2.5rem] p-8 shadow-xl transition-all relative overflow-hidden flex flex-col items-center justify-center text-center gap-4 border-4 ${currentLog ? 'bg-[#36606F] border-[#36606F] text-white' : 'bg-white border-white text-gray-800'}`}>
+        <div className={`rounded-[2.5rem] p-8 shadow-xl transition-all relative overflow-hidden flex flex-col items-center justify-center text-center gap-4 border-4 ${currentLog ? 'bg-[#5B8FB9] border-[#5B8FB9] text-white' : 'bg-white border-white text-gray-800'}`}>
 
             {/* Indicador de Estado */}
             <div className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${currentLog ? 'bg-white/20 text-blue-100' : 'bg-gray-100 text-gray-400'}`}>

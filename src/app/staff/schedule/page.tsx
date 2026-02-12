@@ -192,13 +192,13 @@ export default function StaffSchedulePage() {
     if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
 
     return (
-        <div className="min-h-screen bg-[#36606F] pb-10 pt-4">
+        <div className="min-h-screen bg-[#5B8FB9] pb-10 pt-4">
             {/* CONTENEDOR TIPO TARJETA */}
             <div className="max-w-2xl mx-auto px-4 md:px-0">
                 <div className="bg-white rounded-[2rem] shadow-2xl border border-white/20 overflow-hidden min-h-[calc(100vh-4rem)]">
 
                     {/* HEADER FIJO DENTRO DE LA TARJETA */}
-                    <div className="bg-[#36606F] sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
+                    <div className="bg-[#5B8FB9] sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <Link href="/staff/dashboard" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
@@ -224,7 +224,7 @@ export default function StaffSchedulePage() {
                                     {/* Botón + (abre calendario) */}
                                     <button
                                         onClick={() => setShowCalendarModal(true)}
-                                        className="bg-white hover:bg-white/10 text-[#36606F] hover:text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
+                                        className="bg-white hover:bg-white/10 text-[#5B8FB9] hover:text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
                                     >
                                         <Plus size={20} strokeWidth={3} fill="currentColor" />
                                     </button>
@@ -236,7 +236,7 @@ export default function StaffSchedulePage() {
                         <div className="grid grid-cols-2 p-1.5 bg-black/10 rounded-2xl">
                             <button
                                 onClick={() => setActiveTab('upcoming')}
-                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-[#36606F] shadow-sm' : 'text-white/60 font-medium'}`}
+                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-[#5B8FB9] shadow-sm' : 'text-white/60 font-medium'}`}
                             >
                                 PRÓXIMOS
                             </button>

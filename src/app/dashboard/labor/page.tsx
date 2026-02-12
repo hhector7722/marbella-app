@@ -242,12 +242,12 @@ export default function LaborHistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
                     {/* CABECERA DE LA TARJETA (AZUL) */}
-                    <div className="bg-[#36606F] px-8 py-3 flex items-center gap-3">
+                    <div className="bg-[#5B8FB9] px-8 py-3 flex items-center gap-3">
                         <TrendingUp className="text-white" size={20} />
                         <h1 className="text-base font-black text-white uppercase tracking-wider">
                             Coste Mano de Obra
@@ -262,7 +262,7 @@ export default function LaborHistoryPage() {
                                     <span className="text-[9px] font-black text-gray-400 uppercase">Día:</span>
                                     <button
                                         onClick={() => setShowCalendar('single')}
-                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'single' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'single' ? 'bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
                                     >
                                         <Calendar size={12} />
                                         {new Date(selectedDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
@@ -275,7 +275,7 @@ export default function LaborHistoryPage() {
                                     <span className="text-[9px] font-black text-gray-400 uppercase">Rango:</span>
                                     <button
                                         onClick={() => setShowCalendar('range')}
-                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'range' ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'range' ? 'bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
                                     >
                                         <Calendar size={12} />
                                         {rangeStart && rangeEnd
@@ -326,7 +326,7 @@ export default function LaborHistoryPage() {
                                         return (
                                             <div key={idx} className="bg-gray-50/50 hover:bg-white p-4 rounded-2xl border border-gray-100 grid grid-cols-12 items-center transition-all hover:shadow-md group">
                                                 <div className="col-span-4 flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 group-hover:text-[#36606F] transition-colors">
+                                                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 group-hover:text-[#5B8FB9] transition-colors">
                                                         <Calendar size={14} />
                                                     </div>
                                                     <div className="flex flex-col leading-tight">
@@ -390,7 +390,7 @@ export default function LaborHistoryPage() {
                                                 key={i}
                                                 onClick={() => handleDateSelect(day)}
                                                 className={`aspect-square flex items-center justify-center rounded-xl text-xs font-black transition-all
-                                                ${isSelected ? 'bg-[#36606F] text-white shadow-md' : isInRange ? 'bg-blue-50 text-[#36606F]' : 'hover:bg-gray-100 text-gray-700'}
+                                                ${isSelected ? 'bg-[#5B8FB9] text-white shadow-md' : isInRange ? 'bg-blue-50 text-[#5B8FB9]' : 'hover:bg-gray-100 text-gray-700'}
                                             `}
                                             >
                                                 {day}

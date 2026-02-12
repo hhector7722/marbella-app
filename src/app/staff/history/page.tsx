@@ -559,7 +559,7 @@ export default function HistoryPage() {
                                         <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                             <div className="grid grid-cols-7 border-b border-gray-100">
                                                 {week.days.map((day, i) => (
-                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
                                                         <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
                                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                                         </div>
@@ -722,7 +722,7 @@ export default function HistoryPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                        <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white">
                             <div className="flex flex-col">
                                 <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">

@@ -268,7 +268,7 @@ export default function RegistrosPage() {
     };
 
     return (
-        <div className="min-h-screen w-full flex flex-col bg-[#36606F] p-4 md:p-8 overflow-hidden text-gray-800">
+        <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-8 overflow-hidden text-gray-800">
             {/* CABECERA NAVEGACIÓN */}
             <div className="mb-6 flex items-center justify-center px-2">
                 <div className="flex items-center gap-4 bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md relative">
@@ -410,7 +410,7 @@ export default function RegistrosPage() {
                     >
 
                         {/* Cabecera con Botones */}
-                        <div className="bg-[#36606F] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
+                        <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
                             <div>
                                 <h3 className="text-lg font-bold leading-tight">Registros</h3>
                                 <p className="text-blue-100 text-xs capitalize opacity-90">{format(selectedDate, 'EEEE, d MMMM', { locale: es })}</p>
@@ -430,7 +430,7 @@ export default function RegistrosPage() {
                                     className={`
                                         flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all
                                         ${hasUnsavedChanges
-                                            ? 'bg-white text-[#36606F] hover:bg-gray-50'
+                                            ? 'bg-white text-[#5B8FB9] hover:bg-gray-50'
                                             : 'bg-white/20 text-white/50 cursor-not-allowed'}
                                     `}
                                 >
@@ -462,7 +462,7 @@ export default function RegistrosPage() {
                                     if (log.is_deleted) return null;
 
                                     return (
-                                        <div key={idx} className="bg-white p-1.5 rounded-xl border border-gray-200 flex items-center gap-1.5 shadow-sm hover:border-[#36606F] transition-all">
+                                        <div key={idx} className="bg-white p-1.5 rounded-xl border border-gray-200 flex items-center gap-1.5 shadow-sm hover:border-[#5B8FB9] transition-all">
                                             <div className="flex-1 min-w-0">
                                                 <select
                                                     value={log.user_id}
@@ -516,7 +516,7 @@ export default function RegistrosPage() {
 
                             <button
                                 onClick={addNewLog}
-                                className="mt-4 w-full py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-xl hover:border-[#36606F] hover:text-[#36606F] hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-sm"
+                                className="mt-4 w-full py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-sm"
                             >
                                 <Plus size={18} /> Añadir Fichaje
                             </button>

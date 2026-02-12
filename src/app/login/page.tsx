@@ -46,7 +46,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#36606F] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
             <Toaster position="top-center" />
 
             {/* Tarjeta Flotante Estilo "La Marbella" */}
@@ -71,7 +71,7 @@ export default function LoginPage() {
                     <div className="space-y-4">
                         {/* Input Email */}
                         <div className="relative group">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#36606F] transition-colors">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#5B8FB9] transition-colors">
                                 <Mail className="w-5 h-5" />
                             </div>
                             <input
@@ -79,14 +79,14 @@ export default function LoginPage() {
                                 placeholder="usuario@lamarbella.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-[#36606F] rounded-2xl outline-none text-gray-700 font-bold placeholder:text-gray-300 transition-all focus:bg-white"
+                                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-[#5B8FB9] rounded-2xl outline-none text-gray-700 font-bold placeholder:text-gray-300 transition-all focus:bg-white"
                                 disabled={loading}
                             />
                         </div>
 
                         {/* Input Password */}
                         <div className="relative group">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#36606F] transition-colors">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#5B8FB9] transition-colors">
                                 <Lock className="w-5 h-5" />
                             </div>
                             <input
@@ -94,7 +94,7 @@ export default function LoginPage() {
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-[#36606F] rounded-2xl outline-none text-gray-700 font-bold placeholder:text-gray-300 transition-all focus:bg-white"
+                                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-[#5B8FB9] rounded-2xl outline-none text-gray-700 font-bold placeholder:text-gray-300 transition-all focus:bg-white"
                                 disabled={loading}
                             />
                         </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-[#36606F] hover:bg-[#2A4D59] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
+                        className="w-full bg-[#5B8FB9] hover:bg-[#2A4D59] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
                     >
                         {loading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />

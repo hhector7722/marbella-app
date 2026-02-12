@@ -167,12 +167,12 @@ export default function HistoryPage() {
         new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 
     return (
-        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
                     {/* Header */}
-                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
+                    <div className="bg-[#5B8FB9] px-8 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Receipt className="text-white" size={20} />
                             <h1 className="text-base font-black text-white uppercase tracking-wider">
@@ -194,7 +194,7 @@ export default function HistoryPage() {
                                         onClick={() => setShowCalendar('single')}
                                         className={cn(
                                             "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5",
-                                            filterMode === 'single' ? "bg-[#36606F] border-[#36606F] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
+                                            filterMode === 'single' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
                                         )}
                                     >
                                         <Calendar size={12} />
@@ -208,7 +208,7 @@ export default function HistoryPage() {
                                         onClick={() => setShowCalendar('range')}
                                         className={cn(
                                             "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5",
-                                            filterMode === 'range' ? "bg-[#36606F] border-[#36606F] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
+                                            filterMode === 'range' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
                                         )}
                                     >
                                         <Calendar size={12} />
@@ -254,7 +254,7 @@ export default function HistoryPage() {
                                             className="bg-gray-50/50 hover:bg-white p-4 rounded-2xl border border-gray-100 flex items-center justify-between transition-all hover:shadow-md group cursor-pointer"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 group-hover:text-[#36606F] transition-all group-hover:scale-110">
+                                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 group-hover:text-[#5B8FB9] transition-all group-hover:scale-110">
                                                     <Calendar size={18} />
                                                 </div>
                                                 <div className="flex flex-col">
@@ -268,14 +268,14 @@ export default function HistoryPage() {
                                             </div>
                                             <div className="text-right flex items-center gap-4">
                                                 <div className="flex flex-col items-end">
-                                                    <span className="text-sm font-black text-[#36606F]">
+                                                    <span className="text-sm font-black text-[#5B8FB9]">
                                                         {close.net_sales.toFixed(2)}€
                                                     </span>
                                                     <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 ${close.difference === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                                                         {close.difference === 0 ? 'OK' : `${close.difference.toFixed(2)}€`}
                                                     </div>
                                                 </div>
-                                                <ChevronRightIcon size={16} className="text-gray-300 group-hover:text-[#36606F] transition-colors" />
+                                                <ChevronRightIcon size={16} className="text-gray-300 group-hover:text-[#5B8FB9] transition-colors" />
                                             </div>
                                         </div>
                                     ))
@@ -289,7 +289,7 @@ export default function HistoryPage() {
                 {selectedClosing && (
                     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedClosing(null)}>
                         <div className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#36606F] p-6 text-white relative">
+                            <div className="bg-[#5B8FB9] p-6 text-white relative">
                                 <button onClick={() => setSelectedClosing(null)} className="absolute top-6 right-6 p-2 hover:bg-white/20 rounded-full transition-colors">
                                     <X size={20} />
                                 </button>
@@ -318,9 +318,9 @@ export default function HistoryPage() {
                                             <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Pendiente</span>
                                             <span className="text-lg font-black text-gray-800">{selectedClosing.sales_pending.toFixed(2)}€</span>
                                         </div>
-                                        <div className="p-4 bg-[#36606F]/5 border border-[#36606F]/10 rounded-2xl col-span-2 flex justify-between items-center">
-                                            <span className="text-[10px] font-black text-[#36606F] uppercase">Venta Neta Total</span>
-                                            <span className="text-xl font-black text-[#36606F]">{selectedClosing.net_sales.toFixed(2)}€</span>
+                                        <div className="p-4 bg-[#5B8FB9]/5 border border-[#5B8FB9]/10 rounded-2xl col-span-2 flex justify-between items-center">
+                                            <span className="text-[10px] font-black text-[#5B8FB9] uppercase">Venta Neta Total</span>
+                                            <span className="text-xl font-black text-[#5B8FB9]">{selectedClosing.net_sales.toFixed(2)}€</span>
                                         </div>
                                     </div>
                                 </div>
@@ -355,7 +355,7 @@ export default function HistoryPage() {
                                                 .map(([den, qty]) => (
                                                     <div key={den} className="flex flex-col items-center p-2 bg-gray-50 rounded-xl">
                                                         <span className="text-[8px] font-black text-gray-400">{parseFloat(den) < 1 ? (parseFloat(den) * 100).toFixed(0) + 'c' : den + '€'}</span>
-                                                        <span className="text-xs font-black text-[#36606F]">x{qty as number}</span>
+                                                        <span className="text-xs font-black text-[#5B8FB9]">x{qty as number}</span>
                                                     </div>
                                                 ))}
                                         </div>
@@ -404,7 +404,7 @@ export default function HistoryPage() {
                                                 onClick={() => handleDateSelect(day)}
                                                 className={cn(
                                                     "aspect-square flex items-center justify-center rounded-xl text-xs font-black transition-all",
-                                                    isSelected ? "bg-[#36606F] text-white shadow-md" : isInRange ? "bg-blue-50 text-[#36606F]" : "hover:bg-gray-100 text-gray-700"
+                                                    isSelected ? "bg-[#5B8FB9] text-white shadow-md" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-gray-100 text-gray-700"
                                                 )}
                                             >
                                                 {day}

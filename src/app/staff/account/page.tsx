@@ -80,7 +80,7 @@ function AccountContent() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#36606F] flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
                 <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando configuración...</p>
             </div>
@@ -92,12 +92,12 @@ function AccountContent() {
     const fullName = `${profile.first_name} ${profile.last_name || ''}`;
 
     return (
-        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* ENCABEZADO CORPORATIVO SÓLIDO (Relicando /profile) */}
-                    <div className="bg-[#36606F] p-8 pt-10 text-white relative overflow-hidden">
+                    <div className="bg-[#5B8FB9] p-8 pt-10 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center">
@@ -133,7 +133,7 @@ function AccountContent() {
                             className="w-full flex items-center justify-between p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all group active:scale-[0.98]"
                         >
                             <div className="flex items-center gap-5">
-                                <div className="bg-[#36606F]/10 p-4 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
+                                <div className="bg-[#5B8FB9]/10 p-4 rounded-2xl text-[#5B8FB9] group-hover:bg-[#5B8FB9] group-hover:text-white transition-all duration-300">
                                     <Lock size={24} strokeWidth={2.5} />
                                 </div>
                                 <div className="text-left">
@@ -141,7 +141,7 @@ function AccountContent() {
                                     <p className="text-gray-800 font-black text-sm tracking-tight">Cambiar Contraseña</p>
                                 </div>
                             </div>
-                            <ChevronRight size={20} className="text-gray-300 group-hover:text-[#36606F] transition-colors" />
+                            <ChevronRight size={20} className="text-gray-300 group-hover:text-[#5B8FB9] transition-colors" />
                         </button>
 
                         <button
@@ -174,7 +174,7 @@ function AccountContent() {
 export default function AccountPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#36606F] flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
                 <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando...</p>
             </div>

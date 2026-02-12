@@ -150,12 +150,12 @@ export default function MovementsPage() {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
     return (
-        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
                     {/* Header */}
-                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
+                    <div className="bg-[#5B8FB9] px-8 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Wallet className="text-white" size={20} />
                             <h1 className="text-base font-black text-white uppercase tracking-wider">
@@ -177,7 +177,7 @@ export default function MovementsPage() {
                                         onClick={() => setShowCalendar('single')}
                                         className={cn(
                                             "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5",
-                                            filterMode === 'single' ? "bg-[#36606F] border-[#36606F] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
+                                            filterMode === 'single' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
                                         )}
                                     >
                                         <Calendar size={12} />
@@ -191,7 +191,7 @@ export default function MovementsPage() {
                                         onClick={() => setShowCalendar('range')}
                                         className={cn(
                                             "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5",
-                                            filterMode === 'range' ? "bg-[#36606F] border-[#36606F] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
+                                            filterMode === 'range' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
                                         )}
                                     >
                                         <Calendar size={12} />
@@ -217,7 +217,7 @@ export default function MovementsPage() {
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Balance Neto</span>
                                 <span className={cn(
                                     "text-2xl font-black",
-                                    summary.balance >= 0 ? "text-[#36606F]" : "text-orange-500"
+                                    summary.balance >= 0 ? "text-[#5B8FB9]" : "text-orange-500"
                                 )}>
                                     {summary.balance.toFixed(0)}€
                                 </span>
@@ -303,7 +303,7 @@ export default function MovementsPage() {
                                                 onClick={() => handleDateSelect(day)}
                                                 className={cn(
                                                     "aspect-square flex items-center justify-center rounded-xl text-xs font-black transition-all",
-                                                    isSelected ? "bg-[#36606F] text-white shadow-md" : isInRange ? "bg-blue-50 text-[#36606F]" : "hover:bg-gray-100 text-gray-700"
+                                                    isSelected ? "bg-[#5B8FB9] text-white shadow-md" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-gray-100 text-gray-700"
                                                 )}
                                             >
                                                 {day}

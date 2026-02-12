@@ -147,12 +147,12 @@ export default function OvertimePage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* CABECERA DE LA TARJETA (AZUL MARBELLA) */}
-                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
+                    <div className="bg-[#5B8FB9] px-8 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Clock3 className="text-white" size={20} />
                             <h1 className="text-base font-black text-white uppercase tracking-wider">
@@ -164,7 +164,7 @@ export default function OvertimePage() {
                         </button>
                     </div>
 
-                    <div className="p-6 md:p-8 flex-1 flex flex-col">
+                    <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
 
                         {/* FILTROS Y BÚSQUEDA (Layout Compacto) */}
                         <div className="mb-6 space-y-4">
@@ -284,7 +284,7 @@ export default function OvertimePage() {
                         <div className="grid grid-cols-3 gap-2 mb-8 py-6 border-y border-gray-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Periodo</span>
-                                <span className="text-xl font-black text-[#36606F]">{summary.totalCost.toFixed(0)}€</span>
+                                <span className="text-xl font-black text-[#5B8FB9]">{summary.totalCost.toFixed(0)}€</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
@@ -357,7 +357,7 @@ export default function OvertimePage() {
                                                             {week.staff.map((staff, idx) => (
                                                                 <div key={idx} className="bg-gray-50/50 p-3 rounded-2xl flex items-center justify-between group hover:bg-white border border-transparent hover:border-gray-100 transition-all">
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="w-8 h-8 rounded-xl bg-[#36606F] text-white flex items-center justify-center text-[10px] font-black shadow-sm">
+                                                                        <div className="w-8 h-8 rounded-xl bg-[#5B8FB9] text-white flex items-center justify-center text-[10px] font-black shadow-sm">
                                                                             {staff.name.charAt(0)}
                                                                         </div>
                                                                         <div>

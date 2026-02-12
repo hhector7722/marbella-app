@@ -92,7 +92,7 @@ function ProfileContent() {
     const ProfileDataRow = ({ icon: Icon, label, value, action, isCopyable }: any) => (
         <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/80 transition-all group">
             <div className="flex items-center gap-5 overflow-hidden">
-                <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
+                <div className="bg-[#5B8FB9]/10 p-3 rounded-2xl text-[#5B8FB9] group-hover:bg-[#5B8FB9] group-hover:text-white transition-all duration-300">
                     <Icon size={22} strokeWidth={2.5} />
                 </div>
                 <div className="truncate">
@@ -105,7 +105,7 @@ function ProfileContent() {
                 {isCopyable && value && (
                     <button
                         onClick={() => copyToClipboard(value, label)}
-                        className="text-gray-400 hover:text-[#36606F] w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-[#36606F]/10 transition-all active:scale-90"
+                        className="text-gray-400 hover:text-[#5B8FB9] w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-[#5B8FB9]/10 transition-all active:scale-90"
                         title={`Copiar ${label}`}
                     >
                         {copiedField === label ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
@@ -130,7 +130,7 @@ function ProfileContent() {
             <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-2xl max-w-sm w-full">
                 <User size={48} className="mx-auto text-gray-200 mb-4" />
                 <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Perfil no encontrado</p>
-                <button onClick={() => router.back()} className="mt-6 w-full py-4 bg-[#36606F] text-white rounded-2xl font-black uppercase text-xs tracking-widest">Volver</button>
+                <button onClick={() => router.back()} className="mt-6 w-full py-4 bg-[#5B8FB9] text-white rounded-2xl font-black uppercase text-xs tracking-widest">Volver</button>
             </div>
         </div>
     );
@@ -139,12 +139,12 @@ function ProfileContent() {
     const initials = `${profile.first_name.charAt(0)}${profile.last_name?.charAt(0) || ''}`;
 
     return (
-        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* ENCABEZADO CORPORATIVO SÓLIDO */}
-                    <div className="bg-[#36606F] p-8 pt-10 text-white relative overflow-hidden">
+                    <div className="bg-[#5B8FB9] p-8 pt-10 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center">
@@ -217,22 +217,22 @@ function ProfileContent() {
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => toast.info('Funcionalidad próximamente')}
-                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#5B8FB9]/5 rounded-[2rem] border-2 border-dashed border-[#5B8FB9]/10 hover:bg-white hover:border-[#5B8FB9] hover:shadow-xl transition-all group active:scale-95"
                                 >
-                                    <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                    <div className="bg-white p-4 rounded-2xl text-[#5B8FB9] shadow-sm mb-3 group-hover:bg-[#5B8FB9] group-hover:text-white transition-all">
                                         <FileText size={24} />
                                     </div>
-                                    <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Contrato</span>
+                                    <span className="font-black text-[#5B8FB9] text-[10px] uppercase tracking-widest">Contrato</span>
                                 </button>
 
                                 <button
                                     onClick={() => toast.info('Funcionalidad próximamente')}
-                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#5B8FB9]/5 rounded-[2rem] border-2 border-dashed border-[#5B8FB9]/10 hover:bg-white hover:border-[#5B8FB9] hover:shadow-xl transition-all group active:scale-95"
                                 >
-                                    <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                    <div className="bg-white p-4 rounded-2xl text-[#5B8FB9] shadow-sm mb-3 group-hover:bg-[#5B8FB9] group-hover:text-white transition-all">
                                         <Euro size={24} />
                                     </div>
-                                    <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Nóminas</span>
+                                    <span className="font-black text-[#5B8FB9] text-[10px] uppercase tracking-widest">Nóminas</span>
                                 </button>
                             </div>
                         </div>

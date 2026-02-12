@@ -321,8 +321,8 @@ export default function RecipeDetailPage() {
         return <input {...props} type="number" step="0.01" className={className} value={localValue} onChange={handleChange} onBlur={handleBlurLocal} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />;
     };
 
-    if (loading) return <div className="min-h-screen bg-[#36606F] flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
-    if (!recipe) return <div className="min-h-screen bg-[#36606F] flex items-center justify-center text-white">No encontrada</div>;
+    if (loading) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
+    if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
         <div className="min-h-screen bg-[#5ea2c6] p-2 md:p-3 overflow-hidden flex flex-col">
@@ -366,7 +366,7 @@ export default function RecipeDetailPage() {
 
                     {/* CARD 1: Pricing */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0">
+                        <div className="bg-[#5B8FB9] px-4 py-2 shrink-0">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
                         </div>
                         <div className="p-3 flex-1 flex flex-col justify-between">
@@ -405,7 +405,7 @@ export default function RecipeDetailPage() {
 
                     {/* CARD 2: Ingredients */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col min-h-0">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                        <div className="bg-[#5B8FB9] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
                             <div className="flex gap-1">
                                 <button onClick={() => setShowIngredientModal(true)} className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600">+ Añadir</button>
@@ -437,9 +437,9 @@ export default function RecipeDetailPage() {
                                             </tr>
                                         );
                                     })}
-                                    <tr className="bg-[#36606F]/5 font-black text-[10px] sticky bottom-0">
+                                    <tr className="bg-[#5B8FB9]/5 font-black text-[10px] sticky bottom-0">
                                         <td className="py-2 px-3 text-gray-800" colSpan={3}>COSTO TOTAL</td>
-                                        <td className="py-2 text-right text-[#36606F] pr-1">{totalCost.toFixed(2)}€</td>
+                                        <td className="py-2 text-right text-[#5B8FB9] pr-1">{totalCost.toFixed(2)}€</td>
                                         <td></td>
                                     </tr>
                                 </tbody>
@@ -449,7 +449,7 @@ export default function RecipeDetailPage() {
 
                     {/* CARD 3: Simulator */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden border-2 border-purple-100/30 h-full flex flex-col">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
+                        <div className="bg-[#5B8FB9] px-4 py-2 shrink-0 flex items-center gap-2">
                             <Beaker className="w-3.5 h-3.5 text-white/70" />
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
                         </div>
@@ -484,7 +484,7 @@ export default function RecipeDetailPage() {
 
                     {/* CARD 4: Textos */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full min-h-0">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0">
+                        <div className="bg-[#5B8FB9] px-4 py-2 shrink-0">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2>
                         </div>
                         {/* Elaboración */}

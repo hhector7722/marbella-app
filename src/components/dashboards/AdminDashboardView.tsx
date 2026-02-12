@@ -47,7 +47,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#5B8FB9] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                 <div>
                     <h3 className="text-lg font-black uppercase tracking-wider">{isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')}</h3>
                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
@@ -64,7 +64,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                 {!isAudit && (
                     <div className="px-2">
                         <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Concepto / Motivo</label>
-                        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej. Cambio banco, Pago proveedor..." className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#36606F]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300 text-xs" />
+                        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej. Cambio banco, Pago proveedor..." className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#5B8FB9]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300 text-xs" />
                     </div>
                 )}
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
@@ -75,7 +75,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                             </div>
                             <div className="text-center w-full">
                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                                <input type="number" min="0" value={counts[denom] || ''} onChange={(e) => handleCountChange(denom, e.target.value)} placeholder="0" className={cn("w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm", type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" : "border-transparent focus:border-[#36606F]/20 text-[#36606F] focus:ring-[#36606F]/5")} />
+                                <input type="number" min="0" value={counts[denom] || ''} onChange={(e) => handleCountChange(denom, e.target.value)} placeholder="0" className={cn("w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm", type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" : "border-transparent focus:border-[#5B8FB9]/20 text-[#5B8FB9] focus:ring-[#5B8FB9]/5")} />
                                 {type === 'out' && (availableStock[denom] || 0) > 0 && <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>}
                             </div>
                         </div>
@@ -150,7 +150,7 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
-            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white shrink-0">
                 <div>
                     <h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3>
                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
@@ -213,7 +213,7 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                         disabled={!isBalanced || hasStockIssue}
                         className={cn(
                             "flex-1 py-3.5 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
-                            (isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50"
+                            (isBalanced && !hasStockIssue) ? "bg-[#5B8FB9] shadow-[#5B8FB9]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50"
                         )}
                     >
                         <ArrowRightLeft size={18} strokeWidth={3} />
@@ -229,17 +229,17 @@ const BoxInventoryView = ({ boxName, inventory, onBack }: { boxName: string, inv
     const total = inventory.reduce((sum, item) => sum + (item.denomination * item.quantity), 0);
     return (
         <div className="flex flex-col h-full bg-white">
-            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
                 <div className="flex flex-col"><span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Inventario de Efectivo</span><h3 className="text-lg font-black uppercase tracking-wider mt-1">{boxName}</h3></div>
                 <button onClick={onBack} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><ArrowLeft size={20} strokeWidth={3} /></button>
             </div>
-            <div className="p-6 bg-gray-50 border-b flex justify-between items-center shrink-0"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total en Caja</span><span className="text-3xl font-black text-[#36606F]">{total.toFixed(2)}€</span></div>
+            <div className="p-6 bg-gray-50 border-b flex justify-between items-center shrink-0"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total en Caja</span><span className="text-3xl font-black text-[#5B8FB9]">{total.toFixed(2)}€</span></div>
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <div className="grid grid-cols-2 gap-3">
                     {inventory.sort((a, b) => b.denomination - a.denomination).map((item, idx) => (
                         <div key={idx} className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-2"><div className="h-8 w-8 flex items-center justify-center"><Image src={CURRENCY_IMAGES[item.denomination]} alt={`${item.denomination}€`} width={40} height={40} className="object-contain" /></div><span className="font-black text-gray-700 text-xs">{item.denomination < 1 ? (item.denomination * 100).toFixed(0) + 'c' : item.denomination + '€'}</span></div>
-                            <div className="text-right"><span className="text-xl font-black text-[#36606F] leading-none">x{item.quantity}</span><p className="text-[8px] font-bold text-gray-300 uppercase tracking-tighter">{(item.denomination * item.quantity).toFixed(2)}€</p></div>
+                            <div className="text-right"><span className="text-xl font-black text-[#5B8FB9] leading-none">x{item.quantity}</span><p className="text-[8px] font-bold text-gray-300 uppercase tracking-tighter">{(item.denomination * item.quantity).toFixed(2)}€</p></div>
                         </div>
                     ))}
                     {inventory.length === 0 && <div className="col-span-2 py-20 text-center"><p className="text-gray-300 font-bold uppercase tracking-widest text-xs">Caja vacía</p></div>}
@@ -504,7 +504,7 @@ export default function AdminDashboardView() {
                                     <div className="flex flex-col flex-1 min-h-0">
                                         <div className="flex justify-between items-center px-1 md:px-2 mb-2 md:mb-3">
                                             <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
-                                            <Link href="/dashboard/movements" className="text-[8px] md:text-[10px] font-black text-[#36606F] bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2 md:w-2.5 md:h-2.5" /></Link>
+                                            <Link href="/dashboard/movements" className="text-[8px] md:text-[10px] font-black text-[#5B8FB9] bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2 md:w-2.5 md:h-2.5" /></Link>
                                         </div>
                                         <div className={cn("overflow-hidden transition-all duration-300", isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0")}>
                                             <div className="space-y-1.5 md:space-y-2 py-1 max-h-[100px] md:max-h-[140px] overflow-y-auto no-scrollbar">
@@ -523,7 +523,7 @@ export default function AdminDashboardView() {
                         </div>
                         <div className="grid grid-cols-2 gap-4 md:gap-6 h-12 md:h-16">
                             {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl md:rounded-[1.5rem] p-1.5 md:p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">Cambio {idx + 1}</span><span className="text-xs md:text-lg font-black text-[#36606F] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
+                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl md:rounded-[1.5rem] p-1.5 md:p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">Cambio {idx + 1}</span><span className="text-xs md:text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
                             ))}
                         </div>
                     </div>
@@ -567,7 +567,7 @@ export default function AdminDashboardView() {
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", cashModalMode === 'swap' ? "max-w-4xl" : "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                         {cashModalMode === 'menu' && (
                             <>
-                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                                <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
                                 <div className="p-4 grid grid-cols-2 gap-4">
                                     {selectedBox?.type === 'change' ? (
                                         <>
@@ -598,7 +598,7 @@ export default function AdminDashboardView() {
             {isStaffModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
                             <div>
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Empleado ({allEmployees.length})</p>
@@ -609,7 +609,7 @@ export default function AdminDashboardView() {
                             {/* Botón Crear Nuevo */}
                             <button
                                 onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
-                                className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#36606F] hover:text-[#36606F] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                                className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
                             >
                                 <Plus size={18} /> Nuevo Trabajador
                             </button>
@@ -620,7 +620,7 @@ export default function AdminDashboardView() {
                                         onClick={() => router.push(`/profile?id=${emp.id}`)}
                                         className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
                                     >
-                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#36606F] shadow-inner group-hover:bg-[#36606F] group-hover:text-white transition-colors capitalize shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
                                             {emp.first_name.substring(0, 1)}
                                         </div>
                                         <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
@@ -637,7 +637,7 @@ export default function AdminDashboardView() {
             {isNewWorkerModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                        <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white">
                             <div>
                                 <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Datos del empleado</p>
@@ -715,7 +715,7 @@ export default function AdminDashboardView() {
                             <button
                                 onClick={handleCreateWorker}
                                 disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
-                                className="flex-1 h-12 bg-[#36606F] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
+                                className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
                             >
                                 {newWorkerSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save size={18} /> Guardar</>}
                             </button>
@@ -726,7 +726,7 @@ export default function AdminDashboardView() {
             {isProductModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
                         <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                             {[
                                 { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },

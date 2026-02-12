@@ -87,7 +87,7 @@ export default function RecipesPage() {
 
     return (
         // FONDO AZUL CORPORATIVO PARA VISTAS DE GALERÍA
-        <div className="p-6 md:p-8 w-full bg-[#36606F] min-h-screen">
+        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
 

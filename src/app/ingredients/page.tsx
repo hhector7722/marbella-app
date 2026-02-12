@@ -99,7 +99,7 @@ export default function IngredientsPage() {
 
     return (
         // ELIMINADO EL WRAPPER DEL SIDEBAR Y EL FONDO AZUL
-        <div className="p-6 md:p-8 w-full bg-[#36606F] min-h-screen">
+        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
 
