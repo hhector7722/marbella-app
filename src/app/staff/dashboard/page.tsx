@@ -178,6 +178,8 @@ export default function StaffDashboard() {
                 .eq('id', user.id)
                 .single();
 
+            const isManager = profile?.role === 'manager';
+
             if (profile) {
                 setUserRole(profile.role as any);
                 if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
@@ -270,7 +272,6 @@ export default function StaffDashboard() {
             setWeekDays(daysStructure);
 
             let weekDifference = 0;
-            const isManager = profile?.role === 'manager';
             // Managers y empleados con salario fijo: todas las horas son extras
             if (isManager || isFixedSalary) {
                 weekDifference = totalWeekHours;
