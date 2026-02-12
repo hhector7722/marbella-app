@@ -49,6 +49,8 @@ type TimeLog = {
     total_hours: number | null;
     event_type?: string;
     employee_name?: string;
+    first_name?: string;
+    last_name?: string;
 };
 
 type EditingLog = {
@@ -135,7 +137,9 @@ export default function RegistrosPage() {
                     const emp = staff.find(e => e.id === log.user_id);
                     return {
                         ...log,
-                        employee_name: emp ? `${emp.first_name}` : '?'
+                        employee_name: emp ? `${emp.first_name}` : '?',
+                        first_name: emp?.first_name || '',
+                        last_name: emp?.last_name || ''
                     };
                 });
                 setLogs(enrichedLogs);
@@ -312,7 +316,7 @@ export default function RegistrosPage() {
             </div>
 
             {/* BLOQUE CALENDARIO INTEGRADO */}
-            <div className="flex-1 flex flex-col overflow-hidden rounded-[3rem] shadow-2xl border border-white/10">
+            <div className="flex-1 flex flex-col overflow-hidden rounded-xl shadow-2xl border border-white/10">
                 {/* DÍAS SEMANA ESTILO RESUMEN SEMANAL */}
                 <div className="grid grid-cols-7 border-b border-gray-100">
                     {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
@@ -356,20 +360,34 @@ export default function RegistrosPage() {
                                 </span>
 
                                 <div className="flex-1 overflow-y-auto space-y-1 no-scrollbar w-full">
-                                    {dayLogs.map((log) => {
-                                        const initial = log.employee_name ? log.employee_name.charAt(0).toUpperCase() : '?';
+                                    {Object.values(dayLogs.reduce((acc, log) => {
+                                        if (!acc[log.user_id]) acc[log.user_id] = log;
+                                        else if (!acc[log.user_id].clock_out && log.clock_out) acc[log.user_id] = log;
+                                        return acc;
+                                    }, {} as Record<string, TimeLog>)).map((log) => {
+                                        const initials = `${(log.first_name || '').charAt(0)}${(log.last_name || '').charAt(0)}`.toUpperCase() || '?';
+                                        const isFinished = !!log.clock_out;
+
                                         return (
-                                            <div key={log.id} className="flex flex-col gap-0.5 w-full">
-                                                <div className="w-full flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded-lg">
-                                                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px] font-black shrink-0">{initial}</div>
-                                                    <span className="text-[9px] font-black text-emerald-700 truncate">{format(parseISO(log.clock_in), 'HH:mm')}</span>
-                                                </div>
-                                                {log.clock_out && (
-                                                    <div className="w-full flex items-center gap-1.5 bg-rose-50 border border-rose-100/50 px-1.5 py-0.5 rounded-lg">
-                                                        <div className="w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black shrink-0">{initial}</div>
-                                                        <span className="text-[9px] font-black text-rose-600 truncate">{format(parseISO(log.clock_out), 'HH:mm')}</span>
-                                                    </div>
+                                            <div
+                                                key={log.user_id}
+                                                className={cn(
+                                                    "w-full flex items-center gap-1.5 px-1.5 py-0.5 rounded-lg border transition-colors",
+                                                    isFinished
+                                                        ? "bg-emerald-50 border-emerald-100/50 text-emerald-700"
+                                                        : "bg-rose-50 border-rose-100/50 text-rose-600"
                                                 )}
+                                            >
+                                                <div className={cn(
+                                                    "w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[7px] font-black shrink-0",
+                                                    isFinished ? "bg-emerald-500" : "bg-rose-500"
+                                                )}>
+                                                    {initials}
+                                                </div>
+                                                <span className="text-[9px] font-black truncate">
+                                                    {format(parseISO(log.clock_in), 'HH:mm')}
+                                                    {log.clock_out && ` - ${format(parseISO(log.clock_out), 'HH:mm')}`}
+                                                </span>
                                             </div>
                                         );
                                     })}
