@@ -427,12 +427,11 @@ export default function RegistrosPage() {
                             )}
 
                             {modalLogs.filter(l => !l.is_deleted).length > 0 && (
-                                <div className="flex px-2 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                    <div className="flex-1">Empleado</div>
-                                    <div className="w-24 text-center">Entrada</div>
-                                    <div className="w-6"></div>
-                                    <div className="w-24 text-center">Salida</div>
-                                    <div className="w-10"></div>
+                                <div className="flex px-2 mb-2 text-[8px] font-black text-gray-400 uppercase tracking-wider">
+                                    <div className="flex-1">Trabajador</div>
+                                    <div className="w-16 text-center">Entrada</div>
+                                    <div className="w-16 text-center">Salida</div>
+                                    <div className="w-8"></div>
                                 </div>
                             )}
 
@@ -441,22 +440,22 @@ export default function RegistrosPage() {
                                     if (log.is_deleted) return null;
 
                                     return (
-                                        <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 shadow-sm hover:border-[#5B8FB9] transition-all">
+                                        <div key={idx} className="bg-white p-1.5 rounded-xl border border-gray-200 flex items-center gap-1.5 shadow-sm hover:border-[#5B8FB9] transition-all">
                                             <div className="flex-1 min-w-0">
                                                 <select
                                                     value={log.user_id}
                                                     onChange={(e) => updateLogField(idx, 'user_id', e.target.value)}
-                                                    className="w-full bg-transparent font-bold text-gray-700 text-sm focus:outline-none cursor-pointer truncate"
+                                                    className="w-full bg-transparent font-black text-gray-700 text-[11px] focus:outline-none cursor-pointer truncate"
                                                     disabled={!!log.id}
                                                 >
                                                     {employees.map(emp => (
-                                                        <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
+                                                        <option key={emp.id} value={emp.id}>{emp.first_name}</option>
                                                     ))}
                                                 </select>
                                                 <select
                                                     value={log.event_type}
                                                     onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
-                                                    className="w-full bg-transparent text-[10px] font-bold text-gray-400 uppercase focus:outline-none cursor-pointer"
+                                                    className="w-full bg-transparent text-[8px] font-black text-gray-400 uppercase focus:outline-none cursor-pointer"
                                                 >
                                                     <option value="regular">Regular</option>
                                                     <option value="overtime">Extra</option>
@@ -467,30 +466,26 @@ export default function RegistrosPage() {
                                                 </select>
                                             </div>
 
-                                            <div className="w-[1px] h-6 bg-gray-200"></div>
-
                                             <input
                                                 type="time"
                                                 value={log.in_time}
                                                 onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
-                                                className="w-24 text-center bg-gray-50 border border-gray-200 rounded text-sm font-mono text-green-700 font-bold focus:ring-1 focus:ring-green-500 focus:outline-none p-1"
+                                                className="w-16 text-center bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-mono text-green-700 font-black focus:ring-1 focus:ring-green-500 focus:outline-none p-1 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
                                             />
-
-                                            <ArrowRightIcon size={14} className="text-gray-300" />
 
                                             <input
                                                 type="time"
                                                 value={log.out_time}
                                                 onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
-                                                className="w-24 text-center bg-gray-50 border border-gray-200 rounded text-sm font-mono text-red-600 font-bold focus:ring-1 focus:ring-red-500 focus:outline-none p-1"
+                                                className="w-16 text-center bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-mono text-red-600 font-black focus:ring-1 focus:ring-red-500 focus:outline-none p-1 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
                                             />
 
                                             <button
                                                 onClick={() => deleteLog(idx)}
-                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                                                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Eliminar"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
                                     );
