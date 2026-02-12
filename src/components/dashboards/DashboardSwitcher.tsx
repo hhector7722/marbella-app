@@ -19,8 +19,11 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
     const startX = useRef(0);
     const startY = useRef(0);
     const isHorizontalDrag = useRef<boolean | null>(null);
+    const dragActivated = useRef(false);
     const containerWidth = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const DRAG_DEAD_ZONE = 10; // px de movimiento mínimo antes de activar el drag
 
     // Sync with initialView if it changes (e.g. on direct navigation)
     useEffect(() => {
@@ -32,26 +35,35 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
         isHorizontalDrag.current = null;
-        setIsDragging(true);
+        dragActivated.current = false;
+        // NO setIsDragging(true) aquí — dejamos que los taps pasen a los hijos
         if (containerRef.current) {
             containerWidth.current = containerRef.current.offsetWidth;
         }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging) return;
+        if (userRole !== 'manager') return;
 
         const currentX = e.touches[0].clientX;
         const currentY = e.touches[0].clientY;
         const diffX = currentX - startX.current;
         const diffY = currentY - startY.current;
 
-        // Determinar si es un drag horizontal o vertical una sola vez por drag
-        if (isHorizontalDrag.current === null) {
+        // Dead zone: no activar drag hasta que haya movimiento significativo
+        if (!dragActivated.current) {
+            if (Math.abs(diffX) < DRAG_DEAD_ZONE && Math.abs(diffY) < DRAG_DEAD_ZONE) {
+                return; // Ignorar micro-movimientos (es un tap)
+            }
+            // Determinar si es horizontal o vertical
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 isHorizontalDrag.current = true;
+                dragActivated.current = true;
+                setIsDragging(true);
             } else {
                 isHorizontalDrag.current = false;
+                dragActivated.current = true;
+                return; // Es scroll vertical, no interferir
             }
         }
 
@@ -69,8 +81,9 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
     };
 
     const handleTouchEnd = () => {
-        if (!isDragging) return;
+        if (!dragActivated.current) return;
         setIsDragging(false);
+        dragActivated.current = false;
 
         const threshold = containerWidth.current / 4;
 
@@ -113,11 +126,11 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
                 )}
                 style={isManager ? { transform: `translateX(${finalTranslate}%)` } : {}}
             >
-                <div className={cn("h-full flex-shrink-0", isManager ? "w-1/2" : "w-full")}>
+                <div className={cn("h-full flex-shrink-0 overflow-hidden relative", isManager ? "w-1/2" : "w-full")}>
                     {(!isManager || view === 'staff' || isDragging) && <StaffDashboardView />}
                 </div>
                 {isManager && (
-                    <div className="w-1/2 h-full flex-shrink-0">
+                    <div className="w-1/2 h-full flex-shrink-0 overflow-hidden relative">
                         {(view === 'admin' || isDragging) && <AdminDashboardView />}
                     </div>
                 )}
