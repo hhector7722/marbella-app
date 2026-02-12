@@ -365,134 +365,185 @@ export default function RecipeDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0">
 
                     {/* CARD 1: Pricing */}
-                    <div className="bg-white rounded-xl shadow-md p-3 h-full flex flex-col justify-between">
-                        <div>
-                            <h2 className="text-xs font-bold text-gray-800 mb-2">Precios de Venta</h2>
-                            <div className="flex gap-2 justify-center mb-2">
-                                <button onClick={() => setView(v => ({ ...v, location: 'pvp' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pvp' ? themeColors.toggle : themeColors.toggleInactive}`}>PVP</button>
-                                <button onClick={() => setView(v => ({ ...v, location: 'pavello' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pavello' ? themeColors.toggle : themeColors.toggleInactive}`}>PAV</button>
-                                <div className="w-px bg-gray-300 mx-1"></div>
-                                <button onClick={() => setView(v => ({ ...v, size: 'full' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'full' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/1</button>
-                                <button onClick={() => setView(v => ({ ...v, size: 'half' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'half' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/2</button>
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0">
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
+                        </div>
+                        <div className="p-3 flex-1 flex flex-col justify-between">
+                            <div>
+                                <div className="flex gap-2 justify-center mb-2">
+                                    <button onClick={() => setView(v => ({ ...v, location: 'pvp' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pvp' ? themeColors.toggle : themeColors.toggleInactive}`}>PVP</button>
+                                    <button onClick={() => setView(v => ({ ...v, location: 'pavello' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pavello' ? themeColors.toggle : themeColors.toggleInactive}`}>PAV</button>
+                                    <div className="w-px bg-gray-300 mx-1"></div>
+                                    <button onClick={() => setView(v => ({ ...v, size: 'full' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'full' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/1</button>
+                                    <button onClick={() => setView(v => ({ ...v, size: 'half' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'half' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/2</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="flex items-center justify-center gap-1 my-2">
-                            <span className="text-lg font-bold text-gray-800">€</span>
-                            <EditablePrice
-                                value={currentPrice || 0}
-                                onChange={(val: number) => setRecipe({ ...recipe, [view.location === 'pvp' ? (view.size === 'full' ? 'sale_price' : 'sale_price_half') : (view.size === 'full' ? 'sales_price_pavello' : 'price_pavello_half')]: val })}
-                                onBlur={(e: any) => handlePriceUpdate(e.target.value)}
-                                className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
-                            />
-                        </div>
+                            <div className="flex items-center justify-center gap-1 my-2">
+                                <span className="text-lg font-bold text-gray-800">€</span>
+                                <EditablePrice
+                                    value={currentPrice || 0}
+                                    onChange={(val: number) => setRecipe({ ...recipe, [view.location === 'pvp' ? (view.size === 'full' ? 'sale_price' : 'sale_price_half') : (view.size === 'full' ? 'sales_price_pavello' : 'price_pavello_half')]: val })}
+                                    onBlur={(e: any) => handlePriceUpdate(e.target.value)}
+                                    className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
+                                />
+                            </div>
 
-                        <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
-                            <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
-                            <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
-                            <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
-                        </div>
+                            <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
+                                <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
+                                <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
+                                <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
+                            </div>
 
-                        <div className="flex justify-between items-center mt-2 px-2">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
-                            <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
+                            <div className="flex justify-between items-center mt-2 px-2">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
+                                <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
+                            </div>
                         </div>
                     </div>
 
                     {/* CARD 2: Ingredients */}
-                    <div className="bg-white rounded-xl shadow-md p-3 h-full flex flex-col min-h-0">
-                        <div className="flex items-center justify-between mb-2 shrink-0">
-                            <h2 className="text-xs font-bold text-blue-600">Ingredientes <span className="text-gray-400 font-normal">({ingredients.length})</span></h2>
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col min-h-0">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
                             <div className="flex gap-1">
-                                <button onClick={() => setShowIngredientModal(true)} className="px-2 py-0.5 bg-green-500 text-white rounded text-[10px] font-bold hover:bg-green-600">+ Añadir</button>
-                                <button onClick={() => setIsModalOpen(true)} className="px-2 py-0.5 bg-purple-500 text-white rounded text-[10px] font-bold hover:bg-purple-600">+ Nuevo</button>
+                                <button onClick={() => setShowIngredientModal(true)} className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600">+ Añadir</button>
+                                <button onClick={() => setIsModalOpen(true)} className="px-2 py-0.5 bg-purple-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-purple-600">+ Nuevo</button>
                             </div>
                         </div>
-                        <div className="overflow-y-auto flex-1 custom-scrollbar">
-                            <table className="w-full text-[10px]">
-                                <thead className="sticky top-header-safe bg-white text-gray-500 font-bold uppercase border-b">
-                                    <tr><th className="text-left py-2">Ingrediente</th><th className="text-center">Cant</th><th className="text-center">Ud</th><th className="text-right">Coste</th><th className="w-5"></th></tr>
+                        <div className="overflow-y-auto flex-1 custom-scrollbar relative">
+                            <table className="w-full text-[10px] border-collapse">
+                                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                                    <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
+                                        <th className="text-left py-2 px-3">Ingrediente</th>
+                                        <th className="text-center">Cant</th>
+                                        <th className="text-center">Ud</th>
+                                        <th className="text-right">Coste</th>
+                                        <th className="w-8"></th>
+                                    </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {ingredients.map((ing) => {
                                         const cost = calculateIngredientCost(ing);
                                         const qty = getIngredientQuantity(ing);
                                         return (
-                                            <tr key={ing.id} className="hover:bg-gray-50">
-                                                <td className="py-2 text-gray-800 font-medium truncate max-w-[90px]">{ing.ingredients?.name}</td>
+                                            <tr key={ing.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="py-2 px-3 text-gray-800 font-bold truncate max-w-[120px]">{ing.ingredients?.name}</td>
                                                 <td className="text-center py-2"><QuantityInput initialValue={qty} onSave={(val) => handleQuantityChange(ing.id, val)} /></td>
-                                                <td className="text-center text-gray-400 py-2">{ing.unit}</td>
-                                                <td className="text-right font-bold text-gray-700 py-2">{cost.toFixed(2)}€</td>
-                                                <td className="text-right py-2"><button onClick={() => handleDeleteIngredient(ing.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={12} /></button></td>
+                                                <td className="text-center text-gray-400 py-2 font-bold">{ing.unit}</td>
+                                                <td className="text-right font-black text-gray-700 py-2">{cost.toFixed(2)}€</td>
+                                                <td className="text-center py-2"><button onClick={() => handleDeleteIngredient(ing.id)} className="p-1 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={12} strokeWidth={3} /></button></td>
                                             </tr>
                                         );
                                     })}
-                                    <tr className="bg-green-50 font-bold text-xs"><td className="py-2 pl-2" colSpan={3}>TOTAL</td><td className="py-2 text-right text-green-700">{totalCost.toFixed(2)}€</td><td></td></tr>
+                                    <tr className="bg-[#36606F]/5 font-black text-[10px] sticky bottom-0">
+                                        <td className="py-2 px-3 text-gray-800" colSpan={3}>COSTO TOTAL</td>
+                                        <td className="py-2 text-right text-[#36606F] pr-1">{totalCost.toFixed(2)}€</td>
+                                        <td></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
                     {/* CARD 3: Simulator */}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden border-2 border-purple-100 p-3 h-full flex flex-col justify-between">
-                        <div className="flex items-center gap-2 border-b pb-2 mb-2">
-                            <Beaker className="w-4 h-4 text-purple-600" />
-                            <h2 className="text-xs font-bold text-purple-900">Simulador</h2>
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border-2 border-purple-100/30 h-full flex flex-col">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
+                            <Beaker className="w-3.5 h-3.5 text-white/70" />
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
                         </div>
 
-                        <div className="flex-1 flex flex-col justify-center gap-4">
-                            <div className="flex items-center justify-between px-4">
-                                <span className="text-sm font-bold text-purple-400">Precio</span>
-                                <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
+                        <div className="p-3 flex-1 flex flex-col justify-between">
+                            <div className="flex flex-col justify-center gap-4">
+                                <div className="flex items-center justify-between px-4">
+                                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
+                                    <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
+                                </div>
+
+                                <input
+                                    type="range"
+                                    min={Math.floor((currentPrice * 0.5) * 10) / 10}
+                                    max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
+                                    step={0.10}
+                                    value={simulatedPrice}
+                                    onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
+                                    className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                />
+
+                                <div className="grid grid-cols-3 gap-2 text-center">
+                                    <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
+                                    <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
+                                    <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
+                                </div>
                             </div>
 
-                            <input
-                                type="range"
-                                min={Math.floor((currentPrice * 0.5) * 10) / 10}
-                                max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
-                                step={0.10}
-                                value={simulatedPrice}
-                                onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
-                                className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                            />
-
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                                <div><div className="text-xs text-gray-400 font-bold uppercase">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
-                                <div><div className="text-xs text-gray-400 font-bold uppercase">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
-                                <div><div className="text-xs text-gray-400 font-bold uppercase">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
-                            </div>
+                            <button onClick={applySimulatedPrice} disabled={applyingSimulation || simulatedPrice === currentPrice} className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-2 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50">APLICAR CAMBIOS</button>
                         </div>
-
-                        <button onClick={applySimulatedPrice} disabled={applyingSimulation || simulatedPrice === currentPrice} className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold text-xs mt-2 uppercase tracking-wide disabled:opacity-50">APLICAR CAMBIOS</button>
                     </div>
 
                     {/* CARD 4: Textos */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full min-h-0">
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0">
+                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2>
+                        </div>
                         {/* Elaboración */}
                         <div className="flex-1 p-3 border-b flex flex-col min-h-0 overflow-hidden">
-                            <div className="flex justify-between items-center mb-1 shrink-0">
-                                <h2 className="text-xs font-bold text-blue-600">Elaboración</h2>
-                                <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-[10px] text-blue-500 hover:bg-blue-50 px-2 py-0.5 rounded"><Edit2 size={12} /></button>
+                            <div className="flex justify-between items-center mb-2 shrink-0">
+                                <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-wider">Metodología</h2>
+                                <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-xs text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"><Edit2 size={14} /></button>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {isEditingElaboration ? (
-                                    <div className="space-y-1">{elaborationSteps.map((s, i) => (<div key={i} className="flex gap-1"><input value={s} onChange={e => { const n = [...elaborationSteps]; n[i] = e.target.value; setElaborationSteps(n) }} className="flex-1 border rounded px-1 text-[10px]" /><X size={12} onClick={() => setElaborationSteps(elaborationSteps.filter((_, x) => x !== i))} /></div>))}<button onClick={() => setElaborationSteps([...elaborationSteps, ''])} className="text-[10px] text-blue-500 w-full text-left">+ Paso</button><button onClick={() => { updateTextDB('elaboration', elaborationSteps); setIsEditingElaboration(false) }} className="block w-full bg-green-500 text-white text-[10px] rounded mt-1">Guardar</button></div>
+                                    <div className="space-y-1.5">
+                                        {elaborationSteps.map((s, i) => (
+                                            <div key={i} className="flex gap-1.5 items-center">
+                                                <input value={s} onChange={e => { const n = [...elaborationSteps]; n[i] = e.target.value; setElaborationSteps(n) }} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none" />
+                                                <button onClick={() => setElaborationSteps(elaborationSteps.filter((_, x) => x !== i))} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
+                                            </div>
+                                        ))}
+                                        <button onClick={() => setElaborationSteps([...elaborationSteps, ''])} className="text-[10px] font-bold text-blue-500 w-full py-2 hover:bg-blue-50 rounded-lg transition-colors border border-dashed border-blue-200">+ Añadir paso</button>
+                                        <button onClick={() => { updateTextDB('elaboration', elaborationSteps); setIsEditingElaboration(false) }} className="block w-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-blue-600/20">Guardar Elaboración</button>
+                                    </div>
                                 ) : (
-                                    <ul className="list-disc list-inside space-y-0.5">{elaborationSteps.map((s, i) => <li key={i} className="text-gray-600 text-[10px] leading-tight">{s}</li>)}</ul>
+                                    <ul className="space-y-2">
+                                        {elaborationSteps.map((s, i) => (
+                                            <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
+                                                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[8px]">{i + 1}</span>
+                                                <span>{s}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 )}
                             </div>
                         </div>
                         {/* Presentación */}
-                        <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden">
-                            <div className="flex justify-between items-center mb-1 shrink-0">
-                                <h2 className="text-xs font-bold text-green-600">Presentación</h2>
-                                <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-[10px] text-green-500 hover:bg-green-50 px-2 py-0.5 rounded"><Edit2 size={12} /></button>
+                        <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden bg-zinc-50/30">
+                            <div className="flex justify-between items-center mb-2 shrink-0">
+                                <h2 className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Presentación</h2>
+                                <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-xs text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors"><Edit2 size={14} /></button>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {isEditingPresentation ? (
-                                    <div className="space-y-1">{presentationSteps.map((s, i) => (<div key={i} className="flex gap-1"><input value={s} onChange={e => { const n = [...presentationSteps]; n[i] = e.target.value; setPresentationSteps(n) }} className="flex-1 border rounded px-1 text-[10px]" /><X size={12} onClick={() => setPresentationSteps(presentationSteps.filter((_, x) => x !== i))} /></div>))}<button onClick={() => setPresentationSteps([...presentationSteps, ''])} className="text-[10px] text-green-500 w-full text-left">+ Paso</button><button onClick={() => { updateTextDB('presentation', presentationSteps); setIsEditingPresentation(false) }} className="block w-full bg-green-500 text-white text-[10px] rounded mt-1">Guardar</button></div>
+                                    <div className="space-y-1.5">
+                                        {presentationSteps.map((s, i) => (
+                                            <div key={i} className="flex gap-1.5 items-center">
+                                                <input value={s} onChange={e => { const n = [...presentationSteps]; n[i] = e.target.value; setPresentationSteps(n) }} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-emerald-500 outline-none" />
+                                                <button onClick={() => setPresentationSteps(presentationSteps.filter((_, x) => x !== i))} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
+                                            </div>
+                                        ))}
+                                        <button onClick={() => setPresentationSteps([...presentationSteps, ''])} className="text-[10px] font-bold text-emerald-500 w-full py-2 hover:bg-emerald-50 rounded-lg transition-colors border border-dashed border-emerald-200">+ Añadir nota</button>
+                                        <button onClick={() => { updateTextDB('presentation', presentationSteps); setIsEditingPresentation(false) }} className="block w-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-emerald-600/20">Guardar Notas</button>
+                                    </div>
                                 ) : (
-                                    <ul className="list-disc list-inside space-y-0.5">{presentationSteps.map((s, i) => <li key={i} className="text-gray-600 text-[10px] leading-tight">{s}</li>)}</ul>
+                                    <ul className="space-y-2">
+                                        {presentationSteps.map((s, i) => (
+                                            <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
+                                                <X className="rotate-45 w-2 h-2 text-emerald-500 mt-1 flex-shrink-0" strokeWidth={5} />
+                                                <span>{s}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 )}
                             </div>
                         </div>
