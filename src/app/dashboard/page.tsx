@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import Link from 'next/link';
-import { getISOWeek, format, addDays } from 'date-fns';
+import { getISOWeek, format, addDays, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -537,9 +537,7 @@ export default function DashboardPage() {
 
                 logs.forEach(log => {
                     const date = new Date(log.clock_in);
-                    const day = date.getDay();
-                    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-                    const monday = new Date(date.setDate(diff));
+                    const monday = startOfWeek(date, { weekStartsOn: 1 });
                     monday.setHours(0, 0, 0, 0);
                     const weekLabelId = monday.toISOString().split('T')[0];
 

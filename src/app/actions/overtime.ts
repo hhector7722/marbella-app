@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
+import { startOfWeek } from "date-fns";
 
 export interface StaffWeeklyStats {
     id: string;
@@ -63,10 +64,7 @@ export async function getOvertimeData(startDate: string, endDate: string) {
 
     logs.forEach(log => {
         const date = new Date(log.clock_in);
-        const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(date);
-        monday.setDate(diff);
+        const monday = startOfWeek(date, { weekStartsOn: 1 });
         monday.setHours(0, 0, 0, 0);
 
         const weekId = monday.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
