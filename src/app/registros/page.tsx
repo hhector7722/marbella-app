@@ -47,6 +47,7 @@ type TimeLog = {
     clock_in: string;
     clock_out: string | null;
     total_hours: number | null;
+    event_type?: string;
     employee_name?: string;
 };
 
@@ -56,6 +57,7 @@ type EditingLog = {
     date: Date;
     in_time: string;
     out_time: string;
+    event_type: string;
     is_deleted?: boolean;
 };
 
@@ -163,6 +165,7 @@ export default function RegistrosPage() {
             date: day,
             in_time: format(parseISO(l.clock_in), 'HH:mm'),
             out_time: l.clock_out ? format(parseISO(l.clock_out), 'HH:mm') : '',
+            event_type: l.event_type || 'regular'
         }));
 
         setModalLogs(editableLogs);
@@ -201,7 +204,8 @@ export default function RegistrosPage() {
             user_id: employees[0].id,
             date: selectedDate,
             in_time: '09:00',
-            out_time: '17:00'
+            out_time: '17:00',
+            event_type: 'regular'
         };
         setModalLogs([...modalLogs, newLog]);
         setHasUnsavedChanges(true);
@@ -237,6 +241,7 @@ export default function RegistrosPage() {
                     clock_in: clockInDate.toISOString(),
                     clock_out: clockOutDate ? clockOutDate.toISOString() : null,
                     total_hours: totalHours > 0 ? totalHours : null,
+                    event_type: log.event_type
                 };
 
                 // ACTUALIZAR O INSERTAR
@@ -443,6 +448,18 @@ export default function RegistrosPage() {
                                                     {employees.map(emp => (
                                                         <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
                                                     ))}
+                                                </select>
+                                                <select
+                                                    value={log.event_type}
+                                                    onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
+                                                    className="w-full bg-transparent text-[10px] font-bold text-gray-400 uppercase focus:outline-none cursor-pointer"
+                                                >
+                                                    <option value="regular">Regular</option>
+                                                    <option value="overtime">Extra</option>
+                                                    <option value="weekend">Finde</option>
+                                                    <option value="holiday">Festivo</option>
+                                                    <option value="personal">Personal</option>
+                                                    <option value="adjustment">Ajuste</option>
                                                 </select>
                                             </div>
 

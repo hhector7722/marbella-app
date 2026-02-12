@@ -205,8 +205,10 @@ export default function HistoryPage() {
                     // Managers y empleados con salario fijo: todas las horas son extras
                     if (isManager || isFixedSalary) {
                         summaryWeeklyBalance = weekTotalHours;
+                        summaryTotalHours = 40 + weekTotalHours; // Manager: 40 + extras
                     } else {
                         summaryWeeklyBalance = weekTotalHours - contractHours;
+                        summaryTotalHours = weekTotalHours;
                     }
 
                     const prevWeekDate = new Date(currentWeekStart);

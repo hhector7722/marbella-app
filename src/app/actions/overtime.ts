@@ -134,16 +134,18 @@ export async function getOvertimeData(startDate: string, endDate: string) {
                 const finalBalance = pendingBalance + weeklyBalance;
                 userFinalBalances.get(weekId)!.set(userId, finalBalance);
 
+                // Solo balances positivos (crédito) cuentan como Extras a pagar. Las deudas no.
                 const overtimeHours = finalBalance > 0 ? finalBalance : 0;
                 const overCost = preferStock ? 0 : (overtimeHours * overPrice);
 
+                // Filtrar solo balances positivos y que no sean stock
                 if (overtimeHours > 0 && !preferStock) {
                     staffList.push({
                         id: userId,
                         name: `${profile.first_name} ${profile.last_name || ''}`,
                         role: profile.role || 'Staff',
-                        totalHours: hoursWorked,
-                        regularHours: 0,
+                        totalHours: isManager ? (40 + hoursWorked) : hoursWorked, // Manager: 40 + extras
+                        regularHours: isManager ? 40 : (hoursWorked - overtimeHours),
                         overtimeHours: overtimeHours,
                         totalCost: overCost,
                         regularCost: 0,
@@ -153,7 +155,7 @@ export async function getOvertimeData(startDate: string, endDate: string) {
                     });
 
                     weekTotalCost += overCost;
-                    weekTotalHours += overtimeHours;
+                    weekTotalHours += isManager ? (40 + hoursWorked) : hoursWorked;
                 }
             }
         });

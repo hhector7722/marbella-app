@@ -78,7 +78,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Configuración de Icono PWA**: Corrección de rutas de iconos en `manifest.json` y `layout.tsx` para apuntar correctamente a `/icons/logo-white.png`, asegurando la imagen correcta al "añadir a pantalla de inicio".
 - [x] **Optimización de Modales de Tesorería**: Compactación radical de los formularios de Entrada, Salida, Arqueo y Cambios para eliminar el scroll. Rediseño del formulario de cambios a layout horizontal y homogeneización de tamaños de valores en toda la gestión de efectivo.
 - [x] **Filtros Avanzados en Extras**: Implementación de selector de periodo (mes) y selección manual de rango de fechas en el histórico de horas extras para una auditoría más precisa.
-- [x] **Estandarización de Semanas ISO**: Corrección del sistema de agrupación de semanas en el dashboard de extras para utilizar el estándar ISO (Lunes a Domingo), eliminando discrepancias en el arqueo de horas.
+- [x] **Agrupación de Semanas ISO**: Corrección del sistema de agrupación de semanas en el dashboard de extras para utilizar el estándar ISO (Lunes a Domingo).
+- [x] **Propagación y Recálculo V3**: Implementación de lógica de servidor para propagar balances semanales, respetando contratos históricos y corrigiendo el balance de Managers (Extras-only). Lógica asimétrica de deuda indestructible.
+
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
