@@ -86,9 +86,11 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Navegación por Gestos:** Implementación de gestos "swipe" (deslizar) para que Managers cambien entre Dashboard Staff y Admin.
 - [x] **Optimización UI Móvil (Caja/Personal):** Compactación de modales de tesorería y registros para mejor accesibilidad táctil sin sacrificar legibilidad.
 - [x] **Sincronización Resumen Staff:** Corrección de la lógica de propagación en la base de datos para sincronizar automáticamente el saldo acumulado (`profiles.hours_balance`) tras recálculos en el historial.
+- [x] **Estándar Gallery View:** Creación de plantilla `gallery-view.tsx` e integración en el Generador de Templates Marbella para unificar vistas de catálogo (Ingrediente/Recetas).
 
 
 ## 📅 PENDIENTE
+- [x] **Refinamiento Estético Horarios V4**: Unificación de la cabecera de horarios con el estándar "Vista Marbella Detail" (Azul Sólido) y reestructuración del editor (Totales al final, botón añadir verde premium).
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

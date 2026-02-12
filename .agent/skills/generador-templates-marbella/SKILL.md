@@ -31,6 +31,15 @@ Evitar la fragmentación del diseño. Cada vez que crees una nueva página de de
 - Sombras suaves (`shadow-xl` o `shadow-2xl`).
 - Alta densidad de información sin saturar el espacio visual.
 
+### 4. 🖼️ Galería y Catálogos (Gallery View)
+- **Fondo Global:** Usar siempre `bg-[#5B8FB9]` (Azul Marbella) para el contenedor principal de la página.
+- **Cuadrícula (Grid):** Layout responsivo de alta densidad: `grid-cols-3` en móvil, escalando hasta `grid-cols-8` en monitores XL.
+- **Tarjetas de Ítem:**
+    - `rounded-xl`, `p-1.5`, `bg-white`.
+    - Feedback visual obligatorio: `hover:-translate-y-0.5` y `active:scale-95`.
+    - Altura de imagen fija (`h-14`) para mantener la alineación.
+- **Buscador:** Centrado o a la izquierda con `rounded-2xl` y sombra suave.
+
 ## 📝 Ejemplos de Implementación
 
 ### Estructura de KPI sin tarjeta (Detail View)
@@ -67,7 +76,9 @@ Evitar la fragmentación del diseño. Cada vez que crees una nueva página de de
 - [ ] ¿Los botones e iconos tienen un target táctil de al menos 48px?
 - [ ] ¿Se han incluido filtros contextuales proactivos?
 - [ ] ¿Se usa `cn()` para el manejo de clases dinámicas?
+- [ ] ¿La vista de galería usa el fondo corporativo `#5B8FB9`?
 
 ## 🔧 Recursos Relacionados
 - Template Detail: `resources/templates/detail-view.tsx`
 - Template Modal: `resources/templates/modal-standard.tsx`
+- Template Gallery: `resources/templates/gallery-view.tsx`

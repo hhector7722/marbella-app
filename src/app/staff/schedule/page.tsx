@@ -198,14 +198,14 @@ export default function StaffSchedulePage() {
                 <div className="bg-white rounded-[2rem] shadow-2xl border border-white/20 overflow-hidden min-h-[calc(100vh-4rem)]">
 
                     {/* HEADER FIJO DENTRO DE LA TARJETA */}
-                    <div className="bg-white sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
+                    <div className="bg-[#36606F] sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <Link href="/staff/dashboard" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
-                                    <ArrowLeft size={20} className="text-gray-600" />
+                                <Link href="/staff/dashboard" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                                    <ArrowLeft size={20} className="text-white" />
                                 </Link>
-                                <h1 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                                    <Calendar className="text-purple-600" size={24} fill="currentColor" />
+                                <h1 className="text-xl font-black text-white flex items-center gap-2">
+                                    <Calendar className="text-white/80" size={24} fill="currentColor" />
                                     {getSelectedEmployeeName()}
                                 </h1>
                             </div>
@@ -216,7 +216,7 @@ export default function StaffSchedulePage() {
                                     {/* Botón selector de empleado */}
                                     <button
                                         onClick={() => setShowEmployeeModal(true)}
-                                        className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2.5 rounded-xl transition-all active:scale-95"
+                                        className="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-xl transition-all active:scale-95"
                                     >
                                         <Users size={20} fill="currentColor" />
                                     </button>
@@ -224,7 +224,7 @@ export default function StaffSchedulePage() {
                                     {/* Botón + (abre calendario) */}
                                     <button
                                         onClick={() => setShowCalendarModal(true)}
-                                        className="bg-[#5B8FB9] hover:bg-blue-600 text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
+                                        className="bg-white hover:bg-white/10 text-[#36606F] hover:text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
                                     >
                                         <Plus size={20} strokeWidth={3} fill="currentColor" />
                                     </button>
@@ -233,16 +233,16 @@ export default function StaffSchedulePage() {
                         </div>
 
                         {/* TABS SELECTOR DENTRO DEL HEADER */}
-                        <div className="grid grid-cols-2 p-1.5 bg-gray-100 rounded-2xl">
+                        <div className="grid grid-cols-2 p-1.5 bg-black/10 rounded-2xl">
                             <button
                                 onClick={() => setActiveTab('upcoming')}
-                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400 font-medium'}`}
+                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-[#36606F] shadow-sm' : 'text-white/60 font-medium'}`}
                             >
                                 PRÓXIMOS
                             </button>
                             <button
                                 onClick={() => setActiveTab('history')}
-                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'history' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 font-medium'}`}
+                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'history' ? 'bg-white text-gray-800 shadow-sm' : 'text-white/60 font-medium'}`}
                             >
                                 HISTORIAL
                             </button>
@@ -257,11 +257,8 @@ export default function StaffSchedulePage() {
                             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 {upcomingShifts.length === 0 ? (
                                     <div className="text-center py-20 bg-gray-25 rounded-[2rem] border border-dashed border-gray-100">
-                                        <div className="bg-green-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CheckCircle2 className="text-green-500" size={40} fill="currentColor" />
-                                        </div>
-                                        <h3 className="font-black text-gray-700">¡Todo despejado!</h3>
-                                        <p className="text-xs text-gray-400 mt-2 max-w-[200px] mx-auto">No hay turnos programados próximamente.</p>
+                                        <h3 className="font-black text-gray-700 uppercase tracking-widest text-sm">¡Todo despejado!</h3>
+                                        <p className="text-[10px] font-bold text-gray-400 mt-2 max-w-[200px] mx-auto uppercase tracking-tighter">No hay turnos programados próximamente.</p>
                                     </div>
                                 ) : (
                                     upcomingShifts.map((shift) => {

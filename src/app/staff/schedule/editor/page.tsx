@@ -413,23 +413,6 @@ export default function ScheduleEditorPage() {
                         <div className="w-10 md:w-12 shrink-0 border-l border-red-600" />
                     </div>
 
-                    {/* FILA DE TOTALES - SEGUNDA POSICIÓN FIJA */}
-                    <div className="flex bg-yellow-100 border-b border-yellow-200 sticky top-6 z-20 shadow-sm">
-                        <div className="w-20 md:w-32 p-1 font-black text-black text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-yellow-200">
-                            TOT
-                        </div>
-                        <div className="flex-1 relative h-6 flex">
-                            {totals.map((count, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-black' : 'text-gray-300'}`}
-                                >
-                                    {count > 0 ? count : ''}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="w-10 md:w-12 shrink-0 border-l border-yellow-200" />
-                    </div>
 
                     {/* FILAS DE EMPLEADOS */}
                     <div className="bg-white">
@@ -475,13 +458,31 @@ export default function ScheduleEditorPage() {
                             </div>
                         ))}
 
-                        {/* Fila Añadir Trabajador - Misma altura que celdas */}
+                        {/* FILA DE TOTALES - DESPUÉS DE LOS TRABAJADORES */}
+                        <div className="flex bg-[#36606F] border-b border-[#36606F]/50">
+                            <div className="w-20 md:w-32 p-1 font-black text-white text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-[#36606F]/50">
+                                TOT
+                            </div>
+                            <div className="flex-1 relative h-6 flex">
+                                {totals.map((count, i) => (
+                                    <div
+                                        key={i}
+                                        className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-white' : 'text-white/30'}`}
+                                    >
+                                        {count > 0 ? count : ''}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="w-10 md:w-12 shrink-0 border-l border-[#36606F]/50" />
+                        </div>
+
+                        {/* Fila Añadir Trabajador - Relleno verde font blanco */}
                         <div className="flex h-9 md:h-10 border-b border-gray-100 group">
                             <button
                                 onClick={() => setShowAddModal(true)}
-                                className="flex-1 flex items-center justify-center gap-2 bg-emerald-50/30 hover:bg-emerald-50 transition-colors text-emerald-600 group"
+                                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white group"
                             >
-                                <Plus size={18} strokeWidth={4} className="group-hover:scale-110 transition-transform" />
+                                <Plus size={18} strokeWidth={4} className="group-hover:scale-110 transition-transform text-white" />
                                 <span className="font-black text-[10px] uppercase tracking-wider">Añadir Trabajador</span>
                             </button>
                         </div>
