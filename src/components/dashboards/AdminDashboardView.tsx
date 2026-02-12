@@ -191,15 +191,12 @@ export default function AdminDashboardView() {
         if (!newWorkerData.first_name.trim()) { toast.error('El nombre es obligatorio'); return; }
         setNewWorkerSaving(true);
         try {
-            const email = `${newWorkerData.first_name.trim().toLowerCase().replace(/\s+/g, '.')}@marbella.local`;
-            const { error } = await supabase.from('profiles').insert({
-                id: crypto.randomUUID(),
-                first_name: newWorkerData.first_name.trim(),
-                last_name: newWorkerData.last_name.trim() || null,
-                role: newWorkerData.role,
-                contracted_hours_weekly: newWorkerData.contracted_hours_weekly,
-                overtime_cost_per_hour: newWorkerData.overtime_cost_per_hour,
-                hours_balance: 0,
+            const { data, error } = await supabase.rpc('create_worker_profile', {
+                p_first_name: newWorkerData.first_name.trim(),
+                p_last_name: newWorkerData.last_name.trim() || null,
+                p_role: newWorkerData.role,
+                p_contracted_hours_weekly: newWorkerData.contracted_hours_weekly,
+                p_overtime_cost_per_hour: newWorkerData.overtime_cost_per_hour,
             });
             if (error) throw error;
             toast.success(`${newWorkerData.first_name} añadido correctamente`);
