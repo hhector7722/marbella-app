@@ -167,7 +167,7 @@ export default function HistoryPage() {
         new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 

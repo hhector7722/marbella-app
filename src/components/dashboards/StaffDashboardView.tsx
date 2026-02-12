@@ -406,7 +406,7 @@ export default function StaffDashboardView() {
                                     {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                 </span>
                             </div>
-                            <Link href="/staff/history" className="text-xs font-bold text-[#5B8FB9] flex items-center gap-1 hover:underline">
+                            <Link href="/staff/history" className="text-xs font-bold text-[#36606F] flex items-center gap-1 hover:underline">
                                 Histórico <ArrowRight size={12} />
                             </Link>
                         </div>

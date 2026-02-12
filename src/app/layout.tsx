@@ -13,7 +13,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#5B8FB9",
+  themeColor: "#36606F",
 };
 
 export const metadata: Metadata = {
@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${inter.className} bg-[#5B8FB9]`}>
+      <body className={`${inter.className} bg-[#36606F]`}>
         <Navbar />
         <MainWrapper>
           {children}

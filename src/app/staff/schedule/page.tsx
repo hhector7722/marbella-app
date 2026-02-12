@@ -192,7 +192,7 @@ export default function StaffSchedulePage() {
     if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] pb-10 pt-4">
+        <div className="min-h-screen bg-[#36606F] pb-10 pt-4">
             {/* CONTENEDOR TIPO TARJETA */}
             <div className="max-w-2xl mx-auto px-4 md:px-0">
                 <div className="bg-white rounded-[2rem] shadow-2xl border border-white/20 overflow-hidden min-h-[calc(100vh-4rem)]">

@@ -80,7 +80,7 @@ function AccountContent() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-[#36606F] flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
                 <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando configuración...</p>
             </div>
@@ -92,7 +92,7 @@ function AccountContent() {
     const fullName = `${profile.first_name} ${profile.last_name || ''}`;
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+        <div className="min-h-screen bg-[#36606F] p-4 md:p-6 pb-24">
             <div className="max-w-xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
@@ -174,7 +174,7 @@ function AccountContent() {
 export default function AccountPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-[#36606F] flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
                 <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando...</p>
             </div>

@@ -374,7 +374,7 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="p-8 text-center text-white font-bold">Cargando editor...</div>;
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-4 gap-2">
+        <div className="min-h-screen bg-[#36606F] flex flex-col p-2 md:p-4 gap-2">
 
             {/* CABECERA ULTRA-COMPACTA */}
             <div className="flex justify-center w-full">

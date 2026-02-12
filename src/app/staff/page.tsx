@@ -392,9 +392,9 @@ export default function StaffDashboard() {
                     <div className="bg-white rounded-[2rem] p-5 shadow-xl">
                         <div className="flex justify-between items-center mb-1 px-1">
                             <h3 className="text-sm font-black text-gray-700 flex items-center gap-2 uppercase tracking-wide">
-                                <Calendar size={16} className="text-[#5B8FB9]" /> MIS REGISTROS
+                                <Calendar size={16} className="text-[#36606F]" /> MIS REGISTROS
                             </h3>
-                            <Link href="/staff/history" className="text-xs font-bold text-[#5B8FB9] flex items-center gap-1 hover:underline">
+                            <Link href="/staff/history" className="text-xs font-bold text-[#36606F] flex items-center gap-1 hover:underline">
                                 Histórico <ArrowRight size={12} />
                             </Link>
                         </div>

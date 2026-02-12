@@ -609,7 +609,7 @@ export default function AdminDashboardView() {
                             {/* Botón Crear Nuevo */}
                             <button
                                 onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
-                                className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                                className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#36606F] hover:text-[#36606F] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
                             >
                                 <Plus size={18} /> Nuevo Trabajador
                             </button>
@@ -620,7 +620,7 @@ export default function AdminDashboardView() {
                                         onClick={() => router.push(`/profile?id=${emp.id}`)}
                                         className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
                                     >
-                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#36606F] shadow-inner group-hover:bg-[#36606F] group-hover:text-white transition-colors capitalize shrink-0">
                                             {emp.first_name.substring(0, 1)}
                                         </div>
                                         <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
@@ -715,7 +715,7 @@ export default function AdminDashboardView() {
                             <button
                                 onClick={handleCreateWorker}
                                 disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
-                                className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
+                                className="flex-1 h-12 bg-[#36606F] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
                             >
                                 {newWorkerSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save size={18} /> Guardar</>}
                             </button>

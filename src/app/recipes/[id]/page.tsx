@@ -321,8 +321,8 @@ export default function RecipeDetailPage() {
         return <input {...props} type="number" step="0.01" className={className} value={localValue} onChange={handleChange} onBlur={handleBlurLocal} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />;
     };
 
-    if (loading) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
-    if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
+    if (loading) return <div className="min-h-screen bg-[#36606F] flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
+    if (!recipe) return <div className="min-h-screen bg-[#36606F] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
         <div className="min-h-screen bg-[#5ea2c6] p-2 md:p-3 overflow-hidden flex flex-col">

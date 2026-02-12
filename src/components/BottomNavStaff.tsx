@@ -92,7 +92,7 @@ export default function BottomNavStaff() {
     return (
         <>
             {/* MOBILE: Bottom Bar - same height as admin (h-20) */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 pb-safe bg-[#5B8FB9] border-t border-white/10 z-[100] flex justify-around items-center px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 pb-safe bg-[#36606F] border-t border-white/10 z-[100] flex justify-around items-center px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {staffItems.map((item) => (
                     <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`}>
                         {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={20} />}
@@ -102,7 +102,7 @@ export default function BottomNavStaff() {
             </nav>
 
             {/* DESKTOP: Sidebar - same width as admin (w-20) */}
-            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-[#5B8FB9] flex-col items-center py-6 z-[100] shadow-xl border-r border-white/10">
+            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-[#36606F] flex-col items-center py-6 z-[100] shadow-xl border-r border-white/10">
                 {/* Nav Items */}
                 <div className="flex-1 flex flex-col gap-2 w-full px-2">
                     {staffItems.map((item) => (
