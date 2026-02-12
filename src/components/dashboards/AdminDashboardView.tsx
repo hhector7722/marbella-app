@@ -185,7 +185,7 @@ export default function AdminDashboardView() {
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
-    const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
+    const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
 
     const handleCreateWorker = async () => {
         if (!newWorkerData.first_name.trim()) { toast.error('El nombre es obligatorio'); return; }
@@ -194,6 +194,7 @@ export default function AdminDashboardView() {
             const { data, error } = await supabase.rpc('create_worker_profile', {
                 p_first_name: newWorkerData.first_name.trim(),
                 p_last_name: newWorkerData.last_name.trim() || null,
+                p_email: newWorkerData.email.trim() || null,
                 p_role: newWorkerData.role,
                 p_contracted_hours_weekly: newWorkerData.contracted_hours_weekly,
                 p_overtime_cost_per_hour: newWorkerData.overtime_cost_per_hour,
@@ -201,7 +202,7 @@ export default function AdminDashboardView() {
             if (error) throw error;
             toast.success(`${newWorkerData.first_name} añadido correctamente`);
             setIsNewWorkerModalOpen(false);
-            setNewWorkerData({ first_name: '', last_name: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
+            setNewWorkerData({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -578,6 +579,16 @@ export default function AdminDashboardView() {
                                     value={newWorkerData.last_name}
                                     onChange={e => setNewWorkerData({ ...newWorkerData, last_name: e.target.value })}
                                     placeholder="Opcional"
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={newWorkerData.email}
+                                    onChange={e => setNewWorkerData({ ...newWorkerData, email: e.target.value })}
+                                    placeholder="ejemplo@correo.com"
                                     className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
                                 />
                             </div>
