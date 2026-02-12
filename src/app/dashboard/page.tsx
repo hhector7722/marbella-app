@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { togglePaidStatus } from '@/app/actions/overtime';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 
 // --- CONSTANTES: IMÁGENES DE MONEDAS ---
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -352,6 +353,7 @@ export default function DashboardPage() {
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>([]);
+    const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor' | null>(null);
 
     // Estado para gestión de caja
     const [cashModalMode, setCashModalMode] = useState<'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory'>('none');
@@ -367,6 +369,15 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchData();
     }, []);
+
+    // NAVEGACIÓN POR GESTOS (Sólo Manager)
+    useSwipeNavigation({
+        onSwipeRight: () => {
+            if (userRole === 'manager') {
+                router.push('/staff/dashboard');
+            }
+        }
+    });
 
     const toggleWeek = (weekId: string) => {
         setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
@@ -405,6 +416,12 @@ export default function DashboardPage() {
 
     async function fetchData() {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (profile) setUserRole(profile.role);
+            }
+
             const { data: lastClose } = await supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single();
 
             if (lastClose) {
@@ -960,7 +977,7 @@ export default function DashboardPage() {
                                                         className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                     >
                                                         <div className="w-16 h-16 transition-transform group-hover:scale-110">
-                                                            <Image src="/icons/change.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" />
+                                                            <Image src="/icons/reverse.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" />
                                                         </div>
                                                         <span className="font-black text-xl text-zinc-900">Cambiar</span>
                                                     </button>

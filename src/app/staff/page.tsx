@@ -614,12 +614,12 @@ export default function StaffDashboard() {
                                                 <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
                                                 <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <a href={`tel:${cleanPhone(c.phone)}`} className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors">
-                                                    <Phone size={16} fill="currentColor" />
+                                            <div className="flex gap-4 items-center">
+                                                <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95">
+                                                    <Phone size={22} />
                                                 </a>
-                                                <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                                                    <MessageCircle size={16} />
+                                                <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
+                                                    <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
                                                 </a>
                                             </div>
                                         </div>
