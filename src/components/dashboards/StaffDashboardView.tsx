@@ -609,7 +609,7 @@ export default function StaffDashboardView() {
 
             {activeMenu && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-xs')} rounded-[2rem] p-6 shadow-2xl relative transition-all max-h-[85vh] flex flex-col`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-xs')} rounded-[2.5rem] shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
                         {infoSubMenu && (
                             <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
                                 <ArrowLeft size={16} />
@@ -624,20 +624,20 @@ export default function StaffDashboardView() {
                                     <Info size={24} className="text-blue-500" />
                                     {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : 'Información'}
                                 </h3>
-                                <div className="space-y-4 overflow-y-auto">
+                                <div className="p-8 space-y-2 overflow-y-auto">
                                     {!infoSubMenu && (
                                         <>
-                                            <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
-                                                <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><Phone size={20} /></div>
-                                                <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Contactos</span>
+                                            <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#36606F]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#36606F]"><Phone size={24} strokeWidth={2.5} /></div>
+                                                <span className="font-bold text-base tracking-tight text-left flex-1">Contactos</span>
                                             </button>
-                                            <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
-                                                <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><FileText size={20} /></div>
-                                                <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Convenio</span>
+                                            <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#36606F]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#36606F]"><FileText size={24} strokeWidth={2.5} /></div>
+                                                <span className="font-bold text-base tracking-tight text-left flex-1">Convenio</span>
                                             </button>
-                                            <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
-                                                <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><Scale size={20} /></div>
-                                                <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Código de Conducta</span>
+                                            <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#36606F]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#36606F]"><Scale size={24} strokeWidth={2.5} /></div>
+                                                <span className="font-bold text-base tracking-tight text-left flex-1">Código de Conducta</span>
                                             </button>
                                         </>
                                     )}
@@ -672,8 +672,8 @@ export default function StaffDashboardView() {
                         )}
                         {activeMenu === 'pedidos' && (
                             <>
-                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0 rounded-t-[2rem]">
-                                    <div>
+                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                    <div className="flex flex-col">
                                         <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
                                         <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
                                     </div>
@@ -681,17 +681,17 @@ export default function StaffDashboardView() {
                                         <X size={20} strokeWidth={3} />
                                     </button>
                                 </div>
-                                <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+                                <div className="p-8 grid grid-cols-2 gap-4 bg-transparent overflow-y-auto">
                                     {[
-                                        { title: 'Pedidos', img: '/icons/shipment.png', hover: 'hover:bg-emerald-50/30' },
-                                        { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
-                                        { title: 'Proveedores', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
+                                        { title: 'Pedidos', img: '/icons/shipment.png' },
+                                        { title: 'Inventario', img: '/icons/inventory.png' },
+                                        { title: 'Proveedores', img: '/icons/suplier.png' },
                                     ].map((item, i) => (
-                                        <button key={i} onClick={() => toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}>
-                                            <div className="w-12 h-12 transition-transform group-hover:scale-110">
-                                                <Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" />
+                                        <button key={i} onClick={() => toast.info(`${item.title} próximamente`)} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
+                                            <div className="w-14 h-14 transition-transform group-hover:scale-110">
+                                                <Image src={item.img} alt={item.title} width={56} height={56} className="w-full h-full object-contain" />
                                             </div>
-                                            <span className="font-black text-sm text-gray-700">{item.title}</span>
+                                            <span className="font-black text-xs text-zinc-500 uppercase tracking-tight group-hover:text-zinc-900">{item.title}</span>
                                         </button>
                                     ))}
                                 </div>
