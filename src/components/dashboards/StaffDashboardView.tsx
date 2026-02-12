@@ -717,7 +717,15 @@ export default function StaffDashboardView() {
 
                 const totalIn = ALL_DENOMS.reduce((acc, val) => acc + (val * (swapInCounts[val] || 0)), 0);
                 const totalOut = ALL_DENOMS.reduce((acc, val) => acc + (val * (swapOutCounts[val] || 0)), 0);
-                const isBalanced = totalIn > 0 && Math.abs(totalIn - totalOut) < 0.001;
+                const handleSwapAdjust = (denom: number, side: 'in' | 'out', delta: number) => {
+                    if (side === 'in') {
+                        setSwapInCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
+                    } else {
+                        setSwapOutCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
+                    }
+                };
+
+                const isBalanced = Math.abs(totalIn - totalOut) < 0.01; // Adjusted for floating point comparison
                 const hasStockIssue = Object.entries(swapOutCounts).some(([d, q]) => q > (changeBoxInventoryMap[Number(d)] || 0));
 
                 const handleSwapSubmit = async () => {
@@ -734,90 +742,123 @@ export default function StaffDashboardView() {
                 };
 
                 const renderDenomRow = (denom: number) => (
-                    <div key={denom} className="flex items-center gap-1.5 md:gap-3 mb-5 group">
-                        {/* ENTRA */}
-                        <input
-                            type="number" min="0"
-                            value={swapInCounts[denom] || ''}
-                            onChange={(e) => setSwapInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                            placeholder="0"
-                            className="w-12 h-10 border border-gray-200 rounded-xl text-center font-bold text-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all shadow-sm shrink-0"
-                        />
-
-                        <div className="bg-emerald-500 text-white rounded-full p-1 shadow-sm shrink-0">
-                            <Plus size={12} strokeWidth={4} />
+                    <div key={denom} className="flex items-center gap-1.5 md:gap-4 mb-4 group justify-center">
+                        {/* ENTRA SECTION */}
+                        <div className="flex items-center gap-1.5 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-sm">
+                            <button
+                                onClick={() => handleSwapAdjust(denom, 'in', -1)}
+                                className="w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                            >
+                                <Minus size={16} strokeWidth={3} />
+                            </button>
+                            <input
+                                type="number" min="0"
+                                value={swapInCounts[denom] || ''}
+                                onChange={(e) => setSwapInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                                placeholder="0"
+                                className="w-12 text-center text-lg font-black bg-transparent outline-none text-emerald-600"
+                            />
+                            <button
+                                onClick={() => handleSwapAdjust(denom, 'in', 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                            >
+                                <Plus size={16} strokeWidth={3} />
+                            </button>
                         </div>
 
-                        {/* IMAGEN Y LABEL */}
-                        <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-                            <div className="h-9 flex items-center justify-center transition-transform group-hover:scale-110">
-                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={80} height={80} className="h-full w-auto object-contain drop-shadow-sm" />
+                        {/* CURRENCY IMAGE */}
+                        <div className="flex flex-col items-center justify-center w-16 shrink-0">
+                            <div className="relative h-6 md:h-8 mb-0.5 flex items-center justify-center">
+                                <Image
+                                    src={CURRENCY_IMAGES[denom]}
+                                    alt={`${denom}€`}
+                                    width={60}
+                                    height={40}
+                                    className="h-full w-auto object-contain drop-shadow-sm"
+                                />
                             </div>
-                            <span className="font-black text-gray-400 text-[9px] uppercase tracking-widest mt-0.5 whitespace-nowrap">
-                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}C`}
-                            </span>
+                            <span className="text-[10px] font-black text-gray-400">{denom >= 5 ? `${denom}€` : denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
                         </div>
 
-                        <div className="bg-rose-500 text-white rounded-full p-1 shadow-sm shrink-0">
-                            <Minus size={12} strokeWidth={4} />
+                        {/* SALE SECTION */}
+                        <div className="flex items-center gap-1.5 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-sm">
+                            <button
+                                onClick={() => handleSwapAdjust(denom, 'out', -1)}
+                                className="w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                            >
+                                <Minus size={16} strokeWidth={3} />
+                            </button>
+                            <input
+                                type="number" min="0"
+                                value={swapOutCounts[denom] || ''}
+                                onChange={(e) => setSwapOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                                placeholder="0"
+                                className="w-12 text-center text-lg font-black bg-transparent outline-none text-rose-600"
+                            />
+                            <button
+                                onClick={() => handleSwapAdjust(denom, 'out', 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                            >
+                                <Plus size={16} strokeWidth={3} />
+                            </button>
                         </div>
-
-                        {/* SALE */}
-                        <input
-                            type="number" min="0"
-                            value={swapOutCounts[denom] || ''}
-                            onChange={(e) => setSwapOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                            placeholder="0"
-                            className={cn(
-                                "w-12 h-10 border rounded-xl text-center font-bold outline-none transition-all shadow-sm shrink-0",
-                                (swapOutCounts[denom] || 0) > (changeBoxInventoryMap[denom] || 0)
-                                    ? "border-rose-400 text-rose-700 bg-rose-50"
-                                    : "border-gray-200 text-gray-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
-                            )}
-                        />
                     </div>
                 );
 
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={() => setShowSwapModal(false)}>
-                        <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                            <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white shrink-0">
-                                <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p></div>
-                                <button onClick={() => setShowSwapModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
+                        <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                            {/* STICKY HEADER */}
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md z-10">
+                                <div>
+                                    <h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p>
+                                </div>
+                                <button onClick={() => setShowSwapModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-all text-white active:scale-90">
+                                    <X size={24} strokeWidth={3} />
+                                </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar scroll-smooth">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-12">
-                                    {/* COLUMNA BILLETES */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between px-1 mb-4">
-                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">ENTRAN</span>
-                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">SALEN</span>
-                                        </div>
-                                        {BILLS.map(renderDenomRow)}
-                                    </div>
+                            <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-10 py-2 border-b bg-gray-50/30">
+                                <span>ENTRA</span>
+                                <span>SALE</span>
+                            </div>
 
-                                    {/* COLUMNA MONEDAS */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between px-1 mb-4 mt-8 md:mt-0">
-                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">ENTRAN</span>
-                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">SALEN</span>
-                                        </div>
-                                        {COINS.map(renderDenomRow)}
-                                    </div>
+                            {/* SCROLLABLE CONTENT AREA */}
+                            <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar bg-white">
+                                <div className="max-w-md mx-auto">
+                                    {ALL_DENOMS.map(renderDenomRow)}
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-gray-50 border-t shrink-0 space-y-3">
-                                <div className="flex items-center justify-between px-8 bg-white py-3 rounded-2xl border border-gray-100 shadow-sm">
-                                    <div className="text-center"><span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Entra</span><span className="text-xl font-black text-emerald-800 leading-none">{totalIn.toFixed(2)}€</span></div>
-                                    <div className={cn("px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm", isBalanced ? (hasStockIssue ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700")}>{isBalanced ? (hasStockIssue ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}</div>
-                                    <div className="text-center"><span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Sale</span><span className="text-xl font-black text-rose-800 leading-none">{totalOut.toFixed(2)}€</span></div>
+                            {/* STICKY FOOTER */}
+                            <div className="p-6 bg-white border-t shrink-0 space-y-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] z-10">
+                                <div className="flex items-center justify-center gap-6">
+                                    <div className="text-center">
+                                        <span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Entra</span>
+                                        <span className="text-xl font-black text-emerald-800 leading-none">{totalIn.toFixed(2)}€</span>
+                                    </div>
+
+                                    <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm ${Math.abs(totalIn - totalOut) < 0.01 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                        {Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.
+                                    </div>
+
+                                    <div className="text-center">
+                                        <span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Sale</span>
+                                        <span className="text-xl font-black text-rose-800 leading-none">{totalOut.toFixed(2)}€</span>
+                                    </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setShowSwapModal(false)} className="flex-1 py-3.5 text-gray-500 font-black uppercase tracking-widest text-xs hover:bg-gray-200 rounded-xl transition-all active:scale-95 bg-gray-100">Cancelar</button>
-                                    <button onClick={handleSwapSubmit} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3.5 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#5B8FB9] shadow-[#5B8FB9]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={18} strokeWidth={3} />Confirmar Cambio</button>
-                                </div>
+
+                                <button
+                                    onClick={handleSwapSubmit}
+                                    disabled={!isBalanced || hasStockIssue}
+                                    className={`
+                                        w-full py-4 text-white font-black uppercase tracking-[0.2em] text-xs rounded-xl shadow-lg transition-all active:scale-95
+                                        ${(isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none opacity-50"}
+                                    `}
+                                >
+                                    {hasStockIssue ? "Stock Insuficiente" : "Confirmar Cambio"}
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -100,130 +100,143 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
 
     const totalIn = ALL_DENOMS.reduce((acc, val) => acc + (val * (inCounts[val] || 0)), 0);
     const totalOut = ALL_DENOMS.reduce((acc, val) => acc + (val * (outCounts[val] || 0)), 0);
-    const isBalanced = totalIn > 0 && Math.abs(totalIn - totalOut) < 0.001;
     const hasStockIssue = Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0));
+    const diff = totalIn - totalOut;
+
+    const handleAdjust = (denom: number, side: 'in' | 'out', delta: number) => {
+        if (side === 'in') {
+            setInCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
+        } else {
+            setOutCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
+        }
+    };
 
     const renderDenomRow = (denom: number) => (
-        <div key={denom} className="flex items-center gap-1.5 md:gap-3 mb-5 group">
-            {/* ENTRA */}
-            <input
-                type="number" min="0"
-                value={inCounts[denom] || ''}
-                onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                placeholder="0"
-                className="w-12 h-10 border border-gray-200 rounded-xl text-center font-bold text-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all shadow-sm shrink-0"
-            />
-
-            <div className="bg-emerald-500 text-white rounded-full p-1 shadow-sm shrink-0">
-                <PlusIcon size={12} strokeWidth={4} />
+        <div key={denom} className="flex items-center gap-1.5 md:gap-4 mb-4 group justify-center">
+            {/* ENTRA SECTION */}
+            <div className="flex items-center gap-1.5 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-sm">
+                <button
+                    onClick={() => handleAdjust(denom, 'in', -1)}
+                    className="w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                >
+                    <MinusIcon size={16} strokeWidth={3} />
+                </button>
+                <input
+                    type="number" min="0"
+                    value={inCounts[denom] || ''}
+                    onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                    className="w-12 text-center text-lg font-black bg-transparent outline-none text-emerald-600"
+                />
+                <button
+                    onClick={() => handleAdjust(denom, 'in', 1)}
+                    className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                >
+                    <PlusIcon size={16} strokeWidth={3} />
+                </button>
             </div>
 
-            {/* IMAGEN Y LABEL */}
-            <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-                <div className="h-9 flex items-center justify-center transition-transform group-hover:scale-110">
-                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={80} height={80} className="h-full w-auto object-contain drop-shadow-sm" />
+            {/* CURRENCY IMAGE */}
+            <div className="flex flex-col items-center justify-center w-16 shrink-0">
+                <div className="relative h-6 md:h-8 mb-0.5 flex items-center justify-center">
+                    <Image
+                        src={CURRENCY_IMAGES[denom]}
+                        alt={`${denom}€`}
+                        width={60}
+                        height={40}
+                        className="h-full w-auto object-contain drop-shadow-sm"
+                    />
                 </div>
-                <span className="font-black text-gray-400 text-[9px] uppercase tracking-widest mt-0.5 whitespace-nowrap">
-                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}C`}
-                </span>
+                <span className="text-[10px] font-black text-gray-400">{denom >= 5 ? `${denom}€` : denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
             </div>
 
-            <div className="bg-rose-500 text-white rounded-full p-1 shadow-sm shrink-0">
-                <MinusIcon size={12} strokeWidth={4} />
+            {/* SALE SECTION */}
+            <div className="flex items-center gap-1.5 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-sm">
+                <button
+                    onClick={() => handleAdjust(denom, 'out', -1)}
+                    className="w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                >
+                    <MinusIcon size={16} strokeWidth={3} />
+                </button>
+                <input
+                    type="number" min="0"
+                    value={outCounts[denom] || ''}
+                    onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                    className="w-12 text-center text-lg font-black bg-transparent outline-none text-rose-600"
+                />
+                <button
+                    onClick={() => handleAdjust(denom, 'out', 1)}
+                    className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-full active:scale-90 transition-transform shadow-sm"
+                >
+                    <PlusIcon size={16} strokeWidth={3} />
+                </button>
             </div>
-
-            {/* SALE */}
-            <input
-                type="number" min="0"
-                value={outCounts[denom] || ''}
-                onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                placeholder="0"
-                className={cn(
-                    "w-12 h-10 border rounded-xl text-center font-bold outline-none transition-all shadow-sm shrink-0",
-                    (outCounts[denom] || 0) > (availableStock[denom] || 0)
-                        ? "border-rose-400 text-rose-700 bg-rose-50"
-                        : "border-gray-200 text-gray-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
-                )}
-            />
         </div>
     );
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
-            <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white shrink-0">
-                <div>
-                    <h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3>
-                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
+            {/* STICKY HEADER */}
+            <div className="bg-[#36606F] px-6 py-4 shrink-0 shadow-md z-10">
+                <div className="flex items-center justify-between mb-2">
+                    <div>
+                        <h2 className="text-xl font-black text-white uppercase tracking-wider">Cambio Efectivo</h2>
+                        <p className="text-white/60 text-xs font-bold uppercase tracking-widest">{boxName}</p>
+                    </div>
+                    <button onClick={onCancel} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">
+                        <X size={24} />
+                    </button>
                 </div>
-                <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                    <X size={20} strokeWidth={3} />
+
+                <div className="flex items-center justify-between text-[10px] font-black text-white/50 uppercase tracking-[0.2em] px-10">
+                    <span>ENTRA</span>
+                    <span>SALE</span>
+                </div>
+            </div>
+
+            {/* SCROLLABLE CONTENT */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-white">
+                <div className="max-w-md mx-auto">
+                    {ALL_DENOMS.map(renderDenomRow)}
+                </div>
+            </div>
+
+            {/* STICKY FOOTER */}
+            <div className="bg-white border-t p-4 md:p-6 shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] z-10">
+                <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mb-4">
+                    <div className="text-center group">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-emerald-500 transition-colors">ENTRA</div>
+                        <div className="text-xl md:text-2xl font-black text-emerald-600">{totalIn.toFixed(2)}€</div>
+                    </div>
+
+                    <div className={`px-4 py-1.5 rounded-2xl font-black text-sm transition-all ${Math.abs(diff) < 0.01 ? 'bg-emerald-50 text-emerald-600 shadow-sm' : 'bg-rose-50 text-rose-600 shadow-sm'}`}>
+                        {diff.toFixed(2)}€ DIF.
+                    </div>
+
+                    <div className="text-center group">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-rose-500 transition-colors">SALE</div>
+                        <div className="text-xl md:text-2xl font-black text-rose-600">{totalOut.toFixed(2)}€</div>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => onSubmit((totalIn - totalOut), inCounts, outCounts)}
+                    disabled={Math.abs(diff) > 0.01 || (totalIn === 0 && totalOut === 0) || hasStockIssue}
+                    className={`
+                        w-full h-14 rounded-2xl font-black text-base uppercase tracking-widest shadow-xl transition-all active:scale-[0.98]
+                        ${(Math.abs(diff) < 0.01 && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
+                            ? 'bg-[#36606F] text-white shadow-[#36606F]/20 hover:bg-[#2a4a56] cursor-pointer'
+                            : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none opacity-50'}
+                    `}
+                >
+                    {hasStockIssue ? 'STOCK INSUFICIENTE' : 'Confirmar Cambio'}
                 </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar scroll-smooth">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-12">
-                    {/* COLUMNA BILLETES */}
-                    <div className="space-y-1">
-                        <div className="flex justify-between px-1 mb-4">
-                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">ENTRAN</span>
-                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">SALEN</span>
-                        </div>
-                        {BILLS.map(renderDenomRow)}
-                    </div>
-
-                    {/* COLUMNA MONEDAS */}
-                    <div className="space-y-1">
-                        <div className="flex justify-between px-1 mb-4 mt-8 md:mt-0">
-                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">ENTRAN</span>
-                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">SALEN</span>
-                        </div>
-                        {COINS.map(renderDenomRow)}
-                    </div>
-                </div>
-            </div>
-
-            <div className="p-4 bg-gray-50 border-t shrink-0 space-y-3">
-                <div className="flex items-center justify-between px-8 bg-white py-3 rounded-2xl border border-gray-100 shadow-sm">
-                    <div className="text-center">
-                        <span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Entra</span>
-                        <span className="text-xl font-black text-emerald-800 leading-none">{totalIn.toFixed(2)}€</span>
-                    </div>
-
-                    <div className={cn(
-                        "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm",
-                        isBalanced
-                            ? (hasStockIssue ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white")
-                            : "bg-rose-100 text-rose-700"
-                    )}>
-                        {isBalanced ? (hasStockIssue ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}
-                    </div>
-
-                    <div className="text-center">
-                        <span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Sale</span>
-                        <span className="text-xl font-black text-rose-800 leading-none">{totalOut.toFixed(2)}€</span>
-                    </div>
-                </div>
-
-                <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 py-3.5 text-gray-500 font-black uppercase tracking-widest text-xs hover:bg-gray-200 rounded-xl transition-all active:scale-95 bg-gray-100">
-                        Cancelar
-                    </button>
-                    <button
-                        onClick={() => onSubmit(totalIn, inCounts, outCounts as any)}
-                        disabled={!isBalanced || hasStockIssue}
-                        className={cn(
-                            "flex-1 py-3.5 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
-                            (isBalanced && !hasStockIssue) ? "bg-[#5B8FB9] shadow-[#5B8FB9]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50"
-                        )}
-                    >
-                        <ArrowRightLeft size={18} strokeWidth={3} />
-                        Confirmar Cambio
-                    </button>
-                </div>
             </div>
         </div>
     );
 };
+
 
 const BoxInventoryView = ({ boxName, inventory, onBack }: { boxName: string, inventory: any[], onBack: () => void }) => {
     const total = inventory.reduce((sum, item) => sum + (item.denomination * item.quantity), 0);
