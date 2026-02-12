@@ -85,6 +85,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Visual Staff:** Actualización de iconos a versiones PNG premium, cambio de etiqueta "Guía" por "Cambiar" y optimización de iconos en el popup de Contactos (WhatsApp PNG y icono de teléfono flotante).
 - [x] **Navegación por Gestos:** Implementación de gestos "swipe" (deslizar) para que Managers cambien entre Dashboard Staff y Admin.
 - [x] **Optimización UI Móvil (Caja/Personal):** Compactación de modales de tesorería y registros para mejor accesibilidad táctil sin sacrificar legibilidad.
+- [x] **Sincronización Resumen Staff:** Corrección de la lógica de propagación en la base de datos para sincronizar automáticamente el saldo acumulado (`profiles.hours_balance`) tras recálculos en el historial.
 
 
 ## 📅 PENDIENTE

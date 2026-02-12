@@ -175,6 +175,17 @@ BEGIN
         -- Avanzar semana
         v_current_week := v_current_week + 7;
     END LOOP;
+
+    -- D. SINCRONIZACIÓN CON PERFIL (NUEVO)
+    -- El dashboard de staff usa profiles.hours_balance como baseline.
+    -- Buscamos el balance final de la semana inmediatamente anterior a la actual.
+    SELECT final_balance INTO v_final_balance
+    FROM public.weekly_snapshots
+    WHERE user_id = p_user_id AND week_start = public.get_iso_week_start(current_date - 7);
+
+    IF v_final_balance IS NOT NULL THEN
+        UPDATE public.profiles SET hours_balance = v_final_balance WHERE id = p_user_id;
+    END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
