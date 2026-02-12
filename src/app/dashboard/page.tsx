@@ -496,7 +496,9 @@ export default function DashboardPage() {
             const d = new Date(); d.setDate(d.getDate() - 60);
             const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
             const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary, hours_balance, prefer_stock_hours');
-            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance').gte('week_start', d.toISOString().split('T')[0]);
+            const { data: snapshots } = await supabase.from('weekly_snapshots')
+                .select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance')
+                .gte('week_start', format(d, 'yyyy-MM-dd'));
 
             if (profiles) setAllEmployees(profiles);
 

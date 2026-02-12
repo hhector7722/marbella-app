@@ -6,7 +6,7 @@ import {
     ArrowLeft, Calendar, ChevronLeft, ChevronRight, Filter, X, Check
 } from 'lucide-react';
 import Link from 'next/link';
-import { isSameWeek } from 'date-fns';
+import { isSameWeek, format } from 'date-fns';
 import { cn, formatDisplayValue } from '@/lib/utils';
 
 // --- TIPOS ---
@@ -185,7 +185,7 @@ export default function HistoryPage() {
                 if (hasFutureDays) break;
 
                 // --- LÓGICA DE RESUMEN ---
-                const weekStartISO = currentWeekStart.toISOString().split('T')[0];
+                const weekStartISO = format(currentWeekStart, 'yyyy-MM-dd');
                 const snapshot = snapshots?.find(s => s.week_start === weekStartISO);
                 const userPreferStock = profile?.prefer_stock_hours || false;
 
@@ -213,7 +213,7 @@ export default function HistoryPage() {
 
                     const prevWeekDate = new Date(currentWeekStart);
                     prevWeekDate.setDate(prevWeekDate.getDate() - 7);
-                    const prevWeekISO = prevWeekDate.toISOString().split('T')[0];
+                    const prevWeekISO = format(prevWeekDate, 'yyyy-MM-dd');
                     const prevSnapshot = snapshots?.find(s => s.week_start === prevWeekISO);
 
                     if (prevSnapshot) {

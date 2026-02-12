@@ -108,7 +108,7 @@ export default function OvertimePage() {
 
     const togglePaid = async (e: React.MouseEvent, week: (WeeklyStats & { expanded: boolean }), staff: StaffWeeklyStats) => {
         e.stopPropagation();
-        const mondayISO = week.startDate.toISOString().split('T')[0];
+        const mondayISO = format(week.startDate, 'yyyy-MM-dd');
         const newStatus = !staff.isPaid;
 
         // Optimistic update

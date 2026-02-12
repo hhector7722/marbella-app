@@ -151,8 +151,9 @@ BEGIN
             balance_hours = EXCLUDED.balance_hours,
             pending_balance = EXCLUDED.pending_balance,
             final_balance = EXCLUDED.final_balance,
-            week_end = EXCLUDED.week_end;
-            -- NOTA: NO actualizamos contracted_hours ni is_paid para no romper historia/pagos
+            week_end = EXCLUDED.week_end,
+            is_paid = EXCLUDED.is_paid,
+            contracted_hours_snapshot = EXCLUDED.contracted_hours_snapshot;
 
         -- Avanzar semana
         v_current_week := v_current_week + 7;
