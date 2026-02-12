@@ -86,7 +86,7 @@ export default function RecipesPage() {
     });
 
     return (
-        // CAMBIO AQUÍ: Añadido bg-[#5B8FB9] y min-h-screen
+        // FONDO AZUL CORPORATIVO PARA VISTAS DE GALERÍA
         <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
@@ -105,7 +105,7 @@ export default function RecipesPage() {
 
                 <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
                     <div className="flex gap-2 items-center">
-                        {/* Botón de Categoría Refinado */}
+                        {/* Botón de Categoría Refinado (Popup Flotante) */}
                         {!selectedCategory ? (
                             <div className="relative">
                                 <button
@@ -152,35 +152,33 @@ export default function RecipesPage() {
                                 </button>
                             </div>
                         )}
-
-                        {/* Botón Seleccionar Eliminado */}
                     </div>
 
-                    {/* Botón "+" Justificado a la derecha */}
+                    {/* Botón Acción Principal (Target 48px Táctil) */}
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
+                        className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
                 </div>
             </div>
 
-            {/* GRID LIMPIO Y COMPACTO (Alineado con Ingredients) */}
+            {/* GRID DE ALTA DENSIDAD (GAP-6 Alineado con Ingredients) */}
             {!loading && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-4 pb-24">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredRecipes.map((recipe) => (
-                        <div key={recipe.id} className="group relative">
+                        <div key={recipe.id} className="group relative overflow-hidden">
                             <Link href={`/recipes/${recipe.id}`} className="block h-full">
-                                <div className={`bg-white p-1.5 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-full border border-gray-100/50`}>
-                                    {/* IMAGEN MÁS PEQUEÑA (Compacta) */}
-                                    <div className="w-full h-20 bg-white rounded-lg mb-1.5 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                <div className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95">
+                                    {/* IMAGEN PEQUEÑA (Compacta 14) */}
+                                    <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                         {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
                                     </div>
-                                    {/* DATOS */}
-                                    <div className="flex justify-between items-center px-0.5 gap-1 mt-auto">
-                                        <h3 className="text-[10px] font-bold text-gray-700 truncate leading-tight" title={recipe.name}>{recipe.name}</h3>
-                                        <span className={`text-[10px] font-black whitespace-nowrap ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>
+                                    {/* TEXTOS COMPACTOS */}
+                                    <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
+                                        <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={recipe.name}>{recipe.name}</span>
+                                        <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>
                                     </div>
                                 </div>
                             </Link>
