@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { Play, Square, Clock, Coffee } from 'lucide-react';
 import { toast } from 'sonner';
+import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 
 export default function TimeTracker() {
     const supabase = createClient();
@@ -49,7 +50,40 @@ export default function TimeTracker() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
-            const { data, error } = await supabase.from('time_logs').insert({ user_id: user.id }).select().single();
+
+            // --- GEOFENCING ---
+            let lat: number | null = null;
+            let lng: number | null = null;
+            let distance: number | null = null;
+
+            // Obtener rol (aquí es más simple, solo para geofencing básico)
+            const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            const isAdmin = profile?.role === 'manager';
+
+            try {
+                const pos = await getCurrentPosition();
+                lat = pos.coords.latitude;
+                lng = pos.coords.longitude;
+                distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
+            } catch (geoError) {
+                if (!isAdmin) {
+                    toast.error("Ubicación necesaria para fichar");
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            if (!isAdmin && distance !== null && distance > MAX_DISTANCE_METERS) {
+                toast.error(`Estás demasiado lejos (${Math.round(distance)}m)`);
+                setLoading(false);
+                return;
+            }
+
+            const { data, error } = await supabase.from('time_logs').insert({
+                user_id: user.id,
+                input_lat: lat,
+                input_lng: lng
+            }).select().single();
             if (error) throw error;
             setCurrentLog(data);
             toast.success("Turno iniciado");
@@ -61,13 +95,28 @@ export default function TimeTracker() {
         if (!confirm("¿Finalizar turno?")) return;
         setLoading(true);
         try {
+            // --- GEOFENCING (CAPTURAR COORDENADAS) ---
+            let lat: number | null = null;
+            let lng: number | null = null;
+            try {
+                const pos = await getCurrentPosition();
+                lat = pos.coords.latitude;
+                lng = pos.coords.longitude;
+            } catch (e) { /* Fallback silencioso para salida */ }
+
             const now = new Date();
             const start = new Date(currentLog.clock_in);
             const totalHours = (now.getTime() - start.getTime()) / (1000 * 60 * 60);
 
             const { error } = await supabase
                 .from('time_logs')
-                .update({ clock_out: now.toISOString(), status: 'completed', total_hours: totalHours })
+                .update({
+                    clock_out: now.toISOString(),
+                    status: 'completed',
+                    total_hours: totalHours,
+                    input_lat: lat,
+                    input_lng: lng
+                })
                 .eq('id', currentLog.id);
 
             if (error) throw error;

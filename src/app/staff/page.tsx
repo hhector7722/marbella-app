@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { Share_Tech_Mono } from 'next/font/google';
 import { cn, formatDisplayValue } from '@/lib/utils';
 import Image from 'next/image';
+import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -232,14 +233,58 @@ export default function StaffDashboard() {
         setShowModal(false);
         setActionLoading(true);
         try {
+            let lat: number | null = null;
+            let lng: number | null = null;
+            let distance: number | null = null;
+
+            try {
+                const pos = await getCurrentPosition();
+                lat = pos.coords.latitude;
+                lng = pos.coords.longitude;
+                distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
+            } catch (geoError) {
+                console.error("Geo error:", geoError);
+                if (userRole !== 'manager') {
+                    toast.error("Ubicación necesaria para fichar");
+                    setActionLoading(false);
+                    return;
+                }
+            }
+
+            if (userRole !== 'manager' && distance !== null && distance > MAX_DISTANCE_METERS) {
+                toast.error(`Estás demasiado lejos del local (${Math.round(distance)}m)`);
+                setActionLoading(false);
+                return;
+            }
+
             const now = new Date();
+            const logCoords = { input_lat: lat, input_lng: lng };
+
             if (modalAction === 'in') {
-                const { data } = await supabase.from('time_logs').insert({ user_id: userId, clock_in: now.toISOString(), is_manual_entry: false }).select().single();
+                const { data } = await supabase.from('time_logs')
+                    .insert({
+                        user_id: userId,
+                        clock_in: now.toISOString(),
+                        is_manual_entry: false,
+                        ...logCoords
+                    })
+                    .select()
+                    .single();
                 setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
-                const { data } = await supabase.from('time_logs').update({ clock_out: now.toISOString(), total_hours: diffHours }).eq('id', todayLog.id).select().single();
+
+                const { data } = await supabase.from('time_logs')
+                    .update({
+                        clock_out: now.toISOString(),
+                        total_hours: diffHours,
+                        ...logCoords
+                    })
+                    .eq('id', todayLog.id)
+                    .select()
+                    .single();
+
                 setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
             }
             initialize();
