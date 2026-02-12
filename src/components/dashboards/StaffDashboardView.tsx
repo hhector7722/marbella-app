@@ -734,32 +734,32 @@ export default function StaffDashboardView() {
                 };
 
                 const renderDenomRow = (denom: number) => (
-                    <div key={denom} className="flex items-center justify-between gap-2 mb-4 group">
+                    <div key={denom} className="flex items-center gap-1.5 md:gap-3 mb-5 group">
                         {/* ENTRA */}
                         <input
                             type="number" min="0"
                             value={swapInCounts[denom] || ''}
                             onChange={(e) => setSwapInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                             placeholder="0"
-                            className="w-12 h-10 border border-gray-200 rounded-lg text-center font-bold text-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-12 h-10 border border-gray-200 rounded-xl text-center font-bold text-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all shadow-sm shrink-0"
                         />
 
-                        <div className="bg-emerald-500 text-white rounded-full p-1 shadow-sm">
-                            <Plus size={14} strokeWidth={4} />
+                        <div className="bg-emerald-500 text-white rounded-full p-1 shadow-sm shrink-0">
+                            <Plus size={12} strokeWidth={4} />
                         </div>
 
                         {/* IMAGEN Y LABEL */}
-                        <div className="flex flex-col items-center flex-1 min-w-[80px]">
-                            <div className="h-10 flex items-center justify-center transition-transform group-hover:scale-110">
+                        <div className="flex-1 flex flex-col items-center justify-center min-w-0">
+                            <div className="h-9 flex items-center justify-center transition-transform group-hover:scale-110">
                                 <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={80} height={80} className="h-full w-auto object-contain drop-shadow-sm" />
                             </div>
-                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest mt-1">
+                            <span className="font-black text-gray-400 text-[9px] uppercase tracking-widest mt-0.5 whitespace-nowrap">
                                 {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}C`}
                             </span>
                         </div>
 
-                        <div className="bg-rose-500 text-white rounded-full p-1 shadow-sm">
-                            <Minus size={14} strokeWidth={4} />
+                        <div className="bg-rose-500 text-white rounded-full p-1 shadow-sm shrink-0">
+                            <Minus size={12} strokeWidth={4} />
                         </div>
 
                         {/* SALE */}
@@ -769,7 +769,7 @@ export default function StaffDashboardView() {
                             onChange={(e) => setSwapOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                             placeholder="0"
                             className={cn(
-                                "w-12 h-10 border rounded-lg text-center font-bold outline-none transition-all",
+                                "w-12 h-10 border rounded-xl text-center font-bold outline-none transition-all shadow-sm shrink-0",
                                 (swapOutCounts[denom] || 0) > (changeBoxInventoryMap[denom] || 0)
                                     ? "border-rose-400 text-rose-700 bg-rose-50"
                                     : "border-gray-200 text-gray-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
@@ -781,27 +781,27 @@ export default function StaffDashboardView() {
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={() => setShowSwapModal(false)}>
                         <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                            <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
                                 <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p></div>
                                 <button onClick={() => setShowSwapModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
-                                <div className="grid grid-cols-2 gap-x-12">
+                            <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar scroll-smooth">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-12">
                                     {/* COLUMNA BILLETES */}
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between px-2 mb-6 text-gray-400">
-                                            <span className="text-[10px] font-black tracking-[0.2em]">ENTRAN</span>
-                                            <span className="text-[10px] font-black tracking-[0.2em]">SALEN</span>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between px-1 mb-4">
+                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">ENTRAN</span>
+                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">SALEN</span>
                                         </div>
                                         {BILLS.map(renderDenomRow)}
                                     </div>
 
                                     {/* COLUMNA MONEDAS */}
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between px-2 mb-6 text-gray-400">
-                                            <span className="text-[10px] font-black tracking-[0.2em]">ENTRAN</span>
-                                            <span className="text-[10px] font-black tracking-[0.2em]">SALEN</span>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between px-1 mb-4 mt-8 md:mt-0">
+                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">ENTRAN</span>
+                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em]">SALEN</span>
                                         </div>
                                         {COINS.map(renderDenomRow)}
                                     </div>
