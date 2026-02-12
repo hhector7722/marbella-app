@@ -38,7 +38,17 @@ const percentToTime = (percent: number) => {
 };
 
 // --- COMPONENTE BARRA INTERACTIVA ---
-const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void }) => {
+const ShiftBar = ({
+    shift,
+    onUpdate,
+    allowMove = true,
+    barClass = "bg-emerald-100/50 hover:bg-emerald-200/60"
+}: {
+    shift: any,
+    onUpdate: (s: any) => void,
+    allowMove?: boolean,
+    barClass?: string
+}) => {
     const barRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragType, setDragType] = useState<'move' | 'left' | 'right' | null>(null);
@@ -72,7 +82,7 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             } else if (dragType === 'right') {
                 const rawTime = percentToTime(Math.max(0, Math.min(currentPercent, 100)));
                 if (timeToPercent(rawTime) > timeToPercent(shift.start)) onUpdate({ ...shift, end: rawTime });
-            } else if (dragType === 'move') {
+            } else if (dragType === 'move' && allowMove) {
                 const diffPercent = currentPercent - dragStartPercent;
                 const startPct = timeToPercent(dragStartShift.start);
                 const endPct = timeToPercent(dragStartShift.end);
@@ -99,17 +109,17 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
             window.removeEventListener('pointermove', handlePointerMove);
             window.removeEventListener('pointerup', handlePointerUp);
         };
-    }, [isDragging, dragType, shift, onUpdate]);
+    }, [isDragging, dragType, shift, onUpdate, allowMove, dragStartPercent, dragStartShift]);
 
     return (
         <div
             ref={barRef}
-            className="absolute top-1.5 bottom-1.5 bg-emerald-100/50 flex items-center group cursor-grab active:cursor-grabbing hover:bg-emerald-200/60 transition-all z-10 touch-none overflow-hidden rounded-full"
+            className={`absolute top-1.5 bottom-1.5 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ left: `${leftPos}%`, width: `${width}%` }}
-            onPointerDown={(e) => handlePointerDown(e, 'move')}
+            onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
         >
-            {/* Tirador Izquierda (transparente) */}
-            <div className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
+            {/* Tirador Izquierda (transparente) - Agrandado para táctil */}
+            <div className="absolute left-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
 
             {/* Mini-barra Entrada (Verde) */}
             <div className="absolute left-0 top-0 bottom-0 min-w-[48px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full">
@@ -128,11 +138,12 @@ const ShiftBar = ({ shift, onUpdate }: { shift: any, onUpdate: (s: any) => void 
                 </span>
             </div>
 
-            {/* Tirador Derecha (transparente) */}
-            <div className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
+            {/* Tirador Derecha (transparente) - Agrandado para táctil */}
+            <div className="absolute right-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
         </div>
     );
 };
+
 
 // --- PÁGINA DE EDICIÓN ---
 export default function ScheduleEditorPage() {
@@ -492,9 +503,9 @@ export default function ScheduleEditorPage() {
 
             {/* BARRA DE EDICIÓN FLOTANTE */}
             {editingIndex !== null && shifts[editingIndex] && (
-                <div className="mt-4 mx-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="h-20 relative bg-transparent flex items-center overflow-hidden">
-                        <div className="flex-1 relative h-full bg-white/20 rounded-full shadow-2xl backdrop-blur-md border border-white/30">
+                <div className="mt-2 mx-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="h-12 relative flex items-center">
+                        <div className="flex-1 relative h-full">
                             <div className="absolute inset-0 flex">
                                 {hoursHeader.map((_, i) => (
                                     <div key={i} className="flex-1 border-r border-white/10 pointer-events-none last:border-r-0" />
@@ -503,17 +514,20 @@ export default function ScheduleEditorPage() {
                             <ShiftBar
                                 shift={shifts[editingIndex]}
                                 onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
+                                allowMove={false}
+                                barClass="bg-[#36606F] border border-white/10 shadow-lg"
                             />
                         </div>
                         <button
                             onClick={() => setEditingIndex(null)}
-                            className="ml-3 w-12 h-12 flex items-center justify-center bg-white/90 rounded-full shadow-lg hover:bg-white text-gray-500 transition-colors active:scale-95"
+                            className="ml-3 w-10 h-10 flex items-center justify-center bg-white/90 rounded-xl shadow-lg hover:bg-white text-gray-500 transition-all active:scale-95 shrink-0"
                         >
                             <X size={20} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
             )}
+
 
             {/* MODAL: Calendario */}
             {showCalendarModal && (
