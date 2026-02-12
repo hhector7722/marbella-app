@@ -313,10 +313,14 @@ export default function RegistrosPage() {
 
             {/* BLOQUE CALENDARIO INTEGRADO */}
             <div className="flex-1 flex flex-col overflow-hidden rounded-[3rem] shadow-2xl border border-white/10">
-                {/* DÍAS SEMANA INTEGRADOS (CABECERA ROJA) */}
-                <div className="grid grid-cols-7 bg-rose-500 py-5 shadow-inner border-b border-rose-400/20">
-                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                        <div key={day} className="text-center text-[11px] font-black text-white uppercase tracking-widest drop-shadow-sm">{day}</div>
+                {/* DÍAS SEMANA ESTILO RESUMEN SEMANAL */}
+                <div className="grid grid-cols-7 border-b border-gray-100">
+                    {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
+                        <div key={day} className="border-r border-gray-100 last:border-r-0">
+                            <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md">
+                                <span className="text-[9px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{day}</span>
+                            </div>
+                        </div>
                     ))}
                 </div>
 

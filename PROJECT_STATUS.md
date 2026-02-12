@@ -97,6 +97,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refactorización Recetas (Gallery View)**: Unificación estética de `/recipes` con el estándar de alta densidad, fondo azul Marbella y mantenimiento de lógica de color por food cost.
 - [x] **Unificación de Navegación**: Implementación de una única barra de menú basada en la versión de personal para todos los roles, con redirección inteligente del botón Inicio.
 - [x] **Transición Interactiva de Dashboards**: Modularización de dashboards y creación de `DashboardSwitcher` para transiciones "swipe" en tiempo real estilo iPhone para Managers.
+- [x] **Refinamiento UI Staff (Fase 4)**: Unificación estética del calendario de Registros con Historial (mini-bandas de gradiente).
+- [x] **Acceso Directo "Cambiar"**: Vinculación directa del icono de cambio al modal de swap de "Cambio 1" en el panel de personal.
+- [x] **Rediseño "Gestión Stock" Staff**: Modal de pedidos rediseñado con iconografía PNG estilo Admin e integración de sección "Proveedores".
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

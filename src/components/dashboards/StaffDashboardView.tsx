@@ -8,7 +8,7 @@ import {
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
     Info, Package,
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
-    ChefHat, Calculator
+    ChefHat, Calculator, ArrowRightLeft, Save
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { toast } from 'sonner';
@@ -89,6 +89,11 @@ export default function StaffDashboardView() {
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | null>(null);
     const [preferStock, setPreferStock] = useState(false);
+    const [changeBox, setChangeBox] = useState<any>(null);
+    const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
+    const [showSwapModal, setShowSwapModal] = useState(false);
+    const [swapInCounts, setSwapInCounts] = useState<Record<number, number>>({});
+    const [swapOutCounts, setSwapOutCounts] = useState<Record<number, number>>({});
 
     useEffect(() => { initialize(); }, []);
 
@@ -256,6 +261,12 @@ export default function StaffDashboardView() {
                 status: 'pending',
                 startBalance: historicalBalance
             });
+
+            // Cargar caja de cambio para acceso directo "Cambiar"
+            const { data: changeBoxes } = await supabase.from('cash_boxes').select('*').eq('type', 'change').order('name').limit(1);
+            if (changeBoxes && changeBoxes.length > 0) {
+                setChangeBox(changeBoxes[0]);
+            }
 
             const { data: realShifts } = await supabase
                 .from('shifts')
@@ -549,7 +560,16 @@ export default function StaffDashboardView() {
                     </div>
 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={() => toast.info("Abriendo guía...")} />
+                        <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
+                            if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
+                            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', changeBox.id).gt('quantity', 0);
+                            const initial: any = {};
+                            data?.forEach((d: any) => initial[d.denomination] = d.quantity);
+                            setChangeBoxInventoryMap(initial);
+                            setSwapInCounts({});
+                            setSwapOutCounts({});
+                            setShowSwapModal(true);
+                        }} />
                         <IOSIconBoxed
                             img="/icons/recipes.png"
                             color="bg-white"
@@ -595,74 +615,162 @@ export default function StaffDashboardView() {
                                 <ArrowLeft size={16} />
                             </button>
                         )}
-                        <button onClick={closeMenus} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
-                            <X size={16} />
-                        </button>
-                        <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
-                            {activeMenu === 'info' ? <Info size={24} className="text-blue-500" /> : <Package size={24} className="text-[#8B5E3C]" />}
-                            {activeMenu === 'info'
-                                ? (infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : 'Información')
-                                : 'Gestión Stock'}
-                        </h3>
-                        <div className="space-y-4 overflow-y-auto">
-                            {activeMenu === 'info' && !infoSubMenu && (
-                                <>
-                                    <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
-                                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><Phone size={20} /></div>
-                                        <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Contactos</span>
-                                    </button>
-                                    <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
-                                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><FileText size={20} /></div>
-                                        <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Convenio</span>
-                                    </button>
-                                    <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
-                                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><Scale size={20} /></div>
-                                        <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Código de Conducta</span>
-                                    </button>
-                                </>
-                            )}
-                            {infoSubMenu === 'contactos' && (
-                                <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
-                                    {CONTACTS_DATA.map((c, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
-                                                <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
+                        {activeMenu === 'info' && (
+                            <>
+                                <button onClick={closeMenus} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
+                                    <X size={16} />
+                                </button>
+                                <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
+                                    <Info size={24} className="text-blue-500" />
+                                    {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : 'Información'}
+                                </h3>
+                                <div className="space-y-4 overflow-y-auto">
+                                    {!infoSubMenu && (
+                                        <>
+                                            <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
+                                                <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><Phone size={20} /></div>
+                                                <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Contactos</span>
+                                            </button>
+                                            <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
+                                                <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><FileText size={20} /></div>
+                                                <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Convenio</span>
+                                            </button>
+                                            <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex items-center gap-4 transition-all active:scale-95 border border-zinc-100 group">
+                                                <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-zinc-400 group-hover:text-blue-500"><Scale size={20} /></div>
+                                                <span className="font-bold text-zinc-600 group-hover:text-zinc-900">Código de Conducta</span>
+                                            </button>
+                                        </>
+                                    )}
+                                    {infoSubMenu === 'contactos' && (
+                                        <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+                                            {CONTACTS_DATA.map((c, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
+                                                        <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
+                                                    </div>
+                                                    <div className="flex gap-4 items-center">
+                                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
+                                                        <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
+                                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
+                                        <div className="h-[60vh] w-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                                            <iframe src={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'} className="w-full h-full" title="Documento PDF" />
+                                            <div className="bg-white p-2 text-center border-t border-gray-200">
+                                                <a href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'} target="_blank" download className="text-xs font-bold text-blue-600 hover:underline">Descargar PDF si no visualiza</a>
                                             </div>
-                                            <div className="flex gap-4 items-center">
-                                                <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
-                                                <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
-                                                    <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
-                                                </a>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                        {activeMenu === 'pedidos' && (
+                            <>
+                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0 rounded-t-[2rem]">
+                                    <div>
+                                        <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
+                                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
+                                    </div>
+                                    <button onClick={closeMenus} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                        <X size={20} strokeWidth={3} />
+                                    </button>
+                                </div>
+                                <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+                                    {[
+                                        { title: 'Pedidos', img: '/icons/shipment.png', hover: 'hover:bg-emerald-50/30' },
+                                        { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
+                                        { title: 'Proveedores', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
+                                    ].map((item, i) => (
+                                        <button key={i} onClick={() => toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}>
+                                            <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                                <Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" />
+                                            </div>
+                                            <span className="font-black text-sm text-gray-700">{item.title}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Cambio de Efectivo (Cambio 1) */}
+            {showSwapModal && changeBox && (() => {
+                const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+                const CURRENCY_IMAGES: Record<number, string> = {
+                    100: '/currency/100e-Photoroom.png', 50: '/currency/50e-Photoroom.png', 20: '/currency/20-Photoroom.png',
+                    10: '/currency/10e-Photoroom.png', 5: '/currency/5eur-Photoroom.png', 2: '/currency/2eur-Photoroom.png',
+                    1: '/currency/1eur-Photoroom.png', 0.50: '/currency/50ct-Photoroom.png', 0.20: '/currency/20ct-Photoroom.png',
+                    0.10: '/currency/10ct-Photoroom.png', 0.05: '/currency/5ct-Photoroom.png', 0.02: '/currency/2ct-Photoroom.png',
+                    0.01: '/currency/1ct-Photoroom.png',
+                };
+                const totalIn = DENOMINATIONS.reduce((acc, val) => acc + (val * (swapInCounts[val] || 0)), 0);
+                const totalOut = DENOMINATIONS.reduce((acc, val) => acc + (val * (swapOutCounts[val] || 0)), 0);
+                const isBalanced = totalIn > 0 && Math.abs(totalIn - totalOut) < 0.001;
+                const hasStockIssue = Object.entries(swapOutCounts).some(([d, q]) => q > (changeBoxInventoryMap[Number(d)] || 0));
+                const handleSwapSubmit = async () => {
+                    try {
+                        await supabase.from('treasury_log').insert({
+                            box_id: changeBox.id, type: 'SWAP', amount: totalIn,
+                            breakdown: { in: swapInCounts, out: swapOutCounts },
+                            notes: `Cambio: Entra ${totalIn.toFixed(2)}€`
+                        });
+                        setShowSwapModal(false);
+                        toast.success('Cambio realizado correctamente');
+                        initialize();
+                    } catch (error) { console.error(error); toast.error('Error al realizar cambio'); }
+                };
+                return (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={() => setShowSwapModal(false)}>
+                        <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                                <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p></div>
+                                <button onClick={() => setShowSwapModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto bg-gray-50 p-1.5 no-scrollbar">
+                                <div className="grid grid-cols-1 gap-1">
+                                    {DENOMINATIONS.map(denom => (
+                                        <div key={denom} className="grid grid-cols-[80px_1fr_1fr] items-center gap-1.5 p-1.5 bg-white rounded-xl border border-gray-100">
+                                            <div className="flex flex-col items-center justify-center gap-0.5">
+                                                <div className={cn("flex items-center justify-center transition-transform hover:scale-110", denom >= 5 ? "h-8" : "h-6")}>
+                                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={60} height={60} className="h-full w-auto object-contain drop-shadow-md" />
+                                                </div>
+                                                <span className="font-black text-gray-500 text-[8px] uppercase tracking-widest">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest leading-none">ENTRA</span>
+                                                <input type="number" min="0" value={swapInCounts[denom] || ''} onChange={(e) => setSwapInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
+                                            </div>
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="text-[7px] font-black text-rose-400 uppercase tracking-widest leading-none">SALE</span>
+                                                <input type="number" min="0" value={swapOutCounts[denom] || ''} onChange={(e) => setSwapOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-full bg-rose-50/30 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all", (swapOutCounts[denom] || 0) > (changeBoxInventoryMap[denom] || 0) ? "border-rose-400 text-rose-700" : "border-rose-100 focus:border-rose-300 text-rose-600")} />
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            )}
-                            {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
-                                <div className="h-[60vh] w-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                                    <iframe src={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'} className="w-full h-full" title="Documento PDF" />
-                                    <div className="bg-white p-2 text-center border-t border-gray-200">
-                                        <a href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'} target="_blank" download className="text-xs font-bold text-blue-600 hover:underline">Descargar PDF si no visualiza</a>
-                                    </div>
+                            </div>
+                            <div className="p-3 bg-white border-t gap-2.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0 space-y-3">
+                                <div className="flex items-center justify-between px-6 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
+                                    <div className="text-center"><span className="block text-[7px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Total Entra</span><span className="text-lg font-black text-emerald-800">{totalIn.toFixed(2)}€</span></div>
+                                    <div className={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm", isBalanced ? (hasStockIssue ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700")}>{isBalanced ? (hasStockIssue ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}</div>
+                                    <div className="text-center"><span className="block text-[7px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Total Sale</span><span className="text-lg font-black text-rose-800">{totalOut.toFixed(2)}€</span></div>
                                 </div>
-                            )}
-                            {activeMenu === 'pedidos' && (
-                                <>
-                                    <button className="w-full p-4 bg-gray-50 hover:bg-[#8B5E3C]/10 rounded-xl flex items-center gap-3 transition-colors group">
-                                        <ShoppingCart size={20} className="text-gray-400 group-hover:text-[#8B5E3C]" />
-                                        <span className="font-bold text-gray-600 group-hover:text-[#8B5E3C]">Realizar Pedido</span>
-                                    </button>
-                                    <button className="w-full p-4 bg-gray-50 hover:bg-[#8B5E3C]/10 rounded-xl flex items-center gap-3 transition-colors group">
-                                        <Boxes size={20} className="text-gray-400 group-hover:text-[#8B5E3C]" />
-                                        <span className="font-bold text-gray-600 group-hover:text-[#8B5E3C]">Inventario</span>
-                                    </button>
-                                </>
-                            )}
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowSwapModal(false)} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
+                                    <button onClick={handleSwapSubmit} disabled={!isBalanced || hasStockIssue} className={cn("flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95", (isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-300 cursor-not-allowed shadow-none opacity-50")}><ArrowRightLeft size={16} strokeWidth={3} />Confirmar Cambio</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             <CashClosingModal
                 isOpen={isClosingModalOpen}
