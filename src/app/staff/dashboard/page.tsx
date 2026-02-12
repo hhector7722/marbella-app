@@ -725,6 +725,14 @@ export default function StaffDashboard() {
                 onClose={() => setIsClosingModalOpen(false)}
                 onSuccess={() => initialize()}
             />
+
+            {/* INDICADORES DE PÁGINA (ESTILO IPHONE) - SOLO MANAGERS */}
+            {userRole === 'manager' && (
+                <div className="fixed bottom-6 left-0 right-0 flex justify-center gap-2 z-[60] pointer-events-none">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white shadow-md ring-1 ring-black/5" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/30 shadow-sm border border-white/10" />
+                </div>
+            )}
         </div>
     );
 }

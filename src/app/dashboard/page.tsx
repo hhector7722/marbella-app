@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { togglePaidStatus } from '@/app/actions/overtime';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 
 // --- CONSTANTES: IMÁGENES DE MONEDAS ---
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -347,6 +348,14 @@ export default function DashboardPage() {
     const [boxes, setBoxes] = useState<any[]>([]);
     const [boxMovements, setBoxMovements] = useState<any[]>([]);
     const [overtimeData, setOvertimeData] = useState<any[]>([]);
+    const [userRole, setUserRole] = useState<string | null>(null);
+
+    // NAVEGACIÓN POR GESTOS (Swipe a la derecha para volver a Staff)
+    useSwipeNavigation({
+        onSwipeRight: () => {
+            if (userRole === 'manager') router.push('/staff/dashboard');
+        }
+    });
 
     // Estados de UI
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -480,6 +489,12 @@ export default function DashboardPage() {
                     laborCostBg: laborPercent > 35 ? 'bg-rose-500' : (laborPercent > 30 ? 'bg-orange-400' : 'bg-emerald-500'),
                     laborCostColor: laborPercent > 35 ? 'text-rose-600' : (laborPercent > 30 ? 'text-orange-500' : 'text-emerald-600')
                 });
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (profile) setUserRole(profile.role);
             }
 
             const { data: allBoxes } = await supabase.from('cash_boxes').select('*').order('name');
