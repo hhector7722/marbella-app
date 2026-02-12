@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { startOfWeek, format, parseISO } from "date-fns";
+import { revalidatePath } from "next/cache";
 
 export interface StaffWeeklyStats {
     id: string;
@@ -192,4 +193,46 @@ export async function getOvertimeData(startDate: string, endDate: string) {
             totalOvertimeCost: sumOverCost
         }
     };
+}
+
+export async function togglePaidStatus(userId: string, weekStart: string, newStatus: boolean, stats?: { totalHours: number, overtimeHours: number }) {
+    const supabase = await createClient();
+
+    // 1. Check if snapshot exists
+    const { data: existing } = await supabase
+        .from('weekly_snapshots')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('week_start', weekStart)
+        .maybeSingle();
+
+    if (existing) {
+        const { error } = await supabase
+            .from('weekly_snapshots')
+            .update({ is_paid: newStatus })
+            .eq('id', existing.id);
+        if (error) throw error;
+    } else {
+        // Create with provided stats or defaults
+        const { error } = await supabase
+            .from('weekly_snapshots')
+            .insert({
+                user_id: userId,
+                week_start: weekStart,
+                is_paid: newStatus,
+                total_hours: stats?.totalHours || 0,
+                balance_hours: stats?.overtimeHours || 0,
+                pending_balance: 0,
+                final_balance: stats?.overtimeHours || 0,
+                contracted_hours_snapshot: 40 // Default, trigger will fix it
+            });
+        if (error) throw error;
+    }
+
+    // 2. Revalidate paths to clear cache
+    revalidatePath('/staff/history');
+    revalidatePath('/dashboard/overtime');
+    revalidatePath('/dashboard');
+
+    return { success: true };
 }

@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getOvertimeData, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
+import { getOvertimeData, togglePaidStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
 
 export default function OvertimePage() {
@@ -123,43 +123,16 @@ export default function OvertimePage() {
         }));
 
         try {
-            // First check if a snapshot exists for this user/week
-            const { data: existingSnapshot, error: selectError } = await supabase
-                .from('weekly_snapshots')
-                .select('id')
-                .eq('user_id', staff.id)
-                .eq('week_start', mondayISO)
-                .maybeSingle();
+            const result = await togglePaidStatus(staff.id, mondayISO, newStatus, {
+                totalHours: staff.totalHours,
+                overtimeHours: staff.overtimeHours
+            });
 
-            if (selectError) throw selectError;
-
-            if (existingSnapshot) {
-                // Update existing record
-                const { error: updateError } = await supabase
-                    .from('weekly_snapshots')
-                    .update({ is_paid: newStatus })
-                    .eq('user_id', staff.id)
-                    .eq('week_start', mondayISO);
-
-                if (updateError) throw updateError;
-            } else {
-                // Create new record with all required fields
-                const { error: insertError } = await supabase
-                    .from('weekly_snapshots')
-                    .insert({
-                        user_id: staff.id,
-                        week_start: mondayISO,
-                        is_paid: newStatus,
-                        total_hours: staff.totalHours,
-                        balance_hours: staff.overtimeHours,
-                        pending_balance: 0,
-                        final_balance: staff.overtimeHours
-                    });
-
-                if (insertError) throw insertError;
-            }
+            if (!result.success) throw new Error("Error updating payment status");
+            toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
             console.error(error);
+            toast.error("Error al actualizar estado");
             // Revert on error
             setWeeksData(prev => prev.map(w => {
                 if (w.weekId === week.weekId) {

@@ -17,6 +17,7 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { togglePaidStatus } from '@/app/actions/overtime';
 
 // --- CONSTANTES: IMÁGENES DE MONEDAS ---
 const CURRENCY_IMAGES: Record<number, string> = {
@@ -380,51 +381,19 @@ export default function DashboardPage() {
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
 
         try {
-            const weekStart = new Date(weekId);
-            const weekEnd = addDays(weekStart, 6);
-            const weekEndStr = weekEnd.toISOString().split('T')[0];
+            const weekData = overtimeData.find(w => w.weekId === weekId);
+            const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
 
-            const { data: existing, error: selectError } = await supabase
-                .from('weekly_snapshots')
-                .select('id')
-                .eq('user_id', staffId)
-                .eq('week_start', weekId)
-                .maybeSingle();
+            const result = await togglePaidStatus(staffId, weekId, newStatus, {
+                totalHours: staffData?.hours || 0,
+                overtimeHours: staffData?.hours || 0
+            });
 
-            if (selectError) throw selectError;
-
-            if (existing) {
-                const { error: updateError } = await supabase
-                    .from('weekly_snapshots')
-                    .update({ is_paid: newStatus })
-                    .eq('user_id', staffId)
-                    .eq('week_start', weekId);
-
-                if (updateError) throw updateError;
-            } else {
-                const weekData = overtimeData.find(w => w.weekId === weekId);
-                const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
-
-                const { error: insertError } = await supabase
-                    .from('weekly_snapshots')
-                    .insert({
-                        user_id: staffId,
-                        week_start: weekId,
-                        week_end: weekEndStr,
-                        is_paid: newStatus,
-                        total_hours: staffData?.hours || 0,
-                        balance_hours: staffData?.hours || 0,
-                        contracted_hours_snapshot: 0,
-                        overtime_price_snapshot: 0,
-                        pending_balance: 0,
-                        final_balance: staffData?.hours || 0,
-                        total_cost: staffData?.amount || 0
-                    });
-
-                if (insertError) throw insertError;
-            }
+            if (!result.success) throw new Error("Error updating paid status");
+            toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
             console.error("Error updating paid status:", error);
+            toast.error("Error al actualizar pago");
             setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
         }
     };
