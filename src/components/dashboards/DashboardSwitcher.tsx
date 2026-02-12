@@ -1,0 +1,141 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import AdminDashboardView from './AdminDashboardView';
+import StaffDashboardView from './StaffDashboardView';
+
+interface DashboardSwitcherProps {
+    userRole: string;
+    initialView?: 'staff' | 'admin';
+}
+
+export default function DashboardSwitcher({ userRole, initialView = 'staff' }: DashboardSwitcherProps) {
+    const router = useRouter();
+    const [view, setView] = useState<'staff' | 'admin'>(initialView);
+    const [offsetX, setOffsetX] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const startX = useRef(0);
+    const startY = useRef(0);
+    const isHorizontalDrag = useRef<boolean | null>(null);
+    const containerWidth = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Sync with initialView if it changes (e.g. on direct navigation)
+    useEffect(() => {
+        setView(initialView);
+    }, [initialView]);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (userRole !== 'manager') return;
+        startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+        isHorizontalDrag.current = null;
+        setIsDragging(true);
+        if (containerRef.current) {
+            containerWidth.current = containerRef.current.offsetWidth;
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return;
+
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const diffX = currentX - startX.current;
+        const diffY = currentY - startY.current;
+
+        // Determinar si es un drag horizontal o vertical una sola vez por drag
+        if (isHorizontalDrag.current === null) {
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                isHorizontalDrag.current = true;
+            } else {
+                isHorizontalDrag.current = false;
+            }
+        }
+
+        if (isHorizontalDrag.current) {
+            // Evitar scroll vertical mientras se arrastra horizontalmente
+            if (e.cancelable) e.preventDefault();
+
+            // Lógica de resistencia en los bordes
+            let controlledDiff = diffX;
+            if (view === 'staff' && diffX > 0) controlledDiff = diffX * 0.2;
+            if (view === 'admin' && diffX < 0) controlledDiff = diffX * 0.2;
+
+            setOffsetX(controlledDiff);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging) return;
+        setIsDragging(false);
+
+        const threshold = containerWidth.current / 4;
+
+        if (Math.abs(offsetX) > threshold) {
+            if (offsetX < 0 && view === 'staff') {
+                setView('admin');
+                router.replace('/dashboard');
+            } else if (offsetX > 0 && view === 'admin') {
+                setView('staff');
+                router.replace('/staff/dashboard');
+            }
+        }
+
+        setOffsetX(0);
+        isHorizontalDrag.current = null;
+    };
+
+    // Estilos dinámicos
+    const isManager = userRole === 'manager';
+    const currentTranslate = view === 'staff' ? 0 : -50; // -50% porque el ancho es 200%
+    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 50 : 0;
+    const finalTranslate = isManager ? currentTranslate + dragTranslatePercent : 0;
+
+    return (
+        <div
+            ref={containerRef}
+            className={cn(
+                "w-full h-full overflow-hidden relative",
+                isManager ? "touch-pan-y" : ""
+            )}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
+            <div
+                className={cn(
+                    "flex h-full",
+                    isManager ? "w-[200%] transition-transform duration-300 ease-out" : "w-full",
+                    isDragging && isHorizontalDrag.current && "duration-0"
+                )}
+                style={isManager ? { transform: `translateX(${finalTranslate}%)` } : {}}
+            >
+                <div className={cn("h-full flex-shrink-0", isManager ? "w-1/2" : "w-full")}>
+                    {(!isManager || view === 'staff' || isDragging) && <StaffDashboardView />}
+                </div>
+                {isManager && (
+                    <div className="w-1/2 h-full flex-shrink-0">
+                        {(view === 'admin' || isDragging) && <AdminDashboardView />}
+                    </div>
+                )}
+            </div>
+
+            {/* Indicadores estilo iPhone */}
+            {isManager && (
+                <div className="fixed bottom-24 left-0 right-0 flex justify-center gap-1.5 z-50 pointer-events-none">
+                    <div className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm",
+                        view === 'staff' ? "bg-white scale-125" : "bg-white/30"
+                    )} />
+                    <div className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm",
+                        view === 'admin' ? "bg-white scale-125" : "bg-white/30"
+                    )} />
+                </div>
+            )}
+        </div>
+    );
+}
