@@ -177,31 +177,46 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
-            {/* STICKY HEADER WITH FUSED TOTALS */}
+            {/* STICKY HEADER WITH FUSED TOTALS & ACTION */}
             <div className="bg-[#36606F] shrink-0 shadow-md z-10">
-                <div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
-                    <div>
-                        <h2 className="text-lg font-black text-white uppercase tracking-wider">Cambio Efectivo</h2>
-                        <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest leading-none">{boxName}</p>
+                <div className="px-6 py-2 flex items-center justify-between border-b border-white/5">
+                    <div className="flex flex-col">
+                        <h2 className="text-base font-black text-white uppercase tracking-wider leading-tight">Cambio Efectivo</h2>
+                        <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest leading-none">{boxName}</p>
                     </div>
-                    <button onClick={onCancel} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">
-                        <X size={20} />
+                    <button onClick={onCancel} className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-white">
+                        <X size={18} />
                     </button>
                 </div>
 
-                {/* FUSED TOTALS BAR */}
-                <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between">
-                    <div className="flex flex-col items-start">
-                        <span className="text-[8px] font-black text-white/40 uppercase tracking-tighter">Entra</span>
+                {/* FUSED TOTALS & CONFIRM BAR */}
+                <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between gap-2">
+                    <div className="flex flex-col items-start min-w-[60px]">
+                        <span className="text-[7px] font-black text-white/40 uppercase">Entra</span>
                         <span className="text-sm font-black text-emerald-400 leading-none">{totalIn.toFixed(2)}€</span>
                     </div>
 
-                    <div className={`px-3 py-1 rounded-lg font-black text-[10px] transition-all ${Math.abs(diff) < 0.01 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
-                        DIF: {diff.toFixed(2)}€
+                    <div className="flex-1 flex items-center justify-center gap-2">
+                        <div className={`px-2 py-1 rounded-lg font-black text-[9px] transition-all ${Math.abs(diff) < 0.01 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                            DIF: {diff.toFixed(2)}€
+                        </div>
+
+                        <button
+                            onClick={() => onSubmit((totalIn - totalOut), inCounts, outCounts)}
+                            disabled={Math.abs(diff) > 0.01 || (totalIn === 0 && totalOut === 0) || hasStockIssue}
+                            className={`
+                                h-8 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-[0.95]
+                                ${(Math.abs(diff) < 0.01 && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
+                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer'
+                                    : 'bg-white/10 text-white/20 cursor-not-allowed shadow-none'}
+                            `}
+                        >
+                            {hasStockIssue ? 'STOCK!' : 'OK'}
+                        </button>
                     </div>
 
-                    <div className="flex flex-col items-end">
-                        <span className="text-[8px] font-black text-white/40 uppercase tracking-tighter">Sale</span>
+                    <div className="flex flex-col items-end min-w-[60px]">
+                        <span className="text-[7px] font-black text-white/40 uppercase">Sale</span>
                         <span className="text-sm font-black text-rose-400 leading-none">{totalOut.toFixed(2)}€</span>
                     </div>
                 </div>
@@ -209,29 +224,16 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
 
             {/* SCROLLABLE CONTENT (MAXIMIZED) */}
             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-white">
-                <div className="max-w-md mx-auto py-2">
+                <div className="max-w-md mx-auto py-1">
                     {ALL_DENOMS.map(renderDenomRow)}
+                    {/* SPACER TO ENSURE LAST ITEM IS FULLY VISIBLE */}
+                    <div className="h-4" />
                 </div>
-            </div>
-
-            {/* SLIM FOOTER */}
-            <div className="bg-white border-t p-3 shrink-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
-                <button
-                    onClick={() => onSubmit((totalIn - totalOut), inCounts, outCounts)}
-                    disabled={Math.abs(diff) > 0.01 || (totalIn === 0 && totalOut === 0) || hasStockIssue}
-                    className={`
-                        w-full h-12 rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-[0.98]
-                        ${(Math.abs(diff) < 0.01 && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
-                            ? 'bg-[#36606F] text-white shadow-[#36606F]/20 hover:bg-[#2a4a56] cursor-pointer'
-                            : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none opacity-50'}
-                    `}
-                >
-                    {hasStockIssue ? 'STOCK INSUFICIENTE' : 'Confirmar Cambio'}
-                </button>
             </div>
         </div>
     );
 };
+
 
 
 

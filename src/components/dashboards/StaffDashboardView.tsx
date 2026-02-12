@@ -808,31 +808,46 @@ export default function StaffDashboardView() {
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={() => setShowSwapModal(false)}>
                         <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                            {/* STICKY HEADER WITH FUSED TOTALS */}
+                            {/* STICKY HEADER WITH FUSED TOTALS & ACTION */}
                             <div className="bg-[#36606F] shrink-0 shadow-md z-10">
-                                <div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
-                                    <div>
-                                        <h3 className="text-lg font-black uppercase tracking-wider text-white">Cambio Efectivo</h3>
-                                        <p className="text-white/50 text-[9px] font-black uppercase tracking-[0.2em]">{changeBox.name}</p>
+                                <div className="px-6 py-2 flex items-center justify-between border-b border-white/5">
+                                    <div className="flex flex-col">
+                                        <h3 className="text-base font-black uppercase tracking-wider text-white leading-tight">Cambio Efectivo</h3>
+                                        <p className="text-white/50 text-[8px] font-black uppercase tracking-[0.2em] leading-none">{changeBox.name}</p>
                                     </div>
-                                    <button onClick={() => setShowSwapModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-all text-white active:scale-90">
-                                        <X size={20} strokeWidth={3} />
+                                    <button onClick={() => setShowSwapModal(false)} className="p-1.5 hover:bg-white/10 rounded-full transition-all text-white active:scale-90">
+                                        <X size={18} strokeWidth={3} />
                                     </button>
                                 </div>
 
-                                {/* FUSED TOTALS BAR */}
-                                <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between">
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-[8px] font-black text-white/40 uppercase tracking-tighter">Entra</span>
+                                {/* FUSED TOTALS & CONFIRM BAR */}
+                                <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between gap-2">
+                                    <div className="flex flex-col items-start min-w-[60px]">
+                                        <span className="text-[7px] font-black text-white/40 uppercase">Entra</span>
                                         <span className="text-sm font-black text-emerald-400 leading-none">{totalIn.toFixed(2)}€</span>
                                     </div>
 
-                                    <div className={`px-3 py-1 rounded-lg font-black text-[10px] transition-all ${Math.abs(totalIn - totalOut) < 0.01 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
-                                        DIF: {(totalIn - totalOut).toFixed(2)}€
+                                    <div className="flex-1 flex items-center justify-center gap-2">
+                                        <div className={`px-2 py-1 rounded-lg font-black text-[9px] transition-all ${Math.abs(totalIn - totalOut) < 0.01 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                                            DIF: {(totalIn - totalOut).toFixed(2)}€
+                                        </div>
+
+                                        <button
+                                            onClick={handleSwapSubmit}
+                                            disabled={!isBalanced || hasStockIssue}
+                                            className={`
+                                                h-8 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-[0.95]
+                                                ${(isBalanced && !hasStockIssue)
+                                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer'
+                                                    : 'bg-white/10 text-white/20 cursor-not-allowed shadow-none'}
+                                            `}
+                                        >
+                                            {hasStockIssue ? 'STOCK!' : 'OK'}
+                                        </button>
                                     </div>
 
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[8px] font-black text-white/40 uppercase tracking-tighter">Sale</span>
+                                    <div className="flex flex-col items-end min-w-[60px]">
+                                        <span className="text-[7px] font-black text-white/40 uppercase">Sale</span>
                                         <span className="text-sm font-black text-rose-400 leading-none">{totalOut.toFixed(2)}€</span>
                                     </div>
                                 </div>
@@ -840,23 +855,11 @@ export default function StaffDashboardView() {
 
                             {/* SCROLLABLE CONTENT AREA (MAXIMIZED) */}
                             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-white">
-                                <div className="max-w-md mx-auto py-2">
+                                <div className="max-w-md mx-auto py-1">
                                     {ALL_DENOMS.map(renderDenomRow)}
+                                    {/* SPACER TO ENSURE LAST ITEM IS FULLY VISIBLE */}
+                                    <div className="h-4" />
                                 </div>
-                            </div>
-
-                            {/* SLIM FOOTER */}
-                            <div className="p-3 bg-white border-t shrink-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
-                                <button
-                                    onClick={handleSwapSubmit}
-                                    disabled={!isBalanced || hasStockIssue}
-                                    className={`
-                                        w-full py-4 text-white font-black uppercase tracking-[0.2em] text-xs rounded-xl shadow-lg transition-all active:scale-95
-                                        ${(isBalanced && !hasStockIssue) ? "bg-[#36606F] shadow-[#36606F]/20" : "bg-gray-100 text-gray-300 cursor-not-allowed shadow-none opacity-50"}
-                                    `}
-                                >
-                                    {hasStockIssue ? "Stock Insuficiente" : "Confirmar Cambio"}
-                                </button>
                             </div>
                         </div>
                     </div>
