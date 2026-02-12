@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
-import { startOfWeek } from "date-fns";
+import { startOfWeek, format, parseISO } from "date-fns";
 
 export interface StaffWeeklyStats {
     id: string;
@@ -67,7 +67,7 @@ export async function getOvertimeData(startDate: string, endDate: string) {
         const monday = startOfWeek(date, { weekStartsOn: 1 });
         monday.setHours(0, 0, 0, 0);
 
-        const weekId = monday.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+        const weekId = format(monday, 'yyyy-MM-dd'); // Usar formato ISO local como ID
 
         if (!tempWeekUserHours[weekId]) {
             tempWeekUserHours[weekId] = {};
@@ -86,8 +86,8 @@ export async function getOvertimeData(startDate: string, endDate: string) {
 
     sortedWeekIds.forEach(weekId => {
         const usersInWeek = tempWeekUserHours[weekId];
-        const mondayDate = tempWeekMeta[weekId];
-        const weekStartISO = mondayDate.toISOString().split('T')[0];
+        const mondayDate = parseISO(weekId);
+        const weekStartISO = weekId;
         const fullLabel = `Semana del ${mondayDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`;
 
         const prevMonday = new Date(mondayDate);

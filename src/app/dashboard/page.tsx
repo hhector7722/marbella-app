@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import Link from 'next/link';
-import { getISOWeek, format, addDays, startOfWeek } from 'date-fns';
+import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -539,7 +539,8 @@ export default function DashboardPage() {
                     const date = new Date(log.clock_in);
                     const monday = startOfWeek(date, { weekStartsOn: 1 });
                     monday.setHours(0, 0, 0, 0);
-                    const weekLabelId = monday.toISOString().split('T')[0];
+                    // Usamos un ID que no dependa de strings UTC para evitar desfases
+                    const weekLabelId = format(monday, 'yyyy-MM-dd');
 
                     if (!weekUserHoursMap.has(weekLabelId)) {
                         weekUserHoursMap.set(weekLabelId, new Map());
@@ -555,7 +556,7 @@ export default function DashboardPage() {
 
                 sortedWeekIds.forEach(weekLabelId => {
                     const userMap = weekUserHoursMap.get(weekLabelId)!;
-                    const monday = new Date(weekLabelId);
+                    const monday = parseISO(weekLabelId);
                     const weekNum = getISOWeek(monday);
                     const sunday = addDays(monday, 6);
                     const startStr = format(monday, "d MMM", { locale: es });
