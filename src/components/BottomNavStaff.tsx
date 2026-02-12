@@ -71,22 +71,22 @@ export default function BottomNavStaff() {
         { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
         {
             name: 'Perfil', href: '/profile', icon: () => (
-                <div className="w-6 h-6 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
+                <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
                     {userData?.avatar_url ? (
                         <Image
                             src={userData.avatar_url}
                             alt="Me"
                             width={24}
                             height={24}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-full"
                         />
                     ) : (
-                        <User size={14} className="text-white" />
+                        <User size={20} className="text-current" />
                     )}
                 </div>
             )
         },
-        { name: 'Conf', href: '/account', icon: Settings },
+        { name: 'Conf', href: '/staff/account', icon: Settings },
     ];
 
     return (
