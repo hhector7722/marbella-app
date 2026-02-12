@@ -87,6 +87,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Optimización UI Móvil (Caja/Personal):** Compactación de modales de tesorería y registros para mejor accesibilidad táctil sin sacrificar legibilidad.
 - [x] **Sincronización Resumen Staff:** Corrección de la lógica de propagación en la base de datos para sincronizar automáticamente el saldo acumulado (`profiles.hours_balance`) tras recálculos en el historial.
 - [x] **Estándar Gallery View:** Creación de plantilla `gallery-view.tsx` e integración en el Generador de Templates Marbella para unificar vistas de catálogo (Ingrediente/Recetas).
+- [x] **Rediseño Modal Cambio (V3 - Táctil)**: Implementación de botones incrementales, código de colores (verde/rojo) y corrección de error crítico de overflow para garantizar la visibilidad del botón de guardado.
+- [x] **Migración Cromática**: Transición global de `#5B8FB9` al nuevo Azul Marbella `#36606F` en Registros, Dashboards y Recetas.
 
 
 ## 📅 PENDIENTE
