@@ -934,9 +934,10 @@ export default function DashboardPage() {
                                                         }}
                                                         className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                     >
-                                                        <ArrowRightLeft size={48} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                                                        <span className="font-black text-xl text-orange-800">Cambiar</span>
-                                                        <p className="text-[10px] text-orange-600/60 uppercase font-black tracking-widest mt-1">Valor por Valor</p>
+                                                        <div className="w-16 h-16 transition-transform group-hover:scale-110">
+                                                            <Image src="/icons/change.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className="font-black text-xl text-zinc-900">Cambiar</span>
                                                     </button>
                                                     <button
                                                         onClick={async () => {
@@ -949,8 +950,10 @@ export default function DashboardPage() {
                                                         }}
                                                         className="col-span-2 bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                     >
-                                                        <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                                                        <span className="font-bold text-blue-800">Arqueo</span>
+                                                        <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                                            <Image src="/icons/change.png" alt="Arqueo" width={48} height={48} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className="font-black text-zinc-900">Arqueo</span>
                                                     </button>
                                                     <button
                                                         onClick={async () => {
@@ -960,16 +963,18 @@ export default function DashboardPage() {
                                                         }}
                                                         className="col-span-2 bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                     >
-                                                        <Wallet size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                                                        <span className="font-bold text-emerald-800">Ver Desglose</span>
+                                                        <div className="w-12 h-12 transition-transform group-hover:scale-110">
+                                                            <Image src="/icons/wallet.png" alt="Ver Desglose" width={48} height={48} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className="font-black text-zinc-900">Ver Desglose</span>
                                                     </button>
                                                 </>
                                             </>
                                         ) : (
                                             <>
                                                 <button onClick={() => setCashModalMode('in')} className="bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
-                                                    <Plus size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-black text-emerald-800">Entrada</span>
+                                                    <PlusCircle size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                                                    <span className="font-black text-zinc-900">Entrada</span>
                                                 </button>
                                                 <button
                                                     onClick={async () => {
@@ -983,7 +988,7 @@ export default function DashboardPage() {
                                                     className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                 >
                                                     <Minus size={32} fill="currentColor" strokeWidth={3} className="text-rose-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-black text-rose-800">Salida</span>
+                                                    <span className="font-black text-zinc-900">Salida</span>
                                                 </button>
                                                 <button
                                                     onClick={async () => {
@@ -996,12 +1001,16 @@ export default function DashboardPage() {
                                                     }}
                                                     className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                 >
-                                                    <RefreshCw size={32} fill="currentColor" strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-black text-orange-800">Arqueo</span>
+                                                    <div className="w-10 h-10 transition-transform group-hover:scale-110 mb-1">
+                                                        <Image src="/icons/change.png" alt="Arqueo" width={40} height={40} className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <span className="font-black text-zinc-900">Arqueo</span>
                                                 </button>
                                                 <button onClick={() => router.push('/dashboard/movements')} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
-                                                    <History size={32} fill="currentColor" strokeWidth={3} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-black text-blue-800">Movimientos</span>
+                                                    <div className="w-10 h-10 transition-transform group-hover:scale-110 mb-1">
+                                                        <Image src="/icons/admin.png" alt="Movimientos" width={40} height={40} className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <span className="font-black text-zinc-900">Movimientos</span>
                                                 </button>
                                                 <button
                                                     onClick={async () => {
@@ -1011,8 +1020,10 @@ export default function DashboardPage() {
                                                     }}
                                                     className="col-span-2 bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                 >
-                                                    <Wallet size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-black text-emerald-800">Ver Desglose de Caja</span>
+                                                    <div className="w-10 h-10 transition-transform group-hover:scale-110 mb-1">
+                                                        <Image src="/icons/wallet.png" alt="Ver Desglose" width={40} height={40} className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <span className="font-black text-zinc-900">Ver Desglose</span>
                                                 </button>
                                             </>
                                         )}
