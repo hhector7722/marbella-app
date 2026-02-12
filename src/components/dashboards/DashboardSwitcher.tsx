@@ -103,8 +103,8 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
 
     // Estilos dinámicos
     const isManager = userRole === 'manager';
-    const currentTranslate = view === 'staff' ? 0 : -50; // -50% porque el ancho es 200%
-    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 50 : 0;
+    const currentTranslate = view === 'staff' ? 0 : -100; // -100% del parent (= 1 viewport de desplazamiento)
+    const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 100 : 0;
     const finalTranslate = isManager ? currentTranslate + dragTranslatePercent : 0;
 
     return (

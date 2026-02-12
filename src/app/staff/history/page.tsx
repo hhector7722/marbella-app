@@ -156,19 +156,28 @@ export default function HistoryPage() {
             const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
             const today = new Date(); today.setHours(23, 59, 59, 999);
-            const effectiveEndDate = endOfMonth > today ? today : endOfMonth;
 
             const startView = new Date(startOfMonth);
             const dayOfWeek = startView.getDay();
             const diffToMonday = startView.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
             startView.setDate(diffToMonday); startView.setHours(0, 0, 0, 0);
 
-            // 1. FETCH LOGS
+            // 1. FETCH LOGS — extender al domingo de la última semana visible
+            const endView = new Date(endOfMonth);
+            const endDayOfWeek = endView.getDay();
+            if (endDayOfWeek !== 0) {
+                endView.setDate(endView.getDate() + (7 - endDayOfWeek));
+            }
+            endView.setHours(23, 59, 59, 999);
+
+            // effectiveEndDate: usa endView (no endOfMonth) para cubrir semanas completas
+            const effectiveEndDate = endView > today ? today : endView;
+
             const { data: logs } = await supabase.from('time_logs')
                 .select('*')
                 .eq('user_id', targetUserId)
                 .gte('clock_in', startView.toISOString())
-                .lte('clock_in', endOfMonth.toISOString())
+                .lte('clock_in', endView.toISOString())
                 .order('clock_in', { ascending: true });
 
             // 2. FETCH SNAPSHOTS
@@ -179,6 +188,7 @@ export default function HistoryPage() {
                 .select('week_start, total_hours, balance_hours, pending_balance, final_balance, is_paid')
                 .eq('user_id', targetUserId)
                 .gte('week_start', searchSnapshotStart.toISOString().split('T')[0])
+                .lte('week_start', endView.toISOString().split('T')[0])
                 .order('week_start', { ascending: true });
 
             // 3. GENERAR SEMANAS
