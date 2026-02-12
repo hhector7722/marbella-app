@@ -506,11 +506,6 @@ export default function ScheduleEditorPage() {
                 <div className="mt-2 mx-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="h-12 relative flex items-center">
                         <div className="flex-1 relative h-full">
-                            <div className="absolute inset-0 flex">
-                                {hoursHeader.map((_, i) => (
-                                    <div key={i} className="flex-1 border-r border-white/10 pointer-events-none last:border-r-0" />
-                                ))}
-                            </div>
                             <ShiftBar
                                 shift={shifts[editingIndex]}
                                 onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
