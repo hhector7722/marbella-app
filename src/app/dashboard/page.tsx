@@ -520,7 +520,11 @@ export default function DashboardPage() {
                     userMap.set(log.user_id, (userMap.get(log.user_id) || 0) + (log.total_hours || 0));
                 });
 
-                const sortedWeekIds = Array.from(weekUserHoursMap.keys()).sort();
+                const currentMondayISO = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                const sortedWeekIds = Array.from(weekUserHoursMap.keys())
+                    .sort()
+                    .filter(id => id < currentMondayISO);
+
                 const userFinalBalances = new Map<string, Map<string, number>>();
                 const weeksMap = new Map<string, any>();
                 const initialPaidStatus: Record<string, boolean> = {};

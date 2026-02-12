@@ -78,10 +78,12 @@ export async function getOvertimeData(startDate: string, endDate: string) {
         tempWeekUserHours[weekId][log.user_id] += (log.total_hours || 0);
     });
 
+    const currentMondayISO = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const sortedWeekIds = Object.keys(tempWeekUserHours)
+        .sort((a, b) => tempWeekMeta[a].getTime() - tempWeekMeta[b].getTime())
+        .filter(weekId => weekId < currentMondayISO);
+
     const weeksResult: WeeklyStats[] = [];
-    const sortedWeekIds = Object.keys(tempWeekUserHours).sort((a, b) =>
-        tempWeekMeta[a].getTime() - tempWeekMeta[b].getTime()
-    );
 
     const userFinalBalances = new Map<string, Map<string, number>>();
 
