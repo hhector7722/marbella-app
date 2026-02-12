@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getOvertimeData, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
@@ -49,6 +49,10 @@ export default function OvertimePage() {
     const [summary, setSummary] = useState({ totalCost: 0, totalHours: 0, totalOvertimeCost: 0 });
     const [searchQuery, setSearchQuery] = useState('');
     const [isAllPaidInView, setIsAllPaidInView] = useState(false);
+
+    // UI States for filters
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
+    const [showManualDates, setShowManualDates] = useState(false);
 
     const PRESETS = [
         { label: 'Últimos 30 días', getValue: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
@@ -211,20 +215,93 @@ export default function OvertimePage() {
                                             {PRESETS.slice(0, 2).map(p => (
                                                 <button
                                                     key={p.label}
-                                                    onClick={() => applyPreset(p)}
+                                                    onClick={() => {
+                                                        applyPreset(p);
+                                                        setShowManualDates(false);
+                                                    }}
                                                     className="px-2 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-black text-gray-500 hover:bg-white hover:border-blue-200 transition-all uppercase"
                                                 >
                                                     {p.label.split(' ')[0]}
                                                 </button>
                                             ))}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowMonthPicker(!showMonthPicker)}
+                                                    className={cn(
+                                                        "px-2 py-1.5 border rounded-lg text-[9px] font-black transition-all uppercase",
+                                                        showMonthPicker ? "bg-rose-500 text-white border-rose-500" : "bg-gray-50 border-gray-100 text-gray-500 hover:bg-white hover:border-blue-200"
+                                                    )}
+                                                >
+                                                    Periodo
+                                                </button>
+                                                {showMonthPicker && (
+                                                    <>
+                                                        <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)}></div>
+                                                        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 animate-in fade-in zoom-in duration-200">
+                                                            <div className="grid grid-cols-1 gap-1 max-h-[240px] overflow-y-auto no-scrollbar">
+                                                                {Array.from({ length: 12 }).map((_, i) => {
+                                                                    const d = addMonths(startOfMonth(new Date()), -i);
+                                                                    const isCurrent = isSameMonth(d, new Date(startDate));
+                                                                    return (
+                                                                        <button
+                                                                            key={i}
+                                                                            onClick={() => {
+                                                                                setStartDate(startOfMonth(d).toISOString().split('T')[0]);
+                                                                                setEndDate(endOfMonth(d).toISOString().split('T')[0]);
+                                                                                setShowMonthPicker(false);
+                                                                                setShowManualDates(false);
+                                                                            }}
+                                                                            className={cn(
+                                                                                "px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all text-left",
+                                                                                isCurrent
+                                                                                    ? "bg-rose-500 text-white"
+                                                                                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                                                                            )}
+                                                                        >
+                                                                            {format(d, 'MMMM yyyy', { locale: es })}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        <button className="h-8 px-3 rounded-lg bg-gray-50 border border-gray-100 text-[10px] font-black text-gray-700 flex items-center gap-1.5">
-                                            <Calendar size={12} className="text-blue-500" />
-                                            {format(new Date(startDate), 'dd MMM', { locale: es })} - {format(new Date(endDate), 'dd MMM', { locale: es })}
-                                        </button>
+                                    <div className="flex items-center gap-1.5 shrink-0 relative">
+                                        {!showManualDates ? (
+                                            <button
+                                                onClick={() => setShowManualDates(true)}
+                                                className="h-8 px-3 rounded-lg bg-gray-50 border border-gray-100 text-[10px] font-black text-gray-700 flex items-center gap-1.5 hover:border-blue-200 transition-all"
+                                            >
+                                                <Calendar size={12} className="text-blue-500" />
+                                                {format(new Date(startDate), 'dd MMM', { locale: es })} - {format(new Date(endDate), 'dd MMM', { locale: es })}
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-1 animate-in slide-in-from-right-2 duration-200">
+                                                <input
+                                                    type="date"
+                                                    value={startDate}
+                                                    onChange={(e) => setStartDate(e.target.value)}
+                                                    className="h-8 px-2 rounded-lg bg-white border border-blue-200 text-[9px] font-black text-gray-700 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                />
+                                                <span className="text-[9px] font-black text-gray-400">/</span>
+                                                <input
+                                                    type="date"
+                                                    value={endDate}
+                                                    onChange={(e) => setEndDate(e.target.value)}
+                                                    className="h-8 px-2 rounded-lg bg-white border border-blue-200 text-[9px] font-black text-gray-700 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                />
+                                                <button
+                                                    onClick={() => setShowManualDates(false)}
+                                                    className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
