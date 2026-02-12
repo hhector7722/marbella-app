@@ -1,11 +1,12 @@
 -- =============================================
 -- Función para crear un trabajador completo
--- Crea entry en auth.users + profiles
+-- Crea entry en auth.users + auth.identities + profiles
 -- Ejecutar en Supabase SQL Editor
 -- =============================================
 
--- Primero eliminar la función anterior si existe
+-- Eliminar versiones anteriores
 DROP FUNCTION IF EXISTS create_worker_profile(TEXT, TEXT, TEXT, NUMERIC, NUMERIC);
+DROP FUNCTION IF EXISTS create_worker_profile(TEXT, TEXT, TEXT, TEXT, NUMERIC, NUMERIC);
 
 CREATE OR REPLACE FUNCTION create_worker_profile(
     p_first_name TEXT,
@@ -27,7 +28,7 @@ BEGIN
     -- Usar email proporcionado o generar uno dummy
     worker_email := COALESCE(NULLIF(TRIM(p_email), ''), lower(replace(p_first_name, ' ', '.')) || '.' || substr(new_id::text, 1, 8) || '@marbella.internal');
 
-    -- 1. Crear entrada en auth.users (requerida por FK)
+    -- 1. Crear entrada en auth.users
     INSERT INTO auth.users (
         id,
         instance_id,
@@ -39,7 +40,11 @@ BEGIN
         aud,
         role,
         created_at,
-        updated_at
+        updated_at,
+        confirmation_token,
+        recovery_token,
+        email_change_token_new,
+        email_change
     ) VALUES (
         new_id,
         '00000000-0000-0000-0000-000000000000',
@@ -49,12 +54,37 @@ BEGIN
         '{"provider":"email","providers":["email"]}'::jsonb,
         jsonb_build_object('first_name', p_first_name, 'last_name', COALESCE(p_last_name, '')),
         'authenticated',
-        'role',
+        'authenticated',
+        now(),
+        now(),
+        '',
+        '',
+        '',
+        ''
+    );
+
+    -- 2. Crear entrada en auth.identities (requerido por Supabase moderno)
+    INSERT INTO auth.identities (
+        id,
+        user_id,
+        provider_id,
+        identity_data,
+        provider,
+        last_sign_in_at,
+        created_at,
+        updated_at
+    ) VALUES (
+        new_id::text,
+        new_id,
+        new_id::text,
+        jsonb_build_object('sub', new_id::text, 'email', worker_email),
+        'email',
+        now(),
         now(),
         now()
     );
 
-    -- 2. Crear perfil
+    -- 3. Crear perfil
     INSERT INTO profiles (id, first_name, last_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance)
     VALUES (new_id, p_first_name, p_last_name, p_role, p_contracted_hours_weekly, p_overtime_cost_per_hour, 0);
 
