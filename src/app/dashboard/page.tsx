@@ -57,7 +57,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                 <div>
                     <h3 className="text-lg font-black uppercase tracking-wider">{isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')}</h3>
                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
@@ -76,18 +76,18 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {!isAudit && (
                     <div className="px-2">
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto / Motivo</label>
+                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Concepto / Motivo</label>
                         <input
                             type="text"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Ej. Cambio banco, Pago proveedor..."
-                            className="w-full p-3 rounded-2xl border-2 border-transparent focus:border-[#36606F]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300"
+                            className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#36606F]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300 text-xs"
                         />
                     </div>
                 )}
 
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-4 gap-x-2 p-1">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
@@ -137,13 +137,13 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
                 </div>
             </div>
 
-            <div className="p-4 bg-white border-t flex gap-3">
-                <button onClick={onCancel} className="flex-1 py-4 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 rounded-2xl transition-all active:scale-95">Cancelar</button>
+            <div className="p-3 bg-white border-t flex gap-2 shrink-0">
+                <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
                 <button
                     onClick={() => onSubmit(total, counts, notes)}
                     disabled={type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
                     className={cn(
-                        "flex-1 py-4 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
+                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
                         type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))
                             ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
                             : bgClass + " hover:brightness-110 shadow-emerald-200"
@@ -169,7 +169,7 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                 <div>
                     <h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3>
                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
@@ -179,12 +179,12 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-gray-50 p-2">
+            <div className="flex-1 overflow-y-auto bg-gray-50 p-1.5 no-scrollbar">
                 <div className="grid grid-cols-1 gap-1">
                     {DENOMINATIONS.map(denom => {
                         const isBill = denom >= 5;
                         return (
-                            <div key={denom} className="grid grid-cols-[80px_1fr_1fr] items-center gap-2 p-2 bg-white rounded-xl border border-gray-100">
+                            <div key={denom} className="grid grid-cols-[80px_1fr_1fr] items-center gap-1.5 p-1.5 bg-white rounded-xl border border-gray-100">
                                 {/* VALOR / IMAGEN */}
                                 <div className="flex flex-col items-center justify-center gap-0.5">
                                     <div className={cn(
@@ -209,21 +209,21 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                                 </div>
 
                                 {/* ENTRADA */}
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest">ENTRA</span>
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest leading-none">ENTRA</span>
                                     <input
                                         type="number"
                                         min="0"
                                         value={inCounts[denom] || ''}
                                         onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                                         placeholder="0"
-                                        className="w-full bg-emerald-50/30 border border-emerald-100 focus:border-emerald-300 rounded-lg p-1.5 text-center font-black text-emerald-600 outline-none text-xs transition-all"
+                                        className="w-full bg-emerald-50/30 border border-emerald-100 focus:border-emerald-300 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs transition-all"
                                     />
                                 </div>
 
                                 {/* SALIDA */}
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-[7px] font-black text-rose-400 uppercase tracking-widest">SALE</span>
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[7px] font-black text-rose-400 uppercase tracking-widest leading-none">SALE</span>
                                     <input
                                         type="number"
                                         min="0"
@@ -231,7 +231,7 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                                         onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
                                         placeholder="0"
                                         className={cn(
-                                            "w-full bg-rose-50/30 border rounded-lg p-1.5 text-center font-black outline-none text-xs transition-all",
+                                            "w-full bg-rose-50/30 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all",
                                             (outCounts[denom] || 0) > (availableStock[denom] || 0)
                                                 ? "border-rose-400 text-rose-700"
                                                 : "border-rose-100 focus:border-rose-300 text-rose-600"
@@ -244,35 +244,35 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 </div>
             </div>
 
-            <div className="p-4 bg-white border-t space-y-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                <div className="flex items-center justify-between px-6 bg-gray-50 p-4 rounded-3xl border border-gray-100">
+            <div className="p-3 bg-white border-t gap-2.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0 space-y-3">
+                <div className="flex items-center justify-between px-6 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
                     <div className="text-center">
-                        <span className="block text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Total Entra</span>
-                        <span className="text-xl font-black text-emerald-800">{totalIn.toFixed(2)}€</span>
+                        <span className="block text-[7px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-0.5">Total Entra</span>
+                        <span className="text-lg font-black text-emerald-800">{totalIn.toFixed(2)}€</span>
                     </div>
-                    <div className={cn("px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm",
+                    <div className={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm",
                         isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "bg-rose-100 text-rose-700" : "bg-emerald-500 text-white") : "bg-rose-100 text-rose-700"
                     )}>
                         {isBalanced ? (Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)) ? "Falta Stock" : "Equilibrado") : `${Math.abs(totalIn - totalOut).toFixed(2)}€ Dif.`}
                     </div>
                     <div className="text-center">
-                        <span className="block text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Total Sale</span>
-                        <span className="text-xl font-black text-rose-800">{totalOut.toFixed(2)}€</span>
+                        <span className="block text-[7px] font-black text-rose-500 uppercase tracking-[0.2em] mb-0.5">Total Sale</span>
+                        <span className="text-lg font-black text-rose-800">{totalOut.toFixed(2)}€</span>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 py-4 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 rounded-2xl transition-all active:scale-95">Cancelar</button>
+                <div className="flex gap-2">
+                    <button onClick={onCancel} className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95">Cancelar</button>
                     <button
                         onClick={() => onSubmit(totalIn, inCounts, outCounts as any)}
                         disabled={!isBalanced || Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0))}
                         className={cn(
-                            "flex-1 py-4 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
+                            "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
                             (isBalanced && !Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0)))
                                 ? "bg-[#36606F] shadow-[#36606F]/20"
                                 : "bg-gray-300 cursor-not-allowed shadow-none opacity-50"
                         )}
                     >
-                        <ArrowRightLeft size={18} strokeWidth={3} />
+                        <ArrowRightLeft size={16} strokeWidth={3} />
                         Confirmar Cambio
                     </button>
                 </div>
@@ -904,7 +904,7 @@ export default function DashboardPage() {
                         onClick={() => setCashModalMode('none')}
                     >
                         <div
-                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {cashModalMode === 'menu' && (
