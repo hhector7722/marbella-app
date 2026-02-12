@@ -794,7 +794,7 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-4 gap-2 md:gap-3">
                             {[
                                 { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
-                                { title: 'Coste Mano Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
+                                { title: 'Mano de Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
                                 { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
                                 { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
                             ].map((card, i) => (
@@ -924,6 +924,31 @@ export default function DashboardPage() {
                                             <>
                                                 <>
                                                     <button
+                                                        onClick={() => setCashModalMode('in')}
+                                                        className="bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                    >
+                                                        <div className="w-12 h-12 transition-transform group-hover:scale-110 mb-1">
+                                                            <Image src="/icons/in.png" alt="Entrada" width={48} height={48} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className="font-black text-zinc-900">Entrada</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
+                                                            const initial: any = {};
+                                                            data?.forEach(d => initial[d.denomination] = d.quantity);
+                                                            setBoxInventoryMap(initial);
+                                                            setBoxInventory(data || []);
+                                                            setCashModalMode('out');
+                                                        }}
+                                                        className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                    >
+                                                        <div className="w-12 h-12 transition-transform group-hover:scale-110 mb-1">
+                                                            <Image src="/icons/out.png" alt="Salida" width={48} height={48} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className="font-black text-zinc-900">Salida</span>
+                                                    </button>
+                                                    <button
                                                         onClick={async () => {
                                                             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0);
                                                             const initial: any = {};
@@ -948,7 +973,7 @@ export default function DashboardPage() {
                                                             setBoxInventory(data || []);
                                                             setCashModalMode('audit');
                                                         }}
-                                                        className="col-span-2 bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                        className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                     >
                                                         <div className="w-12 h-12 transition-transform group-hover:scale-110">
                                                             <Image src="/icons/change.png" alt="Arqueo" width={48} height={48} className="w-full h-full object-contain" />
@@ -961,7 +986,7 @@ export default function DashboardPage() {
                                                             setBoxInventory(data || []);
                                                             setCashModalMode('inventory');
                                                         }}
-                                                        className="col-span-2 bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
+                                                        className="bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                     >
                                                         <div className="w-12 h-12 transition-transform group-hover:scale-110">
                                                             <Image src="/icons/wallet.png" alt="Ver Desglose" width={48} height={48} className="w-full h-full object-contain" />
@@ -973,7 +998,9 @@ export default function DashboardPage() {
                                         ) : (
                                             <>
                                                 <button onClick={() => setCashModalMode('in')} className="bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95">
-                                                    <PlusCircle size={32} fill="currentColor" strokeWidth={3} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                                                    <div className="w-10 h-10 transition-transform group-hover:scale-110 mb-1">
+                                                        <Image src="/icons/in.png" alt="Entrada" width={40} height={40} className="w-full h-full object-contain" />
+                                                    </div>
                                                     <span className="font-black text-zinc-900">Entrada</span>
                                                 </button>
                                                 <button
@@ -987,7 +1014,9 @@ export default function DashboardPage() {
                                                     }}
                                                     className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"
                                                 >
-                                                    <Minus size={32} fill="currentColor" strokeWidth={3} className="text-rose-500 group-hover:scale-110 transition-transform" />
+                                                    <div className="w-10 h-10 transition-transform group-hover:scale-110 mb-1">
+                                                        <Image src="/icons/out.png" alt="Salida" width={40} height={40} className="w-full h-full object-contain" />
+                                                    </div>
                                                     <span className="font-black text-zinc-900">Salida</span>
                                                 </button>
                                                 <button
