@@ -121,16 +121,16 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
             <div
                 className={cn(
                     "flex h-full",
-                    isManager ? "w-[200%] transition-transform duration-300 ease-out" : "w-full",
+                    isManager ? "w-[200%] transition-[margin-left] duration-300 ease-out" : "w-full",
                     isDragging && isHorizontalDrag.current && "duration-0"
                 )}
-                style={isManager ? { transform: `translateX(${finalTranslate}%)` } : {}}
+                style={isManager ? { marginLeft: `${finalTranslate}%` } : {}}
             >
-                <div className={cn("h-full flex-shrink-0 overflow-hidden relative", isManager ? "w-1/2" : "w-full")}>
+                <div className={cn("h-full flex-shrink-0", isManager ? "w-1/2" : "w-full")}>
                     {(!isManager || view === 'staff' || isDragging) && <StaffDashboardView />}
                 </div>
                 {isManager && (
-                    <div className="w-1/2 h-full flex-shrink-0 overflow-hidden relative">
+                    <div className="w-1/2 h-full flex-shrink-0">
                         {(view === 'admin' || isDragging) && <AdminDashboardView />}
                     </div>
                 )}
