@@ -61,6 +61,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Optimización Tesorería**: Reorganización de cajas de cambio en fila y caja inicial expandida.
 - [x] **Restauración de Identidad Visual**: Corrección de ruta del logotipo (`/icons/logo-white.png`) en Login y Navbar.
 - [x] **Regla de Iconos Flotantes**: Eliminación de tarjetas de fondo en iconos de modales (Dashboard y Producto) para un diseño más limpio.
+- [x] **Regla de Visibilidad de Modales:** Los modales deben ser 100% visibles (sin cortes) con scroll interno obligatorio si el contenido es extenso.
 - [x] **Cumplimiento Zero-Display (Staff)**: Aplicación de la norma en el resumen semanal del dashboard de personal.
 - [x] **Optimización UI Gestión de Caja**: Imágenes de moneda agrandadas (h-24/h-20), modales ensanchados (max-w-2xl/4xl) y layouts sin scroll para arqueos, entradas/salidas, cambios y cierre.
 - [x] **Disparador de Cierre de Caja**: Conexión del botón "+" de "Último Cierre" con el `CashClosingModal` para gestión proactiva desde el dashboard.

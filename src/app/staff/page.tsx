@@ -568,7 +568,7 @@ export default function StaffDashboard() {
                     onClick={closeMenus}
                 >
                     <div
-                        className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all`}
+                        className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : 'max-w-xs'} rounded-[2rem] p-6 shadow-2xl relative transition-all max-h-[85vh] flex flex-col`}
                         onClick={(e) => e.stopPropagation()}
                     >
 
@@ -588,7 +588,7 @@ export default function StaffDashboard() {
                                 : 'Gestión Stock'}
                         </h3>
 
-                        <div className="space-y-3">
+                        <div className="space-y-3 overflow-y-auto">
                             {activeMenu === 'info' && !infoSubMenu && (
                                 <>
                                     <button onClick={() => setInfoSubMenu('contactos')} className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl flex items-center gap-3 transition-colors group">

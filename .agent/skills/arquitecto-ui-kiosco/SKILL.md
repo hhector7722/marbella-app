@@ -164,6 +164,29 @@ const handleSubmit = async () => {
 
 ---
 
+### 7. 📏 Visibilidad Total de Modales
+
+**REGLA:** Todo pop-up o modal debe ser **100% visible al completo**. El inicio y el final del contenedor deben verse siempre por arriba y por abajo en la pantalla.
+
+```tsx
+// ❌ PROHIBIDO: Contenedores que se cortan fuera de pantalla
+<div className="bg-white h-[2000px]">...</div>
+
+// ✅ OBLIGATORIO: Altura máxima controlada + Scroll interno
+<div className="bg-white max-h-[90vh] overflow-y-auto rounded-[2rem] p-6 shadow-2xl">
+  {/* El contenido puede ser largo, pero el contenedor es visible */}
+  <div className="space-y-4">
+    {/* Contenido extenso aquí */}
+  </div>
+</div>
+```
+
+- **Límite recomendado:** `max-h-[90vh]` o `max-h-[85vh]` para asegurar margen visual.
+- **Scroll:** El scroll debe ser **siempre interno** (`overflow-y-auto`) dentro del contenedor blanco.
+- **Consistencia:** Nunca debe cortarse el borde superior o inferior del modal.
+
+---
+
 > [!WARNING]
 > **Violación de Reglas:** Si detectas código que viole estas reglas, **detente inmediatamente** y corrige antes de continuar. No hay excepciones.
 

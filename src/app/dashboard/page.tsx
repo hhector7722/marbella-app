@@ -921,7 +921,7 @@ export default function DashboardPage() {
                         onClick={() => setCashModalMode('none')}
                     >
                         <div
-                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {cashModalMode === 'menu' && (
@@ -1114,7 +1114,7 @@ export default function DashboardPage() {
                         onClick={() => setIsStaffModalOpen(false)}
                     >
                         <div
-                            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200"
+                            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
@@ -1156,7 +1156,7 @@ export default function DashboardPage() {
             {
                 isProductModalOpen && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
-                        <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
                             <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                                 <div className="flex flex-col">
                                     <h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3>
@@ -1169,7 +1169,7 @@ export default function DashboardPage() {
                                 </button>
                             </div>
 
-                            <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30">
+                            <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                                 <button onClick={() => router.push('/recipes')} className="bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group hover:bg-red-50/30 transition-all active:scale-95">
                                     <ChefHat size={32} fill="currentColor" className="text-red-500 group-hover:scale-110 transition-all" />
                                     <span className="font-black text-sm text-gray-700">Recetas</span>
