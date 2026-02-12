@@ -38,10 +38,10 @@ export default function OvertimePage() {
     const [startDate, setStartDate] = useState(() => {
         const d = new Date();
         d.setDate(d.getDate() - 60);
-        return d.toISOString().split('T')[0];
+        return format(d, 'yyyy-MM-dd');
     });
     const [endDate, setEndDate] = useState(() => {
-        return new Date().toISOString().split('T')[0];
+        return format(new Date(), 'yyyy-MM-dd');
     });
 
     const [loading, setLoading] = useState(true);
@@ -93,8 +93,8 @@ export default function OvertimePage() {
 
     const applyPreset = (preset: any) => {
         const { start, end } = preset.getValue();
-        setStartDate(start.toISOString().split('T')[0]);
-        setEndDate(end.toISOString().split('T')[0]);
+        setStartDate(format(start, 'yyyy-MM-dd'));
+        setEndDate(format(end, 'yyyy-MM-dd'));
     };
 
     const filteredWeeksData = weeksData.map(week => ({
@@ -219,8 +219,8 @@ export default function OvertimePage() {
                                                                         <button
                                                                             key={i}
                                                                             onClick={() => {
-                                                                                setStartDate(startOfMonth(d).toISOString().split('T')[0]);
-                                                                                setEndDate(endOfMonth(d).toISOString().split('T')[0]);
+                                                                                setStartDate(format(startOfMonth(d), 'yyyy-MM-dd'));
+                                                                                setEndDate(format(endOfMonth(d), 'yyyy-MM-dd'));
                                                                                 setShowMonthPicker(false);
                                                                                 setShowManualDates(false);
                                                                             }}

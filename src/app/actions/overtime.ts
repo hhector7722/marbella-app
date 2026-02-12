@@ -54,8 +54,8 @@ export async function getOvertimeData(startDate: string, endDate: string) {
     const { data: snapshots } = await supabase
         .from('weekly_snapshots')
         .select('user_id, week_start, is_paid, final_balance')
-        .gte('week_start', extendedStart.toISOString().split('T')[0])
-        .lte('week_start', endISO.split('T')[0]);
+        .gte('week_start', format(extendedStart, 'yyyy-MM-dd'))
+        .lte('week_start', format(endObj, 'yyyy-MM-dd'));
 
     if (!logs || !profiles) return { weeksResult: [], summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 } };
 
@@ -96,7 +96,7 @@ export async function getOvertimeData(startDate: string, endDate: string) {
         const prevWeekId = Object.keys(tempWeekMeta).find(k =>
             tempWeekMeta[k].getTime() === prevMonday.getTime()
         );
-        const prevWeekISO = prevMonday.toISOString().split('T')[0];
+        const prevWeekISO = format(prevMonday, 'yyyy-MM-dd');
 
         let weekTotalCost = 0;
         let weekTotalHours = 0;
