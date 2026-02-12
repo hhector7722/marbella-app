@@ -14,16 +14,33 @@ END $$;
 CREATE OR REPLACE FUNCTION public.fn_round_marbella_hours(total_hours numeric) 
 RETURNS numeric AS $$
 DECLARE
+    is_neg boolean := false;
+    abs_hours numeric;
     h numeric;
     m numeric;
 BEGIN
-    IF total_hours IS NULL OR total_hours <= 0 THEN RETURN 0; END IF;
-    h := floor(total_hours);
-    m := (total_hours - h) * 60;
+    IF total_hours IS NULL OR total_hours = 0 THEN RETURN 0; END IF;
     
-    IF m <= 20 THEN RETURN h;
-    ELSIF m <= 50 THEN RETURN h + 0.5;
-    ELSE RETURN h + 1;
+    IF total_hours < 0 THEN
+        is_neg := true;
+        abs_hours := -total_hours;
+    ELSE
+        abs_hours := total_hours;
+    END IF;
+
+    h := floor(abs_hours);
+    m := (abs_hours - h) * 60;
+    
+    IF m <= 20 THEN 
+        abs_hours := h;
+    ELSIF m <= 50 THEN 
+        abs_hours := h + 0.5;
+    ELSE 
+        abs_hours := h + 1;
+    END IF;
+    
+    IF is_neg THEN RETURN -abs_hours;
+    ELSE RETURN abs_hours;
     END IF;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;

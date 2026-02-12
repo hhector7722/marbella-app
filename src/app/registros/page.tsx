@@ -64,10 +64,13 @@ type EditingLog = {
 // --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
 const calculateRoundedHours = (start: Date, end: Date): number => {
     const totalMinutes = differenceInMinutes(end, start);
-    if (totalMinutes <= 0) return 0;
+    if (totalMinutes === 0) return 0;
 
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+    const isNeg = totalMinutes < 0;
+    const absMinutes = Math.abs(totalMinutes);
+
+    const hours = Math.floor(absMinutes / 60);
+    const minutes = absMinutes % 60;
 
     let fraction = 0;
     // Regla: 0-20min -> 0.0 | 21-50min -> 0.5 | 51-59min -> 1.0
@@ -79,7 +82,8 @@ const calculateRoundedHours = (start: Date, end: Date): number => {
         fraction = 1.0;
     }
 
-    return hours + fraction;
+    const result = hours + fraction;
+    return isNeg ? -result : result;
 };
 
 export default function RegistrosPage() {
@@ -240,7 +244,7 @@ export default function RegistrosPage() {
                     user_id: log.user_id,
                     clock_in: clockInDate.toISOString(),
                     clock_out: clockOutDate ? clockOutDate.toISOString() : null,
-                    total_hours: totalHours > 0 ? totalHours : null,
+                    total_hours: totalHours !== 0 ? totalHours : null,
                     event_type: log.event_type
                 };
 
