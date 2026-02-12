@@ -8,7 +8,7 @@ import {
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, X, FileText,
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
-    PlusCircle
+    PlusCircle, ArrowDown, ArrowUp
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import Link from 'next/link';
@@ -105,22 +105,24 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 <div><h3 className="text-lg font-black uppercase tracking-wider">Cambio Efectivo</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p></div>
                 <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto bg-gray-50/50 p-2 no-scrollbar">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="flex-1 overflow-y-auto bg-gray-50/30 p-4 no-scrollbar">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
                     {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="bg-white rounded-2xl border border-gray-100 p-2 flex flex-col items-center gap-1.5 shadow-sm">
-                            <div className="h-10 md:h-12 flex items-center justify-center transition-transform hover:scale-105">
+                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                            <div className="h-10 flex items-center justify-center transition-transform group-hover:scale-110">
                                 <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={80} height={80} className="h-full w-auto object-contain drop-shadow-md" />
                             </div>
-                            <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                            <div className="grid grid-cols-2 gap-1 w-full mt-0.5">
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="text-[6px] font-black text-emerald-500 uppercase tracking-tighter">ENTRA</span>
-                                    <input type="number" min="0" value={inCounts[denom] || ''} onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-emerald-50/50 border border-emerald-100 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
-                                </div>
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="text-[6px] font-black text-rose-500 uppercase tracking-tighter">SALE</span>
-                                    <input type="number" min="0" value={outCounts[denom] || ''} onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-full bg-rose-50/50 border rounded-lg p-1 text-center font-black outline-none text-xs transition-all", (outCounts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-700 shadow-inner" : "border-rose-100 focus:border-rose-300 text-rose-600")} />
+                            <div className="flex items-center gap-2 w-full justify-center">
+                                <span className="font-black text-gray-400 text-[10px] uppercase tracking-widest w-8 text-right shrink-0">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1">
+                                        <ArrowDown size={14} strokeWidth={3} className="text-emerald-500" />
+                                        <input type="number" min="0" value={inCounts[denom] || ''} onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-10 bg-emerald-50/50 border-0 rounded-lg p-1 text-center font-black text-emerald-600 outline-none text-xs" />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <ArrowUp size={14} strokeWidth={3} className="text-rose-500" />
+                                        <input type="number" min="0" value={outCounts[denom] || ''} onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))} placeholder="0" className={cn("w-10 bg-rose-50/50 border-0 rounded-lg p-1 text-center font-black outline-none text-xs", (outCounts[denom] || 0) > (availableStock[denom] || 0) ? "text-rose-700" : "text-rose-600")} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
