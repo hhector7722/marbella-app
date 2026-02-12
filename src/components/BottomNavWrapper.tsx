@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import BottomNavAdmin from './BottomNavAdmin';
 import BottomNavStaff from './BottomNavStaff';
 
 export default function BottomNavWrapper() {
