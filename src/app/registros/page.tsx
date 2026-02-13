@@ -270,49 +270,59 @@ export default function RegistrosPage() {
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-8 overflow-hidden text-gray-800">
             {/* CABECERA NAVEGACIÓN */}
-            <div className="mb-6 flex items-center justify-center px-2">
-                <div className="flex items-center gap-4 bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md relative">
-                    <button onClick={prevMonth} className="text-white hover:scale-110 transition-transform"><ChevronLeft size={20} /></button>
+            <div className="mb-6 flex items-center justify-center gap-6 px-2">
+                <button
+                    onClick={prevMonth}
+                    className="w-12 h-12 flex items-center justify-center bg-white/10 rounded-2xl text-white hover:bg-white/20 transition-all active:scale-90 shadow-lg backdrop-blur-sm border border-white/10"
+                >
+                    <ChevronLeft size={24} strokeWidth={3} />
+                </button>
 
-                    <div className="relative">
+                <div className="relative">
+                    <div className="bg-white/20 px-8 py-3 rounded-[2rem] border border-white/20 backdrop-blur-md">
                         <h1
                             onClick={() => setShowMonthPicker(!showMonthPicker)}
-                            className="text-lg font-black text-white capitalize min-w-[140px] text-center cursor-pointer hover:bg-white/10 px-4 py-1 rounded-xl transition-colors select-none"
+                            className="text-[10px] font-black text-white uppercase tracking-[0.3em] min-w-[140px] text-center cursor-pointer hover:text-white/80 transition-colors select-none italic"
                         >
                             {format(currentDate, 'MMMM yyyy', { locale: es })}
                         </h1>
-
-                        {showMonthPicker && (
-                            <>
-                                <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)}></div>
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white rounded-3xl shadow-2xl border border-gray-100 p-4 z-50 animate-in fade-in zoom-in duration-200">
-                                    <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto no-scrollbar">
-                                        {Array.from({ length: 24 }).map((_, i) => {
-                                            const d = addMonths(startOfMonth(new Date()), i - 12);
-                                            const isCurrent = isSameMonth(d, currentDate);
-                                            return (
-                                                <button
-                                                    key={i}
-                                                    onClick={() => { setCurrentDate(d); setShowMonthPicker(false); }}
-                                                    className={cn(
-                                                        "px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
-                                                        isCurrent
-                                                            ? "bg-rose-500 text-white shadow-md shadow-rose-200"
-                                                            : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                                                    )}
-                                                >
-                                                    {format(d, 'MMM yyyy', { locale: es })}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </>
-                        )}
                     </div>
 
-                    <button onClick={nextMonth} className="text-white hover:scale-110 transition-transform"><ChevronRight size={20} /></button>
+                    {showMonthPicker && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)}></div>
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-72 bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 p-6 z-50 animate-in fade-in zoom-in duration-200">
+                                <div className="grid grid-cols-2 gap-3 max-h-[320px] overflow-y-auto no-scrollbar">
+                                    {Array.from({ length: 24 }).map((_, i) => {
+                                        const d = addMonths(startOfMonth(new Date()), i - 12);
+                                        const isCurrent = isSameMonth(d, currentDate);
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => { setCurrentDate(d); setShowMonthPicker(false); }}
+                                                className={cn(
+                                                    "px-3 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                    isCurrent
+                                                        ? "bg-[#36606F] text-white shadow-lg shadow-[#36606F]/20"
+                                                        : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                                                )}
+                                            >
+                                                {format(d, 'MMM yyyy', { locale: es })}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
+
+                <button
+                    onClick={nextMonth}
+                    className="w-12 h-12 flex items-center justify-center bg-white/10 rounded-2xl text-white hover:bg-white/20 transition-all active:scale-90 shadow-lg backdrop-blur-sm border border-white/10"
+                >
+                    <ChevronRight size={24} strokeWidth={3} />
+                </button>
             </div>
 
             {/* BLOQUE CALENDARIO INTEGRADO */}
