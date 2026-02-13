@@ -11,6 +11,7 @@ interface Ingredient {
     supplier: string | null;
     current_price: number;
     purchase_unit: string;
+    unit_type: string; // Added field
     category: string;
     image_url: string | null;
 }
@@ -74,7 +75,15 @@ export default function IngredientsPage() {
         if (!editingIngredient) return;
         setSaving(true);
         try {
-            const { error } = await supabase.from('ingredients').update({ name: editForm.name, supplier: editForm.supplier, current_price: editForm.current_price, purchase_unit: editForm.purchase_unit, category: editForm.category, image_url: editForm.image_url }).eq('id', editingIngredient.id);
+            const { error } = await supabase.from('ingredients').update({
+                name: editForm.name,
+                supplier: editForm.supplier,
+                current_price: editForm.current_price,
+                purchase_unit: editForm.purchase_unit,
+                unit_type: editForm.purchase_unit, // Sync unit_type with purchase_unit
+                category: editForm.category,
+                image_url: editForm.image_url
+            }).eq('id', editingIngredient.id);
             if (error) throw error;
             toast.success('Guardado'); setEditingIngredient(null); fetchIngredients();
         } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
@@ -83,12 +92,19 @@ export default function IngredientsPage() {
     async function handleCreate() {
         if (!newIngredient.name || !newIngredient.current_price) return toast.error('Faltan datos');
         setIsCreating(true);
+        const unit = newIngredient.purchase_unit || 'kg';
         try {
-            const { error } = await supabase.from('ingredients').insert({ ...newIngredient, purchase_unit: newIngredient.purchase_unit || 'kg', category: newIngredient.category || 'Alimentos' });
+            const { error } = await supabase.from('ingredients').insert({
+                ...newIngredient,
+                purchase_unit: unit,
+                unit_type: unit, // Provide missing unit_type
+                category: newIngredient.category || 'Alimentos'
+            });
             if (error) throw error;
             toast.success('Creado'); setShowCreateModal(false); setNewIngredient({}); fetchIngredients();
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
+
 
     const suppliersList = Array.from(new Set(ingredients.map(i => i.supplier).filter(Boolean))) as string[];
     const filteredIngredients = ingredients.filter(ing => {

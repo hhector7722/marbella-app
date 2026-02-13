@@ -70,14 +70,23 @@ export default function SuppliersPage() {
         try {
             setLoading(true);
             const { data, error } = await supabase.from('suppliers').select('*').order('name');
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase Error:', error);
+                toast.error(`Error de base de datos: ${error.message}`);
+                throw error;
+            }
 
-            // Combinar con los iniciales si no están en DB
             const dbSuppliers = data || [];
             const combined = [...dbSuppliers];
 
+            // Solo añadir iniciales si no hay una coincidencia cercana en la DB
             INITIAL_SUPPLIERS.forEach((initial: Partial<Supplier>) => {
-                if (!dbSuppliers.some(s => s.name.toLowerCase() === initial.name?.toLowerCase())) {
+                const alreadyInDb = dbSuppliers.some(s =>
+                    s.name.toLowerCase().trim() === initial.name?.toLowerCase().trim() ||
+                    s.name.toLowerCase().includes(initial.name?.toLowerCase() || '---')
+                );
+
+                if (!alreadyInDb) {
                     combined.push({
                         id: `initial-${initial.name}`,
                         name: initial.name!,
@@ -91,18 +100,20 @@ export default function SuppliersPage() {
             });
 
             setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching suppliers:', error);
-            // Fallback total a los iniciales si falla la DB
-            setSuppliers(INITIAL_SUPPLIERS.map((s, i) => ({
-                id: `fallback-${i}`,
-                name: s.name!,
-                category: s.category!,
-                image_url: null,
-                contact_person: null,
-                phone: null,
-                email: null
-            })));
+            // Fallback solo si la base de datos está inaccesible o vacía
+            if (suppliers.length === 0) {
+                setSuppliers(INITIAL_SUPPLIERS.map((s, i) => ({
+                    id: `fallback-${i}`,
+                    name: s.name!,
+                    category: s.category!,
+                    image_url: null,
+                    contact_person: null,
+                    phone: null,
+                    email: null
+                })));
+            }
         } finally {
             setLoading(false);
         }

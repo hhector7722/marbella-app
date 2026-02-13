@@ -25,8 +25,10 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
         const { error } = await supabase.from('ingredients').insert({
             name,
             current_price: price,
-            unit: 'kg' // Default
+            purchase_unit: 'kg', // Standardize on purchase_unit
+            unit_type: 'kg'      // Satisfy NOT NULL constraint
         });
+        setLoading(true); // Keep loading state until finish
         setLoading(false);
 
         if (error) {

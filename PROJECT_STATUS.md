@@ -111,6 +111,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Modales de Cambio**: Transformación a cuadrícula de 4 columnas con imágenes de moneda agrandadas y inputs "ENTRA/SALE" en paralelo para eliminar el desplazamiento vertical.
 - [x] **Refinamiento Estético Staff (Floating UI)**: Eliminación de fondos en tarjetas de turnos en el dashboard de personal para lograr un efecto de flotado directo sobre el fondo blanco.
 - [x] **Unificación Estética de Fondos**: Restauración del azul Marbella original (#5B8FB9) en toda la aplicación tras pruebas con azul oscuro.
+- [x] **Corrección de Guardado de Ingredientes**: Resolución del error de restricción `NOT NULL` en la columna `unit_type` al crear o editar ingredientes.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
