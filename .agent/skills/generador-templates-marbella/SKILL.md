@@ -19,7 +19,8 @@ Evitar la fragmentación del diseño. Cada vez que crees una nueva página de de
 - **Feedback Táctil:** Altura mínima de 48px para cada opción interactiva.
 
 ### 2. 📊 Vistas de Detalle (Vista Marbella Detail)
-- **Cabecera Sólida:** Color `#36606F` con bordes redondeados pronunciados (`rounded-[2.5rem]`).
+- **Cabecera Estrecha:** Color `#36606F` con bordes redondeados pronunciados (`rounded-[2.5rem]`).
+- **Layout de Cabecera:** Debe ser estrecha (`py-4` aprox.), conteniendo un solo título principal, sin subtítulos ni etiquetas secundarias. Debe ser proporcional en altura a la cabecera de un modal estándar.
 - **Resumen KPI "Clean":**
     - Se eliminan las mini-tarjetas con fondo de color.
     - Se muestran los valores directamente sobre el fondo (blanco o gris muy claro).

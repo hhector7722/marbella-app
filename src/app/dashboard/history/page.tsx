@@ -171,24 +171,13 @@ export default function HistoryPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
-                    {/* ENCABEZADO CORPORATIVO SÓLIDO (Vista Marbella Detail) */}
-                    <div className="bg-[#36606F] p-8 pb-10 text-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
-
-                        <div className="relative z-10 flex flex-col items-center text-center">
-                            <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-xl flex items-center justify-center mb-4 border border-white/20 shadow-2xl group transition-transform hover:scale-110">
-                                <Receipt size={40} className="text-white" strokeWidth={2.5} />
-                            </div>
-
-                            <h1 className="text-3xl font-black tracking-tighter mb-1 uppercase">Histórico</h1>
-                            <p className="text-[10px] text-white/50 font-black uppercase tracking-[0.3em] italic">Registro de Cierres</p>
-                        </div>
-
-                        <button
-                            onClick={() => router.back()}
-                            className="absolute top-6 left-6 w-12 h-12 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90 backdrop-blur-md"
-                        >
-                            <ArrowLeft size={24} strokeWidth={3} />
+                    {/* CABECERA ESTRECHA MARBELLA DETAIL */}
+                    <div className="bg-[#36606F] px-8 py-5 flex items-center justify-between">
+                        <h1 className="text-xl font-black text-white uppercase tracking-wider">
+                            Histórico Cierres
+                        </h1>
+                        <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors p-2">
+                            <X size={24} />
                         </button>
                     </div>
 

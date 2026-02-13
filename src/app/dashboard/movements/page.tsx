@@ -155,19 +155,13 @@ export default function MovementsPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
-                    {/* Header (Detail View Style) */}
-                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2 opacity-60 mb-1 text-white">
-                                <ArrowRightLeft size={14} />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Finanzas y Tesorería</span>
-                            </div>
-                            <h1 className="text-base font-black text-white uppercase tracking-wider">
-                                Movimientos Caja
-                            </h1>
-                        </div>
-                        <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors">
-                            <X size={20} />
+                    {/* CABECERA ESTRECHA MARBELLA DETAIL */}
+                    <div className="bg-[#36606F] px-8 py-5 flex items-center justify-between">
+                        <h1 className="text-xl font-black text-white uppercase tracking-wider">
+                            Movimientos Caja
+                        </h1>
+                        <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors p-2">
+                            <X size={24} />
                         </button>
                     </div>
 
