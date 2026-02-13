@@ -96,6 +96,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Herramienta de Importación Masiva**: Nueva página `/admin/import` para migración de fichajes históricos vía CSV con mapeo automático de emails y procesamiento por bloques.
 - [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
 - [x] **Estandarización de Contacto**: Unificación de iconos de Teléfono y WhatsApp en `/profile` y `/suppliers` siguiendo el estilo minimalista del Dashboard de Personal.
+- [x] **Sistema de Pedidos a Proveedores**: Nueva flujo en `/orders/new` con vista de galería, persistencia de borradores, generación de PDF con `jspdf` y subida automática a Supabase Storage.
 
 
 ## 📅 PENDIENTE
@@ -117,7 +118,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Estabilidad de Build (Suspense)**: Resolución del error `useSearchParams` en el módulo de recetas envolviendo componentes en límites de `Suspense` para permitir el prerenderizado de Next.js.
 - [x] **Adaptación Recetas Staff**: Ajuste de altura dinámica en contenedores de ingredientes y elaboración cuando se accede desde el dashboard de personal.
 - [x] **Rediseño Filtro Historial**: Centralización del filtro de meses en `/staff/history` mediante un botón superior premium y modal estilo Bento.
-- [x] **Refinamiento Estético Staff V5**: Implementación de cabeceras sólidas en el dashboard de personal (Lila para Horarios, Azul Marbella para Resumen) y rediseño de `/staff/schedule` bajo el estándar "Vista Marbella Detail".
+- [x] **Refinamiento Estético Staff V6**: Eliminación de marcos/contornos en los contenedores principales (Resumen, Fichaje, Horarios) y reubicación de iconos de acción a un layout flotante independiente a la derecha de la agenda.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

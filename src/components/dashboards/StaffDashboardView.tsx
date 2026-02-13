@@ -367,7 +367,7 @@ export default function StaffDashboardView() {
             onClick={onClick}
             className={cn(
                 "flex flex-col items-center justify-center gap-1.5 w-full h-full",
-                "bg-white rounded-2xl shadow-sm border border-zinc-100",
+                "bg-white rounded-2xl shadow-sm",
                 "active:scale-95 transition-all duration-150 p-2 group",
                 "min-h-[88px]"
             )}
@@ -399,7 +399,7 @@ export default function StaffDashboardView() {
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] shadow-xl border border-gray-50 overflow-hidden">
+                    <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden">
                         {/* Header Estrecho - Estilo Vista Marbella Detail */}
                         <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                             <div className="flex flex-col">
@@ -496,7 +496,7 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4 border border-gray-50">
+                    <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
                         <button
                             onClick={openConfirmation}
                             disabled={status === 'finished' || actionLoading}
@@ -527,47 +527,50 @@ export default function StaffDashboardView() {
                     </div>
                 </div>
 
-                <div className="lg:col-span-1 grid grid-cols-2 lg:block space-y-0 lg:space-y-6 gap-4">
-                    <div
-                        onClick={() => router.push('/staff/schedule')}
-                        className="bg-white rounded-[2rem] shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px] cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
-                    >
-                        {/* Header Lila - Estilo Personalizado */}
-                        <div className="bg-purple-600 px-6 py-3 flex justify-between items-center text-white shrink-0">
-                            <h3 className="font-black flex items-center gap-2 text-[10px] lg:text-xs uppercase tracking-wider">
-                                <CalendarDays size={16} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
-                            </h3>
-                            <Link href="/staff/schedule" className="text-[9px] lg:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0">Ver más</Link>
-                        </div>
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="flex flex-col xl:flex-row gap-6">
+                        <div
+                            onClick={() => router.push('/staff/schedule')}
+                            className="bg-white rounded-[2rem] shadow-xl flex flex-col overflow-hidden relative min-h-[190px] xl:flex-1 cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                        >
+                            {/* Header Lila - Estilo Personalizado */}
+                            <div className="bg-purple-600 px-6 py-3 flex justify-between items-center text-white shrink-0">
+                                <h3 className="font-black flex items-center gap-2 text-[10px] lg:text-xs uppercase tracking-wider">
+                                    <CalendarDays size={16} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
+                                </h3>
+                                <Link href="/staff/schedule" className="text-[9px] lg:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0">Ver más</Link>
+                            </div>
 
-                        <div className="p-4 flex-1">
-                            <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
-                                {nextShifts.length === 0 ? (
-                                    <div className="flex items-center justify-center py-6 lg:py-10">
-                                        <p className="text-[9px] lg:text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos.</p>
-                                    </div>
-                                ) : (
-                                    nextShifts.slice(0, 2).map((shift, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group">
-                                            <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
-                                                <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                                <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden">
-                                                <span className="text-[8px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
-                                                <div className="flex items-center gap-1.5 lg:gap-2 text-[10px] lg:text-sm font-black">
-                                                    <span className="text-green-600">{shift.startTime}</span>
-                                                    <span className="text-gray-400 font-light">-</span>
-                                                    <span className="text-red-500">{shift.endTime}</span>
+                            <div className="p-4 flex-1">
+                                <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
+                                    {nextShifts.length === 0 ? (
+                                        <div className="flex items-center justify-center py-6 lg:py-10">
+                                            <p className="text-[9px] lg:text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos.</p>
+                                        </div>
+                                    ) : (
+                                        nextShifts.slice(0, 2).map((shift, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group">
+                                                <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
+                                                    <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                    <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
+                                                </div>
+                                                <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden">
+                                                    <span className="text-[8px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
+                                                    <div className="flex items-center gap-1.5 lg:gap-2 text-[10px] lg:text-sm font-black">
+                                                        <span className="text-green-600">{shift.startTime}</span>
+                                                        <span className="text-gray-400 font-light">-</span>
+                                                        <span className="text-red-500">{shift.endTime}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                                )}
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                        {/* Iconos Flotantes - Ahora fuera de Horarios */}
+                        <div className="grid grid-cols-2 xl:grid-cols-2 gap-3 xl:w-44 shrink-0 px-2 lg:px-0">
                             <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
                                 if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
                                 const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', changeBox.id).gt('quantity', 0);

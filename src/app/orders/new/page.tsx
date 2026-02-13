@@ -1,0 +1,292 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Search, ChevronDown, Check, Loader2, ArrowRight } from 'lucide-react';
+import { createClient } from "@/utils/supabase/client";
+import { OrderProductCard } from "@/components/orders/OrderProductCard";
+import { toast, Toaster } from 'sonner';
+import { cn } from "@/lib/utils";
+
+interface Ingredient {
+    id: string;
+    name: string;
+    supplier: string | null;
+    current_price: number;
+    purchase_unit: string;
+    image_url: string | null;
+    category: string;
+}
+
+interface Draft {
+    ingredient_id: string;
+    quantity: number;
+}
+
+import { useRouter } from 'next/navigation';
+import { OrderSummaryModal } from "@/components/orders/OrderSummaryModal";
+import { OrderSuccessModal } from "@/components/orders/OrderSuccessModal";
+import { generateOrderPDF } from "@/utils/orders/pdf-generator";
+
+export default function NewOrderPage() {
+    const supabase = createClient();
+    const router = useRouter();
+    const [userId, setUserId] = useState<string | null>(null);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+    const [drafts, setDrafts] = useState<Record<string, number>>({});
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
+    const [showSupplierPopup, setShowSupplierPopup] = useState(false);
+    const [suppliers, setSuppliers] = useState<string[]>([]);
+
+    // UI Modals
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+    const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
+
+    useEffect(() => {
+        const init = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+                await fetchData(user.id);
+            }
+        };
+        init();
+    }, []);
+
+    async function fetchData(uid: string) {
+        setLoading(true);
+        try {
+            const { data: ingData } = await supabase.from('ingredients').select('*').order('name');
+            setIngredients(ingData || []);
+
+            const uniqueSuppliers = Array.from(new Set((ingData || []).map(i => i.supplier).filter(Boolean))) as string[];
+            setSuppliers(uniqueSuppliers);
+
+            const { data: draftData } = await supabase.from('order_drafts').select('ingredient_id, quantity').eq('user_id', uid);
+            const draftMap: Record<string, number> = {};
+            draftData?.forEach(d => {
+                draftMap[d.ingredient_id] = Number(d.quantity);
+            });
+            setDrafts(draftMap);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            toast.error('Error al cargar datos');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const filteredIngredients = ingredients.filter(ing => {
+        const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier;
+        return matchesSearch && matchesSupplier;
+    });
+
+    const selectedItems = ingredients
+        .filter(ing => (drafts[ing.id] || 0) > 0)
+        .map(ing => ({ ...ing, quantity: drafts[ing.id] }));
+
+    const handleFinalize = async () => {
+        if (selectedItems.length === 0) return;
+        setIsProcessing(true);
+        try {
+            // 1. Generate PDF
+            const orderNum = `ORD-${Date.now().toString().slice(-6)}`;
+            const blob = await generateOrderPDF({
+                supplierName: selectedSupplier || 'Varios Proveedores',
+                items: selectedItems.map(i => ({
+                    name: i.name,
+                    quantity: i.quantity,
+                    unit: i.purchase_unit,
+                    price: i.current_price
+                })),
+                orderNumber: orderNum
+            });
+            setGeneratedBlob(blob);
+
+            // 2. Open Success Modal and start background upload
+            setIsSummaryOpen(false);
+            setIsSuccessOpen(true);
+            setIsUploading(true);
+
+            // 3. Save Order Header
+            const { data: order, error: orderError } = await supabase.from('purchase_orders').insert({
+                order_number: orderNum,
+                created_by: userId,
+                supplier_name: selectedSupplier || 'Varios Proveedores',
+                total_items: selectedItems.length,
+                status: 'SENT'
+            }).select().single();
+
+            if (orderError) throw orderError;
+
+            // 4. Save Order Items
+            const orderItems = selectedItems.map(i => ({
+                purchase_order_id: order.id,
+                ingredient_id: i.id,
+                ingredient_name: i.name,
+                quantity: i.quantity,
+                unit: i.purchase_unit,
+                unit_price: i.current_price
+            }));
+            await supabase.from('purchase_order_items').insert(orderItems);
+
+            // 5. Upload PDF to Storage
+            const fileName = `${orderNum}.pdf`;
+            const { error: uploadError } = await supabase.storage.from('orders').upload(fileName, blob);
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage.from('orders').getPublicUrl(fileName);
+
+            // 6. Update order with PDF URL
+            await supabase.from('purchase_orders').update({ pdf_url: publicUrl }).eq('id', order.id);
+            setPdfUrl(publicUrl);
+
+            // 7. Clear Drafts
+            await supabase.from('order_drafts').delete().eq('user_id', userId);
+            setDrafts({});
+
+            toast.success('Pedido procesado correctamente');
+
+        } catch (error: any) {
+            console.error('Error finalizing order:', error);
+            toast.error('Error al procesar el pedido: ' + error.message);
+        } finally {
+            setIsProcessing(false);
+            setIsUploading(false);
+        }
+    };
+
+    const handleDownload = () => {
+        if (!generatedBlob) return;
+        const url = URL.createObjectURL(generatedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Pedido_${Date.now()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const totalSelected = Object.values(drafts).filter(q => q > 0).length;
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-[#5B8FB9]">
+                <Loader2 className="w-12 h-12 text-white animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
+            <Toaster position="top-right" />
+
+            {/* HEADER & FILTERS */}
+            <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar ingrediente..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1] transition-all"
+                    />
+                </div>
+
+                <div className="flex gap-2 items-center relative flex-1">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSupplierPopup(!showSupplierPopup)}
+                            className={cn(
+                                "px-5 py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50",
+                                selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10"
+                            )}
+                        >
+                            {selectedSupplier || "Proveedor"} <ChevronDown size={14} className="text-zinc-400" />
+                        </button>
+
+                        {showSupplierPopup && (
+                            <>
+                                <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
+                                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar Proveedor</span>
+                                    </div>
+                                    <button
+                                        onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
+                                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
+                                    >
+                                        Todos {!selectedSupplier && <Check size={14} className="text-[#5E35B1]" />}
+                                    </button>
+                                    {suppliers.map(sup => (
+                                        <button
+                                            key={sup}
+                                            onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
+                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
+                                        >
+                                            {sup} {selectedSupplier === sup && <Check size={14} className="text-[#5E35B1]" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* PRODUCT GRID */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-4 pb-24">
+                {filteredIngredients.map(ing => (
+                    <OrderProductCard
+                        key={ing.id}
+                        ingredient={ing}
+                        userId={userId!}
+                        initialQuantity={drafts[ing.id] || 0}
+                        onQuantityChange={(id, q) => setDrafts(prev => ({ ...prev, [id]: q }))}
+                    />
+                ))}
+            </div>
+
+            {/* FLOATING ACTION BUTTON */}
+            {totalSelected > 0 && !isSummaryOpen && !isSuccessOpen && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-300">
+                    <button
+                        onClick={() => setIsSummaryOpen(true)}
+                        className="bg-[#5E35B1] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all group"
+                    >
+                        <span>Ver Resumen ({totalSelected})</span>
+                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            )}
+
+            {/* MODALS */}
+            <OrderSummaryModal
+                isOpen={isSummaryOpen}
+                onClose={() => setIsSummaryOpen(false)}
+                items={selectedItems}
+                onConfirm={handleFinalize}
+                isProcessing={isProcessing}
+            />
+
+            <OrderSuccessModal
+                isOpen={isSuccessOpen}
+                pdfUrl={pdfUrl}
+                isUploading={isUploading}
+                onDownload={handleDownload}
+                onClose={() => {
+                    setIsSuccessOpen(false);
+                    router.refresh();
+                }}
+            />
+        </div>
+    );
+}
+
