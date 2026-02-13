@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-12
+**Última actualización:** 2026-02-13
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -112,6 +112,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Estético Staff (Floating UI)**: Eliminación de fondos en tarjetas de turnos en el dashboard de personal para lograr un efecto de flotado directo sobre el fondo blanco.
 - [x] **Unificación Estética de Fondos**: Restauración del azul Marbella original (#5B8FB9) en toda la aplicación tras pruebas con azul oscuro.
 - [x] **Corrección de Guardado de Ingredientes**: Resolución del error de restricción `NOT NULL` en la columna `unit_type` al crear o editar ingredientes.
+- [x] **Privacidad de Recetas Staff**: Implementación de visibilidad condicional para ocultar costes, márgenes y herramientas administrativas en recetas cuando se accede desde el panel de personal.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

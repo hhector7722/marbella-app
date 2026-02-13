@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, Loader2, ChevronLeft, ChevronRight, Beaker } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
@@ -47,6 +47,10 @@ export default function RecipeDetailPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
+
+    const searchParams = useSearchParams();
+    const isStaffView = searchParams.get('view') === 'staff';
 
     // --- 2. FUNCIONES DE CARGA ---
     const fetchAvailableIngredients = async () => {
@@ -96,7 +100,17 @@ export default function RecipeDetailPage() {
         fetchRecipe();
         fetchAvailableIngredients();
         fetchAllRecipes();
+        const checkRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (data) setUserRole(data.role);
+            }
+        };
+        checkRole();
     }, [recipeId]);
+
+    const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
 
     useEffect(() => {
         if (!recipe) return;
@@ -342,7 +356,12 @@ export default function RecipeDetailPage() {
                             ) : (
                                 <Camera className="w-6 h-6 text-gray-300" />
                             )}
-                            <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition cursor-pointer text-white"><Camera className="w-5 h-5" /><input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} /></label>
+                            {!isRestricted && (
+                                <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition cursor-pointer text-white">
+                                    <Camera className="w-5 h-5" />
+                                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+                                </label>
+                            )}
                             {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-600" /></div>}
                         </div>
                     </div>
@@ -353,64 +372,74 @@ export default function RecipeDetailPage() {
                 {/* Datos */}
                 <div className="flex justify-center items-center gap-4 shrink-0">
                     <div className="bg-white rounded-full shadow-sm px-4 py-1 flex items-center gap-4 text-xs">
-                        <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium hover:bg-blue-200 transition-colors uppercase">{recipe.category}</button>
+                        {isRestricted ? (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium uppercase tracking-wider">{recipe.category}</span>
+                        ) : (
+                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium hover:bg-blue-200 transition-colors uppercase">{recipe.category}</button>
+                        )}
                         <div className="flex items-center gap-1.5 text-gray-600"><Users className="w-3.5 h-3.5" /><span>{recipe.servings || 1} rac</span></div>
                     </div>
-                    <button onClick={handleDelete} className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold text-xs flex items-center gap-2">
-                        <Trash2 size={14} /> Eliminar
-                    </button>
+                    {!isRestricted && (
+                        <button onClick={handleDelete} className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold text-xs flex items-center gap-2">
+                            <Trash2 size={14} /> Eliminar
+                        </button>
+                    )}
                 </div>
 
                 {/* GRID 2x2 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0">
 
                     {/* CARD 1: Pricing */}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0">
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
-                        </div>
-                        <div className="p-3 flex-1 flex flex-col justify-between">
-                            <div>
-                                <div className="flex gap-2 justify-center mb-2">
-                                    <button onClick={() => setView(v => ({ ...v, location: 'pvp' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pvp' ? themeColors.toggle : themeColors.toggleInactive}`}>PVP</button>
-                                    <button onClick={() => setView(v => ({ ...v, location: 'pavello' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pavello' ? themeColors.toggle : themeColors.toggleInactive}`}>PAV</button>
-                                    <div className="w-px bg-gray-300 mx-1"></div>
-                                    <button onClick={() => setView(v => ({ ...v, size: 'full' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'full' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/1</button>
-                                    <button onClick={() => setView(v => ({ ...v, size: 'half' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'half' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/2</button>
+                    {!isRestricted && (
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
+                            <div className="bg-[#36606F] px-4 py-2 shrink-0">
+                                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
+                            </div>
+                            <div className="p-3 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <div className="flex gap-2 justify-center mb-2">
+                                        <button onClick={() => setView(v => ({ ...v, location: 'pvp' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pvp' ? themeColors.toggle : themeColors.toggleInactive}`}>PVP</button>
+                                        <button onClick={() => setView(v => ({ ...v, location: 'pavello' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pavello' ? themeColors.toggle : themeColors.toggleInactive}`}>PAV</button>
+                                        <div className="w-px bg-gray-300 mx-1"></div>
+                                        <button onClick={() => setView(v => ({ ...v, size: 'full' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'full' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/1</button>
+                                        <button onClick={() => setView(v => ({ ...v, size: 'half' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'half' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/2</button>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-center gap-1 my-2">
+                                    <span className="text-lg font-bold text-gray-800">€</span>
+                                    <EditablePrice
+                                        value={currentPrice || 0}
+                                        onChange={(val: number) => setRecipe({ ...recipe, [view.location === 'pvp' ? (view.size === 'full' ? 'sale_price' : 'sale_price_half') : (view.size === 'full' ? 'sales_price_pavello' : 'price_pavello_half')]: val })}
+                                        onBlur={(e: any) => handlePriceUpdate(e.target.value)}
+                                        className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
+                                    />
+                                </div>
+
+                                <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
+                                    <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
+                                    <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
+                                    <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
+                                </div>
+
+                                <div className="flex justify-between items-center mt-2 px-2">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
+                                    <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
                                 </div>
                             </div>
-
-                            <div className="flex items-center justify-center gap-1 my-2">
-                                <span className="text-lg font-bold text-gray-800">€</span>
-                                <EditablePrice
-                                    value={currentPrice || 0}
-                                    onChange={(val: number) => setRecipe({ ...recipe, [view.location === 'pvp' ? (view.size === 'full' ? 'sale_price' : 'sale_price_half') : (view.size === 'full' ? 'sales_price_pavello' : 'price_pavello_half')]: val })}
-                                    onBlur={(e: any) => handlePriceUpdate(e.target.value)}
-                                    className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
-                                />
-                            </div>
-
-                            <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
-                                <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
-                                <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
-                                <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
-                            </div>
-
-                            <div className="flex justify-between items-center mt-2 px-2">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
-                                <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
-                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* CARD 2: Ingredients */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col min-h-0">
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
-                            <div className="flex gap-1">
-                                <button onClick={() => setShowIngredientModal(true)} className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600">+ Añadir</button>
-                                <button onClick={() => setIsModalOpen(true)} className="px-2 py-0.5 bg-purple-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-purple-600">+ Nuevo</button>
-                            </div>
+                            {!isRestricted && (
+                                <div className="flex gap-1">
+                                    <button onClick={() => setShowIngredientModal(true)} className="px-2 py-0.5 bg-green-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-green-600">+ Añadir</button>
+                                    <button onClick={() => setIsModalOpen(true)} className="px-2 py-0.5 bg-purple-500 text-white rounded text-[8px] font-black uppercase tracking-wider hover:bg-purple-600">+ Nuevo</button>
+                                </div>
+                            )}
                         </div>
                         <div className="overflow-y-auto flex-1 custom-scrollbar relative">
                             <table className="w-full text-[10px] border-collapse">
@@ -419,7 +448,7 @@ export default function RecipeDetailPage() {
                                         <th className="text-left py-2 px-3">Ingrediente</th>
                                         <th className="text-center">Cant</th>
                                         <th className="text-center">Ud</th>
-                                        <th className="text-right">Coste</th>
+                                        {!isRestricted && <th className="text-right">Coste</th>}
                                         <th className="w-8"></th>
                                     </tr>
                                 </thead>
@@ -430,57 +459,73 @@ export default function RecipeDetailPage() {
                                         return (
                                             <tr key={ing.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="py-2 px-3 text-gray-800 font-bold truncate max-w-[120px]">{ing.ingredients?.name}</td>
-                                                <td className="text-center py-2"><QuantityInput initialValue={qty} onSave={(val) => handleQuantityChange(ing.id, val)} /></td>
+                                                <td className="text-center py-2">
+                                                    {isRestricted ? (
+                                                        <span className="text-gray-700 font-bold">{qty}</span>
+                                                    ) : (
+                                                        <QuantityInput initialValue={qty} onSave={(val) => handleQuantityChange(ing.id, val)} />
+                                                    )}
+                                                </td>
                                                 <td className="text-center text-gray-400 py-2 font-bold">{ing.unit}</td>
-                                                <td className="text-right font-black text-gray-700 py-2">{cost.toFixed(2)}€</td>
-                                                <td className="text-center py-2"><button onClick={() => handleDeleteIngredient(ing.id)} className="p-1 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={12} strokeWidth={3} /></button></td>
+                                                {!isRestricted && <td className="text-right font-black text-gray-700 py-2">{cost.toFixed(2)}€</td>}
+                                                <td className="text-center py-2">
+                                                    {!isRestricted && (
+                                                        <button onClick={() => handleDeleteIngredient(ing.id)} className="p-1 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                                                            <Trash2 size={12} strokeWidth={3} />
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
                                         );
                                     })}
-                                    <tr className="bg-[#5B8FB9]/5 font-black text-[10px] sticky bottom-0">
-                                        <td className="py-2 px-3 text-gray-800" colSpan={3}>COSTO TOTAL</td>
-                                        <td className="py-2 text-right text-[#5B8FB9] pr-1">{totalCost.toFixed(2)}€</td>
-                                        <td></td>
-                                    </tr>
+                                    {!isRestricted && (
+                                        <tr className="bg-[#5B8FB9]/5 font-black text-[10px] sticky bottom-0">
+                                            <td className="py-2 px-3 text-gray-800" colSpan={3}>COSTO TOTAL</td>
+                                            <td className="py-2 text-right text-[#5B8FB9] pr-1">{totalCost.toFixed(2)}€</td>
+                                            <td></td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
                     {/* CARD 3: Simulator */}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
-                            <Beaker className="w-3.5 h-3.5 text-white/70" />
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
-                        </div>
-
-                        <div className="p-3 flex-1 flex flex-col justify-between">
-                            <div className="flex flex-col justify-center gap-4">
-                                <div className="flex items-center justify-between px-4">
-                                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
-                                    <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
-                                </div>
-
-                                <input
-                                    type="range"
-                                    min={Math.floor((currentPrice * 0.5) * 10) / 10}
-                                    max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
-                                    step={0.10}
-                                    value={simulatedPrice}
-                                    onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
-                                    className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                />
-
-                                <div className="grid grid-cols-3 gap-2 text-center">
-                                    <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
-                                    <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
-                                    <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
-                                </div>
+                    {!isRestricted && (
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
+                            <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
+                                <Beaker className="w-3.5 h-3.5 text-white/70" />
+                                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
                             </div>
 
-                            <button onClick={applySimulatedPrice} disabled={applyingSimulation || simulatedPrice === currentPrice} className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-2 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50">APLICAR CAMBIOS</button>
+                            <div className="p-3 flex-1 flex flex-col justify-between">
+                                <div className="flex flex-col justify-center gap-4">
+                                    <div className="flex items-center justify-between px-4">
+                                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
+                                        <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
+                                    </div>
+
+                                    <input
+                                        type="range"
+                                        min={Math.floor((currentPrice * 0.5) * 10) / 10}
+                                        max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
+                                        step={0.10}
+                                        value={simulatedPrice}
+                                        onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
+                                        className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                    />
+
+                                    <div className="grid grid-cols-3 gap-2 text-center">
+                                        <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
+                                        <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
+                                        <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
+                                    </div>
+                                </div>
+
+                                <button onClick={applySimulatedPrice} disabled={applyingSimulation || simulatedPrice === currentPrice} className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-2 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50">APLICAR CAMBIOS</button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* CARD 4: Textos */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full min-h-0">
@@ -491,7 +536,11 @@ export default function RecipeDetailPage() {
                         <div className="flex-1 p-3 border-b flex flex-col min-h-0 overflow-hidden">
                             <div className="flex justify-between items-center mb-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-wider">Metodología</h2>
-                                <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-xs text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"><Edit2 size={14} /></button>
+                                {!isRestricted && (
+                                    <button onClick={() => setIsEditingElaboration(!isEditingElaboration)} className="text-xs text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors">
+                                        <Edit2 size={14} />
+                                    </button>
+                                )}
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {isEditingElaboration ? (
@@ -521,7 +570,11 @@ export default function RecipeDetailPage() {
                         <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden bg-zinc-50/30">
                             <div className="flex justify-between items-center mb-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Presentación</h2>
-                                <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-xs text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors"><Edit2 size={14} /></button>
+                                {!isRestricted && (
+                                    <button onClick={() => setIsEditingPresentation(!isEditingPresentation)} className="text-xs text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors">
+                                        <Edit2 size={14} />
+                                    </button>
+                                )}
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {isEditingPresentation ? (
