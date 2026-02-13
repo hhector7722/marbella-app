@@ -4,9 +4,11 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
-import { ChefHat, Search, Plus, Trash2, X, ChevronDown } from 'lucide-react';
+import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, BookOpen, UtensilsCrossed, Beaker, Camera, Edit2 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface Recipe {
     id: string;
@@ -33,6 +35,10 @@ function RecipesContent() {
     const [isCreating, setIsCreating] = useState(false);
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+    const [fullRecipeData, setFullRecipeData] = useState<any>(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
+    const router = useRouter();
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -50,7 +56,33 @@ function RecipesContent() {
         checkRole();
     }, []);
 
+    useEffect(() => {
+        if (selectedRecipeId) {
+            fetchRecipeDetails(selectedRecipeId);
+        } else {
+            setFullRecipeData(null);
+        }
+    }, [selectedRecipeId]);
+
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
+
+    async function fetchRecipeDetails(id: string) {
+        try {
+            setLoadingDetails(true);
+            const { data, error } = await supabase
+                .from('recipes')
+                .select(`*, recipe_ingredients (*, ingredients (*))`)
+                .eq('id', id)
+                .single();
+            if (error) throw error;
+            setFullRecipeData(data);
+        } catch (error) {
+            console.error('Error fetching details:', error);
+            toast.error('Error al cargar detalles');
+        } finally {
+            setLoadingDetails(false);
+        }
+    }
 
     async function fetchRecipes() {
         try {
@@ -151,19 +183,148 @@ function RecipesContent() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredRecipes.map((recipe) => (
                         <div key={recipe.id} className="group relative overflow-hidden">
-                            <Link href={`/recipes/${recipe.id}${isRestricted ? '?view=staff' : ''}`} className="block h-full">
-                                <div className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95">
-                                    <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
-                                        {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
-                                    </div>
-                                    <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                                        <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={recipe.name}>{recipe.name}</span>
-                                        {!isRestricted && <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>}
-                                    </div>
+                            <div
+                                onClick={() => {
+                                    if (isStaffView) {
+                                        setSelectedRecipeId(recipe.id);
+                                    } else {
+                                        router.push(`/recipes/${recipe.id}`);
+                                    }
+                                }}
+                                className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
+                            >
+                                <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
+                                    {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
                                 </div>
-                            </Link>
+                                <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
+                                    <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={recipe.name}>{recipe.name}</span>
+                                    {!isRestricted && <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>}
+                                </div>
+                            </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* MODAL DE DETALLE (PARA STAFF) */}
+            {selectedRecipeId && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300"
+                    onClick={() => setSelectedRecipeId(null)}
+                >
+                    <div
+                        className="bg-[#5B8FB9] w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header del Modal */}
+                        <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0">
+                            <div className="flex flex-col">
+                                <h3 className="text-white text-xl font-black uppercase tracking-widest leading-tight">
+                                    {fullRecipeData?.name || 'Cargando...'}
+                                </h3>
+                                <div className="flex items-center gap-3 mt-1">
+                                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{fullRecipeData?.category}</span>
+                                    <div className="flex items-center gap-1.5 text-white/50 text-[10px] font-bold">
+                                        <Users className="w-3 h-3" />
+                                        <span>{fullRecipeData?.servings || 1} raciones</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedRecipeId(null)}
+                                className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 text-white transition-all active:scale-90"
+                            >
+                                <X size={20} strokeWidth={3} />
+                            </button>
+                        </div>
+
+                        {/* Contenido Scrollable */}
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+                            {loadingDetails ? (
+                                <div className="h-64 flex flex-col items-center justify-center text-white/60">
+                                    <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Cargando receta...</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Columna Izquierda: Ingredientes */}
+                                    <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col min-h-[300px]">
+                                        <div className="bg-[#36606F] px-5 py-3 flex items-center justify-between shrink-0">
+                                            <div className="flex items-center gap-2">
+                                                <UtensilsCrossed size={14} className="text-white/70" />
+                                                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes</h4>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-white/50">{fullRecipeData?.recipe_ingredients?.length || 0} items</span>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto">
+                                            <table className="w-full text-left">
+                                                <thead className="sticky top-0 bg-white shadow-sm z-10">
+                                                    <tr className="border-b border-zinc-100 italic">
+                                                        <th className="px-4 py-2.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest">Nombre</th>
+                                                        <th className="px-4 py-2.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest text-right">Cant</th>
+                                                        <th className="px-4 py-2.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest">Ud</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-zinc-50">
+                                                    {fullRecipeData?.recipe_ingredients?.map((ing: any) => (
+                                                        <tr key={ing.id} className="hover:bg-zinc-50/50 transition-colors">
+                                                            <td className="px-4 py-3 text-xs font-bold text-zinc-800">{ing.ingredients?.name}</td>
+                                                            <td className="px-4 py-3 text-xs font-black text-zinc-600 text-right">{ing.quantity_gross || 0}</td>
+                                                            <td className="px-4 py-3 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{ing.unit}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Columna Derecha: Elaboración */}
+                                    <div className="space-y-4">
+                                        <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col h-full">
+                                            <div className="bg-[#36606F] px-5 py-3 flex items-center gap-2 shrink-0">
+                                                <BookOpen size={14} className="text-white/70" />
+                                                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h4>
+                                            </div>
+                                            <div className="p-5 flex-1 overflow-y-auto max-h-[400px]">
+                                                {fullRecipeData?.elaboration ? (
+                                                    <ul className="space-y-4">
+                                                        {fullRecipeData.elaboration.split('\n').filter(Boolean).map((step: string, i: number) => (
+                                                            <li key={i} className="flex gap-4 group">
+                                                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[10px] shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                                                    {i + 1}
+                                                                </div>
+                                                                <p className="text-[11px] leading-relaxed text-zinc-600 font-medium">
+                                                                    {step}
+                                                                </p>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <div className="h-32 flex flex-col items-center justify-center text-zinc-300 italic">
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest">Sin pasos registrados</p>
+                                                    </div>
+                                                )}
+
+                                                {fullRecipeData?.presentation && (
+                                                    <div className="mt-8 pt-6 border-t border-zinc-100">
+                                                        <h5 className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                            Presentación y Notas
+                                                        </h5>
+                                                        <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
+                                                            <p className="text-[11px] text-emerald-800/80 leading-relaxed italic font-medium">
+                                                                {fullRecipeData.presentation}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
             <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={uniqueDbCategories} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
