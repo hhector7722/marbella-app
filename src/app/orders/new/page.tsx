@@ -16,11 +16,12 @@ interface Ingredient {
     purchase_unit: string;
     image_url: string | null;
     category: string;
+    order_unit?: string | null;
 }
 
-interface Draft {
-    ingredient_id: string;
+interface DraftItem {
     quantity: number;
+    unit: string;
 }
 
 import { useRouter } from 'next/navigation';
@@ -33,7 +34,7 @@ export default function NewOrderPage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-    const [drafts, setDrafts] = useState<Record<string, number>>({});
+    const [drafts, setDrafts] = useState<Record<string, DraftItem>>({});
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
@@ -68,10 +69,13 @@ export default function NewOrderPage() {
             const uniqueSuppliers = Array.from(new Set((ingData || []).map(i => i.supplier).filter(Boolean))) as string[];
             setSuppliers(uniqueSuppliers);
 
-            const { data: draftData } = await supabase.from('order_drafts').select('ingredient_id, quantity').eq('user_id', uid);
-            const draftMap: Record<string, number> = {};
+            const { data: draftData } = await supabase.from('order_drafts').select('ingredient_id, quantity, unit').eq('user_id', uid);
+            const draftMap: Record<string, DraftItem> = {};
             draftData?.forEach(d => {
-                draftMap[d.ingredient_id] = Number(d.quantity);
+                draftMap[d.ingredient_id] = {
+                    quantity: Number(d.quantity),
+                    unit: d.unit || 'unidad'
+                };
             });
             setDrafts(draftMap);
         } catch (error) {
@@ -88,23 +92,31 @@ export default function NewOrderPage() {
         return matchesSearch && matchesSupplier;
     });
 
+    // CRITICAL: Filter selected items BY THE CURRENTLY SELECTED SUPPLIER
     const selectedItems = ingredients
-        .filter(ing => (drafts[ing.id] || 0) > 0)
-        .map(ing => ({ ...ing, quantity: drafts[ing.id] }));
+        .filter(ing => (drafts[ing.id]?.quantity || 0) > 0 && (!selectedSupplier || ing.supplier === selectedSupplier))
+        .map(ing => ({
+            ...ing,
+            quantity: drafts[ing.id].quantity,
+            unit: drafts[ing.id].unit
+        }));
 
     const handleFinalize = async () => {
-        if (selectedItems.length === 0) return;
+        if (selectedItems.length === 0) {
+            toast.error('No hay productos del proveedor seleccionado');
+            return;
+        }
         setIsProcessing(true);
         try {
-            // 1. Generate PDF
+            // 1. Generate PDF (Precios eliminados en pdf-generator)
             const orderNum = `ORD-${Date.now().toString().slice(-6)}`;
             const blob = await generateOrderPDF({
                 supplierName: selectedSupplier || 'Varios Proveedores',
                 items: selectedItems.map(i => ({
                     name: i.name,
                     quantity: i.quantity,
-                    unit: i.purchase_unit,
-                    price: i.current_price
+                    unit: i.unit,
+                    price: 0 // Se ignora en el PDF
                 })),
                 orderNumber: orderNum
             });
@@ -132,8 +144,8 @@ export default function NewOrderPage() {
                 ingredient_id: i.id,
                 ingredient_name: i.name,
                 quantity: i.quantity,
-                unit: i.purchase_unit,
-                unit_price: i.current_price
+                unit: i.unit,
+                unit_price: 0 // No guardamos precio en pedidos
             }));
             await supabase.from('purchase_order_items').insert(orderItems);
 
@@ -148,9 +160,17 @@ export default function NewOrderPage() {
             await supabase.from('purchase_orders').update({ pdf_url: publicUrl }).eq('id', order.id);
             setPdfUrl(publicUrl);
 
-            // 7. Clear Drafts
-            await supabase.from('order_drafts').delete().eq('user_id', userId);
-            setDrafts({});
+            // 7. Clear Drafts ONLY FOR THE ITEMS ORDERED
+            const orderedIds = selectedItems.map(i => i.id);
+            await supabase.from('order_drafts').delete()
+                .eq('user_id', userId)
+                .in('ingredient_id', orderedIds);
+
+            setDrafts(prev => {
+                const NewDrafts = { ...prev };
+                orderedIds.forEach(id => delete NewDrafts[id]);
+                return NewDrafts;
+            });
 
             toast.success('Pedido procesado correctamente');
 
@@ -173,7 +193,7 @@ export default function NewOrderPage() {
         URL.revokeObjectURL(url);
     };
 
-    const totalSelected = Object.values(drafts).filter(q => q > 0).length;
+    const totalSelected = selectedItems.length;
 
     if (loading) {
         return (
@@ -200,12 +220,12 @@ export default function NewOrderPage() {
                     />
                 </div>
 
-                <div className="flex gap-2 items-center relative flex-1">
-                    <div className="relative">
+                <div className="flex gap-2 items-center relative flex-1 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto">
                         <button
                             onClick={() => setShowSupplierPopup(!showSupplierPopup)}
                             className={cn(
-                                "px-5 py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50",
+                                "w-full sm:w-auto px-5 py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center justify-between sm:justify-start gap-2 border border-white/50",
                                 selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10"
                             )}
                         >
@@ -238,6 +258,17 @@ export default function NewOrderPage() {
                             </>
                         )}
                     </div>
+
+                    {/* REPOSITIONED: VER RESUMEN BUTTON AT TOP */}
+                    {totalSelected > 0 && (
+                        <button
+                            onClick={() => setIsSummaryOpen(true)}
+                            className="flex-1 sm:flex-initial bg-[#5E35B1] text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all group animate-in slide-in-from-right-4"
+                        >
+                            <span>Resumen ({totalSelected})</span>
+                            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -248,8 +279,9 @@ export default function NewOrderPage() {
                         key={ing.id}
                         ingredient={ing}
                         userId={userId!}
-                        initialQuantity={drafts[ing.id] || 0}
-                        onQuantityChange={(id, q) => setDrafts(prev => ({ ...prev, [id]: q }))}
+                        initialQuantity={drafts[ing.id]?.quantity || 0}
+                        initialUnit={drafts[ing.id]?.unit}
+                        onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
                     />
                 ))}
             </div>

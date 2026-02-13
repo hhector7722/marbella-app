@@ -62,14 +62,12 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const tableData = data.items.map(item => [
         item.name,
         item.quantity.toString(),
-        item.unit,
-        `${item.price.toFixed(2)}€`,
-        `${(item.quantity * item.price).toFixed(2)}€`
+        item.unit
     ]);
 
     doc.autoTable({
         startY: 75,
-        head: [['ARTÍCULO', 'CANTIDAD', 'UNIDAD', 'PRECIO UN.', 'TOTAL']],
+        head: [['ARTÍCULO', 'CANTIDAD', 'UNIDAD']],
         body: tableData,
         theme: 'striped',
         headStyles: {
@@ -81,10 +79,8 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
         columnStyles: {
             0: { cellWidth: 'auto', halign: 'left' },
-            1: { cellWidth: 30, halign: 'center' },
-            2: { cellWidth: 30, halign: 'center' },
-            3: { cellWidth: 30, halign: 'right' },
-            4: { cellWidth: 30, halign: 'right' }
+            1: { cellWidth: 40, halign: 'center' },
+            2: { cellWidth: 40, halign: 'center' }
         },
         styles: {
             fontSize: 9,
@@ -93,18 +89,17 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         margin: { left: margin, right: margin }
     });
 
-    // --- Totals ---
+    // --- Totals (Solo líneas) ---
     const finalY = doc.lastAutoTable.finalY + 10;
-    const total = data.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(54, 96, 111);
-    doc.text('TOTAL PEDIDO:', pageWidth - margin - 40, finalY, { align: 'right' });
+    doc.text('TOTAL ARTÍCULOS:', pageWidth - margin - 40, finalY, { align: 'right' });
 
     doc.setFontSize(14);
     doc.setTextColor(0, 0, 0);
-    doc.text(`${total.toFixed(2)}€`, pageWidth - margin, finalY, { align: 'right' });
+    doc.text(`${data.items.length}`, pageWidth - margin, finalY, { align: 'right' });
 
     // --- Footer ---
     doc.setFontSize(8);

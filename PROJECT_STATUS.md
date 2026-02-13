@@ -96,7 +96,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Herramienta de Importación Masiva**: Nueva página `/admin/import` para migración de fichajes históricos vía CSV con mapeo automático de emails y procesamiento por bloques.
 - [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
 - [x] **Estandarización de Contacto**: Unificación de iconos de Teléfono y WhatsApp en `/profile` y `/suppliers` siguiendo el estilo minimalista del Dashboard de Personal.
-- [x] **Sistema de Pedidos a Proveedores**: Nueva flujo en `/orders/new` con vista de galería, persistencia de borradores, generación de PDF con `jspdf` y subida automática a Supabase Storage.
+- [x] **Sistema de Pedidos a Proveedores (Refinado)**: Mejora del flujo en `/orders/new` con iconos circulares (48px), botón de resumen superior, filtrado estricto por proveedor, soporte para unidades personalizadas con persistencia y eliminación de precios en resumen y PDF.
 
 
 ## 📅 PENDIENTE
