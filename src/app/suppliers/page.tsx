@@ -305,7 +305,7 @@ export default function SuppliersPage() {
                                         href={`tel:${detailSupplier.phone.replace(/\s+/g, '')}`}
                                         className="w-14 h-14 bg-[#36606F] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
                                     >
-                                        <Phone className="text-white group-hover:rotate-12 transition-transform" />
+                                        <Phone size={32} className="text-white group-hover:rotate-12 transition-transform" strokeWidth={2.5} />
                                     </a>
                                     <a
                                         href={`https://wa.me/${detailSupplier.phone.replace(/\s+/g, '').replace('+', '')}`}
@@ -313,7 +313,7 @@ export default function SuppliersPage() {
                                         rel="noopener noreferrer"
                                         className="w-14 h-14 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
                                     >
-                                        <img src="/icons/whatsapp.png" alt="WhatsApp" className="w-8 h-8 object-contain" />
+                                        <img src="/icons/whatsapp.png" alt="WhatsApp" className="w-9 h-9 object-contain" />
                                     </a>
                                 </>
                             )}
