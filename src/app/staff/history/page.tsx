@@ -519,120 +519,131 @@ export default function HistoryPage() {
                         {weeksData.map((week, idx) => {
                             return (
                                 <div key={idx} className={cn(
-                                    "bg-white rounded-[2rem] p-4 md:p-6 shadow-xl border border-zinc-100",
+                                    "bg-white rounded-[2rem] shadow-xl overflow-hidden",
                                     "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4",
                                     week.isCurrentWeek && "ring-2 ring-blue-400/40"
                                 )} style={{ animationDelay: `${idx * 50}ms` }}>
-                                    <div className="flex justify-between items-end mb-2 px-1">
+
+                                    {/* Header Sólido Azul Marbella */}
+                                    <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                                         <div className="flex flex-col">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">
-                                                    {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
+                                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                                                {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
+                                            </span>
+                                            {week.isCurrentWeek && (
+                                                <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 w-fit animate-pulse">
+                                                    En Curso
                                                 </span>
-                                                {week.isCurrentWeek && (
-                                                    <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider -mt-1 animate-pulse">
-                                                        En Curso
-                                                    </span>
-                                                )}
-                                            </div>
+                                            )}
                                         </div>
-                                        {/* Botón editar para manager */}
                                         {isManager && (
                                             <button
                                                 onClick={() => openEdit(idx)}
-                                                className="h-7 w-7 flex items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 hover:bg-blue-100 hover:text-blue-600 transition-all active:scale-90"
+                                                className="h-8 w-8 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-90"
                                                 title="Editar registros"
                                             >
-                                                <Pencil size={13} />
+                                                <Pencil size={14} strokeWidth={3} />
                                             </button>
                                         )}
                                     </div>
-                                    {week.summary.isPaid && (
-                                        <div className="absolute -bottom-7 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
-                                            <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                                        </div>
-                                    )}
 
-                                    <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                                        <div className="grid grid-cols-7 border-b border-gray-100">
-                                            {week.days.map((day, i) => (
-                                                <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
-                                                    <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                                        <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                                    </div>
-                                                    <div className="flex-1 p-1 flex flex-col items-center relative z-0">
-                                                        <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                        <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
-                                                            <div className="h-3 flex items-center justify-center gap-1">
-                                                                {day.hasLog ? (
-                                                                    <>
-                                                                        <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                    </>
-                                                                ) : null}
+                                    <div className="p-4">
+                                        {week.summary.isPaid && (
+                                            <div className="absolute -bottom-7 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
+                                                <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
+                                            </div>
+                                        )}
+
+                                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                            <div className="grid grid-cols-7 border-b border-gray-100">
+                                                {week.days.map((day, i) => (
+                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
+                                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                                        </div>
+                                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0">
+                                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
+                                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                                    {day.hasLog ? (
+                                                                        <>
+                                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                        </>
+                                                                    ) : null}
+                                                                </div>
+                                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                                    {day.hasLog && day.clockOut ? (
+                                                                        <>
+                                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                        </>
+                                                                    ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                                </div>
                                                             </div>
-                                                            <div className="h-3 flex items-center justify-center gap-1">
-                                                                {day.hasLog && day.clockOut ? (
-                                                                    <>
-                                                                        <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                    </>
-                                                                ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                            <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                                {day.hasLog && day.totalHours > 0 ? (
+                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                        <span className="ml-0.5">H</span>
+                                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
+                                                                    </div>
+                                                                ) : <div className="h-3" />}
+                                                                {day.extraHours > 0.1 ? (
+                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                        <span className="ml-0.5">Ex</span>
+                                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
+                                                                    </div>
+                                                                ) : <div className="h-3" />}
                                                             </div>
                                                         </div>
-                                                        <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                            {day.hasLog && day.totalHours > 0 ? (
-                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                    <span className="ml-0.5">H</span>
-                                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
-                                                                </div>
-                                                            ) : <div className="h-3" />}
-                                                            {day.extraHours > 0.1 ? (
-                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                    <span className="ml-0.5">Ex</span>
-                                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
-                                                                </div>
-                                                            ) : <div className="h-3" />}
-                                                        </div>
                                                     </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                                <div className="h-4 flex items-center">
+                                                    <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                                        <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                            <div className="h-4 flex items-center">
-                                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                             </div>
-                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                        </div>
 
-                                        <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                            <div className="h-4 flex items-center">
-                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                    {formatBalance(week.summary.weeklyBalance)}
-                                                </span>
+                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                                <div className="h-4 flex items-center">
+                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                        {formatBalance(week.summary.weeklyBalance)}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
                                             </div>
-                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
-                                        </div>
 
-                                        <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                            <div className="h-4 flex items-center">
-                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                    {formatBalance(week.summary.startBalance)}
-                                                </span>
+                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                                <div className="h-4 flex items-center">
+                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                        {formatBalance(week.summary.startBalance)}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                             </div>
-                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                        </div>
 
-                                        <div className="flex flex-col items-center flex-1 shrink-0">
-                                            <div className="h-4 flex items-center">
-                                                <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                                    {formatMoney(week.summary.estimatedValue)}
-                                                </span>
+                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                                <div className="h-4 flex items-center">
+                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.finalBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                                        {week.summary.finalBalance > 0 ? formatBalance(week.summary.finalBalance) : " "}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap px-1">H Extras</span>
                                             </div>
-                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+
+                                            <div className="flex flex-col items-center flex-1 shrink-0">
+                                                <div className="h-4 flex items-center">
+                                                    <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                                        {!preferStock ? formatMoney(week.summary.estimatedValue) : " "}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

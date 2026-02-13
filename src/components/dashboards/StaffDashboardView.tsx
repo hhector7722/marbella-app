@@ -484,13 +484,21 @@ export default function StaffDashboardView() {
                                     </div>
                                     <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                 </div>
+                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="h-4 flex items-center">
+                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.currentBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                            {weeklySummary.currentBalance > 0 ? formatBalance(weeklySummary.currentBalance) : " "}
+                                        </span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">H Extras</span>
+                                </div>
                                 <div className="flex flex-col items-center flex-1">
                                     <div className="h-4 flex items-center">
                                         <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                            {formatMoney(weeklySummary.estimatedPayout)}
+                                            {!preferStock ? formatMoney(weeklySummary.estimatedPayout) : " "}
                                         </span>
                                     </div>
-                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
                                 </div>
                             </div>
                         </div>
@@ -528,13 +536,13 @@ export default function StaffDashboardView() {
                 </div>
 
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="flex flex-col xl:flex-row gap-6">
+                    <div className="flex flex-row md:flex-col xl:flex-row gap-3 md:gap-6">
                         <div
                             onClick={() => router.push('/staff/schedule')}
-                            className="bg-white rounded-[2rem] shadow-xl flex flex-col overflow-hidden relative min-h-[190px] xl:flex-1 cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                            className="bg-white rounded-[2rem] shadow-xl flex flex-col overflow-hidden relative min-h-[180px] w-1/2 md:w-full xl:flex-1 cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
                         >
                             {/* Header Lila - Estilo Personalizado */}
-                            <div className="bg-purple-600 px-6 py-3 flex justify-between items-center text-white shrink-0">
+                            <div className="bg-purple-600 px-6 py-3 flex justify-start items-center text-white shrink-0 gap-4">
                                 <h3 className="font-black flex items-center gap-2 text-[10px] lg:text-xs uppercase tracking-wider">
                                     <CalendarDays size={16} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
                                 </h3>
@@ -542,19 +550,19 @@ export default function StaffDashboardView() {
                             </div>
 
                             <div className="p-4 flex-1">
-                                <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
+                                <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1 justify-items-start">
                                     {nextShifts.length === 0 ? (
-                                        <div className="flex items-center justify-center py-6 lg:py-10">
-                                            <p className="text-[9px] lg:text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos.</p>
+                                        <div className="flex items-center justify-start py-6 lg:py-10 px-4">
+                                            <p className="text-[9px] lg:text-xs text-gray-400 text-left font-bold italic">No tienes turnos.</p>
                                         </div>
                                     ) : (
                                         nextShifts.slice(0, 2).map((shift, idx) => (
-                                            <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group">
-                                                <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
+                                            <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group w-full">
+                                                <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors shrink-0">
                                                     <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
                                                     <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
                                                 </div>
-                                                <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden">
+                                                <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden items-start">
                                                     <span className="text-[8px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
                                                     <div className="flex items-center gap-1.5 lg:gap-2 text-[10px] lg:text-sm font-black">
                                                         <span className="text-green-600">{shift.startTime}</span>
@@ -570,7 +578,7 @@ export default function StaffDashboardView() {
                         </div>
 
                         {/* Iconos Flotantes - Ahora fuera de Horarios */}
-                        <div className="grid grid-cols-2 xl:grid-cols-2 gap-3 xl:w-44 shrink-0 px-2 lg:px-0">
+                        <div className="grid grid-cols-2 xl:grid-cols-2 gap-1.5 md:gap-3 w-1/2 md:w-full xl:w-44 shrink-0 px-0 md:px-2 lg:px-0">
                             <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
                                 if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
                                 const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', changeBox.id).gt('quantity', 0);
