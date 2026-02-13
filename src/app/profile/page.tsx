@@ -9,9 +9,11 @@ import Image from 'next/image';
 import {
     User, Phone, CreditCard, FileText, Copy, Check,
     Briefcase, Hash, Euro, FileClock, PhoneCall, Mail,
-    CheckCircle2, ArrowLeft
+    CheckCircle2, ArrowLeft, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import EditProfileModal from '@/components/EditProfileModal';
+import DocumentManager from '@/components/DocumentManager';
 
 // Definimos la interfaz basada en los datos
 interface UserProfile {
@@ -38,7 +40,10 @@ function ProfileContent() {
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [isManager, setIsManager] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [activeDocTab, setActiveDocTab] = useState<'contract' | 'payroll' | null>(null);
 
     useEffect(() => {
         fetchInitialData();
@@ -60,8 +65,9 @@ function ProfileContent() {
                 .eq('id', user.id)
                 .single();
 
-            const isManager = currentProfile?.role === 'manager';
-            const effectiveId = (targetId && isManager) ? targetId : user.id;
+            const managerStatus = currentProfile?.role === 'manager';
+            setIsManager(managerStatus);
+            const effectiveId = (targetId && managerStatus) ? targetId : user.id;
 
             // 2. Fetch target profile
             const { data, error } = await supabase
@@ -162,6 +168,15 @@ function ProfileContent() {
                             </div>
 
                             <h1 className="text-3xl font-black tracking-tighter mb-1">{fullName}</h1>
+                            {isManager && (
+                                <button
+                                    onClick={() => setIsEditModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition-all mt-2 active:scale-95"
+                                >
+                                    <Settings size={12} className="text-white/70" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Editar Datos</span>
+                                </button>
+                            )}
                         </div>
 
                         <button
@@ -214,29 +229,57 @@ function ProfileContent() {
                         {/* Grupo 3: Documentación Estilo Premium */}
                         <div className="p-8">
                             <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Documentación Oficial</h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => toast.info('Funcionalidad próximamente')}
-                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#5B8FB9]/5 rounded-[2rem] border-2 border-dashed border-[#5B8FB9]/10 hover:bg-white hover:border-[#5B8FB9] hover:shadow-xl transition-all group active:scale-95"
-                                >
-                                    <div className="bg-white p-4 rounded-2xl text-[#5B8FB9] shadow-sm mb-3 group-hover:bg-[#5B8FB9] group-hover:text-white transition-all">
-                                        <FileText size={24} />
-                                    </div>
-                                    <span className="font-black text-[#5B8FB9] text-[10px] uppercase tracking-widest">Contrato</span>
-                                </button>
 
-                                <button
-                                    onClick={() => toast.info('Funcionalidad próximamente')}
-                                    className="aspect-square flex flex-col items-center justify-center p-6 bg-[#5B8FB9]/5 rounded-[2rem] border-2 border-dashed border-[#5B8FB9]/10 hover:bg-white hover:border-[#5B8FB9] hover:shadow-xl transition-all group active:scale-95"
-                                >
-                                    <div className="bg-white p-4 rounded-2xl text-[#5B8FB9] shadow-sm mb-3 group-hover:bg-[#5B8FB9] group-hover:text-white transition-all">
-                                        <Euro size={24} />
+                            {activeDocTab ? (
+                                <div className="animate-in slide-in-from-bottom-2 duration-300">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <button
+                                            onClick={() => setActiveDocTab(null)}
+                                            className="text-[9px] font-black text-[#36606F] uppercase tracking-widest flex items-center gap-1 hover:underline"
+                                        >
+                                            <ArrowLeft size={10} strokeWidth={3} /> Volver
+                                        </button>
                                     </div>
-                                    <span className="font-black text-[#5B8FB9] text-[10px] uppercase tracking-widest">Nóminas</span>
-                                </button>
-                            </div>
+                                    <DocumentManager
+                                        userId={profile.id}
+                                        isManager={isManager}
+                                        initialType={activeDocTab}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => setActiveDocTab('contract')}
+                                        className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                    >
+                                        <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                            <FileText size={24} />
+                                        </div>
+                                        <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Contrato</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setActiveDocTab('payroll')}
+                                        className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                    >
+                                        <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                            <Euro size={24} />
+                                        </div>
+                                        <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Nóminas</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
+
+                    {isEditModalOpen && (
+                        <EditProfileModal
+                            isOpen={isEditModalOpen}
+                            onClose={() => setIsEditModalOpen(false)}
+                            onSuccess={() => fetchInitialData()}
+                            profile={profile}
+                        />
+                    )}
 
                 </div>
             </div>

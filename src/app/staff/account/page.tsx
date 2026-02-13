@@ -10,6 +10,7 @@ import {
     User, LogOut, Lock, ArrowLeft, CheckCircle2, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ChangePasswordModal from '@/components/ChangePasswordModal';
 
 interface UserProfile {
     id: string;
@@ -24,6 +25,7 @@ function AccountContent() {
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -64,18 +66,8 @@ function AccountContent() {
         }
     };
 
-    const handleChangePassword = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-            const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-                redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
-            });
-            if (error) {
-                toast.error('Error al enviar el correo');
-            } else {
-                toast.success('Se ha enviado un correo para restablecer tu contraseña');
-            }
-        }
+    const handleChangePassword = () => {
+        setIsPasswordModalOpen(true);
     };
 
     if (loading) {
@@ -97,7 +89,7 @@ function AccountContent() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* ENCABEZADO CORPORATIVO SÓLIDO (Relicando /profile) */}
-                    <div className="bg-[#5B8FB9] p-8 pt-10 text-white relative overflow-hidden">
+                    <div className="bg-[#36606F] p-8 pt-10 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center">
@@ -133,7 +125,7 @@ function AccountContent() {
                             className="w-full flex items-center justify-between p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all group active:scale-[0.98]"
                         >
                             <div className="flex items-center gap-5">
-                                <div className="bg-[#5B8FB9]/10 p-4 rounded-2xl text-[#5B8FB9] group-hover:bg-[#5B8FB9] group-hover:text-white transition-all duration-300">
+                                <div className="bg-[#36606F]/10 p-4 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
                                     <Lock size={24} strokeWidth={2.5} />
                                 </div>
                                 <div className="text-left">
@@ -141,8 +133,13 @@ function AccountContent() {
                                     <p className="text-gray-800 font-black text-sm tracking-tight">Cambiar Contraseña</p>
                                 </div>
                             </div>
-                            <ChevronRight size={20} className="text-gray-300 group-hover:text-[#5B8FB9] transition-colors" />
+                            <ChevronRight size={20} className="text-gray-300 group-hover:text-[#36606F] transition-colors" />
                         </button>
+
+                        <ChangePasswordModal
+                            isOpen={isPasswordModalOpen}
+                            onClose={() => setIsPasswordModalOpen(false)}
+                        />
 
                         <button
                             onClick={handleLogout}

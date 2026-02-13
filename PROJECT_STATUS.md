@@ -90,6 +90,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Modal Cambio (V3 - Táctil)**: Implementación de botones incrementales, código de colores (verde/rojo) y corrección de error crítico de overflow para garantizar la visibilidad del botón de guardado.
 - [x] **Migración Cromática**: Transición global de `#5B8FB9` al nuevo Azul Marbella `#36606F` en Registros, Dashboards y Recetas.
 - [x] **Unificación Estética Vistas de Detalle y Modales**: Aplicación del estándar "Vista Marbella Detail" (#36606F) en cabeceras de Movimientos, Horas Extras, Perfil y todos los modales de la aplicación (Cierre Caja, Stock, Empleados, Recetas).
+- [x] **Expansión de Perfil (DNI/IBAN/Documentos)**: Implementación de campos DNI e IBAN, sistema de gestión de archivos (Contratos/Nóminas) con Supabase Storage y modalidad de edición para Managers.
+- [x] **Gestión de Seguridad**: Implementación de modal de cambio de contraseña directo en la cuenta del personal con diseño táctil premium.
 - [x] **Herramienta de Importación Masiva**: Nueva página `/admin/import` para migración de fichajes históricos vía CSV con mapeo automático de emails y procesamiento por bloques.
 
 
