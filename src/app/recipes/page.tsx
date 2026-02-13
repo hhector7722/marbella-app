@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
@@ -21,7 +21,7 @@ interface Recipe {
     }[];
 }
 
-export default function RecipesPage() {
+function RecipesContent() {
     const supabase = createClient();
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
@@ -104,11 +104,8 @@ export default function RecipesPage() {
     });
 
     return (
-        // FONDO AZUL CORPORATIVO PARA VISTAS DE GALERÍA
         <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
-
-
             <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="relative w-full sm:max-w-xs">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -120,40 +117,19 @@ export default function RecipesPage() {
                         className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1]"
                     />
                 </div>
-
                 <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
                     <div className="flex gap-2 items-center">
-                        {/* Botón de Categoría Refinado (Popup Flotante) */}
                         {!selectedCategory ? (
                             <div className="relative">
-                                <button
-                                    onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                                    className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
-                                >
-                                    Categoría <ChevronDown size={14} className="text-zinc-400" />
-                                </button>
-
+                                <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50">Categoría <ChevronDown size={14} className="text-zinc-400" /></button>
                                 {showCategoryPopup && (
                                     <>
                                         <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
                                         <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
-                                            </div>
-                                            <button
-                                                onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
-                                            >
-                                                Todas
-                                            </button>
+                                            <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
+                                            <button onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
                                             {uniqueDbCategories.map(cat => (
-                                                <button
-                                                    key={cat}
-                                                    onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }}
-                                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
-                                                >
-                                                    {cat}
-                                                </button>
+                                                <button key={cat} onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
                                             ))}
                                         </div>
                                     </>
@@ -162,45 +138,27 @@ export default function RecipesPage() {
                         ) : (
                             <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
                                 <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
-                                <button
-                                    onClick={() => setSelectedCategory(null)}
-                                    className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
-                                >
-                                    <X size={14} className="text-rose-500" strokeWidth={4} />
-                                </button>
+                                <button onClick={() => setSelectedCategory(null)} className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"><X size={14} className="text-rose-500" strokeWidth={4} /></button>
                             </div>
                         )}
                     </div>
-
-                    {/* Botón Acción Principal (Target 48px Táctil) */}
                     {!isRestricted && (
-                        <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
-                        >
-                            <Plus className="w-6 h-6" />
-                        </button>
+                        <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-6 h-6" /></button>
                     )}
                 </div>
             </div>
-
-            {/* GRID DE ALTA DENSIDAD (GAP-6 Alineado con Ingredients) */}
             {!loading && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredRecipes.map((recipe) => (
                         <div key={recipe.id} className="group relative overflow-hidden">
                             <Link href={`/recipes/${recipe.id}${isRestricted ? '?view=staff' : ''}`} className="block h-full">
                                 <div className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95">
-                                    {/* IMAGEN PEQUEÑA (Compacta 14) */}
                                     <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                         {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
                                     </div>
-                                    {/* TEXTOS COMPACTOS */}
                                     <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
                                         <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={recipe.name}>{recipe.name}</span>
-                                        {!isRestricted && (
-                                            <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>
-                                        )}
+                                        {!isRestricted && <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>}
                                     </div>
                                 </div>
                             </Link>
@@ -208,9 +166,20 @@ export default function RecipesPage() {
                     ))}
                 </div>
             )}
-
-            {/* Modal Creación */}
             <CreateModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} newRecipe={newRecipe} setNewRecipe={setNewRecipe} isCreating={isCreating} categories={uniqueDbCategories} allIngredients={allIngredients} handleCreateRecipe={handleCreateRecipe} addIngredientToRecipe={() => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { ingredient_id: '', quantity: 0, unit: 'kg' }] })} removeIngredientFromRecipe={(idx: number) => { const updated = [...newRecipe.ingredients]; updated.splice(idx, 1); setNewRecipe({ ...newRecipe, ingredients: updated }); }} updateRecipeIngredient={(idx: number, field: string, val: any) => { const updated = [...newRecipe.ingredients]; updated[idx] = { ...updated[idx], [field]: val }; setNewRecipe({ ...newRecipe, ingredients: updated }); }} />
         </div>
+    );
+}
+
+export default function RecipesPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+                <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando recetas...</p>
+            </div>
+        }>
+            <RecipesContent />
+        </Suspense>
     );
 }

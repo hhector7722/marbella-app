@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, Loader2, ChevronLeft, ChevronRight, Beaker } from 'lucide-react';
@@ -14,7 +14,7 @@ interface ViewState {
     size: 'full' | 'half';
 }
 
-export default function RecipeDetailPage() {
+function RecipeDetailContent() {
     const params = useParams();
     const router = useRouter();
     const recipeId = params.id as string;
@@ -216,7 +216,6 @@ export default function RecipeDetailPage() {
 
         setUploadingPhoto(true);
         try {
-            // Sanitización del nombre
             const fileExt = file.name.split('.').pop();
             const cleanName = file.name
                 .toLowerCase()
@@ -234,14 +233,13 @@ export default function RecipeDetailPage() {
         finally { setUploadingPhoto(false); }
     };
 
-    // --- CORRECCIÓN AQUÍ: Acepta la unidad como parámetro ---
     const handleAddIngredient = async (ingredientId: string, unit: string) => {
         await supabase.from('recipe_ingredients').insert({
             recipe_id: recipeId,
             ingredient_id: ingredientId,
             quantity_gross: 1,
             quantity_half: 0.5,
-            unit: unit || 'kg' // Usamos la unidad real, fallback a kg
+            unit: unit || 'kg'
         });
         fetchRecipe();
         setShowIngredientModal(false);
@@ -253,37 +251,18 @@ export default function RecipeDetailPage() {
         fetchRecipe();
     };
 
-    const handleUnitChange = async (id: string, unit: string) => {
-        await supabase.from('recipe_ingredients').update({ unit }).eq('id', id);
-        fetchRecipe();
-    };
-
     const updateTextDB = async (field: 'elaboration' | 'presentation', steps: string[]) => {
         await updateRecipeField(field, steps.join('\n'));
     };
 
     const handleAddElaborationStep = () => setElaborationSteps([...elaborationSteps, '']);
-    const handleDeleteElaborationStep = (index: number) => {
-        const n = elaborationSteps.filter((_, i) => i !== index); setElaborationSteps(n); updateTextDB('elaboration', n);
-    };
     const handleUpdateElaborationStep = (index: number, value: string) => {
         const n = [...elaborationSteps]; n[index] = value; setElaborationSteps(n);
     };
-    const handleManualSaveElaboration = async () => {
-        const success = await updateTextDB('elaboration', elaborationSteps);
-        setIsEditingElaboration(false); toast.success('Guardado');
-    };
 
     const handleAddPresentationStep = () => setPresentationSteps([...presentationSteps, '']);
-    const handleDeletePresentationStep = (index: number) => {
-        const n = presentationSteps.filter((_, i) => i !== index); setPresentationSteps(n); updateTextDB('presentation', n);
-    };
     const handleUpdatePresentationStep = (index: number, value: string) => {
         const n = [...presentationSteps]; n[index] = value; setPresentationSteps(n);
-    };
-    const handleManualSavePresentation = async () => {
-        const success = await updateTextDB('presentation', presentationSteps);
-        setIsEditingPresentation(false); toast.success('Guardado');
     };
 
     const getHealthIndicator = (fc: number) => {
@@ -301,8 +280,6 @@ export default function RecipeDetailPage() {
         : { toggle: 'bg-orange-600 text-white', toggleInactive: 'bg-gray-100 text-gray-600', border: 'border-orange-500' };
 
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    // --- COMPONENTES AUXILIARES ---
 
     const QuantityInput = ({ initialValue, onSave }: { initialValue: number; onSave: (val: number) => void }) => {
         const [localValue, setLocalValue] = useState<string>(initialValue?.toString() || '');
@@ -343,12 +320,8 @@ export default function RecipeDetailPage() {
             <Toaster position="top-right" />
 
             <div className="max-w-6xl mx-auto space-y-2 w-full flex-1 flex flex-col">
-
-
-                {/* Image & Metadata */}
                 <div className="flex items-center justify-center gap-4 shrink-0">
                     <button onClick={handlePreviousRecipe} disabled={currentRecipeIndex <= 0} className="w-8 h-8 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition disabled:opacity-30"><ChevronLeft className="w-5 h-5 text-gray-700" /></button>
-
                     <div className="bg-white rounded-2xl p-1 shadow-md w-fit">
                         <div className="relative group w-32 h-20 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
                             {recipe.photo_url ? (
@@ -365,11 +338,9 @@ export default function RecipeDetailPage() {
                             {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-600" /></div>}
                         </div>
                     </div>
-
                     <button onClick={handleNextRecipe} disabled={currentRecipeIndex >= allRecipes.length - 1} className="w-8 h-8 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition disabled:opacity-30"><ChevronRight className="w-5 h-5 text-gray-700" /></button>
                 </div>
 
-                {/* Datos */}
                 <div className="flex justify-center items-center gap-4 shrink-0">
                     <div className="bg-white rounded-full shadow-sm px-4 py-1 flex items-center gap-4 text-xs">
                         {isRestricted ? (
@@ -386,10 +357,7 @@ export default function RecipeDetailPage() {
                     )}
                 </div>
 
-                {/* GRID 2x2 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0">
-
-                    {/* CARD 1: Pricing */}
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
@@ -405,7 +373,6 @@ export default function RecipeDetailPage() {
                                         <button onClick={() => setView(v => ({ ...v, size: 'half' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'half' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/2</button>
                                     </div>
                                 </div>
-
                                 <div className="flex items-center justify-center gap-1 my-2">
                                     <span className="text-lg font-bold text-gray-800">€</span>
                                     <EditablePrice
@@ -415,13 +382,11 @@ export default function RecipeDetailPage() {
                                         className={`text-3xl font-black text-center text-gray-800 border-b-2 focus:${themeColors.border} outline-none w-28 bg-transparent`}
                                     />
                                 </div>
-
                                 <div className="rounded-lg p-2 grid grid-cols-3 gap-2 text-center bg-gray-50">
                                     <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
                                     <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
                                     <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
                                 </div>
-
                                 <div className="flex justify-between items-center mt-2 px-2">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado (Target {activeTargetFC}%)</span>
                                     <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
@@ -429,8 +394,6 @@ export default function RecipeDetailPage() {
                             </div>
                         </div>
                     )}
-
-                    {/* CARD 2: Ingredients */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col min-h-0">
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
@@ -489,50 +452,31 @@ export default function RecipeDetailPage() {
                             </table>
                         </div>
                     </div>
-
-                    {/* CARD 3: Simulator */}
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
                                 <Beaker className="w-3.5 h-3.5 text-white/70" />
                                 <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
                             </div>
-
                             <div className="p-3 flex-1 flex flex-col justify-between">
                                 <div className="flex flex-col justify-center gap-4">
                                     <div className="flex items-center justify-between px-4">
                                         <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Simulado</span>
                                         <span className="text-3xl font-black text-purple-600">{(simulatedPrice || 0).toFixed(2)}€</span>
                                     </div>
-
-                                    <input
-                                        type="range"
-                                        min={Math.floor((currentPrice * 0.5) * 10) / 10}
-                                        max={Math.ceil((currentPrice * 2) * 10) / 10 || 20}
-                                        step={0.10}
-                                        value={simulatedPrice}
-                                        onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)}
-                                        className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                    />
-
+                                    <input type="range" min={Math.floor((currentPrice * 0.5) * 10) / 10} max={Math.ceil((currentPrice * 2) * 10) / 10 || 20} step={0.10} value={simulatedPrice} onChange={(e) => setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)} className="w-full h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-600" />
                                     <div className="grid grid-cols-3 gap-2 text-center">
                                         <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">FC</div><div className={`text-lg font-black ${simulatedHealthIndicator.color}`}>{(simulatedFoodCost || 0).toFixed(0)}%</div></div>
                                         <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base</div><div className="text-lg font-black text-purple-800">{(simulatedBasePrice || 0).toFixed(2)}</div></div>
                                         <div><div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Margen</div><div className="text-lg font-black text-purple-800">{(simulatedMargin || 0).toFixed(2)}€</div></div>
                                     </div>
                                 </div>
-
                                 <button onClick={applySimulatedPrice} disabled={applyingSimulation || simulatedPrice === currentPrice} className="w-full py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-black text-[10px] mt-2 uppercase tracking-[0.2em] shadow-lg shadow-purple-600/20 disabled:opacity-50">APLICAR CAMBIOS</button>
                             </div>
                         </div>
                     )}
-
-                    {/* CARD 4: Textos */}
                     <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full min-h-0">
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0">
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2>
-                        </div>
-                        {/* Elaboración */}
+                        <div className="bg-[#36606F] px-4 py-2 shrink-0"><h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2></div>
                         <div className="flex-1 p-3 border-b flex flex-col min-h-0 overflow-hidden">
                             <div className="flex justify-between items-center mb-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-wider">Metodología</h2>
@@ -547,12 +491,12 @@ export default function RecipeDetailPage() {
                                     <div className="space-y-1.5">
                                         {elaborationSteps.map((s, i) => (
                                             <div key={i} className="flex gap-1.5 items-center">
-                                                <input value={s} onChange={e => { const n = [...elaborationSteps]; n[i] = e.target.value; setElaborationSteps(n) }} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none" />
-                                                <button onClick={() => setElaborationSteps(elaborationSteps.filter((_, x) => x !== i))} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
+                                                <input value={s} onChange={e => handleUpdateElaborationStep(i, e.target.value)} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none" />
+                                                <button onClick={() => { const n = [...elaborationSteps]; n.splice(i, 1); setElaborationSteps(n); updateTextDB('elaboration', n); }} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
                                             </div>
                                         ))}
-                                        <button onClick={() => setElaborationSteps([...elaborationSteps, ''])} className="text-[10px] font-bold text-blue-500 w-full py-2 hover:bg-blue-50 rounded-lg transition-colors border border-dashed border-blue-200">+ Añadir paso</button>
-                                        <button onClick={() => { updateTextDB('elaboration', elaborationSteps); setIsEditingElaboration(false) }} className="block w-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-blue-600/20">Guardar Elaboración</button>
+                                        <button onClick={handleAddElaborationStep} className="text-[10px] font-bold text-blue-500 w-full py-2 hover:bg-blue-50 rounded-lg transition-colors border border-dashed border-blue-200">+ Añadir paso</button>
+                                        <button onClick={() => setIsEditingElaboration(false)} className="block w-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-blue-600/20">Cerrar Edición</button>
                                     </div>
                                 ) : (
                                     <ul className="space-y-2">
@@ -566,7 +510,6 @@ export default function RecipeDetailPage() {
                                 )}
                             </div>
                         </div>
-                        {/* Presentación */}
                         <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden bg-zinc-50/30">
                             <div className="flex justify-between items-center mb-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Presentación</h2>
@@ -581,12 +524,12 @@ export default function RecipeDetailPage() {
                                     <div className="space-y-1.5">
                                         {presentationSteps.map((s, i) => (
                                             <div key={i} className="flex gap-1.5 items-center">
-                                                <input value={s} onChange={e => { const n = [...presentationSteps]; n[i] = e.target.value; setPresentationSteps(n) }} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-emerald-500 outline-none" />
-                                                <button onClick={() => setPresentationSteps(presentationSteps.filter((_, x) => x !== i))} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
+                                                <input value={s} onChange={e => handleUpdatePresentationStep(i, e.target.value)} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-emerald-500 outline-none" />
+                                                <button onClick={() => { const n = [...presentationSteps]; n.splice(i, 1); setPresentationSteps(n); updateTextDB('presentation', n); }} className="p-1 text-gray-300 hover:text-rose-500"><X size={14} /></button>
                                             </div>
                                         ))}
-                                        <button onClick={() => setPresentationSteps([...presentationSteps, ''])} className="text-[10px] font-bold text-emerald-500 w-full py-2 hover:bg-emerald-50 rounded-lg transition-colors border border-dashed border-emerald-200">+ Añadir nota</button>
-                                        <button onClick={() => { updateTextDB('presentation', presentationSteps); setIsEditingPresentation(false) }} className="block w-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-emerald-600/20">Guardar Notas</button>
+                                        <button onClick={handleAddPresentationStep} className="text-[10px] font-bold text-emerald-500 w-full py-2 hover:bg-emerald-50 rounded-lg transition-colors border border-dashed border-emerald-200">+ Añadir nota</button>
+                                        <button onClick={() => setIsEditingPresentation(false)} className="block w-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-xl mt-2 shadow-lg shadow-emerald-600/20">Cerrar Edición</button>
                                     </div>
                                 ) : (
                                     <ul className="space-y-2">
@@ -602,27 +545,39 @@ export default function RecipeDetailPage() {
                         </div>
                     </div>
                 </div>
-
-                {/* MODALES */}
-                {showIngredientModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowIngredientModal(false)}>
-                        <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                            <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir</h3><button onClick={() => setShowIngredientModal(false)}><X size={16} /></button></div>
-                            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
-                            {/* --- CORRECCIÓN AQUÍ: Pasa la unidad real del ingrediente al hacer clic --- */}
-                            <div className="flex-1 overflow-y-auto space-y-1">{filteredIngredients.map(ing => (<button key={ing.id} onClick={() => handleAddIngredient(ing.id, ing.purchase_unit)} className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"><span className="font-bold">{ing.name}</span><span>{ing.current_price}€</span></button>))}</div>
-                        </div>
-                    </div>
-                )}
-                <CreateIngredientModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => { fetchAvailableIngredients(); fetchRecipe(); }} />
-                {showCategoryModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
-                        <div className="bg-white rounded-xl p-4 max-w-xs w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-                            <div className="grid grid-cols-2 gap-2">{CATEGORY_OPTIONS.map(cat => (<button key={cat} onClick={() => { handleCategoryUpdate(cat); }} className={`py-2 rounded-lg font-bold text-xs ${recipe.category === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>{cat}</button>))}</div>
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {/* MODALES */}
+            {showIngredientModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowIngredientModal(false)}>
+                    <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir</h3><button onClick={() => setShowIngredientModal(false)}><X size={16} /></button></div>
+                        <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
+                        <div className="flex-1 overflow-y-auto space-y-1">{filteredIngredients.map(ing => (<button key={ing.id} onClick={() => handleAddIngredient(ing.id, ing.purchase_unit)} className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"><span className="font-bold">{ing.name}</span><span>{ing.current_price}€</span></button>))}</div>
+                    </div>
+                </div>
+            )}
+            <CreateIngredientModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => { fetchAvailableIngredients(); fetchRecipe(); }} />
+            {showCategoryModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
+                    <div className="bg-white rounded-xl p-4 max-w-xs w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="grid grid-cols-2 gap-2">{CATEGORY_OPTIONS.map(cat => (<button key={cat} onClick={() => { handleCategoryUpdate(cat); }} className={`py-2 rounded-lg font-bold text-xs ${recipe.category === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>{cat}</button>))}</div>
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+export default function RecipeDetailPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+                <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando detalle...</p>
+            </div>
+        }>
+            <RecipeDetailContent />
+        </Suspense>
     );
 }
