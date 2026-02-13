@@ -125,6 +125,8 @@ export default function SuppliersPage() {
         }
     }
 
+    const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
+
     const filteredSuppliers = suppliers.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (s.contact_person?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
@@ -212,7 +214,10 @@ export default function SuppliersPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredSuppliers.map((supplier) => (
                         <div key={supplier.id} className="relative group">
-                            <div className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col">
+                            <div
+                                onClick={() => setDetailSupplier(supplier)}
+                                className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
+                            >
                                 {/* IMAGEN PEQUEÑA SIN BORDE */}
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                     {supplier.image_url || SUPPLIER_LOGOS[supplier.name] ? (
@@ -226,7 +231,6 @@ export default function SuppliersPage() {
                                     <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={supplier.name}>
                                         {supplier.name}
                                     </span>
-                                    <span className="text-[8px] font-black text-gray-300 uppercase shrink-0">{supplier.category?.substring(0, 3)}</span>
                                 </div>
                             </div>
                         </div>
@@ -245,6 +249,62 @@ export default function SuppliersPage() {
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                         <div key={i} className="bg-white/10 rounded-xl h-24 animate-pulse"></div>
                     ))}
+                </div>
+            )}
+
+            {/* MODAL DETALLE / CONTACTO PROVEEDOR */}
+            {detailSupplier && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setDetailSupplier(null)}>
+                    <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-end -mt-4 -mr-4 mb-2">
+                            <button onClick={() => setDetailSupplier(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                <X className="text-gray-400" size={20} />
+                            </button>
+                        </div>
+
+                        <div className="w-32 h-32 mx-auto bg-gray-50 rounded-3xl flex items-center justify-center mb-6 overflow-hidden border border-gray-100 shadow-inner">
+                            {detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] ? (
+                                <img src={detailSupplier.image_url || SUPPLIER_LOGOS[detailSupplier.name] || ''} alt="" className="w-full h-full object-contain p-4" />
+                            ) : (
+                                <Truck className="w-12 h-12 text-gray-200" />
+                            )}
+                        </div>
+
+                        <h2 className="text-xl font-black text-gray-800 uppercase tracking-wider mb-1">
+                            {detailSupplier.name}
+                        </h2>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-4">
+                            {detailSupplier.category || 'Varios'}
+                        </p>
+
+                        <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+                            <div className="flex items-center justify-center gap-2 text-gray-600 font-bold">
+                                <Phone size={14} className="text-[#36606F]" />
+                                <span>{detailSupplier.phone || 'Sin teléfono'}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-4">
+                            {detailSupplier.phone && (
+                                <>
+                                    <a
+                                        href={`tel:${detailSupplier.phone.replace(/\s+/g, '')}`}
+                                        className="w-14 h-14 bg-[#36606F] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                    >
+                                        <Phone className="text-white group-hover:rotate-12 transition-transform" />
+                                    </a>
+                                    <a
+                                        href={`https://wa.me/${detailSupplier.phone.replace(/\s+/g, '').replace('+', '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-14 h-14 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                    >
+                                        <img src="/icons/whatsapp.png" alt="WhatsApp" className="w-8 h-8 object-contain" />
+                                    </a>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
