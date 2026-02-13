@@ -98,6 +98,34 @@ export default function BulkImportPage() {
         });
     };
 
+    const parseDateToISO = (dateStr: string) => {
+        if (!dateStr) return null;
+        // Si ya es YYYY-MM-DD
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
+
+        // Si es DD/MM/YYYY
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            return `${year}-${month}-${day}`;
+        }
+        return dateStr;
+    };
+
+    const normalizeTime = (timeStr: string) => {
+        if (!timeStr) return "00:00:00";
+        const parts = timeStr.split(':');
+
+        // Poner padding a horas y minutos
+        const hh = parts[0].padStart(2, '0');
+        const mm = (parts[1] || '00').padStart(2, '0');
+        const ss = (parts[2] || '00').padStart(2, '0');
+
+        return `${hh}:${mm}:${ss}`;
+    };
+
     const handleImport = async () => {
         if (!file) return;
 
@@ -129,11 +157,15 @@ export default function BulkImportPage() {
 
                     rows.forEach(row => {
                         const userId = emailToIdMap.get(row.email?.toLowerCase());
-                        if (userId && row.date && row.check_in && row.check_out) {
+                        const dateISO = parseDateToISO(row.date);
+                        const cinISO = normalizeTime(row.check_in);
+                        const coutISO = normalizeTime(row.check_out);
+
+                        if (userId && dateISO && row.check_in && row.check_out) {
                             validEntries.push({
                                 user_id: userId,
-                                clock_in: `${row.date}T${row.check_in}:00`,
-                                clock_out: `${row.date}T${row.check_out}:00`,
+                                clock_in: `${dateISO}T${cinISO}`,
+                                clock_out: `${dateISO}T${coutISO}`,
                                 event_type: 'regular',
                                 is_manual_entry: true
                             });
