@@ -9,6 +9,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 
 ## ✅ COMPLETADO
 - [x] **Infraestructura Base:** Next.js + Supabase Auth / SSR configurado.
+- [x] **Redirección por Rol:** Implementación de lógica en `/` para dirigir a Managers a `/dashboard` y Staff a `/staff/dashboard`.
 - [x] **Panel Admin:** Dashboard principal y navegación básica.
 - [x] **Gestión de Staff:** Listado y detalles de empleados.
 - [x] **Control de Horas:** Sistema de fichaje (`time_logs`) operativo.
