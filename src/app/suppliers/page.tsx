@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, truck, Plus, Trash2, X, ChevronDown, Phone, Mail, User, Package, Truck } from 'lucide-react';
+import { Search, Plus, Trash2, X, ChevronDown, Phone, Mail, User, Package, Truck } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -16,7 +16,41 @@ interface Supplier {
     image_url: string | null;
 }
 
+const SUPPLIER_LOGOS: Record<string, string> = {
+    'Ametller': '/icons/prov/Ametller.png',
+    'Panabad': '/icons/prov/panabad.png',
+    'Videla': '/icons/prov/videla.png',
+    'Zander': '/icons/prov/Zander.png',
+    'Abril': '/icons/prov/Abril.png',
+    'Carnicas Pijuan': '/icons/prov/Pijuan.png',
+    'Santa Teresa': '/icons/prov/Sta-Teresa.png',
+    'Shers': '/icons/prov/Shers.png',
+    'Sanilec': '/icons/prov/Sanilec.png',
+    'Nestle': '/icons/prov/Nestle.png',
+    'Sant Aniol': '/icons/prov/Sant-Aniol.png',
+    'Fritz Ravich': '/icons/prov/Fritz-Ravich.png',
+    'Hielo Fenix': '/icons/prov/hielo-fenix.png',
+    'Vins i Pons': '/icons/prov/Pons.png'
+};
+
 const CATEGORIES = ['Alimentos', 'Bebidas', 'Limpieza', 'Mantenimiento', 'Suministros', 'Otros'];
+
+const INITIAL_SUPPLIERS: Partial<Supplier>[] = [
+    { name: 'Ametller', category: 'Alimentos' },
+    { name: 'Panabad', category: 'Alimentos' },
+    { name: 'Videla', category: 'Alimentos' },
+    { name: 'Santa Teresa', category: 'Alimentos' },
+    { name: 'Carnicas Pijuan', category: 'Alimentos' },
+    { name: 'Fritz Ravich', category: 'Alimentos' },
+    { name: 'Sant Aniol', category: 'Bebidas' },
+    { name: 'Vins i Pons', category: 'Bebidas' },
+    { name: 'Shers', category: 'Bebidas' },
+    { name: 'Zander', category: 'Bebidas' },
+    { name: 'Nestle', category: 'Alimentos' },
+    { name: 'Abril', category: 'Alimentos' },
+    { name: 'Sanilec', category: 'Limpieza' },
+    { name: 'Hielo Fenix', category: 'Otros' }
+];
 
 export default function SuppliersPage() {
     const supabase = createClient();
@@ -37,10 +71,38 @@ export default function SuppliersPage() {
             setLoading(true);
             const { data, error } = await supabase.from('suppliers').select('*').order('name');
             if (error) throw error;
-            setSuppliers(data || []);
+
+            // Combinar con los iniciales si no están en DB
+            const dbSuppliers = data || [];
+            const combined = [...dbSuppliers];
+
+            INITIAL_SUPPLIERS.forEach((initial: Partial<Supplier>) => {
+                if (!dbSuppliers.some(s => s.name.toLowerCase() === initial.name?.toLowerCase())) {
+                    combined.push({
+                        id: `initial-${initial.name}`,
+                        name: initial.name!,
+                        category: initial.category!,
+                        image_url: null,
+                        contact_person: null,
+                        phone: null,
+                        email: null
+                    });
+                }
+            });
+
+            setSuppliers(combined.sort((a, b) => a.name.localeCompare(b.name)));
         } catch (error) {
             console.error('Error fetching suppliers:', error);
-            toast.error('Error al cargar proveedores');
+            // Fallback total a los iniciales si falla la DB
+            setSuppliers(INITIAL_SUPPLIERS.map((s, i) => ({
+                id: `fallback-${i}`,
+                name: s.name!,
+                category: s.category!,
+                image_url: null,
+                contact_person: null,
+                phone: null,
+                email: null
+            })));
         } finally {
             setLoading(false);
         }
@@ -166,8 +228,8 @@ export default function SuppliersPage() {
                                 <div className="bg-white rounded-2xl p-3 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer h-full flex flex-col active:scale-95 border border-white">
                                     {/* LOGO / IMAGEN */}
                                     <div className="h-20 w-full bg-gray-50 rounded-xl flex items-center justify-center mb-3 overflow-hidden relative border border-gray-100/50">
-                                        {supplier.image_url ? (
-                                            <img src={supplier.image_url} alt="" className="h-full w-full object-contain p-2" />
+                                        {supplier.image_url || SUPPLIER_LOGOS[supplier.name] ? (
+                                            <img src={supplier.image_url || SUPPLIER_LOGOS[supplier.name] || ''} alt="" className="h-full w-full object-contain p-2" />
                                         ) : (
                                             <Truck className="w-8 h-8 text-gray-200" />
                                         )}

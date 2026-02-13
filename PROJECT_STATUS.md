@@ -94,6 +94,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Gestión de Seguridad**: Implementación de modal de cambio de contraseña directo en la cuenta del personal con diseño táctil premium.
 - [x] **Refinamiento UI Global (Vista Marbella Detail)**: Unificación estética de las cabeceras en Laboral, Historial y Horas Extras. Rediseño de la navegación en Registros con mes compacto y controles externos.
 - [x] **Herramienta de Importación Masiva**: Nueva página `/admin/import` para migración de fichajes históricos vía CSV con mapeo automático de emails y procesamiento por bloques.
+- [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
 
 
 ## 📅 PENDIENTE
