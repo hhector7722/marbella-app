@@ -170,7 +170,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             <div className="bg-white rounded-[2.5rem] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
                 {/* Header (Detail View Style) */}
-                <div className="bg-[#5B8FB9] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
+                <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2 opacity-60 mb-1">
                             <Calculator size={14} />

@@ -16,7 +16,8 @@ import {
     TrendingUp,
     Wallet,
     TrendingDown,
-    PiggyBank
+    PiggyBank,
+    ArrowRightLeft
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -154,10 +155,13 @@ export default function MovementsPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
 
-                    {/* Header */}
-                    <div className="bg-[#5B8FB9] px-8 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Wallet className="text-white" size={20} />
+                    {/* Header (Detail View Style) */}
+                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 opacity-60 mb-1 text-white">
+                                <ArrowRightLeft size={14} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Finanzas y Tesorería</span>
+                            </div>
                             <h1 className="text-base font-black text-white uppercase tracking-wider">
                                 Movimientos Caja
                             </h1>

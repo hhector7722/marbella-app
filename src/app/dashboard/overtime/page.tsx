@@ -21,7 +21,8 @@ import {
     Download,
     Info,
     BadgeDollarSign,
-    HandCoins
+    HandCoins,
+    Calculator
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -151,10 +152,13 @@ export default function OvertimePage() {
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
-                    {/* CABECERA DE LA TARJETA (AZUL MARBELLA) */}
-                    <div className="bg-[#5B8FB9] px-8 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Clock3 className="text-white" size={20} />
+                    {/* Header (Detail View Style) */}
+                    <div className="bg-[#36606F] px-8 py-3 flex items-center justify-between">
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 opacity-60 mb-1 text-white">
+                                <Calculator size={14} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Recursos Humanos</span>
+                            </div>
                             <h1 className="text-base font-black text-white uppercase tracking-wider">
                                 Histórico de Extras
                             </h1>

@@ -144,7 +144,7 @@ function ProfileContent() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* ENCABEZADO CORPORATIVO SÓLIDO */}
-                    <div className="bg-[#5B8FB9] p-8 pt-10 text-white relative overflow-hidden">
+                    <div className="bg-[#36606F] p-8 pt-10 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center">

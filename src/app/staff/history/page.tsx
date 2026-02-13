@@ -722,7 +722,7 @@ export default function HistoryPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white">
+                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                             <div className="flex flex-col">
                                 <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">

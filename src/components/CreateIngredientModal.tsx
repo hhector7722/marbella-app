@@ -54,7 +54,7 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
                         <input
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-purple-500 outline-none"
+                            className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-[#36606F] outline-none"
                             placeholder="Ej: Tomate Pera"
                         />
                     </div>
@@ -65,13 +65,13 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
                             step="0.01"
                             value={price}
                             onChange={e => setPrice(parseFloat(e.target.value))}
-                            className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-purple-500 outline-none"
+                            className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-[#36606F] outline-none"
                         />
                     </div>
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-purple-700 transition"
+                        className="w-full bg-[#36606F] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#2d4f5c] transition shadow-lg"
                     >
                         {loading ? 'Guardando...' : <><Save size={18} /> Guardar</>}
                     </button>

@@ -47,7 +47,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="bg-[#5B8FB9] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                 <div>
                     <h3 className="text-lg font-black uppercase tracking-wider">{isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')}</h3>
                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
@@ -241,7 +241,7 @@ const BoxInventoryView = ({ boxName, inventory, onBack }: { boxName: string, inv
     const total = inventory.reduce((sum, item) => sum + (item.denomination * item.quantity), 0);
     return (
         <div className="flex flex-col h-full bg-white">
-            <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                 <div className="flex flex-col"><span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Inventario de Efectivo</span><h3 className="text-lg font-black uppercase tracking-wider mt-1">{boxName}</h3></div>
                 <button onClick={onBack} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><ArrowLeft size={20} strokeWidth={3} /></button>
             </div>
@@ -579,7 +579,7 @@ export default function AdminDashboardView() {
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", cashModalMode === 'swap' ? "max-w-4xl" : "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                         {cashModalMode === 'menu' && (
                             <>
-                                <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
                                 <div className="p-4 grid grid-cols-2 gap-4">
                                     {selectedBox?.type === 'change' ? (
                                         <>
@@ -608,7 +608,7 @@ export default function AdminDashboardView() {
             {isStaffModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                             <div>
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Empleado ({allEmployees.length})</p>
@@ -647,7 +647,7 @@ export default function AdminDashboardView() {
             {isNewWorkerModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#5B8FB9] px-6 py-4 flex justify-between items-center text-white">
+                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                             <div>
                                 <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Datos del empleado</p>
@@ -736,7 +736,7 @@ export default function AdminDashboardView() {
             {isProductModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
                         <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                             {[
                                 { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },

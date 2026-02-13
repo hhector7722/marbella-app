@@ -35,7 +35,7 @@ export default function CreateModal({
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="bg-[#5E35B1] p-6 flex justify-between items-center text-white">
+                <div className="bg-[#36606F] p-6 flex justify-between items-center text-white">
                     <h2 className="text-xl font-black uppercase tracking-wide">Nueva Receta</h2>
                     <button onClick={() => setShowCreateModal(false)} className="hover:bg-white/20 p-2 rounded-full transition-colors">
                         <X size={24} />
@@ -50,7 +50,7 @@ export default function CreateModal({
                                 type="text"
                                 value={newRecipe.name || ''}
                                 onChange={e => setNewRecipe({ ...newRecipe, name: e.target.value })}
-                                className="w-full border-b-2 border-gray-200 focus:border-[#5E35B1] outline-none py-2 text-lg font-bold text-gray-800 bg-transparent"
+                                className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 text-lg font-bold text-gray-800 bg-transparent"
                                 placeholder="Ej: Patatas Bravas"
                                 autoFocus
                             />
@@ -60,7 +60,7 @@ export default function CreateModal({
                             <select
                                 value={newRecipe.category || 'Tapas'}
                                 onChange={e => setNewRecipe({ ...newRecipe, category: e.target.value })}
-                                className="w-full border-b-2 border-gray-200 focus:border-[#5E35B1] outline-none py-2 font-medium bg-transparent"
+                                className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
                             >
                                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
@@ -72,7 +72,7 @@ export default function CreateModal({
                                 step="0.10"
                                 value={newRecipe.sale_price || 0}
                                 onChange={e => setNewRecipe({ ...newRecipe, sale_price: parseFloat(e.target.value) })}
-                                className="w-full border-b-2 border-gray-200 focus:border-[#5E35B1] outline-none py-2 font-medium bg-transparent"
+                                className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
                             />
                         </div>
                     </div>
@@ -96,7 +96,7 @@ export default function CreateModal({
                                         <select
                                             value={row.ingredient_id}
                                             onChange={e => updateRecipeIngredient(idx, 'ingredient_id', e.target.value)}
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#5E35B1] outline-none"
+                                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#36606F] outline-none"
                                         >
                                             <option value="">Seleccionar...</option>
                                             {allIngredients.map(ing => <option key={ing.id} value={ing.id}>{ing.name}</option>)}
@@ -108,7 +108,7 @@ export default function CreateModal({
                                             step="0.001"
                                             value={row.quantity}
                                             onChange={e => updateRecipeIngredient(idx, 'quantity', parseFloat(e.target.value))}
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium text-center focus:border-[#5E35B1] outline-none"
+                                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium text-center focus:border-[#36606F] outline-none"
                                             placeholder="Cant."
                                         />
                                     </div>
@@ -116,7 +116,7 @@ export default function CreateModal({
                                         <select
                                             value={row.unit}
                                             onChange={e => updateRecipeIngredient(idx, 'unit', e.target.value)}
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#5E35B1] outline-none"
+                                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#36606F] outline-none"
                                         >
                                             <option value="kg">kg</option>
                                             <option value="l">l</option>
@@ -134,7 +134,7 @@ export default function CreateModal({
 
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
                     <button onClick={() => setShowCreateModal(false)} className="px-6 py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-200">CANCELAR</button>
-                    <button onClick={handleCreateRecipe} disabled={isCreating} className="bg-[#5E35B1] text-white px-8 py-3 rounded-xl text-xs font-black hover:bg-[#4a2c8a] disabled:opacity-50 flex items-center gap-2 shadow-lg">
+                    <button onClick={handleCreateRecipe} disabled={isCreating} className="bg-[#36606F] text-white px-8 py-3 rounded-xl text-xs font-black hover:bg-[#2d4f5c] disabled:opacity-50 flex items-center gap-2 shadow-lg">
                         {isCreating ? 'GUARDANDO...' : <><Save size={16} /> GUARDAR</>}
                     </button>
                 </div>
