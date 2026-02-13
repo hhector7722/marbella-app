@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
 import { ChefHat, Search, Plus, Trash2, X, ChevronDown } from 'lucide-react';
@@ -31,8 +32,25 @@ export default function RecipesPage() {
     const [newRecipe, setNewRecipe] = useState<any>({ name: '', category: 'Tapas', sale_price: 0, ingredients: [] });
     const [isCreating, setIsCreating] = useState(false);
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
-    useEffect(() => { fetchRecipes(); fetchIngredients(); }, []);
+    const searchParams = useSearchParams();
+    const isStaffView = searchParams.get('view') === 'staff';
+
+    useEffect(() => {
+        fetchRecipes();
+        fetchIngredients();
+        const checkRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (data) setUserRole(data.role);
+            }
+        };
+        checkRole();
+    }, []);
+
+    const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
 
     async function fetchRecipes() {
         try {
@@ -155,12 +173,14 @@ export default function RecipesPage() {
                     </div>
 
                     {/* Botón Acción Principal (Target 48px Táctil) */}
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
-                    >
-                        <Plus className="w-6 h-6" />
-                    </button>
+                    {!isRestricted && (
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
+                        >
+                            <Plus className="w-6 h-6" />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -169,7 +189,7 @@ export default function RecipesPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredRecipes.map((recipe) => (
                         <div key={recipe.id} className="group relative overflow-hidden">
-                            <Link href={`/recipes/${recipe.id}`} className="block h-full">
+                            <Link href={`/recipes/${recipe.id}${isRestricted ? '?view=staff' : ''}`} className="block h-full">
                                 <div className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95">
                                     {/* IMAGEN PEQUEÑA (Compacta 14) */}
                                     <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
@@ -178,7 +198,9 @@ export default function RecipesPage() {
                                     {/* TEXTOS COMPACTOS */}
                                     <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
                                         <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={recipe.name}>{recipe.name}</span>
-                                        <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>
+                                        {!isRestricted && (
+                                            <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>
+                                        )}
                                     </div>
                                 </div>
                             </Link>

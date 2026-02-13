@@ -575,7 +575,7 @@ export default function StaffDashboardView() {
                             img="/icons/recipes.png"
                             color="bg-white"
                             label="Recetas"
-                            onClick={() => router.push('/recipes')}
+                            onClick={() => router.push('/recipes?view=staff')}
                         />
                         <IOSIconBoxed
                             img="/icons/information.png"

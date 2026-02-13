@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 import {
     User, Phone, CreditCard, FileText, Copy, Check,
-    Briefcase, Hash, Euro, FileClock, PhoneCall, Mail,
+    Briefcase, Hash, Euro, FileClock, Mail,
     CheckCircle2, ArrowLeft, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -219,9 +219,24 @@ function ProfileContent() {
                                 label="Teléfono Móvil"
                                 value={profile.phone}
                                 action={profile.phone && (
-                                    <a href={`tel:${profile.phone}`} className="bg-emerald-50 text-emerald-600 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-emerald-500 hover:text-white transition-all active:scale-90 shadow-sm" title="Llamar">
-                                        <PhoneCall size={20} />
-                                    </a>
+                                    <div className="flex items-center gap-3">
+                                        <a
+                                            href={`tel:${profile.phone.replace(/\s+/g, '')}`}
+                                            className="w-14 h-14 bg-[#36606F] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                            title="Llamar"
+                                        >
+                                            <Phone size={32} className="text-white group-hover:rotate-12 transition-transform" strokeWidth={2.5} />
+                                        </a>
+                                        <a
+                                            href={`https://wa.me/${profile.phone.replace(/\s+/g, '').replace('+', '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-14 h-14 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                            title="WhatsApp"
+                                        >
+                                            <img src="/icons/whatsapp.png" alt="WhatsApp" className="w-9 h-9 object-contain" />
+                                        </a>
+                                    </div>
                                 )}
                             />
                         </div>
