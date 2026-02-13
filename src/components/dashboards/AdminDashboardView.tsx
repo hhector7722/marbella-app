@@ -744,7 +744,7 @@ export default function AdminDashboardView() {
                                 { title: 'Pedidos', img: '/icons/shipment.png', hover: 'hover:bg-emerald-50/30' },
                                 { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
                                 { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
-                                { title: 'Proveedores', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
+                                { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
                             ].map((item, i) => (
                                 <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
                             ))}
