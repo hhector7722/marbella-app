@@ -95,6 +95,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento UI Global (Vista Marbella Detail)**: Unificación estética de las cabeceras en Laboral, Historial y Horas Extras. Rediseño de la navegación en Registros con mes compacto y controles externos.
 - [x] **Herramienta de Importación Masiva**: Nueva página `/admin/import` para migración de fichajes históricos vía CSV con mapeo automático de emails y procesamiento por bloques.
 - [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
+- [x] **Estandarización de Contacto**: Unificación de iconos de Teléfono y WhatsApp en `/profile` y `/suppliers` siguiendo el estilo minimalista del Dashboard de Personal.
 
 
 ## 📅 PENDIENTE
@@ -113,6 +114,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Unificación Estética de Fondos**: Restauración del azul Marbella original (#5B8FB9) en toda la aplicación tras pruebas con azul oscuro.
 - [x] **Corrección de Guardado de Ingredientes**: Resolución del error de restricción `NOT NULL` en la columna `unit_type` al crear o editar ingredientes.
 - [x] **Privacidad de Recetas Staff**: Implementación de visibilidad condicional para ocultar costes, márgenes y herramientas administrativas en recetas cuando se accede desde el panel de personal.
+- [x] **Estabilidad de Build (Suspense)**: Resolución del error `useSearchParams` en el módulo de recetas envolviendo componentes en límites de `Suspense` para permitir el prerenderizado de Next.js.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

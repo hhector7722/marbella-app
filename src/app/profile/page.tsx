@@ -219,22 +219,22 @@ function ProfileContent() {
                                 label="Teléfono Móvil"
                                 value={profile.phone}
                                 action={profile.phone && (
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex gap-4 items-center">
                                         <a
-                                            href={`tel:${profile.phone.replace(/\s+/g, '')}`}
-                                            className="w-14 h-14 bg-[#36606F] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                            href={`tel:${profile.phone.replace(/\D/g, '').startsWith('34') ? '+' + profile.phone.replace(/\D/g, '') : '+34' + profile.phone.replace(/\D/g, '')}`}
+                                            className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"
                                             title="Llamar"
                                         >
-                                            <Phone size={32} className="text-white group-hover:rotate-12 transition-transform" strokeWidth={2.5} />
+                                            <Phone size={22} />
                                         </a>
                                         <a
-                                            href={`https://wa.me/${profile.phone.replace(/\s+/g, '').replace('+', '')}`}
+                                            href={`https://wa.me/${profile.phone.replace(/\D/g, '').startsWith('34') ? profile.phone.replace(/\D/g, '') : '34' + profile.phone.replace(/\D/g, '')}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="w-14 h-14 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                            className="transition-all hover:scale-110 active:scale-95"
                                             title="WhatsApp"
                                         >
-                                            <img src="/icons/whatsapp.png" alt="WhatsApp" className="w-9 h-9 object-contain" />
+                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
                                         </a>
                                     </div>
                                 )}

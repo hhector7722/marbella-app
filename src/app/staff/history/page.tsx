@@ -479,6 +479,37 @@ export default function HistoryPage() {
                     </div>
                 )}
 
+                {/* Botón Central de Filtrado de Mes (Rediseño) */}
+                {!loading && (
+                    <div className="flex justify-center py-4 animate-in fade-in slide-in-from-top-4 duration-700">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowFilter(true)}
+                                className={cn(
+                                    "flex items-center gap-3 px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100",
+                                    "text-[11px] font-black text-zinc-800 uppercase tracking-[0.25em]",
+                                    "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl",
+                                    isFilterActive && "ring-2 ring-orange-500 ring-offset-4 ring-offset-[#5B8FB9]"
+                                )}
+                            >
+                                <Calendar size={16} className={cn(isFilterActive ? "text-orange-500" : "text-zinc-400")} fill={isFilterActive ? "currentColor" : "none"} />
+                                <span>{getMonthLabel(currentDate)}</span>
+                                <ChevronDown size={16} className={cn("text-zinc-400 transition-transform", showFilter && "rotate-180")} />
+                            </button>
+
+                            {isFilterActive && (
+                                <button
+                                    onClick={clearFilter}
+                                    className="w-12 h-12 flex items-center justify-center bg-white/10 text-white rounded-full hover:bg-white/20 backdrop-blur-md transition-all active:scale-90 border border-white/20"
+                                    title="Quitar filtro"
+                                >
+                                    <X size={20} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="py-10 text-center text-white/50"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>Cargando registros...</div>
                 ) : weeksData.length === 0 ? (
@@ -486,160 +517,125 @@ export default function HistoryPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
                         {weeksData.map((week, idx) => {
-                            const currentMonthLabel = getMonthLabel(week.startDate);
-                            const prevWeekLabel = idx > 0 ? getMonthLabel(weeksData[idx - 1].startDate) : null;
-                            const showMonthHeader = idx === 0 || currentMonthLabel !== prevWeekLabel;
-
                             return (
-                                <React.Fragment key={idx}>
-                                    {showMonthHeader && (
-                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 py-2 flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
-                                            <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-md whitespace-nowrap opacity-70">{currentMonthLabel}</span>
-                                            <div className="h-px bg-white/30 flex-1 opacity-70"></div>
-                                            {idx === 0 && (
-                                                <div className="flex items-center gap-1.5 ml-1 shrink-0">
-                                                    <button
-                                                        onClick={() => setShowFilter(true)}
-                                                        className={cn(
-                                                            "h-8 w-8 flex items-center justify-center rounded-lg transition-all active:scale-95 duration-150 shadow-lg",
-                                                            isFilterActive ? 'bg-orange-500 text-white shadow-orange-200' : 'bg-white text-zinc-500 shadow-sm border border-zinc-100'
-                                                        )}
-                                                        title="Filtrar"
-                                                    >
-                                                        <Filter size={14} fill="currentColor" />
-                                                    </button>
-                                                    {isFilterActive && (
-                                                        <button
-                                                            onClick={clearFilter}
-                                                            className="h-8 w-8 flex items-center justify-center bg-white/20 text-white rounded-lg transition-all active:scale-95 duration-150 backdrop-blur-sm"
-                                                            title="Quitar Filtro"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
+                                <div key={idx} className={cn(
+                                    "bg-white rounded-[2rem] p-4 md:p-6 shadow-xl border border-zinc-100",
+                                    "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4",
+                                    week.isCurrentWeek && "ring-2 ring-blue-400/40"
+                                )} style={{ animationDelay: `${idx * 50}ms` }}>
+                                    <div className="flex justify-between items-end mb-2 px-1">
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">
+                                                    {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
+                                                </span>
+                                                {week.isCurrentWeek && (
+                                                    <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider -mt-1 animate-pulse">
+                                                        En Curso
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Botón editar para manager */}
+                                        {isManager && (
+                                            <button
+                                                onClick={() => openEdit(idx)}
+                                                className="h-7 w-7 flex items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 hover:bg-blue-100 hover:text-blue-600 transition-all active:scale-90"
+                                                title="Editar registros"
+                                            >
+                                                <Pencil size={13} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {week.summary.isPaid && (
+                                        <div className="absolute -bottom-7 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
+                                            <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
                                         </div>
                                     )}
-                                    <div className={cn(
-                                        "bg-white rounded-[2rem] p-4 md:p-6 shadow-xl border border-zinc-100",
-                                        "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4",
-                                        week.isCurrentWeek && "ring-2 ring-blue-400/40"
-                                    )} style={{ animationDelay: `${idx * 50}ms` }}>
-                                        <div className="flex justify-between items-end mb-2 px-1">
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">
-                                                        {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
-                                                    </span>
-                                                    {week.isCurrentWeek && (
-                                                        <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider -mt-1 animate-pulse">
-                                                            En Curso
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {/* Botón editar para manager */}
-                                            {isManager && (
-                                                <button
-                                                    onClick={() => openEdit(idx)}
-                                                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 hover:bg-blue-100 hover:text-blue-600 transition-all active:scale-90"
-                                                    title="Editar registros"
-                                                >
-                                                    <Pencil size={13} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        {week.summary.isPaid && (
-                                            <div className="absolute -bottom-7 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
-                                                <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                                            </div>
-                                        )}
 
-                                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                                            <div className="grid grid-cols-7 border-b border-gray-100">
-                                                {week.days.map((day, i) => (
-                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
-                                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                    <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                        <div className="grid grid-cols-7 border-b border-gray-100">
+                                            {week.days.map((day, i) => (
+                                                <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
+                                                    <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                                        <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                                    </div>
+                                                    <div className="flex-1 p-1 flex flex-col items-center relative z-0">
+                                                        <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                                        <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
+                                                            <div className="h-3 flex items-center justify-center gap-1">
+                                                                {day.hasLog ? (
+                                                                    <>
+                                                                        <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                    </>
+                                                                ) : null}
+                                                            </div>
+                                                            <div className="h-3 flex items-center justify-center gap-1">
+                                                                {day.hasLog && day.clockOut ? (
+                                                                    <>
+                                                                        <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                    </>
+                                                                ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                            </div>
                                                         </div>
-                                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0">
-                                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
-                                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                                    {day.hasLog ? (
-                                                                        <>
-                                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                        </>
-                                                                    ) : null}
+                                                        <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                            {day.hasLog && day.totalHours > 0 ? (
+                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                    <span className="ml-0.5">H</span>
+                                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
                                                                 </div>
-                                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                                    {day.hasLog && day.clockOut ? (
-                                                                        <>
-                                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                        </>
-                                                                    ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                            ) : <div className="h-3" />}
+                                                            {day.extraHours > 0.1 ? (
+                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                    <span className="ml-0.5">Ex</span>
+                                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
                                                                 </div>
-                                                            </div>
-                                                            <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                                {day.hasLog && day.totalHours > 0 ? (
-                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                        <span className="ml-0.5">H</span>
-                                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
-                                                                    </div>
-                                                                ) : <div className="h-3" />}
-                                                                {day.extraHours > 0.1 ? (
-                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                        <span className="ml-0.5">Ex</span>
-                                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
-                                                                    </div>
-                                                                ) : <div className="h-3" />}
-                                                            </div>
+                                                            ) : <div className="h-3" />}
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
                                                 </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                        {formatBalance(week.summary.weeklyBalance)}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                        {formatBalance(week.summary.startBalance)}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center flex-1 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                                        {formatMoney(week.summary.estimatedValue)}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
-                                            </div>
+                                            ))}
                                         </div>
                                     </div>
-                                </React.Fragment>
+
+                                    <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                        <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                            <div className="h-4 flex items-center">
+                                                <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
+                                            </div>
+                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                            <div className="h-4 flex items-center">
+                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {formatBalance(week.summary.weeklyBalance)}
+                                                </span>
+                                            </div>
+                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                            <div className="h-4 flex items-center">
+                                                <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {formatBalance(week.summary.startBalance)}
+                                                </span>
+                                            </div>
+                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center flex-1 shrink-0">
+                                            <div className="h-4 flex items-center">
+                                                <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                                    {formatMoney(week.summary.estimatedValue)}
+                                                </span>
+                                            </div>
+                                            <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                        </div>
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>
@@ -647,35 +643,47 @@ export default function HistoryPage() {
             </div>
 
             {/* MODAL: Filtro de Fecha */}
+            {/* MODAL: Filtro de Fecha (Rediseño Bento) */}
             {showFilter && (
                 <div
-                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
+                    className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
                     onClick={() => setShowFilter(false)}
                 >
                     <div
-                        className="bg-white w-full max-w-xs rounded-[2rem] p-6 shadow-2xl transform transition-all scale-100"
+                        className="bg-zinc-50/90 w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-black text-zinc-800">Filtrar Fecha</h3>
+                        {/* Header Modal */}
+                        <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100">
+                            <div className="flex flex-col">
+                                <h3 className="text-xl font-black text-zinc-900 leading-tight">Calendario</h3>
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona periodo</p>
+                            </div>
                             <button
                                 onClick={() => setShowFilter(false)}
-                                className="h-10 w-10 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-95"
+                                className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
                             >
-                                <X size={16} />
+                                <X size={20} />
                             </button>
                         </div>
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-400 uppercase mb-3 px-1">Año</label>
-                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+
+                        <div className="p-8 space-y-8">
+                            {/* Selector de Año */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 px-1">
+                                    <div className="w-1 h-3 bg-blue-600 rounded-full" />
+                                    <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Año</span>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2">
                                     {[2024, 2025, 2026, 2027].map(year => (
                                         <button
                                             key={year}
                                             onClick={() => setFilterYear(year)}
                                             className={cn(
-                                                "h-12 px-5 rounded-xl text-sm font-bold border transition-all active:scale-95 whitespace-nowrap",
-                                                filterYear === year ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-zinc-600 border-zinc-200 hover:border-blue-400'
+                                                "h-12 rounded-2xl text-[13px] font-black transition-all active:scale-95 border-2",
+                                                filterYear === year
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
+                                                    : 'bg-white text-zinc-500 border-transparent hover:border-zinc-200'
                                             )}
                                         >
                                             {year}
@@ -683,29 +691,52 @@ export default function HistoryPage() {
                                     ))}
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-400 uppercase mb-3 px-1">Mes</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {Array.from({ length: 12 }).map((_, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setFilterMonth(i)}
-                                            className={cn(
-                                                "h-12 rounded-xl text-xs font-bold border transition-all active:scale-95 capitalize",
-                                                filterMonth === i ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-white hover:border-blue-200'
-                                            )}
-                                        >
-                                            {new Date(0, i).toLocaleDateString('es-ES', { month: 'short' })}
-                                        </button>
-                                    ))}
+
+                            {/* Selector de Mes */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 px-1">
+                                    <div className="w-1 h-3 bg-blue-600 rounded-full" />
+                                    <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Meses</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {Array.from({ length: 12 }).map((_, i) => {
+                                        const isSelected = filterMonth === i;
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => setFilterMonth(i)}
+                                                className={cn(
+                                                    "h-14 rounded-2xl text-[11px] font-bold transition-all active:scale-95 capitalize border-2",
+                                                    isSelected
+                                                        ? 'bg-blue-50 text-blue-700 border-blue-500 shadow-sm'
+                                                        : 'bg-white text-zinc-400 border-transparent hover:bg-white hover:border-zinc-100'
+                                                )}
+                                            >
+                                                {new Date(0, i).toLocaleDateString('es-ES', { month: 'long' })}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                            <button
-                                onClick={applyFilter}
-                                className="w-full h-14 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"
-                            >
-                                <Check size={20} fill="currentColor" /> Aplicar Filtro
-                            </button>
+
+                            {/* Botones de Acción */}
+                            <div className="pt-2 space-y-3">
+                                <button
+                                    onClick={applyFilter}
+                                    className="w-full h-16 bg-blue-600 text-white font-black rounded-[1.5rem] shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+                                >
+                                    <Check size={20} strokeWidth={3} /> Aplicar Filtro
+                                </button>
+
+                                {isFilterActive && (
+                                    <button
+                                        onClick={() => { clearFilter(); setShowFilter(false); }}
+                                        className="w-full h-14 bg-white text-zinc-400 font-bold rounded-[1.5rem] hover:bg-zinc-100 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                                    >
+                                        Limpiar Filtro
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

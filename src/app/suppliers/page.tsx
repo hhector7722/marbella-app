@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Search, Plus, Trash2, X, ChevronDown, Phone, Mail, User, Package, Truck } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Supplier {
     id: string;
@@ -298,22 +299,24 @@ export default function SuppliersPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center gap-4">
+                        <div className="flex items-center justify-center gap-6 mt-2">
                             {detailSupplier.phone && (
                                 <>
                                     <a
-                                        href={`tel:${detailSupplier.phone.replace(/\s+/g, '')}`}
-                                        className="w-14 h-14 bg-[#36606F] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                        href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
+                                        className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"
+                                        title="Llamar"
                                     >
-                                        <Phone size={32} className="text-white group-hover:rotate-12 transition-transform" strokeWidth={2.5} />
+                                        <Phone size={28} />
                                     </a>
                                     <a
-                                        href={`https://wa.me/${detailSupplier.phone.replace(/\s+/g, '').replace('+', '')}`}
+                                        href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-14 h-14 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all group"
+                                        className="transition-all hover:scale-110 active:scale-95"
+                                        title="WhatsApp"
                                     >
-                                        <img src="/icons/whatsapp.png" alt="WhatsApp" className="w-9 h-9 object-contain" />
+                                        <Image src="/icons/whatsapp.png" alt="WhatsApp" width={36} height={36} className="object-contain" />
                                     </a>
                                 </>
                             )}
