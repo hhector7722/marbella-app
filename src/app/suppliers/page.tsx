@@ -77,12 +77,6 @@ export default function SuppliersPage() {
             }
 
             const dbSuppliers = data || [];
-            if (dbSuppliers.length > 0) {
-                toast.info(`Cargados ${dbSuppliers.length} proveedores de la base de datos`);
-            } else {
-                toast.warning('No se han recibido proveedores de la base de datos (posible RLS)');
-            }
-
             const combined = [...dbSuppliers];
 
             // Solo añadir iniciales si no hay una coincidencia clara en la DB
