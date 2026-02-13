@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { createClient } from "@/utils/supabase/server";
+import OnboardingOverlay from "@/components/OnboardingOverlay";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
@@ -30,16 +32,32 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let needsOnboarding = false;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('needs_onboarding')
+      .eq('id', user.id)
+      .single();
+
+    needsOnboarding = profile?.needs_onboarding || false;
+  }
+
   return (
     <html lang="es">
       <body className={`${inter.className} bg-[#5B8FB9]`}>
         <Navbar />
         <MainWrapper>
+          <OnboardingOverlay needsOnboarding={needsOnboarding} />
           {children}
         </MainWrapper>
         <BottomNavWrapper />

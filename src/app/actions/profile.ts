@@ -124,3 +124,23 @@ export async function deleteEmployeeDocument(docId: string, filePath: string) {
     revalidatePath('/profile');
     return { success: true };
 }
+
+export async function completeOnboarding() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ needs_onboarding: false })
+        .eq('id', user.id);
+
+    if (error) {
+        console.error('Error completing onboarding:', error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath('/');
+    return { success: true };
+}

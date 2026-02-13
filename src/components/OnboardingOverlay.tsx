@@ -1,0 +1,251 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from "@/utils/supabase/client";
+import { toast } from 'sonner';
+import { Lock, Eye, EyeOff, Save, CheckCircle2, ChevronRight, Smartphone, Share, PlusSquare, ArrowUp, Menu } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { completeOnboarding } from '@/app/actions/profile';
+import Image from 'next/image';
+
+interface OnboardingOverlayProps {
+    needsOnboarding: boolean;
+}
+
+export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlayProps) {
+    const [isVisible, setIsVisible] = useState(false);
+    const [step, setStep] = useState(1); // 1: Password, 2: PWA
+    const supabase = createClient();
+
+    // Password State
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [os, setOs] = useState<'ios' | 'android' | 'desktop'>('desktop');
+
+    useEffect(() => {
+        if (needsOnboarding) {
+            setIsVisible(true);
+            // Detect OS
+            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+            if (/iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream) {
+                setOs('ios');
+            } else if (/android/i.test(userAgent)) {
+                setOs('android');
+            }
+        }
+    }, [needsOnboarding]);
+
+    if (!isVisible) return null;
+
+    const handlePasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (newPassword.length < 6) {
+            toast.error('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error('Las contraseñas no coinciden');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+
+            if (error) throw error;
+
+            toast.success('Contraseña actualizada');
+            setStep(2); // Move to PWA step
+        } catch (error: any) {
+            console.error('Error updating password:', error);
+            toast.error(error.message || 'Error al actualizar la contraseña');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFinishOnboarding = async () => {
+        setLoading(true);
+        try {
+            const result = await completeOnboarding();
+            if (!result.success) throw new Error(result.error);
+
+            toast.success('¡Bienvenido a Bar La Marbella!');
+            setIsVisible(false);
+        } catch (error: any) {
+            toast.error('Error al finalizar el onboarding');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+            {/* Background decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+            <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 animate-in zoom-in-95 duration-500">
+
+                {/* Header */}
+                <div className="bg-[#36606F] text-white p-8 text-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
+                    <h1 className="text-2xl font-black uppercase tracking-widest mb-2 relative z-10">
+                        {step === 1 ? 'Seguridad' : 'Instalación'}
+                    </h1>
+                    <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">
+                        Paso {step} de 2
+                    </p>
+                </div>
+
+                <div className="p-8">
+                    {step === 1 && (
+                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
+                            <p className="text-center text-gray-500 font-medium text-sm">
+                                Para garantizar la seguridad de tu cuenta, por favor establece una nueva contraseña personal.
+                            </p>
+
+                            <form onSubmit={handlePasswordSubmit} className="space-y-5">
+                                <div className="space-y-4">
+                                    {/* Nueva Contraseña */}
+                                    <div className="relative group">
+                                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Nueva Contraseña</label>
+                                        <div className="relative">
+                                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#36606F] transition-colors">
+                                                <Lock size={20} />
+                                            </div>
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={newPassword}
+                                                onChange={e => setNewPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full h-14 pl-14 pr-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600"
+                                            >
+                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Confirmar Contraseña */}
+                                    <div className="relative group">
+                                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Confirmar Contraseña</label>
+                                        <div className="relative">
+                                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#36606F] transition-colors">
+                                                <CheckCircle2 size={20} />
+                                            </div>
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={confirmPassword}
+                                                onChange={e => setConfirmPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full h-14 pl-14 pr-4 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading || !newPassword || !confirmPassword}
+                                    className={cn(
+                                        "w-full h-16 font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 mt-4",
+                                        loading || !newPassword || !confirmPassword
+                                            ? "bg-gray-200 text-gray-400 shadow-none cursor-not-allowed"
+                                            : "bg-[#36606F] text-white shadow-[#36606F]/25 hover:brightness-110"
+                                    )}
+                                >
+                                    {loading ? (
+                                        <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>Continuar <ChevronRight size={20} strokeWidth={3} /></>
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+                            <div className="text-center space-y-2">
+                                <div className="w-20 h-20 bg-[#36606F]/10 text-[#36606F] rounded-3xl flex items-center justify-center mx-auto mb-4">
+                                    <Smartphone size={40} strokeWidth={1.5} />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800">Instálalo como App</h3>
+                                <p className="text-gray-500 text-sm leading-relaxed max-w-[280px] mx-auto">
+                                    Añade la aplicación a tu pantalla de inicio para una experiencia completa a pantalla completa.
+                                </p>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                                {os === 'ios' && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 text-[#007AFF]">
+                                                <Share size={16} />
+                                            </div>
+                                            <span>1. Pulsa el botón <strong>Compartir</strong> en la barra inferior.</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <PlusSquare size={16} />
+                                            </div>
+                                            <span>2. Busca y selecciona <strong>"Añadir a inicio"</strong>.</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {os === 'android' && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <Menu size={16} />
+                                            </div>
+                                            <span>1. Pulsa el menú del navegador (3 puntos).</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <Smartphone size={16} />
+                                            </div>
+                                            <span>2. Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {os === 'desktop' && (
+                                    <div className="text-center text-gray-500 italic text-sm">
+                                        Esta opción está optimizada para dispositivos móviles (iOS y Android). En PC, puedes instalarla desde la barra de direcciones si tu navegador lo soporta.
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={handleFinishOnboarding}
+                                disabled={loading}
+                                className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
+                            >
+                                {loading ? (
+                                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <>¡Entendido, vamos! <CheckCircle2 size={20} strokeWidth={3} /></>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
