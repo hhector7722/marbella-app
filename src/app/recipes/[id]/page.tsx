@@ -316,10 +316,10 @@ function RecipeDetailContent() {
     if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-3 overflow-hidden flex flex-col">
+        <div className={`min-h-screen bg-[#5B8FB9] p-2 md:p-3 flex flex-col ${isRestricted ? 'overflow-y-auto' : 'overflow-hidden'}`}>
             <Toaster position="top-right" />
 
-            <div className="max-w-6xl mx-auto space-y-2 w-full flex-1 flex flex-col">
+            <div className={`max-w-6xl mx-auto space-y-2 w-full flex-1 flex flex-col ${isRestricted ? 'pb-8' : ''}`}>
                 <div className="flex items-center justify-center gap-4 shrink-0">
                     <button onClick={handlePreviousRecipe} disabled={currentRecipeIndex <= 0} className="w-8 h-8 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition disabled:opacity-30"><ChevronLeft className="w-5 h-5 text-gray-700" /></button>
                     <div className="bg-white rounded-2xl p-1 shadow-md w-fit">
@@ -357,7 +357,7 @@ function RecipeDetailContent() {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 ${!isRestricted ? 'min-h-0' : ''}`}>
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
@@ -394,7 +394,7 @@ function RecipeDetailContent() {
                             </div>
                         </div>
                     )}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col min-h-0">
+                    <div className={`bg-white rounded-xl shadow-md overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
                             {!isRestricted && (
@@ -475,7 +475,7 @@ function RecipeDetailContent() {
                             </div>
                         </div>
                     )}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full min-h-0">
+                    <div className={`bg-white rounded-xl shadow-md overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div className="bg-[#36606F] px-4 py-2 shrink-0"><h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2></div>
                         <div className="flex-1 p-3 border-b flex flex-col min-h-0 overflow-hidden">
                             <div className="flex justify-between items-center mb-2 shrink-0">

@@ -115,6 +115,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Corrección de Guardado de Ingredientes**: Resolución del error de restricción `NOT NULL` en la columna `unit_type` al crear o editar ingredientes.
 - [x] **Privacidad de Recetas Staff**: Implementación de visibilidad condicional para ocultar costes, márgenes y herramientas administrativas en recetas cuando se accede desde el panel de personal.
 - [x] **Estabilidad de Build (Suspense)**: Resolución del error `useSearchParams` en el módulo de recetas envolviendo componentes en límites de `Suspense` para permitir el prerenderizado de Next.js.
+- [x] **Adaptación Recetas Staff**: Ajuste de altura dinámica en contenedores de ingredientes y elaboración cuando se accede desde el dashboard de personal.
+- [x] **Rediseño Filtro Historial**: Centralización del filtro de meses en `/staff/history` mediante un botón superior premium y modal estilo Bento.
+- [x] **Refinamiento Estético Staff V5**: Implementación de cabeceras sólidas en el dashboard de personal (Lila para Horarios, Azul Marbella para Resumen) y rediseño de `/staff/schedule` bajo el estándar "Vista Marbella Detail".
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

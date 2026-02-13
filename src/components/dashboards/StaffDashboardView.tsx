@@ -399,95 +399,99 @@ export default function StaffDashboardView() {
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] p-4 shadow-xl border border-gray-50">
-                        <div className="flex justify-between items-end mb-2 px-1">
+                    <div className="bg-white rounded-[2rem] shadow-xl border border-gray-50 overflow-hidden">
+                        {/* Header Estrecho - Estilo Vista Marbella Detail */}
+                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">
                                     {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                 </span>
                             </div>
-                            <Link href="/staff/history" className="text-xs font-bold text-[#5B8FB9] flex items-center gap-1 hover:underline">
-                                Histórico <ArrowRight size={12} />
+                            <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
+                                Historial <ArrowRight size={10} strokeWidth={3} />
                             </Link>
                         </div>
 
-                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                            <div className="grid grid-cols-7 border-b border-gray-100">
-                                {weekDays.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                        </div>
-                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
-                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
-                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                    {day.hasLog ? (
-                                                        <>
-                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                        </>
-                                                    ) : null}
-                                                </div>
-                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                    {day.hasLog && day.clockOut ? (
-                                                        <>
-                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                        </>
-                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
-                                                </div>
-                                            </div>
-                                            <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                {day.hasLog && day.totalHours > 0 ? (
-                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                        <span className="ml-0.5">H</span>
-                                                        <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
-                                                    </div>
-                                                ) : <div className="h-3" />}
-                                                {day.extraHours > 0 ? (
-                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                        <span className="ml-0.5">Ex</span>
-                                                        <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
-                                                    </div>
-                                                ) : <div className="h-3" />}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <div className="p-4">
 
-                        <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                            <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                <div className="h-4 flex items-center">
-                                    <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                            <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                <div className="grid grid-cols-7 border-b border-gray-100">
+                                    {weekDays.map((day, i) => (
+                                        <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                            <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                            </div>
+                                            <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
+                                                <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                                <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
+                                                    <div className="h-3 flex items-center justify-center gap-1">
+                                                        {day.hasLog ? (
+                                                            <>
+                                                                <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                            </>
+                                                        ) : null}
+                                                    </div>
+                                                    <div className="h-3 flex items-center justify-center gap-1">
+                                                        {day.hasLog && day.clockOut ? (
+                                                            <>
+                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                            </>
+                                                        ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                    </div>
+                                                </div>
+                                                <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                    {day.hasLog && day.totalHours > 0 ? (
+                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                            <span className="ml-0.5">H</span>
+                                                            <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
+                                                        </div>
+                                                    ) : <div className="h-3" />}
+                                                    {day.extraHours > 0 ? (
+                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                            <span className="ml-0.5">Ex</span>
+                                                            <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
+                                                        </div>
+                                                    ) : <div className="h-3" />}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                             </div>
-                            <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                <div className="h-4 flex items-center">
-                                    <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {formatBalance(weeklySummary.hoursDifference)}
-                                    </span>
+
+                            <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="h-4 flex items-center">
+                                        <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                 </div>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
-                            </div>
-                            <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                <div className="h-4 flex items-center">
-                                    <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {formatBalance(weeklySummary.startBalance)}
-                                    </span>
+                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="h-4 flex items-center">
+                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.hoursDifference >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {formatBalance(weeklySummary.hoursDifference)}
+                                        </span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
                                 </div>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                            </div>
-                            <div className="flex flex-col items-center flex-1">
-                                <div className="h-4 flex items-center">
-                                    <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                        {formatMoney(weeklySummary.estimatedPayout)}
-                                    </span>
+                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="h-4 flex items-center">
+                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {formatBalance(weeklySummary.startBalance)}
+                                        </span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                 </div>
-                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                <div className="flex flex-col items-center flex-1">
+                                    <div className="h-4 flex items-center">
+                                        <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                            {formatMoney(weeklySummary.estimatedPayout)}
+                                        </span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -526,72 +530,76 @@ export default function StaffDashboardView() {
                 <div className="lg:col-span-1 grid grid-cols-2 lg:block space-y-0 lg:space-y-6 gap-4">
                     <div
                         onClick={() => router.push('/staff/schedule')}
-                        className="bg-white rounded-[2rem] p-4 lg:p-6 shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px] cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                        className="bg-white rounded-[2rem] shadow-xl flex flex-col overflow-hidden relative border border-gray-50 min-h-[190px] lg:min-h-[220px] cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
                     >
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-black text-gray-800 flex items-center gap-2 text-[10px] lg:text-sm uppercase tracking-wider">
-                                <CalendarDays size={18} className="text-purple-500 shrink-0" /> <span className="truncate">Horarios</span>
+                        {/* Header Lila - Estilo Personalizado */}
+                        <div className="bg-purple-600 px-6 py-3 flex justify-between items-center text-white shrink-0">
+                            <h3 className="font-black flex items-center gap-2 text-[10px] lg:text-xs uppercase tracking-wider">
+                                <CalendarDays size={16} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
                             </h3>
-                            <Link href="/staff/schedule" className="text-[9px] lg:text-xs font-black text-purple-600 hover:underline uppercase tracking-widest px-2 lg:px-3 py-1 rounded-full shrink-0">Ver más</Link>
+                            <Link href="/staff/schedule" className="text-[9px] lg:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0">Ver más</Link>
                         </div>
-                        <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
-                            {nextShifts.length === 0 ? (
-                                <div className="flex items-center justify-center py-6 lg:py-10">
-                                    <p className="text-[9px] lg:text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos.</p>
-                                </div>
-                            ) : (
-                                nextShifts.slice(0, 2).map((shift, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group">
-                                        <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
-                                            <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                            <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden">
-                                            <span className="text-[8px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
-                                            <div className="flex items-center gap-1.5 lg:gap-2 text-[10px] lg:text-sm font-black">
-                                                <span className="text-green-600">{shift.startTime}</span>
-                                                <span className="text-gray-400 font-light">-</span>
-                                                <span className="text-red-500">{shift.endTime}</span>
+
+                        <div className="p-4 flex-1">
+                            <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1">
+                                {nextShifts.length === 0 ? (
+                                    <div className="flex items-center justify-center py-6 lg:py-10">
+                                        <p className="text-[9px] lg:text-xs text-gray-400 text-center px-2 font-bold italic">No tienes turnos.</p>
+                                    </div>
+                                ) : (
+                                    nextShifts.slice(0, 2).map((shift, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-colors group">
+                                            <div className="bg-white p-1.5 lg:p-2 rounded-xl text-gray-500 font-black text-[10px] lg:text-xs text-center min-w-[40px] lg:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors">
+                                                <span className="block text-[7px] lg:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                <span className="leading-none text-sm lg:text-lg text-gray-800">{shift.date.getDate()}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 lg:gap-1 overflow-hidden">
+                                                <span className="text-[8px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
+                                                <div className="flex items-center gap-1.5 lg:gap-2 text-[10px] lg:text-sm font-black">
+                                                    <span className="text-green-600">{shift.startTime}</span>
+                                                    <span className="text-gray-400 font-light">-</span>
+                                                    <span className="text-red-500">{shift.endTime}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
+                                if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
+                                const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', changeBox.id).gt('quantity', 0);
+                                const initial: any = {};
+                                data?.forEach((d: any) => initial[d.denomination] = d.quantity);
+                                setChangeBoxInventoryMap(initial);
+                                setSwapInCounts({});
+                                setSwapOutCounts({});
+                                setShowSwapModal(true);
+                            }} />
+                            <IOSIconBoxed
+                                img="/icons/recipes.png"
+                                color="bg-white"
+                                label="Recetas"
+                                onClick={() => router.push('/recipes?view=staff')}
+                            />
+                            <IOSIconBoxed
+                                img="/icons/information.png"
+                                color="bg-blue-500"
+                                label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
+                                onClick={() => setActiveMenu('info')}
+                            />
+                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                            {userRole === 'supervisor' && (
+                                <IOSIconBoxed
+                                    icon={Calculator}
+                                    color="bg-[#5B8FB9]"
+                                    label="Cierre"
+                                    onClick={() => setIsClosingModalOpen(true)}
+                                />
                             )}
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
-                            if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
-                            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', changeBox.id).gt('quantity', 0);
-                            const initial: any = {};
-                            data?.forEach((d: any) => initial[d.denomination] = d.quantity);
-                            setChangeBoxInventoryMap(initial);
-                            setSwapInCounts({});
-                            setSwapOutCounts({});
-                            setShowSwapModal(true);
-                        }} />
-                        <IOSIconBoxed
-                            img="/icons/recipes.png"
-                            color="bg-white"
-                            label="Recetas"
-                            onClick={() => router.push('/recipes?view=staff')}
-                        />
-                        <IOSIconBoxed
-                            img="/icons/information.png"
-                            color="bg-blue-500"
-                            label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
-                            onClick={() => setActiveMenu('info')}
-                        />
-                        <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
-                        {userRole === 'supervisor' && (
-                            <IOSIconBoxed
-                                icon={Calculator}
-                                color="bg-[#5B8FB9]"
-                                label="Cierre"
-                                onClick={() => setIsClosingModalOpen(true)}
-                            />
-                        )}
                     </div>
                 </div>
             </div>

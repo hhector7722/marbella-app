@@ -9,6 +9,7 @@ import {
     Plus, Users, X
 } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from "@/lib/utils";
 import { Share_Tech_Mono } from 'next/font/google';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
@@ -195,17 +196,17 @@ export default function StaffSchedulePage() {
         <div className="min-h-screen bg-[#5B8FB9] pb-10 pt-4">
             {/* CONTENEDOR TIPO TARJETA */}
             <div className="max-w-2xl mx-auto px-4 md:px-0">
-                <div className="bg-white rounded-[2rem] shadow-2xl border border-white/20 overflow-hidden min-h-[calc(100vh-4rem)]">
+                <div className="bg-white rounded-[2rem] shadow-2xl border border-white/20 overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col">
 
                     {/* HEADER FIJO DENTRO DE LA TARJETA */}
-                    <div className="bg-[#5B8FB9] sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
+                    <div className="bg-[#36606F] sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <Link href="/staff/dashboard" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                                <Link href="/staff/dashboard" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors shadow-inner">
                                     <ArrowLeft size={20} className="text-white" />
                                 </Link>
-                                <h1 className="text-xl font-black text-white flex items-center gap-2">
-                                    <Calendar className="text-white/80" size={24} fill="currentColor" />
+                                <h1 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider">
+                                    <Calendar className="text-white/80" size={20} fill="currentColor" />
                                     {getSelectedEmployeeName()}
                                 </h1>
                             </div>
@@ -216,7 +217,7 @@ export default function StaffSchedulePage() {
                                     {/* Botón selector de empleado */}
                                     <button
                                         onClick={() => setShowEmployeeModal(true)}
-                                        className="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-xl transition-all active:scale-95"
+                                        className="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-xl transition-all active:scale-95 shadow-inner"
                                     >
                                         <Users size={20} fill="currentColor" />
                                     </button>
@@ -224,25 +225,31 @@ export default function StaffSchedulePage() {
                                     {/* Botón + (abre calendario) */}
                                     <button
                                         onClick={() => setShowCalendarModal(true)}
-                                        className="bg-white hover:bg-white/10 text-[#5B8FB9] hover:text-white p-2.5 rounded-xl shadow-md transition-all active:scale-95"
+                                        className="bg-white hover:bg-zinc-50 text-[#36606F] p-2.5 rounded-xl shadow-lg transition-all active:scale-95"
                                     >
-                                        <Plus size={20} strokeWidth={3} fill="currentColor" />
+                                        <Plus size={20} strokeWidth={3} />
                                     </button>
                                 </div>
                             )}
                         </div>
 
                         {/* TABS SELECTOR DENTRO DEL HEADER */}
-                        <div className="grid grid-cols-2 p-1.5 bg-black/10 rounded-2xl">
+                        <div className="grid grid-cols-2 p-1.5 bg-black/20 rounded-2xl mx-1 shadow-inner">
                             <button
                                 onClick={() => setActiveTab('upcoming')}
-                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'upcoming' ? 'bg-white text-[#5B8FB9] shadow-sm' : 'text-white/60 font-medium'}`}
+                                className={cn(
+                                    "py-2.5 text-[10px] font-black rounded-xl transition-all uppercase tracking-[0.15em]",
+                                    activeTab === 'upcoming' ? 'bg-white text-[#36606F] shadow-md' : 'text-white/40 hover:text-white/60'
+                                )}
                             >
                                 PRÓXIMOS
                             </button>
                             <button
                                 onClick={() => setActiveTab('history')}
-                                className={`py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'history' ? 'bg-white text-gray-800 shadow-sm' : 'text-white/60 font-medium'}`}
+                                className={cn(
+                                    "py-2.5 text-[10px] font-black rounded-xl transition-all uppercase tracking-[0.15em]",
+                                    activeTab === 'history' ? 'bg-white text-[#36606F] shadow-md' : 'text-white/40 hover:text-white/60'
+                                )}
                             >
                                 HISTORIAL
                             </button>
@@ -250,7 +257,7 @@ export default function StaffSchedulePage() {
                     </div>
 
                     {/* CONTENIDO PRINCIPAL SCROLLABLE */}
-                    <div className="p-6 space-y-6">
+                    <div className="p-6 flex-1 overflow-y-auto no-scrollbar">
 
                         {/* VISTA 1: PRÓXIMOS */}
                         {activeTab === 'upcoming' && (
