@@ -15,6 +15,7 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
     const supabase = createClient();
     const [name, setName] = useState('');
     const [price, setPrice] = useState(0);
+    const [category, setCategory] = useState('Alimentos');
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -26,19 +27,21 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
             name,
             current_price: price,
             purchase_unit: 'kg', // Standardize on purchase_unit
-            unit_type: 'kg'      // Satisfy NOT NULL constraint
+            unit_type: 'kg',      // Satisfy NOT NULL constraint
+            category: category || 'Alimentos',
+            waste_percentage: 0
         });
-        setLoading(true); // Keep loading state until finish
         setLoading(false);
 
         if (error) {
-            toast.error("Error al crear");
+            toast.error("Error al crear: " + error.message);
         } else {
             toast.success("Ingrediente creado");
             onSuccess();
             onClose();
             setName('');
             setPrice(0);
+            setCategory('Alimentos');
         }
     };
 
@@ -60,15 +63,29 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
                             placeholder="Ej: Tomate Pera"
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio (€/kg)</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={price}
-                            onChange={e => setPrice(parseFloat(e.target.value))}
-                            className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-[#36606F] outline-none"
-                        />
+                    <div className="flex gap-2">
+                        <div className="w-1/2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio (€/kg)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={price}
+                                onChange={e => setPrice(parseFloat(e.target.value))}
+                                className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-[#36606F] outline-none"
+                            />
+                        </div>
+                        <div className="w-1/2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Categoría</label>
+                            <select
+                                value={category}
+                                onChange={e => setCategory(e.target.value)}
+                                className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-[#36606F] outline-none bg-white"
+                            >
+                                <option value="Alimentos">Alimentos</option>
+                                <option value="Packaging">Packaging</option>
+                                <option value="Bebidas">Bebidas</option>
+                            </select>
+                        </div>
                     </div>
                     <button
                         onClick={handleSubmit}

@@ -77,14 +77,23 @@ export default function SuppliersPage() {
             }
 
             const dbSuppliers = data || [];
+            if (dbSuppliers.length > 0) {
+                toast.info(`Cargados ${dbSuppliers.length} proveedores de la base de datos`);
+            } else {
+                toast.warning('No se han recibido proveedores de la base de datos (posible RLS)');
+            }
+
             const combined = [...dbSuppliers];
 
-            // Solo añadir iniciales si no hay una coincidencia cercana en la DB
+            // Solo añadir iniciales si no hay una coincidencia clara en la DB
             INITIAL_SUPPLIERS.forEach((initial: Partial<Supplier>) => {
-                const alreadyInDb = dbSuppliers.some(s =>
-                    s.name.toLowerCase().trim() === initial.name?.toLowerCase().trim() ||
-                    s.name.toLowerCase().includes(initial.name?.toLowerCase() || '---')
-                );
+                const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+
+                const alreadyInDb = dbSuppliers.some(s => {
+                    const dbName = normalize(s.name);
+                    const initName = normalize(initial.name || '');
+                    return dbName === initName || dbName.includes(initName) || initName.includes(dbName);
+                });
 
                 if (!alreadyInDb) {
                     combined.push({

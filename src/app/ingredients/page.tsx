@@ -13,11 +13,14 @@ interface Ingredient {
     purchase_unit: string;
     unit_type: string; // Added field
     category: string;
+    waste_percentage: number; // Added
     image_url: string | null;
+    allergens: string[]; // Added
 }
 
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'cl', 'u'];
 const STANDARD_SUPPLIERS = ['Santa Teresa', 'Sant Aniol', 'Ametller', 'Sanilec', 'Shers', 'Panabad', 'Zander', 'Videla', 'Abril', 'Nestle', 'Fritz Ravich', 'Paellador', 'Vins Pons'];
+const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas'];
 
 export default function IngredientsPage() {
     const supabase = createClient();
@@ -33,7 +36,7 @@ export default function IngredientsPage() {
     const [isCustomSupplier, setIsCustomSupplier] = useState(false);
     const [customSupplierName, setCustomSupplierName] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({});
+    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos' });
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
 
@@ -82,6 +85,7 @@ export default function IngredientsPage() {
                 purchase_unit: editForm.purchase_unit,
                 unit_type: editForm.purchase_unit, // Sync unit_type with purchase_unit
                 category: editForm.category,
+                waste_percentage: editForm.waste_percentage || 0,
                 image_url: editForm.image_url
             }).eq('id', editingIngredient.id);
             if (error) throw error;
@@ -98,10 +102,11 @@ export default function IngredientsPage() {
                 ...newIngredient,
                 purchase_unit: unit,
                 unit_type: unit, // Provide missing unit_type
-                category: newIngredient.category || 'Alimentos'
+                category: newIngredient.category || 'Alimentos',
+                waste_percentage: newIngredient.waste_percentage || 0
             });
             if (error) throw error;
-            toast.success('Creado'); setShowCreateModal(false); setNewIngredient({}); fetchIngredients();
+            toast.success('Creado'); setShowCreateModal(false); setNewIngredient({ category: 'Alimentos' }); fetchIngredients();
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
 
@@ -221,9 +226,9 @@ export default function IngredientsPage() {
             {/* MODALES */}
             {editingIngredient && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setEditingIngredient(null)}>
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-[#3F51B5]">Editar</h2>
+                            <h2 className="text-2xl font-bold text-[#5B8FB9]">Editar</h2>
                             <button onClick={() => setEditingIngredient(null)}><X className="text-gray-400" /></button>
                         </div>
                         <div className="space-y-4">
@@ -236,8 +241,24 @@ export default function IngredientsPage() {
                             </div>
                             <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-xl font-bold" />
                             <div className="flex gap-2">
-                                <input type="number" step="0.01" value={editForm.current_price} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-1/2 p-3 border rounded-xl font-bold" />
-                                <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-1/2 p-3 border rounded-xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                <div className="w-1/2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
+                                    <input type="number" step="0.01" value={editForm.current_price} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" />
+                                </div>
+                                <div className="w-1/2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
+                                    <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="w-1/2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
+                                    <select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                                </div>
+                                <div className="w-1/2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
+                                    <input type="number" step="0.01" value={editForm.waste_percentage} onChange={e => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" />
+                                </div>
                             </div>
                             {!isCustomSupplier ? (
                                 <select value={editForm.supplier || ''} onChange={e => { if (e.target.value === 'custom') setIsCustomSupplier(true); else setEditForm({ ...editForm, supplier: e.target.value }) }} className="w-full p-3 border rounded-xl bg-white">
@@ -274,13 +295,27 @@ export default function IngredientsPage() {
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowCreateModal(false)}>
                     <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-2xl font-bold text-[#3F51B5] mb-6">Nuevo</h2>
+                        <h2 className="text-2xl font-bold text-[#5B8FB9] mb-6">Nuevo</h2>
                         <div className="space-y-4">
                             <div className="flex justify-center"><div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300"><Upload className="text-gray-400" /><input type="file" className="absolute inset-0 opacity-0" onChange={(e) => handleImageUpload(e, 'create')} /></div></div>
                             <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-xl font-bold" placeholder="Nombre" />
                             <div className="flex gap-2">
-                                <input type="number" step="0.01" onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-1/2 p-3 border rounded-xl font-bold" placeholder="Precio" />
-                                <select onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })} className="w-1/2 p-3 border rounded-xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                <div className="w-1/2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
+                                    <input type="number" step="0.01" onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" placeholder="Precio" />
+                                </div>
+                                <div className="w-1/2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
+                                    <select onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
+                                <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
+                                <input type="number" step="0.01" value={newIngredient.waste_percentage} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" placeholder="Merma" />
                             </div>
                             <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-xl font-bold">Crear</button>
                         </div>
