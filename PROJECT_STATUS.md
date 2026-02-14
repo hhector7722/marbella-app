@@ -110,3 +110,4 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - **Primary Color:** `#5B8FB9` (Azul Marbella)
 - **Database Rules:** Seguir el protocolo `db-supabase-master`.
 - **Naming Convention:** Se mantienen nombres actuales de DB (`prefer_stock_hours`, `contracted_hours_weekly`) para evitar roturas de esquema.
+ 
