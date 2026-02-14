@@ -190,7 +190,7 @@ export default function StaffSchedulePage() {
         router.push(`/staff/schedule/editor?date=${dateStr}`);
     };
 
-    if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 text-gray-400">Cargando turnos...</div>;
+    if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
         <div className="min-h-screen bg-[#5B8FB9] pb-10 pt-4">

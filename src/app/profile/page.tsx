@@ -141,10 +141,7 @@ function ProfileContent() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
-                <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
-                <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando perfil corporativo...</p>
-            </div>
+            <div className="min-h-screen bg-[#5B8FB9]"></div>
         );
     }
 
@@ -368,10 +365,7 @@ function ProfileContent() {
 export default function StaffProfilePage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
-                <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
-                <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Cargando perfil corporativo...</p>
-            </div>
+            <div className="min-h-screen bg-[#5B8FB9]"></div>
         }>
             <ProfileContent />
         </Suspense>

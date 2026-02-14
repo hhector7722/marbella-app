@@ -55,7 +55,7 @@ export default function Navbar() {
                             <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
                         </div>
                         <span className="text-white text-[8px] md:text-[10px] font-black leading-none uppercase tracking-wider whitespace-nowrap">
-                            {userData ? `Hola, ${userData.name}` : 'Cargando...'}
+                            {userData ? `Hola, ${userData.name}` : ''}
                         </span>
                     </div>
                 </div>

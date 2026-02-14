@@ -371,7 +371,7 @@ export default function ScheduleEditorPage() {
         shifts.filter(s => s.active && hour >= parseInt(s.start.split(':')[0]) && hour < parseInt(s.end.split(':')[0])).length
     );
 
-    if (loading) return <div className="p-8 text-center text-white font-bold">Cargando editor...</div>;
+    if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
         <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-4 gap-2">

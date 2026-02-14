@@ -29,12 +29,7 @@ export default function StaffDashboardPage() {
     }, [router, supabase]);
 
     if (loading) return (
-        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center">
-            <div className="flex items-center gap-3 bg-white p-6 rounded-3xl shadow-xl">
-                <div className="w-4 h-4 bg-[#5B8FB9] animate-pulse rounded-full"></div>
-                <span className="font-bold text-[#5B8FB9]">Cargando Dashboard...</span>
-            </div>
-        </div>
+        <div className="min-h-screen bg-[#5B8FB9]"></div>
     );
 
     return <DashboardSwitcher userRole={userRole || 'staff'} initialView="staff" />;

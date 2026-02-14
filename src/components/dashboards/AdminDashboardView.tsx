@@ -505,7 +505,7 @@ export default function AdminDashboardView() {
         } catch (error) { console.error(error); alert("Error"); }
     };
 
-    if (loading) return <div className="p-8 text-white flex items-center gap-2 rounded-2xl bg-white/10 backdrop-blur-md"><div className="w-4 h-4 bg-white animate-pulse rounded-full"></div> Cargando...</div>;
+    if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
 
