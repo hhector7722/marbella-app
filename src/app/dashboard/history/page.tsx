@@ -438,6 +438,29 @@ export default function HistoryPage() {
                         </div>
                     </div>
                 )}
+
+                {/* MODAL MESES */}
+                {showMonthPicker && (
+                    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
+                        <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                                <h3 className="font-black text-gray-800 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
+                                <button onClick={() => setShowMonthPicker(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
+                            </div>
+                            <div className="p-4 grid grid-cols-2 gap-2">
+                                {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((month, i) => (
+                                    <button
+                                        key={month}
+                                        onClick={() => handleMonthSelect(i)}
+                                        className="py-3 px-4 rounded-xl text-xs font-black uppercase text-gray-600 hover:bg-[#5B8FB9] hover:text-white transition-all text-left"
+                                    >
+                                        {month}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
