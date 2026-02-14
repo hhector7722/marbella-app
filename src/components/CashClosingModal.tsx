@@ -16,9 +16,9 @@ import { es } from 'date-fns/locale';
 import { sendClosingNotification } from '@/app/actions/notifications';
 
 // --- CONSTANTS ---
-const FIXED_CASH_FUND = 100;
-const BILLS = [100, 50, 20, 10, 5];
-const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+export const FIXED_CASH_FUND = 100;
+export const BILLS = [100, 50, 20, 10, 5];
+export const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
@@ -148,7 +148,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             const { data: closing, error } = await supabase
                 .from('cash_closings')
                 .insert({
-                    closing_datetime: now.toISOString(),
+                    closed_at: now.toISOString(),
+                    closed_by: user?.id,
                     closing_date: format(now, "yyyy-MM-dd"),
                     tpv_sales: totalSalesGross,
                     net_sales: netSalesCalculated,

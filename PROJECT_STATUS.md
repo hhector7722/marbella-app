@@ -60,6 +60,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Recetas Staff**: Ajuste de fondo blanco para el modal de detalle de recetas cuando se accede desde el dashboard de personal.
 - [x] **Refinamiento Cierre de Caja**: Consolidación de ventas en un único campo, autocompletado desde tickets, redondeo a 2 decimales y adición de símbolo de euro.
 - [x] **Rediseño Histórico Admin**: KPIs de resumen actualizados (Ventas, Venta Neta, Ticket Medio) y nuevos filtros dinámicos por Periodo y Mes.
+- [x] **Refinamiento de Perfil**: Cabecera compacta, reducción de fuentes, nombre en una sola fila y migración del botón de edición a icono superior derecho para managers.
+- [x] **Optimización de Capas (Z-Index)**: Ajuste de nivel en la navegación inferior (`z-30`) para permitir el difuminado (blur) correcto cuando hay modales abiertos.
+- [x] **Refinamiento Histórico y Gestión de Cierres**: Rediseño del modal de histórico con KPIs de negocio (Venta Neta, Efectivo Ingresado, Ticket Medio) e implementación de edición/borrado de cierres con sincronización automática de tesorería y balance de caja.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
@@ -70,4 +73,3 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - **Primary Color:** `#5B8FB9` (Azul Marbella)
 - **Database Rules:** Seguir el protocolo `db-supabase-master`.
 - **Naming Convention:** Se mantienen nombres actuales de DB (`prefer_stock_hours`, `contracted_hours_weekly`) para evitar roturas de esquema.
- 
