@@ -468,23 +468,20 @@ export default function AdminDashboardView() {
         <div className="pb-24 animate-in fade-in duration-500">
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="bg-white rounded-[2.5rem] shadow-xl flex flex-col md:min-h-[380px] overflow-hidden">
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
+                    <div className="bg-white rounded-[2.5rem] shadow-xl flex flex-col md:min-h-[300px] overflow-hidden">
+                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/10 text-white p-2 rounded-xl"><CloudSun className="w-5 h-5" fill="currentColor" /></div>
                                 <div>
-                                    <h3 className="text-sm font-black uppercase tracking-wider">Último Cierre</h3>
-                                    <p className="text-[10px] text-white/60 font-bold capitalize">{dailyStats?.fullDate}</p>
+                                    <h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <button onClick={() => setIsClosingModalOpen(true)} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90"><Plus className="w-4 h-4" strokeWidth={3} /></button>
                                 <Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                             </div>
                         </div>
-                        <div className="p-4 md:p-6 grid grid-cols-2 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1">
+                        <div className="p-4 md:p-6 grid grid-cols-3 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1 items-center">
                             {[
-                                { val: dailyStats?.facturat > 0 ? `${dailyStats.facturat.toFixed(0)}€` : ' ', label: 'Facturación' },
+                                { val: dailyStats?.facturat > 0 ? `${dailyStats.facturat.toFixed(0)}€` : ' ', label: 'Ventas' },
                                 { val: dailyStats?.vNeta > 0 ? `${dailyStats.vNeta.toFixed(0)}€` : ' ', label: 'Venta Neta', color: 'text-emerald-600' },
                                 { val: dailyStats?.ticketMedio > 0 ? `${dailyStats.ticketMedio.toFixed(2)}€` : ' ', label: 'Ticket Medio', color: 'text-blue-600' },
                             ].map((item, i) => (
@@ -493,22 +490,9 @@ export default function AdminDashboardView() {
                                     <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{item.label}</span>
                                 </div>
                             ))}
-                            <div className="flex flex-col items-center justify-center text-center relative">
-                                <span className={cn("text-lg md:text-2xl font-black leading-none", dailyStats?.laborCostColor)}>{dailyStats?.costeManoObra > 0 ? `${dailyStats.costeManoObra.toFixed(0)}€` : ' '}</span>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                    <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest">M.Obra</span>
-                                    <div className="w-5 h-5 md:w-6 md:h-6 relative shrink-0">
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            <circle cx="50%" cy="50%" r="40%" stroke="#f4f4f5" strokeWidth="12%" fill="transparent" />
-                                            <circle cx="50%" cy="50%" r="40%" stroke="currentColor" strokeWidth="12%" fill="transparent" strokeDasharray={2 * Math.PI * 12} strokeDashoffset={(2 * Math.PI * 12) - (laborPercent / 100) * (2 * Math.PI * 12)} strokeLinecap="round" className={dailyStats?.laborCostColor} />
-                                        </svg>
-                                        <div className="absolute inset-0 flex items-center justify-center"><span className={cn("text-[5px] md:text-[6px] font-black", dailyStats?.laborCostColor)}>{laborPercent.toFixed(0)}%</span></div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                    <div className="space-y-4 md:space-y-6 flex flex-col md:min-h-[380px]">
+                    <div className="space-y-4 md:space-y-6 flex flex-col md:min-h-[300px]">
                         <div className="bg-white rounded-[2.5rem] p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
@@ -552,7 +536,7 @@ export default function AdminDashboardView() {
                             <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
                         ))}
                     </div>
-                    <div className="bg-white rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden md:min-h-[380px]">
+                    <div className="bg-white rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden md:min-h-[300px]">
                         <div className="bg-[#5E35B1] px-6 py-4 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
