@@ -283,6 +283,12 @@ export default function AdminDashboardView() {
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
     const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const handleCreateWorker = async () => {
         if (!newWorkerData.first_name.trim()) { toast.error('El nombre es obligatorio'); return; }
@@ -502,13 +508,24 @@ export default function AdminDashboardView() {
         <div className="pb-24 animate-in fade-in duration-500">
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="bg-white rounded-[2.5rem] shadow-xl flex flex-col md:min-h-[300px] overflow-hidden">
-                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
+                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
                             <div className="flex items-center gap-3">
                                 <div>
                                     <h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3>
                                 </div>
                             </div>
+
+                            {/* Reloj en vivo */}
+                            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-tight">
+                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90">
+                                    {format(now, "eee d MMM", { locale: es }).replace('.', '')}
+                                </span>
+                                <span className="text-[10px] md:text-xs font-medium tracking-[0.1em] text-white/70">
+                                    {format(now, "HH:mm:ss")}
+                                </span>
+                            </div>
+
                             <div className="flex items-center gap-3">
                                 <Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                             </div>
@@ -526,8 +543,8 @@ export default function AdminDashboardView() {
                             ))}
                         </div>
                     </div>
-                    <div className="space-y-4 md:space-y-6 flex flex-col md:min-h-[300px]">
-                        <div className="bg-white rounded-[2.5rem] p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
+                    <div className="space-y-4 md:space-y-6 flex flex-col">
+                        <div className="bg-white rounded-2xl md:rounded-[2.5rem] p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
                                     <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 md:py-4 rounded-2xl md:rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 md:mb-4 active:scale-95">
@@ -570,7 +587,7 @@ export default function AdminDashboardView() {
                             <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
                         ))}
                     </div>
-                    <div className="bg-white rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden md:min-h-[300px]">
+                    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
                         <div className="bg-[#5E35B1] px-6 py-4 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
