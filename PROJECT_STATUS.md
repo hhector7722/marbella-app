@@ -120,6 +120,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Adaptación Recetas Staff**: Ajuste de altura dinámica en contenedores de ingredientes y elaboración cuando se accede desde el dashboard de personal.
 - [x] **Rediseño Filtro Historial**: Centralización del filtro de meses en `/staff/history` mediante un botón superior premium y modal estilo Bento.
 - [x] **Refinamiento Contenedor Ventas (Admin)**: Transformación del bloque "Último Cierre" en "Ventas", con cabecera compacta, eliminación de Mano de Obra y layout de 3 columnas horizontales para métricas clave.
+- [x] **Persistencia de Tickets en Tiempo Real**: Implementación de suscripción Realtime a `tickets_marbella`, lógica de 3 columnas (Ventas, Neta, Medio) y cumplimiento estricto de la regla Zero-Display.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

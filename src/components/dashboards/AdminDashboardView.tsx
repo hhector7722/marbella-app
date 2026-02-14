@@ -266,6 +266,7 @@ export default function AdminDashboardView() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [dailyStats, setDailyStats] = useState<any>(null);
+    const [liveTickets, setLiveTickets] = useState<{ total: number, count: number }>({ total: 0, count: 0 });
     const [boxes, setBoxes] = useState<any[]>([]);
     const [boxMovements, setBoxMovements] = useState<any[]>([]);
     const [overtimeData, setOvertimeData] = useState<any[]>([]);
@@ -308,7 +309,31 @@ export default function AdminDashboardView() {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+
+        // Subscription for real-time tickets
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const channel = supabase
+            .channel('realtime_tickets_dashboard')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'tickets_marbella',
+                filter: `fecha=eq.${todayStr}`
+            }, (payload: any) => {
+                const newTotal = Number(payload.new.total_documento) || 0;
+                setLiveTickets(prev => ({
+                    total: prev.total + newTotal,
+                    count: prev.count + 1
+                }));
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
     const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string) => {
@@ -336,6 +361,18 @@ export default function AdminDashboardView() {
 
     async function fetchData() {
         try {
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+            // Fetch initial tickets for today
+            const { data: ticketsToday } = await supabase
+                .from('tickets_marbella')
+                .select('total_documento')
+                .eq('fecha', todayStr);
+
+            const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
+            const countVentas = ticketsToday?.length || 0;
+            setLiveTickets({ total: totalVentas, count: countVentas });
+
             const { data: lastClose } = await supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single();
             if (lastClose) {
                 const closeDate = new Date(lastClose.closed_at);
@@ -373,9 +410,6 @@ export default function AdminDashboardView() {
                     date: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
                     fullDate: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
                     weather: lastClose.weather || 'General',
-                    facturat: lastClose.net_sales * 1.10,
-                    vNeta: lastClose.net_sales,
-                    ticketMedio: lastClose.tickets_count > 0 ? lastClose.net_sales / lastClose.tickets_count : 0,
                     costeManoObra: laborCost,
                     porcentajeManoObra: laborPercent,
                     laborCostBg: laborPercent > 35 ? 'bg-rose-500' : (laborPercent > 30 ? 'bg-orange-400' : 'bg-emerald-500'),
@@ -481,9 +515,9 @@ export default function AdminDashboardView() {
                         </div>
                         <div className="p-4 md:p-6 grid grid-cols-3 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1 items-center">
                             {[
-                                { val: dailyStats?.facturat > 0 ? `${dailyStats.facturat.toFixed(0)}€` : ' ', label: 'Ventas' },
-                                { val: dailyStats?.vNeta > 0 ? `${dailyStats.vNeta.toFixed(0)}€` : ' ', label: 'Venta Neta', color: 'text-emerald-600' },
-                                { val: dailyStats?.ticketMedio > 0 ? `${dailyStats.ticketMedio.toFixed(2)}€` : ' ', label: 'Ticket Medio', color: 'text-blue-600' },
+                                { val: liveTickets.total > 0 ? `${liveTickets.total.toFixed(2)}€` : ' ', label: 'Ventas' },
+                                { val: liveTickets.total > 0 ? `${(liveTickets.total / 1.10).toFixed(2)}€` : ' ', label: 'Venta Neta', color: 'text-emerald-600' },
+                                { val: liveTickets.count > 0 ? `${(liveTickets.total / liveTickets.count).toFixed(2)}€` : ' ', label: 'Ticket Medio', color: 'text-blue-600' },
                             ].map((item, i) => (
                                 <div key={i} className="flex flex-col items-center justify-center text-center">
                                     <span className={cn("text-lg md:text-2xl font-black text-black leading-none", item.color)}>{item.val}</span>
