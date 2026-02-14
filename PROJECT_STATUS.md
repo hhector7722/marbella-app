@@ -62,7 +62,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Histórico Admin**: KPIs de resumen actualizados (Ventas, Venta Neta, Ticket Medio) y nuevos filtros dinámicos por Periodo y Mes.
 - [x] **Refinamiento de Perfil**: Cabecera compacta, reducción de fuentes, nombre en una sola fila y migración del botón de edición a icono superior derecho para managers.
 - [x] **Optimización de Capas (Z-Index)**: Ajuste de nivel en la navegación inferior (`z-30`) para permitir el difuminado (blur) correcto cuando hay modales abiertos.
-- [x] **Refinamiento Histórico y Gestión de Cierres**: Rediseño del modal de histórico con KPIs de negocio (Venta Neta, Efectivo Ingresado, Ticket Medio) e implementación de edición/borrado de cierres con sincronización automática de tesorería y balance de caja.
+- [x] **Refinamiento Historial y Gestión de Cierres**: Rediseño del modal de histórico con KPIs de negocio e implementación de edición/borrado de cierres con sincronización robusta y políticas RLS corregidas.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

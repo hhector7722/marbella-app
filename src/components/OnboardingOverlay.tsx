@@ -7,6 +7,7 @@ import { Lock, Eye, EyeOff, Save, CheckCircle2, ChevronRight, Smartphone, Share,
 import { cn } from '@/lib/utils';
 import { completeOnboarding } from '@/app/actions/profile';
 import Image from 'next/image';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface OnboardingOverlayProps {
     needsOnboarding: boolean;
@@ -23,6 +24,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [os, setOs] = useState<'ios' | 'android' | 'desktop'>('desktop');
+    const { isInstallable, install } = usePWAInstall();
 
     useEffect(() => {
         if (needsOnboarding) {
@@ -82,6 +84,13 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
             toast.error('Error al finalizar el onboarding');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleInstallClick = async () => {
+        const success = await install();
+        if (success) {
+            toast.success('¡Instalación iniciada!');
         }
     };
 
@@ -188,6 +197,16 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                     Añade la aplicación a tu pantalla de inicio para una experiencia completa a pantalla completa.
                                 </p>
                             </div>
+
+                            {isInstallable && (
+                                <button
+                                    onClick={handleInstallClick}
+                                    className="w-full h-16 bg-[#F3F4F6] text-[#36606F] font-black uppercase tracking-widest text-[11px] rounded-2xl border-2 border-[#36606F]/10 hover:bg-[#36606F] hover:text-white transition-all active:scale-95 flex items-center justify-center gap-3 animate-in fade-in zoom-in duration-500"
+                                >
+                                    <PlusSquare size={20} strokeWidth={3} />
+                                    INSTALAR AHORA
+                                </button>
+                            )}
 
                             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                                 {os === 'ios' && (

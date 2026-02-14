@@ -1,9 +1,22 @@
 -- UPDATING TREASURY TRIGGERS TO HANDLE UPDATE/DELETE --
 
--- 1. Añadir columna closing_id a treasury_log para vincular cierres
-ALTER TABLE public.treasury_log ADD COLUMN IF NOT EXISTS closing_id UUID REFERENCES public.cash_closings(id) ON DELETE CASCADE;
+-- 1. Asegurar columna closing_id con ON DELETE CASCADE
+-- Primero eliminamos la constraint si existe para recrearla con CASCADE
+DO $$ 
+BEGIN 
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'treasury_log_closing_id_fkey') THEN
+        ALTER TABLE public.treasury_log DROP CONSTRAINT treasury_log_closing_id_fkey;
+    END IF;
+END $$;
 
--- 2. Modificar fn_sync_box_inventory para manejar UPDATE y DELETE
+ALTER TABLE public.treasury_log 
+ADD COLUMN IF NOT EXISTS closing_id UUID;
+
+ALTER TABLE public.treasury_log 
+ADD CONSTRAINT treasury_log_closing_id_fkey 
+FOREIGN KEY (closing_id) REFERENCES public.cash_closings(id) ON DELETE CASCADE;
+
+-- 2. Modificar fn_sync_box_inventory para ser más flexible en DELETE
 CREATE OR REPLACE FUNCTION public.fn_sync_box_inventory()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -17,7 +30,7 @@ BEGIN
             -- Reversar inventario
             FOR b_key, b_val IN SELECT * FROM jsonb_each_text(OLD.breakdown) LOOP
                 IF OLD.type IN ('IN', 'CLOSE_ENTRY', 'ADJUSTMENT') THEN
-                    -- Era suma, ahora restamos
+                    -- Era suma, ahora restamos (incluso si queda negativo)
                     UPDATE public.cash_box_inventory 
                     SET quantity = quantity - b_val
                     WHERE box_id = OLD.box_id AND denomination = b_key::numeric;
@@ -61,6 +74,11 @@ BEGIN
                     ON CONFLICT (box_id, denomination) 
                     DO UPDATE SET quantity = public.cash_box_inventory.quantity + EXCLUDED.quantity;
                 ELSIF NEW.type = 'OUT' THEN
+                    -- Bloquear salida si no hay stock (solo en INSERT/UPDATE, no en DELETE)
+                    IF NOT EXISTS (SELECT 1 FROM public.cash_box_inventory WHERE box_id = NEW.box_id AND denomination = b_key::numeric AND quantity >= b_val) THEN
+                        RAISE EXCEPTION 'Stock insuficiente de %€ en la caja para esta salida', b_key;
+                    END IF;
+
                     UPDATE public.cash_box_inventory 
                     SET quantity = quantity - b_val
                     WHERE box_id = NEW.box_id AND denomination = b_key::numeric;
@@ -71,15 +89,18 @@ BEGIN
             UPDATE public.cash_boxes SET current_balance = current_balance + v_amount_diff WHERE id = NEW.box_id;
 
         ELSIF NEW.type = 'SWAP' THEN
-            -- Aplicar entrada
+            -- Entrada
             FOR b_key, b_val IN SELECT * FROM jsonb_each_text(NEW.breakdown->'in') LOOP
                 INSERT INTO public.cash_box_inventory (box_id, denomination, quantity)
                 VALUES (NEW.box_id, b_key::numeric, b_val)
                 ON CONFLICT (box_id, denomination) 
                 DO UPDATE SET quantity = public.cash_box_inventory.quantity + EXCLUDED.quantity;
             END LOOP;
-            -- Aplicar salida
+            -- Salida (validar stock)
             FOR b_key, b_val IN SELECT * FROM jsonb_each_text(NEW.breakdown->'out') LOOP
+                IF NOT EXISTS (SELECT 1 FROM public.cash_box_inventory WHERE box_id = NEW.box_id AND denomination = b_key::numeric AND quantity >= b_val) THEN
+                    RAISE EXCEPTION 'Stock insuficiente de %€ para el intercambio', b_key;
+                END IF;
                 UPDATE public.cash_box_inventory 
                 SET quantity = quantity - b_val
                 WHERE box_id = NEW.box_id AND denomination = b_key::numeric;
@@ -87,17 +108,18 @@ BEGIN
         END IF;
     END IF;
 
-    RETURN NULL;
+    IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Actualizar el trigger de treasury_log para que se lance en todos los eventos
+-- 3. Actualizar o Recrear triggers con AFTER
 DROP TRIGGER IF EXISTS trg_sync_treasury_inventory ON public.treasury_log;
 CREATE TRIGGER trg_sync_treasury_inventory
 AFTER INSERT OR UPDATE OR DELETE ON public.treasury_log
 FOR EACH ROW EXECUTE FUNCTION public.fn_sync_box_inventory();
 
--- 4. Modificar fn_on_cash_closing_confirmed para manejar UPDATE y DELETE
+-- 4. Modificar fn_on_cash_closing_confirmed para ser SECURITY DEFINER
 CREATE OR REPLACE FUNCTION public.fn_on_cash_closing_confirmed()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -115,7 +137,6 @@ BEGIN
             );
         END IF;
     ELSIF TG_OP = 'UPDATE' THEN
-        -- Intentar actualizar registro existente
         UPDATE public.treasury_log 
         SET 
             amount = NEW.cash_withdrawn,
@@ -123,7 +144,6 @@ BEGIN
             notes = 'Cierre TPV: ' || NEW.closing_date || ' (Editado)'
         WHERE closing_id = NEW.id;
         
-        -- Si no existe y ahora sí hay retiro, insertar
         IF NOT FOUND AND v_op_box_id IS NOT NULL AND NEW.cash_withdrawn > 0 THEN
             INSERT INTO public.treasury_log (
                 box_id, type, amount, breakdown, user_id, notes, closing_id
@@ -131,27 +151,40 @@ BEGIN
                 v_op_box_id, 'CLOSE_ENTRY', NEW.cash_withdrawn, NEW.breakdown, NEW.closed_by, 
                 'Cierre TPV: ' || NEW.closing_date || ' (Editado)', NEW.id
             );
-        -- Si existe pero el retiro ahora es 0, borrar
         ELSIF NEW.cash_withdrawn <= 0 THEN
             DELETE FROM public.treasury_log WHERE closing_id = NEW.id;
         END IF;
     ELSIF TG_OP = 'DELETE' THEN
+        -- El ON DELETE CASCADE ya lo borraría, pero por si acaso o para triggers manuales:
         DELETE FROM public.treasury_log WHERE closing_id = OLD.id;
     END IF;
 
-    RETURN NULL;
+    IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. Actualizar el trigger de cash_closings para que se lance en todos los eventos
 DROP TRIGGER IF EXISTS trg_cash_closing_to_treasury ON public.cash_closings;
 CREATE TRIGGER trg_cash_closing_to_treasury
 AFTER INSERT OR UPDATE OR DELETE ON public.cash_closings
 FOR EACH ROW EXECUTE FUNCTION public.fn_on_cash_closing_confirmed();
 
--- 6. Vincular registros existentes si es posible
-UPDATE public.treasury_log t
-SET closing_id = c.id
-FROM public.cash_closings c
-WHERE (t.notes = 'Cierre TPV: ' || c.closing_date OR t.notes = 'Cierre ' || c.closing_date)
-AND t.closing_id IS NULL;
+-- 5. POLÍTICAS RLS FALTANTES (Fundamental para que el DELETE desde UI funcione)
+ALTER TABLE public.cash_closings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.treasury_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Managers can delete closings" ON public.cash_closings;
+CREATE POLICY "Managers can delete closings" ON public.cash_closings
+FOR DELETE TO authenticated
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'manager'));
+
+DROP POLICY IF EXISTS "Managers can delete treasury logs" ON public.treasury_log;
+CREATE POLICY "Managers can delete treasury logs" ON public.treasury_log
+FOR DELETE TO authenticated
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'manager'));
+
+DROP POLICY IF EXISTS "Managers can update closings" ON public.cash_closings;
+CREATE POLICY "Managers can update closings" ON public.cash_closings
+FOR UPDATE TO authenticated
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'manager'));
+

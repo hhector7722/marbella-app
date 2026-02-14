@@ -6,6 +6,7 @@ import OnboardingOverlay from "@/components/OnboardingOverlay";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -55,6 +56,7 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} bg-[#5B8FB9]`}>
+        <ServiceWorkerRegistration />
         <Navbar />
         <MainWrapper>
           <OnboardingOverlay needsOnboarding={needsOnboarding} />

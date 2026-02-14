@@ -11,13 +11,15 @@ import {
     ChevronLeft,
     ChevronRight,
     UserPlus,
-    Trash2
+    Trash2,
+    Send
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { sendScheduleNotifications } from '@/app/actions/notifications';
 
 const START_HOUR = 7; // 7:00 AM
 const END_HOUR = 23;  // 23:00 PM
@@ -267,19 +269,19 @@ export default function ScheduleEditorPage() {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (silent = false) => {
         const activeShifts = shifts.filter(s => s.active);
 
         if (activeShifts.length === 0) {
-            toast.error('No hay turnos activos para guardar');
-            return;
+            if (!silent) toast.error('No hay turnos activos para guardar');
+            return false;
         }
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                toast.error('No hay sesión activa');
-                return;
+                if (!silent) toast.error('No hay sesión activa');
+                return false;
             }
 
             const shiftsToInsert = activeShifts.map(shift => {
@@ -324,11 +326,41 @@ export default function ScheduleEditorPage() {
             }
 
             setHasUnsavedChanges(false);
-            toast.success(`${activeShifts.length} turno(s) guardado(s)`);
-            router.push('/staff/schedule');
+            if (!silent) toast.success(`${activeShifts.length} turno(s) guardado(s)`);
+            if (!silent) router.push('/staff/schedule');
+            return true;
         } catch (error: any) {
             console.error('Save error:', error);
-            toast.error(error?.message || 'Error al guardar los turnos');
+            if (!silent) toast.error(error?.message || 'Error al guardar los turnos');
+            return false;
+        }
+    };
+
+    const handleSendNotifications = async () => {
+        // 1. Guardar primero de forma silenciosa
+        const saved = await handleSave(true);
+        if (!saved) return;
+
+        const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
+        if (userIds.length === 0) return;
+
+        const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+
+        const loadingToast = toast.loading('Enviando notificaciones...');
+
+        try {
+            const result = await sendScheduleNotifications(userIds, dateFormatted);
+            toast.dismiss(loadingToast);
+
+            if (result.success) {
+                toast.success('Notificaciones enviadas con éxito');
+                router.push('/staff/schedule');
+            } else {
+                toast.error(result.error || 'Error al enviar notificaciones');
+            }
+        } catch (error) {
+            toast.dismiss(loadingToast);
+            toast.error('Error al enviar notificaciones');
         }
     };
 
@@ -395,10 +427,17 @@ export default function ScheduleEditorPage() {
                     />
                     {/* Botón Guardar */}
                     <button
-                        onClick={handleSave}
+                        onClick={() => handleSave()}
                         className="bg-green-500 hover:bg-green-600 text-white px-3 h-7 rounded-lg font-black flex items-center justify-center gap-1 shadow-md transition-transform active:scale-95 text-[9px] uppercase tracking-wider"
                     >
                         <Save size={12} /> GUARDAR
+                    </button>
+                    {/* Botón Enviar */}
+                    <button
+                        onClick={handleSendNotifications}
+                        className="bg-[#36606F] hover:bg-[#2A4D59] text-white px-3 h-7 rounded-lg font-black flex items-center justify-center gap-1 shadow-md transition-transform active:scale-95 text-[9px] uppercase tracking-wider"
+                    >
+                        <Send size={12} /> ENVIAR
                     </button>
                 </div>
             </div>
