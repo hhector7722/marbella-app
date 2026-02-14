@@ -331,7 +331,7 @@ export default function AdminDashboardView() {
                 const newTotal = Number(payload.new.total_documento) || 0;
                 setLiveTickets(prev => ({
                     total: prev.total + newTotal,
-                    count: prev.count + 1
+                    count: prev.count + (newTotal > 0 ? 1 : (newTotal < 0 ? -1 : 0))
                 }));
             })
             .subscribe();
@@ -376,8 +376,13 @@ export default function AdminDashboardView() {
                 .eq('fecha', todayStr);
 
             const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-            const countVentas = ticketsToday?.length || 0;
-            setLiveTickets({ total: totalVentas, count: countVentas });
+            const countVentas = ticketsToday?.reduce((count, t) => {
+                const val = Number(t.total_documento) || 0;
+                if (val > 0) return count + 1;
+                if (val < 0) return count - 1;
+                return count;
+            }, 0) || 0;
+            setLiveTickets({ total: totalVentas, count: Math.max(0, countVentas) });
 
             const { data: lastClose } = await supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single();
             if (lastClose) {
@@ -508,7 +513,7 @@ export default function AdminDashboardView() {
         <div className="pb-24 animate-in fade-in duration-500">
             <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                         <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
                             <div className="flex items-center gap-3">
                                 <div>
@@ -544,7 +549,7 @@ export default function AdminDashboardView() {
                         </div>
                     </div>
                     <div className="space-y-4 md:space-y-6 flex flex-col">
-                        <div className="bg-white rounded-2xl md:rounded-[2.5rem] p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
+                        <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
                                     <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 md:py-4 rounded-2xl md:rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 md:mb-4 active:scale-95">
@@ -587,7 +592,7 @@ export default function AdminDashboardView() {
                             <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
                         ))}
                     </div>
-                    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                         <div className="bg-[#5E35B1] px-6 py-4 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
