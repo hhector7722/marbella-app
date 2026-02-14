@@ -7,7 +7,7 @@ export const MARBELLA_COORDS = {
     lng: 2.209611
 };
 
-export const MAX_DISTANCE_METERS = 50;
+export const MAX_DISTANCE_METERS = 150;
 
 /**
  * Calculates the distance between two points in meters using the Haversine formula.
@@ -38,9 +38,15 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
             return;
         }
 
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
+        navigator.geolocation.getCurrentPosition(resolve, (error) => {
+            let message = "Error al obtener ubicación";
+            if (error.code === error.TIMEOUT) message = "Tiempo de espera agotado al obtener ubicación. Inténtalo de nuevo.";
+            if (error.code === error.PERMISSION_DENIED) message = "Debes permitir el acceso a la ubicación para fichar.";
+            if (error.code === error.POSITION_UNAVAILABLE) message = "Ubicación no disponible en este momento.";
+            reject(new Error(message));
+        }, {
             enableHighAccuracy: true,
-            timeout: 10000,
+            timeout: 20000,
             maximumAge: 0
         });
     });

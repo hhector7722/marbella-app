@@ -91,7 +91,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
-            <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 animate-in zoom-in-95 duration-500">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden relative z-10 animate-in zoom-in-95 duration-500">
 
                 {/* Header */}
                 <div className="bg-[#36606F] text-white p-8 text-center relative overflow-hidden">

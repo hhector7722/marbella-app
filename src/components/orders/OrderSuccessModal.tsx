@@ -35,7 +35,7 @@ export function OrderSuccessModal({ isOpen, pdfUrl, isUploading, onClose, onDown
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-[80] p-4 animate-in fade-in duration-500">
-            <div className="bg-white rounded-[3rem] p-10 max-w-md w-full shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] text-center animate-in zoom-in duration-500">
+            <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
                 {/* Success Icon */}
                 <div className="mb-6 flex justify-center">
                     <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center animate-bounce">

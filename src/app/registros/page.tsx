@@ -291,7 +291,7 @@ export default function RegistrosPage() {
                     {showMonthPicker && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)}></div>
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-72 bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 p-6 z-50 animate-in fade-in zoom-in duration-200">
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50 animate-in fade-in zoom-in duration-200">
                                 <div className="grid grid-cols-2 gap-3 max-h-[320px] overflow-y-auto no-scrollbar">
                                     {Array.from({ length: 24 }).map((_, i) => {
                                         const d = addMonths(startOfMonth(new Date()), i - 12);

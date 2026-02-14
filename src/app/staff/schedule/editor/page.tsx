@@ -527,7 +527,7 @@ export default function ScheduleEditorPage() {
             {/* MODAL: Calendario */}
             {showCalendarModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
                             <div className="flex flex-col">
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Calendario</h3>

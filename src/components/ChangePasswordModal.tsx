@@ -57,7 +57,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div
-                className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header Estilo Marbella Detail */}

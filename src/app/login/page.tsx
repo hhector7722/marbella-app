@@ -50,7 +50,7 @@ export default function LoginPage() {
             <Toaster position="top-center" />
 
             {/* Tarjeta Flotante Estilo "La Marbella" */}
-            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-8 md:p-12 animate-in fade-in zoom-in duration-300">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-8 md:p-12 animate-in fade-in zoom-in duration-300">
 
                 {/* Cabecera */}
                 <div className="flex flex-col items-center mb-10">

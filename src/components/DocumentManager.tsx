@@ -141,7 +141,7 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
                 ) : (
                     <>
                         {(docType === 'contract' ? contracts : payrolls).map((doc) => (
-                            <div key={doc.id} className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm flex items-center justify-between group">
+                            <div key={doc.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group">
                                 <div className="flex items-center gap-4">
                                     <div className={cn("p-3 rounded-xl", doc.type === 'contract' ? "bg-blue-50 text-blue-500" : "bg-emerald-50 text-emerald-500")}>
                                         {doc.type === 'contract' ? <FileText size={20} /> : <Euro size={20} />}
@@ -168,7 +168,7 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
                             </div>
                         ))}
                         {((docType === 'contract' ? contracts : payrolls).length === 0) && (
-                            <div className="py-12 flex flex-col items-center justify-center text-gray-300 border-2 border-dashed border-gray-100 rounded-[2rem]">
+                            <div className="py-12 flex flex-col items-center justify-center text-gray-300 border-2 border-dashed border-gray-100 rounded-2xl">
                                 <FileText size={40} className="mb-2 opacity-50" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">No hay documentos disponibles</p>
                             </div>
@@ -180,7 +180,7 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
             {/* Modal de Subida */}
             {showUpload && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="bg-[#36606F] p-6 flex justify-between items-center text-white">
                             <h3 className="font-black uppercase tracking-wider">Subir {docType === 'contract' ? 'Contrato' : 'Nómina'}</h3>
                             <button onClick={() => setShowUpload(false)}><X size={20} strokeWidth={3} /></button>
@@ -212,7 +212,7 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
                                 <label
                                     htmlFor="file-upload"
                                     className={cn(
-                                        "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-[2rem] cursor-pointer transition-all",
+                                        "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-2xl cursor-pointer transition-all",
                                         uploading ? "bg-gray-100 opacity-50 cursor-wait" : "bg-blue-50/30 border-blue-200 hover:bg-blue-50 hover:border-[#36606F]"
                                     )}
                                 >

@@ -65,7 +65,7 @@ export default function GalleryTemplate() {
 
                     {/* BOTÓN ACCIÓN PRINCIPAL (TARGET 48px TÁCTIL) */}
                     <button
-                        className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
+                        className="bg-[#5E35B1] text-white w-12 h-12 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
@@ -77,7 +77,7 @@ export default function GalleryTemplate() {
                 {/* ITEM CARD REPETIBLE */}
                 {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                     <div key={i} className="relative group overflow-hidden">
-                        <div className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95">
+                        <div className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95">
                             {/* IMAGEN/ICONO */}
                             <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                 <Package className="text-gray-200 w-6 h-6" />
@@ -94,7 +94,7 @@ export default function GalleryTemplate() {
 
             {/* MODAL DE EDICIÓN FLOTANTE (ESTÁNDAR) */}
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-                <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-[#3F51B5]">Título Modal</h2>
                         <button className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="text-gray-400" /></button>
@@ -112,11 +112,11 @@ export default function GalleryTemplate() {
                         </div>
 
                         {/* INPUTS DE ALTO CONTRASTE */}
-                        <input className="w-full p-3 border border-gray-200 rounded-xl font-bold focus:ring-2 focus:ring-[#5E35B1] outline-none" placeholder="Nombre..." />
+                        <input className="w-full p-3 border border-gray-200 rounded-2xl font-bold focus:ring-2 focus:ring-[#5E35B1] outline-none" placeholder="Nombre..." />
 
                         <div className="flex gap-2">
-                            <input type="number" className="w-1/2 p-3 border border-gray-200 rounded-xl font-bold outline-none" placeholder="0.00" />
-                            <select className="w-1/2 p-3 border border-gray-200 rounded-xl bg-white font-bold outline-none">
+                            <input type="number" className="w-1/2 p-3 border border-gray-200 rounded-2xl font-bold outline-none" placeholder="0.00" />
+                            <select className="w-1/2 p-3 border border-gray-200 rounded-2xl bg-white font-bold outline-none">
                                 <option>kg</option>
                                 <option>u</option>
                             </select>
@@ -124,10 +124,10 @@ export default function GalleryTemplate() {
 
                         {/* ACCIONES FINALES */}
                         <div className="flex gap-2 pt-4">
-                            <button className="px-4 bg-gray-50 text-gray-400 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-95">
+                            <button className="px-4 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-95">
                                 <Trash2 size={20} />
                             </button>
-                            <button className="flex-1 py-4 bg-[#5E35B1] text-white rounded-xl font-black uppercase tracking-widest shadow-lg shadow-purple-200 active:scale-95 transition-all">
+                            <button className="flex-1 py-4 bg-[#5E35B1] text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-purple-200 active:scale-95 transition-all">
                                 Guardar Cambios
                             </button>
                         </div>

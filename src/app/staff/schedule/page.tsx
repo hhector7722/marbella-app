@@ -196,8 +196,7 @@ export default function StaffSchedulePage() {
         <div className="min-h-screen bg-[#5B8FB9] pb-10 pt-4">
             {/* CONTENEDOR TIPO TARJETA */}
             <div className="max-w-2xl mx-auto px-4 md:px-0">
-                <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col">
-
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col">
                     {/* HEADER FIJO DENTRO DE LA TARJETA */}
                     <div className="bg-[#36606F] sticky top-0 z-20 shadow-sm px-6 pt-6 pb-4">
                         <div className="flex items-center justify-between mb-6">

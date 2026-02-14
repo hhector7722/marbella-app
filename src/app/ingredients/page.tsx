@@ -179,7 +179,7 @@ export default function IngredientsPage() {
                                 <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedSupplier}</span>
                                 <button
                                     onClick={() => setSelectedSupplier(null)}
-                                    className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"
+                                    className="p-1.5 hover:bg-zinc-100 rounded-2xl transition-colors"
                                 >
                                     <X size={14} className="text-rose-500" strokeWidth={4} />
                                 </button>
@@ -193,7 +193,7 @@ export default function IngredientsPage() {
 
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
+                        className="bg-[#5E35B1] text-white w-10 h-10 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
@@ -206,7 +206,7 @@ export default function IngredientsPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
                     {filteredIngredients.map(ing => (
                         <div key={ing.id} className="relative group">
-                            <div onClick={() => (setEditingIngredient(ing), setEditForm({ ...ing }))} className={`bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col`}>
+                            <div onClick={() => (setEditingIngredient(ing), setEditForm({ ...ing }))} className={`bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col`}>
                                 {/* IMAGEN PEQUEÑA SIN BORDE */}
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                     {ing.image_url ? <img src={ing.image_url} className="w-full h-full object-contain" /> : <Package className="text-gray-200 w-6 h-6" />}
@@ -239,36 +239,36 @@ export default function IngredientsPage() {
                                     {uploadingImage && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><Loader2 className="animate-spin text-[#5E35B1]" /></div>}
                                 </div>
                             </div>
-                            <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-xl font-bold" />
+                            <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" />
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
-                                    <input type="number" step="0.01" value={editForm.current_price} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" />
+                                    <input type="number" step="0.01" value={editForm.current_price} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
                                 </div>
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
-                                    <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                    <select value={editForm.purchase_unit} onChange={e => setEditForm({ ...editForm, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
-                                    <select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                                    <select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
                                 </div>
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
-                                    <input type="number" step="0.01" value={editForm.waste_percentage} onChange={e => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" />
+                                    <input type="number" step="0.01" value={editForm.waste_percentage} onChange={e => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
                                 </div>
                             </div>
                             {!isCustomSupplier ? (
-                                <select value={editForm.supplier || ''} onChange={e => { if (e.target.value === 'custom') setIsCustomSupplier(true); else setEditForm({ ...editForm, supplier: e.target.value }) }} className="w-full p-3 border rounded-xl bg-white">
+                                <select value={editForm.supplier || ''} onChange={e => { if (e.target.value === 'custom') setIsCustomSupplier(true); else setEditForm({ ...editForm, supplier: e.target.value }) }} className="w-full p-3 border rounded-2xl bg-white">
                                     <option value="">Proveedor...</option>
                                     {STANDARD_SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
                                     <option value="custom">+ Nuevo...</option>
                                 </select>
                             ) : (
                                 <div className="flex gap-2">
-                                    <input value={customSupplierName} onChange={e => { setCustomSupplierName(e.target.value); setEditForm({ ...editForm, supplier: e.target.value }) }} className="flex-1 p-3 border rounded-xl" placeholder="Proveedor" />
+                                    <input value={customSupplierName} onChange={e => { setCustomSupplierName(e.target.value); setEditForm({ ...editForm, supplier: e.target.value }) }} className="flex-1 p-3 border rounded-2xl" placeholder="Proveedor" />
                                     <button onClick={() => setIsCustomSupplier(false)} className="text-xs text-red-500 font-bold">X</button>
                                 </div>
                             )}
@@ -281,11 +281,11 @@ export default function IngredientsPage() {
                                         setEditingIngredient(null);
                                         fetchIngredients();
                                     }}
-                                    className="px-4 bg-gray-100 text-gray-400 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                                    className="px-4 bg-gray-100 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-colors"
                                 >
                                     <Trash2 size={20} />
                                 </button>
-                                <button onClick={handleSaveEdit} disabled={saving} className="flex-1 py-3 bg-[#5E35B1] text-white rounded-xl font-bold">Guardar</button>
+                                <button onClick={handleSaveEdit} disabled={saving} className="flex-1 py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Guardar</button>
                             </div>
                         </div>
                     </div>
@@ -298,26 +298,26 @@ export default function IngredientsPage() {
                         <h2 className="text-2xl font-bold text-[#5B8FB9] mb-6">Nuevo</h2>
                         <div className="space-y-4">
                             <div className="flex justify-center"><div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300"><Upload className="text-gray-400" /><input type="file" className="absolute inset-0 opacity-0" onChange={(e) => handleImageUpload(e, 'create')} /></div></div>
-                            <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-xl font-bold" placeholder="Nombre" />
+                            <input onChange={e => setNewIngredient({ ...newIngredient, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Nombre" />
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
-                                    <input type="number" step="0.01" onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" placeholder="Precio" />
+                                    <input type="number" step="0.01" onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Precio" />
                                 </div>
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
-                                    <select onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                    <select onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
                                 </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
-                                <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                                <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
-                                <input type="number" step="0.01" value={newIngredient.waste_percentage} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-xl font-bold" placeholder="Merma" />
+                                <input type="number" step="0.01" value={newIngredient.waste_percentage} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Merma" />
                             </div>
-                            <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-xl font-bold">Crear</button>
+                            <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Crear</button>
                         </div>
                     </div>
                 </div>

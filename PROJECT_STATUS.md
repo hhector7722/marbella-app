@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-13
+**Última actualización:** 2026-02-14
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -82,7 +82,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Filtros Avanzados en Extras**: Implementación de selector de periodo (mes) y selección manual de rango de fechas en el histórico de horas extras para una auditoría más precisa.
 - [x] **Agrupación de Semanas ISO**: Corrección del sistema de agrupación de semanas en el dashboard de extras para utilizar el estándar ISO (Lunes a Domingo).
 - [x] **Propagación y Recálculo V3**: Implementación de lógica de servidor para propagar balances semanales, respetando contratos históricos y corrigiendo el balance de Managers (Extras-only). Lógica asimétrica de deuda indestructible.
-- [x] **Geofencing (GPS) Restricción:** Implementación de validación por radio de 50m para fichajes de staff y auditoría silenciosa para managers.
+- [x] **Geofencing (GPS) Restricción:** Implementación de validación por radio de 150m para fichajes de staff y auditoría silenciosa para managers (Ajustado por fiabilidad).
 - [x] **Refinamiento Visual Staff:** Actualización de iconos a versiones PNG premium, cambio de etiqueta "Guía" por "Cambiar" y optimización de iconos en el popup de Contactos (WhatsApp PNG y icono de teléfono flotante).
 - [x] **Navegación por Gestos:** Implementación de gestos "swipe" (deslizar) para que Managers cambien entre Dashboard Staff y Admin.
 - [x] **Optimización UI Móvil (Caja/Personal):** Compactación de modales de tesorería y registros para mejor accesibilidad táctil sin sacrificar legibilidad.
@@ -98,29 +98,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
 - [x] **Estandarización de Contacto**: Unificación de iconos de Teléfono y WhatsApp en `/profile` y `/suppliers` siguiendo el estilo minimalista del Dashboard de Personal.
 - [x] **Sistema de Pedidos a Proveedores (Refinado)**: Mejora del flujo en `/orders/new` con iconos circulares (48px), botón de resumen superior, filtrado estricto por proveedor, soporte para unidades personalizadas con persistencia y eliminación de precios en resumen y PDF.
-
+- [x] **Estandarización de Redondeo (rounded-2xl)**: Unificación global de todos los contenedores y modales de la aplicación al estándar de redondeo de 16px (`rounded-2xl`) para una estética premium y consistente.
 
 ## 📅 PENDIENTE
-- [x] **Refinamiento Estético Horarios V4**: Unificación de la cabecera de horarios con el estándar "Vista Marbella Detail" (Azul Sólido) y reestructuración del editor (Totales al final, botón añadir verde premium).
-- [x] **Refinamiento Barra de Edición**: Implementación de tiradores independientes de entrada/salida (48px targets), eliminación de movimiento en bloque en edición y diseño flotante ultra-compacto integrado con color de totales.
-- [x] **Actualización Estética Producto**: Sustitución de iconos Lucide por imágenes PNG premium en el modal de gestión de artículos del dashboard administrativo.
-- [x] **Mejora UX Staff Dashboard**: Contenedor de "Horarios" ahora es clicable íntegramente para un acceso más ágil a la agenda.
-- [x] **Refactorización Recetas (Gallery View)**: Unificación estética de `/recipes` con el estándar de alta densidad, fondo azul Marbella y mantenimiento de lógica de color por food cost.
-- [x] **Unificación de Navegación**: Implementación de una única barra de menú basada en la versión de personal para todos los roles, con redirección inteligente del botón Inicio.
-- [x] **Transición Interactiva de Dashboards**: Modularización de dashboards y creación de `DashboardSwitcher` para transiciones "swipe" en tiempo real estilo iPhone para Managers.
-- [x] **Refinamiento UI Staff (Fase 4)**: Unificación estética del calendario de Registros con Historial (mini-bandas de gradiente).
-- [x] **Acceso Directo "Cambiar"**: Vinculación directa del icono de cambio al modal de swap de "Cambio 1" en el panel de personal.
-- [x] **Rediseño "Gestión Stock" Staff**: Modal de pedidos rediseñado con iconografía PNG estilo Admin e integración de sección "Proveedores".
-- [x] **Rediseño Modales de Cambio**: Transformación a cuadrícula de 4 columnas con imágenes de moneda agrandadas y inputs "ENTRA/SALE" en paralelo para eliminar el desplazamiento vertical.
-- [x] **Refinamiento Estético Staff (Floating UI)**: Eliminación de fondos en tarjetas de turnos en el dashboard de personal para lograr un efecto de flotado directo sobre el fondo blanco.
-- [x] **Unificación Estética de Fondos**: Restauración del azul Marbella original (#5B8FB9) en toda la aplicación tras pruebas con azul oscuro.
-- [x] **Corrección de Guardado de Ingredientes**: Resolución del error de restricción `NOT NULL` en la columna `unit_type` al crear o editar ingredientes.
-- [x] **Privacidad de Recetas Staff**: Implementación de visibilidad condicional para ocultar costes, márgenes y herramientas administrativas en recetas cuando se accede desde el panel de personal.
-- [x] **Estabilidad de Build (Suspense)**: Resolución del error `useSearchParams` en el módulo de recetas envolviendo componentes en límites de `Suspense` para permitir el prerenderizado de Next.js.
-- [x] **Adaptación Recetas Staff**: Ajuste de altura dinámica en contenedores de ingredientes y elaboración cuando se accede desde el dashboard de personal.
-- [x] **Rediseño Filtro Historial**: Centralización del filtro de meses en `/staff/history` mediante un botón superior premium y modal estilo Bento.
-- [x] **Refinamiento Contenedor Ventas (Admin)**: Transformación del bloque "Último Cierre" en "Ventas", con cabecera compacta, eliminación de Mano de Obra y layout de 3 columnas horizontales para métricas clave.
-- [x] **Persistencia de Tickets en Tiempo Real**: Implementación de suscripción Realtime a `tickets_marbella`, flujo completo desde Mini PC (CommonJS) hasta Dashboard con layout de 3 columnas y regla Zero-Display.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

@@ -34,7 +34,7 @@ export default function CreateModal({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="bg-[#36606F] p-6 flex justify-between items-center text-white">
                     <h2 className="text-xl font-black uppercase tracking-wide">Nueva Receta</h2>
                     <button onClick={() => setShowCreateModal(false)} className="hover:bg-white/20 p-2 rounded-full transition-colors">
@@ -87,11 +87,11 @@ export default function CreateModal({
 
                         <div className="space-y-2">
                             {(!newRecipe.ingredients || newRecipe.ingredients.length === 0) && (
-                                <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-xl">No hay ingredientes añadidos</p>
+                                <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-2xl">No hay ingredientes añadidos</p>
                             )}
 
                             {newRecipe.ingredients?.map((row: any, idx: number) => (
-                                <div key={idx} className="flex gap-2 items-end bg-gray-50 p-2 rounded-xl">
+                                <div key={idx} className="flex gap-2 items-end bg-gray-50 p-2 rounded-2xl">
                                     <div className="flex-1">
                                         <select
                                             value={row.ingredient_id}
@@ -133,8 +133,8 @@ export default function CreateModal({
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-                    <button onClick={() => setShowCreateModal(false)} className="px-6 py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-200">CANCELAR</button>
-                    <button onClick={handleCreateRecipe} disabled={isCreating} className="bg-[#36606F] text-white px-8 py-3 rounded-xl text-xs font-black hover:bg-[#2d4f5c] disabled:opacity-50 flex items-center gap-2 shadow-lg">
+                    <button onClick={() => setShowCreateModal(false)} className="px-6 py-3 rounded-2xl text-xs font-bold text-gray-500 hover:bg-gray-200">CANCELAR</button>
+                    <button onClick={handleCreateRecipe} disabled={isCreating} className="bg-[#36606F] text-white px-8 py-3 rounded-2xl text-xs font-black hover:bg-[#2d4f5c] disabled:opacity-50 flex items-center gap-2 shadow-lg">
                         {isCreating ? 'GUARDANDO...' : <><Save size={16} /> GUARDAR</>}
                     </button>
                 </div>

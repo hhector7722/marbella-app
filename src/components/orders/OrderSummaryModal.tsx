@@ -25,7 +25,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
+            <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
                 {/* Header */}
                 <div className="bg-[#36606F] py-4 px-8 flex justify-between items-center shrink-0">
                     <h2 className="text-xl font-black text-white uppercase tracking-widest">Resumen del Pedido</h2>

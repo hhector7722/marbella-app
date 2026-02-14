@@ -15,7 +15,7 @@ export default function DetailViewTemplate() {
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
+                <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* 1. HEADER SÓLIDO */}
                     <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between">
@@ -73,7 +73,7 @@ export default function DetailViewTemplate() {
 
                         {/* 4. CONTENT AREA (Bento Grid Example) */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-1">
-                            <div className="p-6 bg-gray-50 rounded-[2rem] border border-gray-100">
+                            <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Sección de Contenido</h3>
                                 <div className="space-y-3">
                                     {/* Filas de alta densidad */}

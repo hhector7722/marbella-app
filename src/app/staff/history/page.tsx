@@ -519,7 +519,7 @@ export default function HistoryPage() {
                         {weeksData.map((week, idx) => {
                             return (
                                 <div key={idx} className={cn(
-                                    "bg-white rounded-[2rem] shadow-xl overflow-hidden",
+                                    "bg-white rounded-2xl shadow-xl overflow-hidden",
                                     "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4",
                                     week.isCurrentWeek && "ring-2 ring-blue-400/40"
                                 )} style={{ animationDelay: `${idx * 50}ms` }}>
@@ -539,7 +539,7 @@ export default function HistoryPage() {
                                         {isManager && (
                                             <button
                                                 onClick={() => openEdit(idx)}
-                                                className="h-8 w-8 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-90"
+                                                className="h-8 w-8 flex items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-90"
                                                 title="Editar registros"
                                             >
                                                 <Pencil size={14} strokeWidth={3} />
@@ -554,7 +554,7 @@ export default function HistoryPage() {
                                             </div>
                                         )}
 
-                                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                        <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                             <div className="grid grid-cols-7 border-b border-gray-100">
                                                 {week.days.map((day, i) => (
                                                     <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
@@ -661,7 +661,7 @@ export default function HistoryPage() {
                     onClick={() => setShowFilter(false)}
                 >
                     <div
-                        className="bg-zinc-50/90 w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
+                        className="bg-zinc-50/90 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header Modal */}
@@ -734,7 +734,7 @@ export default function HistoryPage() {
                             <div className="pt-2 space-y-3">
                                 <button
                                     onClick={applyFilter}
-                                    className="w-full h-16 bg-blue-600 text-white font-black rounded-[1.5rem] shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+                                    className="w-full h-16 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
                                 >
                                     <Check size={20} strokeWidth={3} /> Aplicar Filtro
                                 </button>
@@ -742,7 +742,7 @@ export default function HistoryPage() {
                                 {isFilterActive && (
                                     <button
                                         onClick={() => { clearFilter(); setShowFilter(false); }}
-                                        className="w-full h-14 bg-white text-zinc-400 font-bold rounded-[1.5rem] hover:bg-zinc-100 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                                        className="w-full h-14 bg-white text-zinc-400 font-bold rounded-2xl hover:bg-zinc-100 active:scale-95 transition-all text-xs uppercase tracking-widest"
                                     >
                                         Limpiar Filtro
                                     </button>
@@ -760,7 +760,7 @@ export default function HistoryPage() {
                     onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
                 >
                     <div
-                        className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                        className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
@@ -773,7 +773,7 @@ export default function HistoryPage() {
                             </div>
                             <button
                                 onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
-                                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
                             >
                                 <X size={20} strokeWidth={3} />
                             </button>
@@ -789,7 +789,7 @@ export default function HistoryPage() {
                             {editEntries.map((entry, idx) => {
                                 if (entry.toDelete) return null;
                                 return (
-                                    <div key={idx} className="bg-zinc-50 rounded-xl p-3 border border-zinc-100 space-y-2">
+                                    <div key={idx} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 space-y-2">
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="date"

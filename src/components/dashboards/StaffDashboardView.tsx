@@ -399,7 +399,7 @@ export default function StaffDashboardView() {
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                         {/* Header Estrecho - Estilo Vista Marbella Detail */}
                         <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                             <div className="flex flex-col">
@@ -414,7 +414,7 @@ export default function StaffDashboardView() {
 
                         <div className="p-4">
 
-                            <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                            <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                 <div className="grid grid-cols-7 border-b border-gray-100">
                                     {weekDays.map((day, i) => (
                                         <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
@@ -504,7 +504,7 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[2rem] p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
+                    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
                         <button
                             onClick={openConfirmation}
                             disabled={status === 'finished' || actionLoading}
@@ -539,7 +539,7 @@ export default function StaffDashboardView() {
                     <div className="flex flex-row md:flex-col xl:flex-row gap-3 md:gap-6">
                         <div
                             onClick={() => router.push('/staff/schedule')}
-                            className="bg-white rounded-[2rem] shadow-xl flex flex-col overflow-hidden relative min-h-[180px] w-1/2 md:w-full xl:flex-1 cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden relative min-h-[180px] w-1/2 md:w-full xl:flex-1 cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
                         >
                             {/* Header Lila - Estilo Personalizado */}
                             <div className="bg-purple-600 px-3 md:px-6 py-2.5 md:py-3 flex justify-between items-center text-white shrink-0">
@@ -617,7 +617,7 @@ export default function StaffDashboardView() {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
@@ -629,7 +629,7 @@ export default function StaffDashboardView() {
 
             {activeMenu && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-xs')} rounded-[2.5rem] shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-xs')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
                         {infoSubMenu && (
                             <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
                                 <ArrowLeft size={16} />

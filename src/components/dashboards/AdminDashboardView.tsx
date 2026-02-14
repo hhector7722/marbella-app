@@ -505,7 +505,7 @@ export default function AdminDashboardView() {
         } catch (error) { console.error(error); alert("Error"); }
     };
 
-    if (loading) return <div className="p-8 text-white flex items-center gap-2 rounded-3xl bg-white/10 backdrop-blur-md"><div className="w-4 h-4 bg-white animate-pulse rounded-full"></div> Cargando...</div>;
+    if (loading) return <div className="p-8 text-white flex items-center gap-2 rounded-2xl bg-white/10 backdrop-blur-md"><div className="w-4 h-4 bg-white animate-pulse rounded-full"></div> Cargando...</div>;
 
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
 
@@ -552,7 +552,7 @@ export default function AdminDashboardView() {
                         <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
-                                    <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 md:py-4 rounded-2xl md:rounded-[1.8rem] bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 md:mb-4 active:scale-95">
+                                    <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 md:py-4 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 md:mb-4 active:scale-95">
                                         <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
                                         <span className="text-xl md:text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                     </button>
@@ -578,7 +578,7 @@ export default function AdminDashboardView() {
                         </div>
                         <div className="grid grid-cols-2 gap-4 md:gap-6 h-12 md:h-16">
                             {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl md:rounded-[1.5rem] p-1.5 md:p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">Cambio {idx + 1}</span><span className="text-xs md:text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
+                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl p-1.5 md:p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">Cambio {idx + 1}</span><span className="text-xs md:text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
                             ))}
                         </div>
                     </div>
@@ -589,7 +589,7 @@ export default function AdminDashboardView() {
                             { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
                             { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
                         ].map((card, i) => (
-                            <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl md:rounded-[2rem] p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
+                            <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
                         ))}
                     </div>
                     <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
@@ -602,7 +602,7 @@ export default function AdminDashboardView() {
                                 {overtimeData.slice(0, 3).map((week) => {
                                     const isFullyPaid = isWeekFullyPaid(week);
                                     return (
-                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-2xl md:rounded-[2rem] shadow-sm border border-white/10 overflow-hidden">
+                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-2xl shadow-sm border border-white/10 overflow-hidden">
                                             <button onClick={() => toggleWeek(week.weekId)} className="w-full p-2 md:p-3 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"><div className="flex items-center gap-2 md:gap-3"><div className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-emerald-500" : "bg-orange-400")}>{isFullyPaid ? <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /> : <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />}</div><div className="flex items-center gap-1.5 md:gap-2"><h4 className="text-xs md:text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4><span className="text-purple-300 font-light mx-0.5">•</span><p className="text-[8px] md:text-[10px] font-bold text-purple-200 uppercase pt-0.5">{format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}</p></div></div><div className="text-right flex items-center gap-2 md:gap-3"><span className="text-sm md:text-lg font-black text-white">{week.total.toFixed(0)}€</span></div></button>
                                             {week.expanded && (
                                                 <div className="px-2.5 md:px-4 pb-2.5 md:pb-4 pt-1 space-y-1.5 md:space-y-2 animate-in slide-in-from-top-2 duration-300">
@@ -655,7 +655,7 @@ export default function AdminDashboardView() {
             )}
             {isStaffModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                             <div>
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
@@ -694,7 +694,7 @@ export default function AdminDashboardView() {
             {/* MODAL: Crear Nuevo Trabajador */}
             {isNewWorkerModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                             <div>
                                 <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
@@ -783,7 +783,7 @@ export default function AdminDashboardView() {
             )}
             {isProductModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
                         <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                             {[
@@ -794,7 +794,7 @@ export default function AdminDashboardView() {
                                 { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
                                 { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
                             ].map((item, i) => (
-                                <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-3xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
+                                <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
                             ))}
                         </div>
                     </div>

@@ -15,11 +15,12 @@ Evitar la fragmentación del diseño. Cada vez que crees una nueva página de de
 ### 1. 🖼️ Pop-ups y Modales (Estilo Flotante)
 - **Cero Contenedores en Opciones:** Las opciones dentro de un modal NO deben tener fondo (`bg-xxx`) ni bordes (`border-xxx`) por defecto.
 - **Icono + Texto:** Los elementos deben flotar sobre el fondo del modal.
+- **Bordes:** Usar siempre `rounded-2xl` para el contenedor principal del modal.
 - **Interacción:** Usar `hover:text-xxx` o `active:scale-95` para feedback, sin añadir cajas.
 - **Feedback Táctil:** Altura mínima de 48px para cada opción interactiva.
 
 ### 2. 📊 Vistas de Detalle (Vista Marbella Detail)
-- **Cabecera Estrecha:** Color `#36606F` con bordes redondeados pronunciados (`rounded-[2.5rem]`).
+- **Cabecera Estrecha:** Color `#36606F` con bordes redondeados estándar (`rounded-2xl`).
 - **Layout de Cabecera:** Debe ser estrecha (`py-4` aprox.), conteniendo un solo título principal, sin subtítulos ni etiquetas secundarias. Debe ser proporcional en altura a la cabecera de un modal estándar.
 - **Resumen KPI "Clean":**
     - Se eliminan las mini-tarjetas con fondo de color.
@@ -28,7 +29,7 @@ Evitar la fragmentación del diseño. Cada vez que crees una nueva página de de
 - **Filtros Contextuales:** Toda vista detalle debe incluir una sección de filtros (Fecha, Búsqueda, etc.) compacta y de alta densidad debajo de la cabecera.
 
 ### 3. 🍱 Bento Grid
-- Usar `rounded-3xl` o `rounded-[2.5rem]` para los contenedores principales.
+- Usar exclusivamente `rounded-2xl` para los contenedores principales.
 - Sombras suaves (`shadow-xl` o `shadow-2xl`).
 - Alta densidad de información sin saturar el espacio visual.
 
@@ -36,7 +37,7 @@ Evitar la fragmentación del diseño. Cada vez que crees una nueva página de de
 - **Fondo Global:** Usar siempre `bg-[#5B8FB9]` (Azul Marbella) para el contenedor principal de la página.
 - **Cuadrícula (Grid):** Layout responsivo de alta densidad: `grid-cols-3` en móvil, escalando hasta `grid-cols-8` en monitores XL.
 - **Tarjetas de Ítem:**
-    - `rounded-xl`, `p-1.5`, `bg-white`.
+    - `rounded-2xl`, `p-1.5`, `bg-white`.
     - Feedback visual obligatorio: `hover:-translate-y-0.5` y `active:scale-95`.
     - Altura de imagen fija (`h-14`) para mantener la alineación.
 - **Buscador:** Centrado o a la izquierda con `rounded-2xl` y sombra suave.

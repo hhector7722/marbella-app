@@ -170,12 +170,12 @@ function RecipesContent() {
                         ) : (
                             <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
                                 <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
-                                <button onClick={() => setSelectedCategory(null)} className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors"><X size={14} className="text-rose-500" strokeWidth={4} /></button>
+                                <button onClick={() => setSelectedCategory(null)} className="p-1.5 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={14} className="text-rose-500" strokeWidth={4} /></button>
                             </div>
                         )}
                     </div>
                     {!isRestricted && (
-                        <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-6 h-6" /></button>
+                        <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-12 h-12 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-6 h-6" /></button>
                     )}
                 </div>
             </div>
@@ -191,7 +191,7 @@ function RecipesContent() {
                                         router.push(`/recipes/${recipe.id}`);
                                     }
                                 }}
-                                className="bg-white rounded-xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
+                                className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
                             >
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                     {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
@@ -213,7 +213,7 @@ function RecipesContent() {
                     onClick={() => setSelectedRecipeId(null)}
                 >
                     <div
-                        className="bg-[#5B8FB9] w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
+                        className="bg-[#5B8FB9] w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header del Modal */}
@@ -248,7 +248,7 @@ function RecipesContent() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Columna Izquierda: Ingredientes */}
-                                    <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col min-h-[300px]">
+                                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col min-h-[300px]">
                                         <div className="bg-[#36606F] px-5 py-3 flex items-center justify-between shrink-0">
                                             <div className="flex items-center gap-2">
                                                 <UtensilsCrossed size={14} className="text-white/70" />
@@ -280,7 +280,7 @@ function RecipesContent() {
 
                                     {/* Columna Derecha: Elaboración */}
                                     <div className="space-y-4">
-                                        <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col h-full">
+                                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-full">
                                             <div className="bg-[#36606F] px-5 py-3 flex items-center gap-2 shrink-0">
                                                 <BookOpen size={14} className="text-white/70" />
                                                 <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h4>

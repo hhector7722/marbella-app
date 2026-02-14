@@ -270,7 +270,7 @@ export default function SuppliersPage() {
             {/* MODAL DETALLE / CONTACTO PROVEEDOR */}
             {detailSupplier && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setDetailSupplier(null)}>
-                    <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end -mt-4 -mr-4 mb-2">
                             <button onClick={() => setDetailSupplier(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                                 <X className="text-gray-400" size={20} />

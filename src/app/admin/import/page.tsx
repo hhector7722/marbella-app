@@ -228,7 +228,7 @@ export default function BulkImportPage() {
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
+                <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* CABECERA */}
                     <div className="bg-[#5B8FB9] px-8 py-4 flex items-center justify-between">

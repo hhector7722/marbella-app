@@ -494,7 +494,7 @@ export default function StaffDashboard() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 h-[200px]">
-                        <div className="bg-white rounded-[2rem] p-4 shadow-xl h-full flex flex-col overflow-hidden relative">
+                        <div className="bg-white rounded-2xl p-4 shadow-xl h-full flex flex-col overflow-hidden relative">
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="font-bold text-gray-700 flex items-center gap-2 text-xs">
                                     <CalendarDays size={16} className="text-purple-500" /> Horarios

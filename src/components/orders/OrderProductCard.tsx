@@ -78,7 +78,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     return (
         <div className="relative group overflow-hidden h-full">
             <div className={cn(
-                "bg-white rounded-[2rem] p-3 shadow-md transition-all flex flex-col h-full",
+                "bg-white rounded-2xl p-3 shadow-md transition-all flex flex-col h-full",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-xl" : "hover:shadow-lg hover:-translate-y-0.5"
             )}>
                 {/* Product Image */}

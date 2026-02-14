@@ -167,7 +167,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
 
                 {/* Header (Detail View Style) */}
                 <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
