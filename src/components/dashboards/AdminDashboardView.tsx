@@ -480,14 +480,16 @@ export default function AdminDashboardView() {
                             userFinalBalances.get(weekLabelId)!.set(userId, finalBalance);
                             const cost = (finalBalance > 0 && !preferStock) ? finalBalance * (userProfile.overtime_cost_per_hour || 0) : 0;
                             const isPaid = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId)?.is_paid || false;
-                            weekEntry.staff.push({ id: userId, name: userProfile.first_name, amount: cost, hours: finalBalance });
                             initialPaidStatus[`${weekLabelId}-${userId}`] = isPaid;
-                            weekEntry.total += cost;
+                            if (cost > 0) {
+                                weekEntry.staff.push({ id: userId, name: userProfile.first_name, amount: cost, hours: finalBalance });
+                                weekEntry.total += cost;
+                            }
                         }
                     });
                 });
                 setPaidStatus(initialPaidStatus);
-                setOvertimeData(Array.from(weeksMap.values()).sort((a, b) => b.weekId.localeCompare(a.weekId)));
+                setOvertimeData(Array.from(weeksMap.values()).filter((w: any) => w.staff.length > 0).sort((a: any, b: any) => b.weekId.localeCompare(a.weekId)));
             }
         } catch (error) { console.error(error); } finally { setLoading(false); }
     }
