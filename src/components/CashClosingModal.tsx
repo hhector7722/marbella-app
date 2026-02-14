@@ -215,9 +215,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
                         <div className="p-8 space-y-6">
-                            <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100 italic transition-all">
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas (Total del día)</label>
-                                <div className="flex items-center justify-between">
+                            <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100 transition-all">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas</label>
+                                <div className="flex items-center">
                                     <input
                                         type="number"
                                         className="w-full text-4xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0"
@@ -225,12 +225,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                         value={tpvData.totalSales || ''}
                                         onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
                                     />
-                                    <div className="flex items-center gap-1.5 shrink-0 px-4 py-2 bg-[#5B8FB9]/10 rounded-full">
-                                        <TrendingUp className="text-[#5B8FB9]" size={14} />
-                                        <span className="text-[10px] font-black text-[#5B8FB9] uppercase">Real Time</span>
-                                    </div>
                                 </div>
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-2">Extraídas automáticamente del sistema de tickets</p>
                             </div>
 
                             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between">
