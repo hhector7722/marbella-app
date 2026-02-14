@@ -217,7 +217,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                         <div className="p-8 space-y-6">
                             <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100 transition-all">
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas</label>
-                                <div className="flex items-center">
+                                <div className="flex items-center gap-2">
                                     <input
                                         type="number"
                                         step="0.01"
@@ -226,6 +226,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                         value={tpvData.totalSales || ''}
                                         onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
                                     />
+                                    <span className="text-4xl font-black text-[#5B8FB9]/40">€</span>
                                 </div>
                             </div>
 
