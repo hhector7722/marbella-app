@@ -58,10 +58,13 @@ export default function HistoryPage() {
     // Datos
     const [closings, setClosings] = useState<any[]>([]);
     const [summary, setSummary] = useState({
-        avgNetSales: 0,
-        avgLaborPercent: 0,
+        totalGrossSales: 0,
+        totalNetSales: 0,
+        avgTicket: 0,
         totalClosings: 0
     });
+
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
 
     useEffect(() => {
         fetchHistory();
@@ -82,7 +85,7 @@ export default function HistoryPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setClosings([]);
-                    setSummary({ avgNetSales: 0, avgLaborPercent: 0, totalClosings: 0 });
+                    setSummary({ totalGrossSales: 0, totalNetSales: 0, avgTicket: 0, totalClosings: 0 });
                     setLoading(false);
                     return;
                 }
@@ -111,16 +114,16 @@ export default function HistoryPage() {
 
             if (closingsData) {
                 setClosings(closingsData);
+                const sumGross = closingsData.reduce((acc, c) => acc + (c.tpv_sales || 0), 0);
                 const sumNet = closingsData.reduce((acc, c) => acc + (c.net_sales || 0), 0);
-                const avgNet = closingsData.length > 0 ? sumNet / closingsData.length : 0;
+                const totalTickets = closingsData.reduce((acc, c) => acc + (c.tickets_count || 0), 0);
 
-                const totalHours = logsData?.reduce((acc, l) => acc + (l.total_hours || 0), 0) || 0;
-                const totalLaborCost = totalHours * AVG_HOURLY_COST;
-                const avgLabor = sumNet > 0 ? (totalLaborCost / sumNet) * 100 : 0;
+                const avgTicket = totalTickets > 0 ? sumNet / totalTickets : 0;
 
                 setSummary({
-                    avgNetSales: avgNet,
-                    avgLaborPercent: avgLabor,
+                    totalGrossSales: sumGross,
+                    totalNetSales: sumNet,
+                    avgTicket: avgTicket,
                     totalClosings: closingsData.length
                 });
             }
@@ -162,6 +165,17 @@ export default function HistoryPage() {
         }
     };
 
+    const handleMonthSelect = (monthIndex: number) => {
+        const year = new Date().getFullYear();
+        const firstDay = new Date(year, monthIndex, 1);
+        const lastDay = new Date(year, monthIndex + 1, 0);
+
+        setRangeStart(format(firstDay, 'yyyy-MM-dd'));
+        setRangeEnd(format(lastDay, 'yyyy-MM-dd'));
+        setFilterMode('range');
+        setShowMonthPicker(false);
+    };
+
     // Helper para formatear moneda
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
@@ -200,18 +214,29 @@ export default function HistoryPage() {
                                 </div>
                                 <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rango:</span>
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Periodo:</span>
                                     <button
                                         onClick={() => setShowCalendar('range')}
                                         className={cn(
-                                            "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5",
-                                            filterMode === 'range' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
+                                            "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 font-black uppercase",
+                                            filterMode === 'range' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-[#5B8FB9] hover:border-gray-200"
                                         )}
                                     >
                                         <Calendar size={12} />
                                         {rangeStart && rangeEnd
                                             ? `${format(new Date(rangeStart), 'dd MMM', { locale: es })} - ${format(new Date(rangeEnd), 'dd MMM', { locale: es })}`
-                                            : 'Selec...'}
+                                            : 'RANGO'}
+                                    </button>
+                                </div>
+                                <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Mes:</span>
+                                    <button
+                                        onClick={() => setShowMonthPicker(true)}
+                                        className="h-8 px-3 rounded-lg text-[10px] font-bold border-2 bg-gray-50 border-gray-100 text-[#5B8FB9] hover:border-gray-200 transition-all flex items-center gap-1.5 font-black uppercase"
+                                    >
+                                        <Filter size={12} />
+                                        Mes
                                     </button>
                                 </div>
                             </div>
@@ -220,16 +245,16 @@ export default function HistoryPage() {
                         {/* KPI SUMMARY CLEAN (Sin tarjetas, solo valor y color) */}
                         <div className="grid grid-cols-3 gap-2 mb-8 py-6 border-y border-gray-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Venta Media</span>
-                                <span className="text-xl font-black text-emerald-500">{summary.avgNetSales.toFixed(0)}€</span>
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas</span>
+                                <span className="text-xl font-black text-emerald-500">{summary.totalGrossSales.toFixed(0)}€</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Coste MO</span>
-                                <span className="text-xl font-black text-rose-500">{summary.avgLaborPercent.toFixed(1)}%</span>
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Venta Neta</span>
+                                <span className="text-xl font-black text-emerald-600">{summary.totalNetSales.toFixed(0)}€</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Cierres</span>
-                                <span className="text-xl font-black text-blue-500">{summary.totalClosings}</span>
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ticket Medio</span>
+                                <span className="text-xl font-black text-blue-500">{summary.avgTicket.toFixed(2)}€</span>
                             </div>
                         </div>
 
