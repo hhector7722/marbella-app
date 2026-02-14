@@ -98,6 +98,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
 - [x] **Estandarización de Contacto**: Unificación de iconos de Teléfono y WhatsApp en `/profile` y `/suppliers` siguiendo el estilo minimalista del Dashboard de Personal.
 - [x] **Sistema de Pedidos a Proveedores (Refinado)**: Mejora del flujo en `/orders/new` con iconos circulares (48px), botón de resumen superior, filtrado estricto por proveedor, soporte para unidades personalizadas con persistencia y eliminación de precios en resumen y PDF.
+- [x] **Refinamiento UI Historial (Staff)**: Unificación estética de cabeceras, rediseño de filtros (Empleado/Mes) sin flechas, reposicionamiento del sello "Pagado" y ajuste de ancho de tabla para mayor densidad visual.
 - [x] **Estandarización de Redondeo (rounded-2xl)**: Unificación global de todos los contenedores y modales de la aplicación al estándar de redondeo de 16px (`rounded-2xl`) para una estética premium y consistente.
 
 ## 📅 PENDIENTE

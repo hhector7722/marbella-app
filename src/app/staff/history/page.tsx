@@ -443,10 +443,9 @@ export default function HistoryPage() {
                     <div className="relative">
                         <button
                             onClick={() => setShowEmployeeDropdown(!showEmployeeDropdown)}
-                            className="w-full h-12 bg-white rounded-2xl shadow-sm border border-zinc-100 px-4 flex items-center justify-between text-sm font-bold text-zinc-700 active:scale-[0.98] transition-all"
+                            className="w-full h-12 bg-white rounded-2xl shadow-sm border border-zinc-100 px-4 flex items-center justify-center text-sm font-black uppercase tracking-widest text-zinc-700 active:scale-[0.98] transition-all"
                         >
-                            <span>{viewingOther ? `Historial de ${selectedEmployeeName}` : 'Mi Historial'}</span>
-                            <ChevronDown size={18} className={cn("text-zinc-400 transition-transform", showEmployeeDropdown && "rotate-180")} />
+                            <span>Empleado</span>
                         </button>
                         {showEmployeeDropdown && (
                             <div className="absolute top-14 left-0 right-0 bg-white rounded-2xl shadow-xl border border-zinc-100 z-50 max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
@@ -488,13 +487,11 @@ export default function HistoryPage() {
                                 className={cn(
                                     "flex items-center gap-3 px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100",
                                     "text-[11px] font-black text-zinc-800 uppercase tracking-[0.25em]",
-                                    "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl",
-                                    isFilterActive && "ring-2 ring-orange-500 ring-offset-4 ring-offset-[#5B8FB9]"
+                                    "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl"
                                 )}
                             >
-                                <Calendar size={16} className={cn(isFilterActive ? "text-orange-500" : "text-zinc-400")} fill={isFilterActive ? "currentColor" : "none"} />
+                                <Calendar size={16} className="text-zinc-400" />
                                 <span>{getMonthLabel(currentDate)}</span>
-                                <ChevronDown size={16} className={cn("text-zinc-400 transition-transform", showFilter && "rotate-180")} />
                             </button>
 
                             {isFilterActive && (
@@ -526,12 +523,12 @@ export default function HistoryPage() {
 
                                     {/* Header Sólido Azul Marbella */}
                                     <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                                        <div className="flex flex-col">
+                                        <div className="flex items-center gap-3">
                                             <span className="text-[10px] font-black uppercase tracking-widest leading-none">
                                                 {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
                                             </span>
                                             {week.isCurrentWeek && (
-                                                <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 w-fit animate-pulse">
+                                                <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse leading-none">
                                                     En Curso
                                                 </span>
                                             )}
@@ -539,22 +536,20 @@ export default function HistoryPage() {
                                         {isManager && (
                                             <button
                                                 onClick={() => openEdit(idx)}
-                                                className="h-8 w-8 flex items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-90"
-                                                title="Editar registros"
+                                                className="text-[10px] font-black text-white/70 hover:text-white transition-all active:scale-90 uppercase tracking-widest"
                                             >
-                                                <Pencil size={14} strokeWidth={3} />
+                                                EDITAR
                                             </button>
                                         )}
                                     </div>
 
-                                    <div className="p-4">
-                                        {week.summary.isPaid && (
-                                            <div className="absolute -bottom-7 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
-                                                <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                                            </div>
-                                        )}
-
+                                    <div className="p-2 relative">
                                         <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                            {week.summary.isPaid && (
+                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
+                                                    <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
+                                                </div>
+                                            )}
                                             <div className="grid grid-cols-7 border-b border-gray-100">
                                                 {week.days.map((day, i) => (
                                                     <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
