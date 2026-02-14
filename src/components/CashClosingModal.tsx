@@ -6,7 +6,7 @@ import {
     X, Save, Banknote, Coins, Calculator, Loader2,
     CreditCard, UserMinus, ArchiveRestore, Store,
     AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
-    CheckCircle2
+    CheckCircle2, TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -50,8 +50,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
     // 1. STATE: TPVs
     const [tpvData, setTpvData] = useState({
-        tpv1: 0,
-        tpv2: 0,
+        totalSales: 0,
         cardSales: 0,
         pendingSales: 0,
         debtRecovered: 0,
@@ -68,11 +67,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
     useEffect(() => {
         if (isOpen) {
             fetchOpening();
+            fetchTodayVentas();
         } else {
             // Reset state on close
             setStep('tpv_data');
             setTpvData({
-                tpv1: 0, tpv2: 0, cardSales: 0, pendingSales: 0,
+                totalSales: 0, cardSales: 0, pendingSales: 0,
                 debtRecovered: 0, ticketsCount: 0, weather: 'Soleado'
             });
             setCounts({});
@@ -92,8 +92,25 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         }
     }
 
+    async function fetchTodayVentas() {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const { data: tickets } = await supabase
+            .from('tickets_marbella')
+            .select('total_documento')
+            .eq('fecha', todayStr);
+
+        const total = tickets?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
+        const count = tickets?.filter(t => (Number(t.total_documento) || 0) !== 0).length || 0;
+
+        setTpvData(prev => ({
+            ...prev,
+            totalSales: total,
+            ticketsCount: count
+        }));
+    }
+
     // --- CALCULATIONS ---
-    const totalSalesGross = tpvData.tpv1 + tpvData.tpv2;
+    const totalSalesGross = tpvData.totalSales;
     const cashSalesToday = totalSalesGross - tpvData.cardSales - tpvData.pendingSales;
     const expectedCash = openingCash + cashSalesToday + tpvData.debtRecovered;
     const totalCounted = Object.entries(counts).reduce((sum, [val, qty]) => sum + (parseFloat(val) * qty), 0);
@@ -198,31 +215,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
                         <div className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-4 p-5 bg-gray-50 rounded-[2rem] border border-gray-100">
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">TPV 2</label>
+                            <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100 italic transition-all">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas (Total del día)</label>
+                                <div className="flex items-center justify-between">
                                     <input
                                         type="number"
-                                        className="w-full text-2xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-[#5B8FB9] outline-none transition-colors"
+                                        className="w-full text-4xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0"
                                         placeholder="0.00"
-                                        value={tpvData.tpv2 || ''}
-                                        onChange={e => setTpvData({ ...tpvData, tpv2: parseFloat(e.target.value) || 0 })}
+                                        value={tpvData.totalSales || ''}
+                                        onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
                                     />
+                                    <div className="flex items-center gap-1.5 shrink-0 px-4 py-2 bg-[#5B8FB9]/10 rounded-full">
+                                        <TrendingUp className="text-[#5B8FB9]" size={14} />
+                                        <span className="text-[10px] font-black text-[#5B8FB9] uppercase">Real Time</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">TPV 1</label>
-                                    <input
-                                        type="number"
-                                        className="w-full text-2xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-[#5B8FB9] outline-none transition-colors"
-                                        placeholder="0.00"
-                                        value={tpvData.tpv1 || ''}
-                                        onChange={e => setTpvData({ ...tpvData, tpv1: parseFloat(e.target.value) || 0 })}
-                                    />
-                                </div>
-                                <div className="col-span-2 pt-2 flex justify-between items-center bg-white/50 p-3 rounded-xl mt-2">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase">Total Bruto</span>
-                                    <span className="text-xl font-black text-[#5B8FB9]">{totalSalesGross.toFixed(2)}€</span>
-                                </div>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-2">Extraídas automáticamente del sistema de tickets</p>
                             </div>
 
                             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between">
@@ -268,7 +276,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     )}
 
@@ -394,6 +401,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
