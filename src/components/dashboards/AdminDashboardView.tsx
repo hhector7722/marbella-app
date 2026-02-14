@@ -590,21 +590,54 @@ export default function AdminDashboardView() {
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                         </div>
-                        <div className="p-4 md:p-6 flex flex-col gap-4 md:gap-6 flex-1">
+                        <div className="p-4 md:p-6 space-y-3 md:space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                             {overtimeData.length === 0 ? (
                                 <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
                             ) : (
-                                overtimeData.slice(0, 3).map((week, idx) => (
-                                    <div key={idx} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#5B8FB9]">Semana {format(parseISO(week.weekId), 'dd/MM')}</span>
-                                            <span className="text-xs font-black text-zinc-800">{week.total.toFixed(0)}€</span>
+                                overtimeData.slice(0, 3).map((week) => {
+                                    const isFullyPaid = isWeekFullyPaid(week);
+                                    return (
+                                        <div key={week.weekId} className="bg-[#5E35B1] rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+                                            <button onClick={() => toggleWeek(week.weekId)} className="w-full p-2 md:p-3 flex items-center justify-between text-left group hover:bg-white/5 transition-colors">
+                                                <div className="flex items-center gap-2 md:gap-3">
+                                                    <div className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-emerald-500" : "bg-orange-400")}>
+                                                        {isFullyPaid ? <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /> : <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />}
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                                        <h4 className="text-xs md:text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                                        <span className="text-purple-300 font-light mx-0.5">•</span>
+                                                        <p className="text-[8px] md:text-[10px] font-bold text-purple-200 uppercase pt-0.5">
+                                                            {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex items-center gap-2 md:gap-3">
+                                                    <span className="text-sm md:text-lg font-black text-white">{week.total.toFixed(0)}€</span>
+                                                </div>
+                                            </button>
+                                            {week.expanded && (
+                                                <div className="px-2.5 md:px-4 pb-2.5 md:pb-4 pt-1 space-y-1.5 md:space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                    {week.staff.map((s: any) => (
+                                                        <div key={s.id} className="flex items-center justify-between p-2 md:p-3 bg-white/60 rounded-xl md:rounded-2xl border border-purple-100/30">
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-[10px] md:text-xs font-black capitalize">
+                                                                    {s.name.charAt(0)}
+                                                                </div>
+                                                                <span className="text-[10px] md:text-xs font-bold text-gray-700 capitalize">{s.name}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <span className="text-[10px] md:text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
+                                                                <button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border md:border-2 border-gray-200 text-transparent")}>
+                                                                    <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, (week.total / 1000) * 100)}%` }} />
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
@@ -619,26 +652,6 @@ export default function AdminDashboardView() {
                         ].map((card, i) => (
                             <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
                         ))}
-                    </div>
-                    <div className="space-y-3 md:space-y-4 max-h-[250px] md:max-h-[350px] overflow-y-auto no-scrollbar pr-1">
-                        {overtimeData.slice(0, 3).map((week) => {
-                            const isFullyPaid = isWeekFullyPaid(week);
-                            return (
-                                <div key={week.weekId} className="bg-[#5E35B1] rounded-2xl shadow-sm border border-white/10 overflow-hidden">
-                                    <button onClick={() => toggleWeek(week.weekId)} className="w-full p-2 md:p-3 flex items-center justify-between text-left group hover:bg-white/5 transition-colors"><div className="flex items-center gap-2 md:gap-3"><div className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-emerald-500" : "bg-orange-400")}>{isFullyPaid ? <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /> : <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />}</div><div className="flex items-center gap-1.5 md:gap-2"><h4 className="text-xs md:text-sm font-black text-white">Sem {getISOWeek(new Date(week.weekId))}</h4><span className="text-purple-300 font-light mx-0.5">•</span><p className="text-[8px] md:text-[10px] font-bold text-purple-200 uppercase pt-0.5">{format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}</p></div></div><div className="text-right flex items-center gap-2 md:gap-3"><span className="text-sm md:text-lg font-black text-white">{week.total.toFixed(0)}€</span></div></button>
-                                    {week.expanded && (
-                                        <div className="px-2.5 md:px-4 pb-2.5 md:pb-4 pt-1 space-y-1.5 md:space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                            {week.staff.map((s: any) => (
-                                                <div key={s.id} className="flex items-center justify-between p-2 md:p-3 bg-white/60 rounded-xl md:rounded-2xl border border-purple-100/30">
-                                                    <div className="flex items-center gap-2 md:gap-3"><div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-[10px] md:text-xs font-black capitalize">{s.name.charAt(0)}</div><span className="text-[10px] md:text-xs font-bold text-gray-700 capitalize">{s.name}</span></div>
-                                                    <div className="flex items-center gap-2 md:gap-3"><span className="text-[10px] md:text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border md:border-2 border-gray-200 text-transparent")}><CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /></button></div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
                     </div>
                 </div>
             </div>
