@@ -111,7 +111,7 @@ export async function getOvertimeData(startDate: string, endDate: string) {
             const profile = profileMap.get(userId);
 
             if (profile) {
-                const limit = profile.contracted_hours_weekly || 40;
+                const limit = profile.contracted_hours_weekly ?? 40;
                 const overPrice = profile.overtime_cost_per_hour || 0;
                 const preferStock = profile.prefer_stock_hours || false;
                 const isManager = profile.role === 'manager';

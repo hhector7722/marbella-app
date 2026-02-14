@@ -144,7 +144,7 @@ export default function HistoryPage() {
                 setPreferStock(profile.prefer_stock_hours || false);
             }
 
-            const contractHours = profile?.contracted_hours_weekly || 40;
+            const contractHours = profile?.contracted_hours_weekly ?? 40;
             const overtimeRate = profile?.overtime_cost_per_hour || 0;
             const isFixedSalary = profile?.is_fixed_salary || false;
             const isTargetManager = profile?.role === 'manager';

@@ -399,7 +399,7 @@ export default function AdminDashboardView() {
                 userDayHours.forEach((hours, userId) => {
                     const profile = profileMap.get(userId);
                     if (profile) {
-                        const dailyContracted = (profile.contracted_hours_weekly || 40) / 5;
+                        const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
                         const regPrice = profile.regular_cost_per_hour || 0;
                         const overPrice = profile.overtime_cost_per_hour || regPrice;
                         if (profile.role === 'manager') { laborCost += dailyContracted * regPrice; laborCost += hours * overPrice; countedManagers.add(userId); }
@@ -408,7 +408,7 @@ export default function AdminDashboardView() {
                 });
                 allProfiles?.forEach(profile => {
                     if (profile.role === 'manager' && !countedManagers.has(profile.id)) {
-                        const dailyContracted = (profile.contracted_hours_weekly || 40) / 5;
+                        const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
                         const regPrice = profile.regular_cost_per_hour || 0;
                         laborCost += dailyContracted * regPrice;
                     }
@@ -464,7 +464,7 @@ export default function AdminDashboardView() {
                     userMap.forEach((totalHours, userId) => {
                         const userProfile = profileMap.get(userId);
                         if (userProfile) {
-                            const contractedHours = userProfile.contracted_hours_weekly || 40;
+                            const contractedHours = userProfile.contracted_hours_weekly ?? 40;
                             const isManager = userProfile.role === 'manager';
                             const isFixedSalary = userProfile.is_fixed_salary || false;
                             const preferStock = userProfile.prefer_stock_hours || false;
@@ -507,8 +507,8 @@ export default function AdminDashboardView() {
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
 
     return (
-        <div className="pb-24 animate-in fade-in duration-500">
-            <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6">
+        <div className="pb-28 pt-1 animate-in fade-in duration-500">
+            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
                     {/* Desktop Col 1: Ventas + Horas Extras */}
@@ -595,10 +595,15 @@ export default function AdminDashboardView() {
                                 </div>
                             ))}
                         </div>
-                        <div className="grid grid-cols-2 gap-6 h-16">
-                            {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cambio {idx + 1}</span><span className="text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
-                            ))}
+                        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                            <div className="bg-[#36606F] px-6 py-2.5 flex items-center text-white shrink-0">
+                                <h3 className="text-sm font-black uppercase tracking-wider">Cajas Cambio</h3>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 p-4">
+                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
+                                    <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-gray-50 rounded-2xl p-3 hover:bg-gray-100 transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cambio {idx + 1}</span><span className="text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
+                                ))}
+                            </div>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                             {[
@@ -703,14 +708,18 @@ export default function AdminDashboardView() {
                     {/* 4. FILA INFERIOR: Cajas de Cambio (izq) + Iconos (dcha) */}
                     <div className="grid grid-cols-2 gap-3">
                         {/* Columna izquierda: Cajas de cambio */}
-                        <div className="bg-white rounded-2xl p-3 shadow-xl border border-gray-100 flex flex-col justify-center gap-3">
-                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cajas</span>
-                            {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="flex items-center justify-between active:scale-95 transition-all">
-                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider">Cambio {idx + 1}</span>
-                                    <span className="text-sm font-black text-[#5B8FB9]">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span>
-                                </button>
-                            ))}
+                        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                            <div className="bg-[#36606F] px-4 py-2 flex items-center text-white shrink-0">
+                                <h3 className="text-[10px] font-black uppercase tracking-wider">Cajas Cambio</h3>
+                            </div>
+                            <div className="p-3 flex flex-col justify-center gap-2.5 flex-1">
+                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
+                                    <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-gray-50 active:scale-95 transition-all">
+                                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider">Cambio {idx + 1}</span>
+                                        <span className="text-sm font-black text-[#5B8FB9]">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                         {/* Columna derecha: 2x2 Iconos */}
                         <div className="grid grid-cols-2 gap-2">
