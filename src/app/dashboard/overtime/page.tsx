@@ -162,7 +162,7 @@ export default function OvertimePage() {
                         </button>
                     </div>
 
-                    <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
+                    <div className="p-6 md:p-8 w-full bg-white min-h-screen">
 
                         {/* FILTROS Y BÚSQUEDA (Layout Compacto) */}
                         <div className="mb-6 space-y-4">
