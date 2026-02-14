@@ -55,6 +55,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Visibilidad Selectiva ADM/Staff**: Restricción del toggle de la cabecera exclusivamente para usuarios con rol de Manager.
 - [x] **Cierre de Caja Full Integration**: Implementación de botón "+ CIERRE" en la cabecera fija para usuarios específicos, con mapeo al nuevo esquema de `cash_closings` e integración automática con la tesorería de la "Caja Inicial" mediante desglose de unidades.
 - [x] **Unificación de Cuenta**: Migración de las opciones de "Configuración" (Cambio de Contraseña y Logout) directamente a la vista de Perfil.
+- [x] **Notificaciones de Horario**: Implementación de sistema Web Push con botón "ENVIAR" en el editor de horarios para notificar a los empleados.
+- [x] **Reporte de Cierre Automático**: Notificaciones push automáticas a todos los managers con el resumen financiero (Ventas, Venta Neta, Ticket Medio) al realizar el cierre diario.
 - [x] **Refinamiento Recetas Staff**: Ajuste de fondo blanco para el modal de detalle de recetas cuando se accede desde el dashboard de personal.
 
 ## 📅 PENDIENTE

@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { sendClosingNotification } from '@/app/actions/notifications';
 
 // --- CONSTANTS ---
 const FIXED_CASH_FUND = 100;
@@ -177,6 +178,15 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             }
 
             toast.success("Cierre completado con éxito");
+
+            // Enviar notificación a los managers
+            const avgTicket = tpvData.ticketsCount > 0 ? (totalSalesGross / tpvData.ticketsCount) : 0;
+            sendClosingNotification({
+                totalSales: totalSalesGross,
+                netSales: netSalesCalculated,
+                avgTicket: avgTicket
+            }).catch(err => console.error("Error sending closing notify:", err));
+
             if (onSuccess) await onSuccess();
             onClose();
         } catch (error: any) {
