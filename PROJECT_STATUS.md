@@ -53,7 +53,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Optimización Bottom Nav**: Reorganización de ítems (Horarios, Asistencia, Inicio, Pedidos, Cuenta) con nuevos iconos PNG y acceso directo a pedidos.
 - [x] **Estabilidad Dashboard Admin**: Corrección de layout en 2 columnas, reordenación inteligente para móvil/desktop y ajuste cromático de Horas Extras a púrpura corporativo.
 - [x] **Visibilidad Selectiva ADM/Staff**: Restricción del toggle de la cabecera exclusivamente para usuarios con rol de Manager.
+- [x] **Cierre de Caja Full Integration**: Implementación de botón "+ CIERRE" en la cabecera fija para usuarios específicos, con mapeo al nuevo esquema de `cash_closings` e integración automática con la tesorería de la "Caja Inicial" mediante desglose de unidades.
 - [x] **Unificación de Cuenta**: Migración de las opciones de "Configuración" (Cambio de Contraseña y Logout) directamente a la vista de Perfil.
+- [x] **Refinamiento Recetas Staff**: Ajuste de fondo blanco para el modal de detalle de recetas cuando se accede desde el dashboard de personal.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

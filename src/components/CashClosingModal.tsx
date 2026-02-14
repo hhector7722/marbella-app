@@ -11,6 +11,8 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 // --- CONSTANTS ---
 const FIXED_CASH_FUND = 100;
@@ -109,11 +111,15 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            const now = new Date();
+
+            // Format movement name for treasury: "Cierre Sab 14 Feb"
+            const movementName = `Cierre ${format(now, "EEE d MMM", { locale: es })}`;
 
             // Calculate Net Sales (Excluding 10% IVA as expected by Dashboard)
             const netSalesCalculated = totalSalesGross / 1.10;
 
-            // 1. Prepare breakdown for the new unified treasury logic
+            // Prepare breakdown for the new unified treasury logic
             const breakdownJson: Record<string, number> = {};
             Object.entries(counts).forEach(([denomination, count]) => {
                 if (count > 0) {
@@ -124,13 +130,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             const { data: closing, error } = await supabase
                 .from('cash_closings')
                 .insert({
-                    opened_by: user?.id,
-                    closed_by: user?.id,
-                    closed_at: new Date().toISOString(),
+                    closing_datetime: now.toISOString(),
+                    closing_date: format(now, "yyyy-MM-dd"),
+                    tpv_sales: totalSalesGross,
                     net_sales: netSalesCalculated,
                     sales_card: tpvData.cardSales,
                     sales_pending: tpvData.pendingSales,
                     debt_recovered: tpvData.debtRecovered,
+                    card_payments: tpvData.cardSales,
+                    pending_payments: tpvData.pendingSales,
+                    collections: tpvData.debtRecovered,
                     cash_expected: expectedCash,
                     cash_counted: totalCounted,
                     difference: difference,
@@ -138,8 +147,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                     cash_left: cashLeft,
                     weather: tpvData.weather,
                     tickets_count: tpvData.ticketsCount,
-                    notes: `TPV1: ${tpvData.tpv1.toFixed(2)}€ | TPV2: ${tpvData.tpv2.toFixed(2)}€`,
-                    breakdown: breakdownJson // New column for automated treasury logging
+                    notes: movementName, // This will be the name in treasury log
+                    status: 'closed',
+                    breakdown: breakdownJson
                 })
                 .select()
                 .single();
@@ -148,9 +158,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                 console.error("Error inserting closing:", error);
                 throw new Error(`Error al guardar el cierre: ${error.message}`);
             }
-
-            // Legacy individual cash_counts insert is now removed as it's handled by DB trigger
-            // moving the cash_withdrawn amount to the operational box via treasury_log.
 
             toast.success("Cierre completado con éxito");
             if (onSuccess) await onSuccess();
