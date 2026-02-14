@@ -438,41 +438,67 @@ export default function HistoryPage() {
 
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
 
-                {/* Filtro por empleado (solo manager) */}
+                {/* Filtro por empleado (solo manager) - Popup Rediseñado */}
                 {isManager && (
-                    <div className="relative">
+                    <div className="flex justify-center mb-2">
                         <button
-                            onClick={() => setShowEmployeeDropdown(!showEmployeeDropdown)}
-                            className="w-full h-12 bg-white rounded-2xl shadow-sm border border-zinc-100 px-4 flex items-center justify-center text-sm font-black uppercase tracking-widest text-zinc-700 active:scale-[0.98] transition-all"
+                            onClick={() => setShowEmployeeDropdown(true)}
+                            className="px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-800 active:scale-95 transition-all hover:bg-zinc-50"
                         >
-                            <span>Empleado</span>
+                            <span>Seleccionar Empleado</span>
                         </button>
+
                         {showEmployeeDropdown && (
-                            <div className="absolute top-14 left-0 right-0 bg-white rounded-2xl shadow-xl border border-zinc-100 z-50 max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
-                                <button
-                                    onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
-                                    className={cn(
-                                        "w-full px-4 py-3 text-left text-sm font-bold flex items-center gap-2 hover:bg-zinc-50 transition-colors",
-                                        selectedEmployeeId === currentUserId ? "text-blue-600 bg-blue-50" : "text-zinc-700"
-                                    )}
+                            <div
+                                className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
+                                onClick={() => setShowEmployeeDropdown(false)}
+                            >
+                                <div
+                                    className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[80vh]"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    Mi Historial
-                                    {selectedEmployeeId === currentUserId && <Check size={16} className="ml-auto" />}
-                                </button>
-                                <div className="h-px bg-zinc-100" />
-                                {employees.filter(e => e.id !== currentUserId).map(emp => (
-                                    <button
-                                        key={emp.id}
-                                        onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
-                                        className={cn(
-                                            "w-full px-4 py-3 text-left text-sm font-bold flex items-center gap-2 hover:bg-zinc-50 transition-colors",
-                                            selectedEmployeeId === emp.id ? "text-blue-600 bg-blue-50" : "text-zinc-700"
-                                        )}
-                                    >
-                                        {emp.first_name} {emp.last_name}
-                                        {selectedEmployeeId === emp.id && <Check size={16} className="ml-auto" />}
-                                    </button>
-                                ))}
+                                    <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100 shrink-0">
+                                        <div className="flex flex-col">
+                                            <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
+                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowEmployeeDropdown(false)}
+                                            className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-4 overflow-y-auto custom-scrollbar">
+                                        <button
+                                            onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
+                                            className={cn(
+                                                "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
+                                                selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
+                                            )}
+                                        >
+                                            <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
+                                            Mi Historial
+                                        </button>
+
+                                        <div className="h-px bg-zinc-100 my-4" />
+
+                                        {employees.filter(e => e.id !== currentUserId).map(emp => (
+                                            <button
+                                                key={emp.id}
+                                                onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
+                                                className={cn(
+                                                    "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
+                                                    selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
+                                                )}
+                                            >
+                                                <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
+                                                {emp.first_name} {emp.last_name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -490,7 +516,6 @@ export default function HistoryPage() {
                                     "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl"
                                 )}
                             >
-                                <Calendar size={16} className="text-zinc-400" />
                                 <span>{getMonthLabel(currentDate)}</span>
                             </button>
 
@@ -517,8 +542,7 @@ export default function HistoryPage() {
                             return (
                                 <div key={idx} className={cn(
                                     "bg-white rounded-2xl shadow-xl overflow-hidden",
-                                    "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4",
-                                    week.isCurrentWeek && "ring-2 ring-blue-400/40"
+                                    "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4"
                                 )} style={{ animationDelay: `${idx * 50}ms` }}>
 
                                     {/* Header Sólido Azul Marbella */}
@@ -552,7 +576,7 @@ export default function HistoryPage() {
                                             )}
                                             <div className="grid grid-cols-7 border-b border-gray-100">
                                                 {week.days.map((day, i) => (
-                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-[#5B8FB9] min-h-[108px] bg-white relative">
+                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
                                                         <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
                                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                                         </div>

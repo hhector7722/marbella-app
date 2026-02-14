@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, LogOut, User, Calendar, Clock, Settings } from 'lucide-react';
+import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -69,8 +69,9 @@ export default function BottomNavStaff() {
         { name: 'Horarios', href: '/staff/schedule', icon: Calendar },
         { name: 'Asistencia', href: '/staff/history', icon: Clock },
         { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
+        { name: 'Pedidos', href: '/orders', icon: Package },
         {
-            name: 'Perfil', href: '/profile', icon: () => (
+            name: 'Cuenta', href: '/profile', icon: () => (
                 <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
                     {userData?.avatar_url ? (
                         <Image
@@ -86,7 +87,6 @@ export default function BottomNavStaff() {
                 </div>
             )
         },
-        { name: 'Conf', href: '/staff/account', icon: Settings },
     ];
 
     return (

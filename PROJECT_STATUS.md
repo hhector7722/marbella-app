@@ -49,57 +49,11 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Rediseño Registros: Calendario ultra-moderno integrado directamente sobre fondo azul, con cabecera roja y celdas blancas, unificado en un bloque con esquinas redondeadas.
 - [x] Refactorización Dashboard Staff (Escritorio): Nueva disposición optimizada con Resumen/Fichaje a la izquierda (col-1) y Horarios proactivos/Iconos a la derecha (col-2).
 - [x] Identificación Visual Tesorería: Integración de imágenes de billetes y monedas en todos los formularios de desglose de efectivo (Caja Inicial, Cambio, Arqueo).
-- [x] Rediseño Perfil Corporativo: Transición de `/profile` a una tarjeta de alta densidad con estilo "Vista Marbella Detail", optimizada para táctil y alto contraste.
-- [x] Refinamiento Staff (Móvil): Layout de doble columna en smartphone (Horarios 1/2 e Iconos 1/2) con etiqueta "Info" responsiva.
-- [x] **Cierre de Caja Moderno**: Nuevo `CashClosingModal` multi-paso con soporte para clima, tickets y arqueo detallado, reemplazando la página legacy.
-- [x] **Gestión Staff Transparente**: Restauración de etiquetas y visualización de valores cero en resúmenes semanales para trazabilidad total.
-- [x] **Refinamiento Dashboard Admin**: Tarjetas de "Último Cierre" con diseño minimalista sin relleno, valores flotantes y acentos de color tipográficos.
-- [x] **Consistencia Estética (Iconografía)**: Estandarización de iconos de navegación y acción a estilo "solid-fill" en Navbar, Dashboard, Histórico y Horarios.
-- [x] **Corrección de Estabilidad Dashboard**: Resolución de errores de sintaxis JSX y balanceo de etiquetas en el panel de administración principal.
-- [x] **Regla Zero-Display Global**: Implementación de norma para ocultar valores cero en vistas de lectura, con soporte en el protocolo de arquitectura y `lib/utils.ts`.
-- [x] **Refactorización Layout Dashboard Admin**: Disposición en cuadrícula 2x2 con Cierre y Tesorería arriba, e Iconos y Horas Extras abajo.
-- [x] **Unificación Estética Cierre**: Resumen de facturación integrado en un único bloque blanco sin tarjetas internas para mayor claridad.
-- [x] **Optimización Tesorería**: Reorganización de cajas de cambio en fila y caja inicial expandida.
-- [x] **Restauración de Identidad Visual**: Corrección de ruta del logotipo (`/icons/logo-white.png`) en Login y Navbar.
-- [x] **Regla de Iconos Flotantes**: Eliminación de tarjetas de fondo en iconos de modales (Dashboard y Producto) para un diseño más limpio.
-- [x] **Regla de Visibilidad de Modales:** Los modales deben ser 100% visibles (sin cortes) con scroll interno obligatorio si el contenido es extenso.
-- [x] **Cumplimiento Zero-Display (Staff)**: Aplicación de la norma en el resumen semanal del dashboard de personal.
-- [x] **Optimización UI Gestión de Caja**: Imágenes de moneda agrandadas (h-24/h-20), modales ensanchados (max-w-2xl/4xl) y layouts sin scroll para arqueos, entradas/salidas, cambios y cierre.
-- [x] **Disparador de Cierre de Caja**: Conexión del botón "+" de "Último Cierre" con el `CashClosingModal` para gestión proactiva desde el dashboard.
-- [x] **Integración Herencia Iconográfica**: Migración de iconos Lucide a PNG personalizados en Dashboard, Staff y Perfil para identidad corporativa (Refinado: eliminación de marcos/filtros).
-- [x] **Cumplimiento Regla Zero-Display (Final)**: Aplicación estricta y verificada de ocultación de valores cero en las vistas de personal (Dashboard e Historial) y refuerzo de la utilidad global en `lib/utils.ts`.
-- [x] **Optimización de Accesos Admin**: Reducción al 50% de los contenedores de aplicaciones en el dashboard administrativo, organizados en una única fila compacta con iconos centrados.
-- [x] **Optimización de Rendimiento y Carga de Iconos**: Sustitución de etiquetas `<img>` por el componente `Image` de Next.js en dashboards y navegación para mejorar la velocidad de carga y prevenir saltos de diseño (Layout Shift).
-- [x] **Compactación Dashboard Admin (Smartphone)**: Reducción del 50% en la altura de contenedores clave (Cierres, Tesorería, Extras) y ajuste de iconos cuadrados para máxima eficiencia vertical.
-- [x] **Refinamiento Staff Dashboard**: Simplificación de etiquetas ("Horarios" en lugar de "Próximos Horarios") para una interfaz más limpia.
-- [x] **Rediseño Modal de Cierre**: Simplificación total del modal de arqueo e implementación de persistencia real en la tabla `cash_closings` (Corregido error de columnas `opened_by`/`closed_by`).
-- [x] **Persistencia y Cálculo de Venta Neta**: Integración de lógica de inserción en base de datos con cálculo automático de neto (IVA 10%) para estadísticas históricas.
-- [x] **Refinamiento Modal de Cambios**: Títulos dinámicos y botones flotantes para una estética minimalista.
-- [x] **Estandarización de Resúmenes Staff**: Unificación de resúmenes semanales con alturas fijas para garantizar la inmovilidad de etiquetas bajo la regla Zero-Display.
-- [x] **Unificación Estética de Tesorería (Floating UI)**: Eliminación de billetes de 500/200€, implementación de imágenes premium agrandadas y diseño sin tarjetas en todos los formularios de caja y cierre.
-- [x] **Configuración de Icono PWA**: Corrección de rutas de iconos en `manifest.json` y `layout.tsx` para apuntar correctamente a `/icons/logo-white.png`, asegurando la imagen correcta al "añadir a pantalla de inicio".
-- [x] **Optimización de Modales de Tesorería**: Compactación radical de los formularios de Entrada, Salida, Arqueo y Cambios para eliminar el scroll. Rediseño del formulario de cambios a layout horizontal y homogeneización de tamaños de valores en toda la gestión de efectivo.
-- [x] **Filtros Avanzados en Extras**: Implementación de selector de periodo (mes) y selección manual de rango de fechas en el histórico de horas extras para una auditoría más precisa.
-- [x] **Agrupación de Semanas ISO**: Corrección del sistema de agrupación de semanas en el dashboard de extras para utilizar el estándar ISO (Lunes a Domingo).
-- [x] **Propagación y Recálculo V3**: Implementación de lógica de servidor para propagar balances semanales, respetando contratos históricos y corrigiendo el balance de Managers (Extras-only). Lógica asimétrica de deuda indestructible.
-- [x] **Geofencing (GPS) Restricción:** Implementación de validación por radio de 150m para fichajes de staff y auditoría silenciosa para managers (Ajustado por fiabilidad).
-- [x] **Refinamiento Visual Staff:** Actualización de iconos a versiones PNG premium, cambio de etiqueta "Guía" por "Cambiar" y optimización de iconos en el popup de Contactos (WhatsApp PNG y icono de teléfono flotante).
-- [x] **Navegación por Gestos:** Implementación de gestos "swipe" (deslizar) para que Managers cambien entre Dashboard Staff y Admin.
-- [x] **Optimización UI Móvil (Caja/Personal):** Compactación de modales de tesorería y registros para mejor accesibilidad táctil sin sacrificar legibilidad.
-- [x] **Sincronización Resumen Staff:** Corrección de la lógica de propagación en la base de datos para sincronizar automáticamente el saldo acumulado (`profiles.hours_balance`) tras recálculos en el historial.
-- [x] **Estándar Gallery View:** Creación de plantilla `gallery-view.tsx` e integración en el Generador de Templates Marbella para unificar vistas de catálogo (Ingrediente/Recetas).
-- [x] **Rediseño Modal Cambio (V3 - Táctil)**: Implementación de botones incrementales, código de colores (verde/rojo) y corrección de error crítico de overflow para garantizar la visibilidad del botón de guardado.
-- [x] **Migración Cromática**: Transición global de `#5B8FB9` al nuevo Azul Marbella `#36606F` en Registros, Dashboards y Recetas.
-- [x] **Unificación Estética Vistas de Detalle y Modales**: Aplicación del estándar "Vista Marbella Detail" (#36606F) en cabeceras de Movimientos, Horas Extras, Perfil y todos los modales de la aplicación (Cierre Caja, Stock, Empleados, Recetas).
-- [x] **Expansión de Perfil (DNI/IBAN/Documentos)**: Implementación de campos DNI e IBAN, sistema de gestión de archivos (Contratos/Nóminas) con Supabase Storage y modalidad de edición para Managers.
-- [x] **Gestión de Seguridad**: Implementación de modal de cambio de contraseña directo en la cuenta del personal con diseño táctil premium.
-- [x] **Refinamiento UI Global (Vista Marbella Detail)**: Unificación estética de las cabeceras en Laboral, Historial y Horas Extras. Rediseño de la navegación en Registros con mes compacto y controles externos.
-- [x] **Herramienta de Importación Masiva**: Nueva página `/admin/import` para migración de fichajes históricos vía CSV con mapeo automático de emails y procesamiento por bloques.
-- [x] **Gestión de Proveedores (Gallery View)**: Nueva vista de alta densidad para proveedores con integración de logotipos corporativos y acceso directo desde el Dashboard.
-- [x] **Estandarización de Contacto**: Unificación de iconos de Teléfono y WhatsApp en `/profile` y `/suppliers` siguiendo el estilo minimalista del Dashboard de Personal.
-- [x] **Sistema de Pedidos a Proveedores (Refinado)**: Mejora del flujo en `/orders/new` con iconos circulares (48px), botón de resumen superior, filtrado estricto por proveedor, soporte para unidades personalizadas con persistencia y eliminación de precios en resumen y PDF.
-- [x] **Refinamiento UI Historial (Staff)**: Unificación estética de cabeceras, rediseño de filtros (Empleado/Mes) sin flechas, reposicionamiento del sello "Pagado" y ajuste de ancho de tabla para mayor densidad visual.
-- [x] **Estandarización de Redondeo (rounded-2xl)**: Unificación global de todos los contenedores y modales de la aplicación al estándar de redondeo de 16px (`rounded-2xl`) para una estética premium y consistente.
+- [x] **Refinamiento UI Marbella (Fase 4)**: Historial sin bordes azules, eliminación de icono calendario en filtros, integración de popup de empleado en registros y unificación de configuración en el perfil.
+- [x] **Optimización Bottom Nav**: Reorganización de ítems (Horarios, Asistencia, Inicio, Pedidos, Cuenta) con nuevos iconos PNG y acceso directo a pedidos.
+- [x] **Estabilidad Dashboard Admin**: Corrección de layout en 2 columnas, reordenación inteligente para móvil/desktop y ajuste cromático de Horas Extras a púrpura corporativo.
+- [x] **Visibilidad Selectiva ADM/Staff**: Restricción del toggle de la cabecera exclusivamente para usuarios con rol de Manager.
+- [x] **Unificación de Cuenta**: Migración de las opciones de "Configuración" (Cambio de Contraseña y Logout) directamente a la vista de Perfil.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

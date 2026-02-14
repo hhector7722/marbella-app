@@ -107,10 +107,11 @@ export default function StaffDashboardView() {
                 const diff = now - start;
                 const hours = Math.floor(diff / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
             };
             updateTimer();
-            interval = setInterval(updateTimer, 60000);
+            interval = setInterval(updateTimer, 1000);
         } else if (status === 'finished' && todayLog?.total_hours) {
             const rounded = roundHoursValue(todayLog.total_hours);
             const h = Math.floor(rounded);

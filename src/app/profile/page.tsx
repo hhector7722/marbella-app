@@ -9,11 +9,12 @@ import Image from 'next/image';
 import {
     User, Phone, CreditCard, FileText, Copy, Check,
     Briefcase, Hash, Euro, FileClock, Mail,
-    CheckCircle2, ArrowLeft, Settings
+    CheckCircle2, ArrowLeft, Settings, LogOut, Lock, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
 import DocumentManager from '@/components/DocumentManager';
+import ChangePasswordModal from '@/components/ChangePasswordModal';
 
 // Definimos la interfaz basada en los datos
 interface UserProfile {
@@ -44,6 +45,7 @@ function ProfileContent() {
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeDocTab, setActiveDocTab] = useState<'contract' | 'payroll' | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     useEffect(() => {
         fetchInitialData();
@@ -84,6 +86,21 @@ function ProfileContent() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLogout = async () => {
+        if (!confirm("¿Seguro que quieres cerrar sesión?")) return;
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            toast.error('Error al salir');
+        } else {
+            router.push('/login');
+            router.refresh();
+        }
+    };
+
+    const handleChangePassword = () => {
+        setIsPasswordModalOpen(true);
     };
 
     const copyToClipboard = (text: string | null, fieldName: string) => {
@@ -285,6 +302,45 @@ function ProfileContent() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Grupo 4: Configuración de Cuenta (Nueva sección migrada) */}
+                        <div className="p-8 border-t border-gray-100 bg-gray-50/30">
+                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Configuración de Cuenta</h2>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <button
+                                    onClick={handleChangePassword}
+                                    className="w-full flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all group active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
+                                            <Lock size={20} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-0.5">Seguridad</p>
+                                            <p className="text-gray-800 font-black text-xs tracking-tight">Cambiar Contraseña</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={16} className="text-gray-300 group-hover:text-[#36606F] transition-colors" />
+                                </button>
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full flex items-center justify-between p-5 bg-white border border-rose-50 rounded-3xl shadow-sm hover:shadow-md hover:bg-rose-50 transition-all group active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-rose-500/10 p-3 rounded-2xl text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
+                                            <LogOut size={20} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-[10px] text-rose-300 font-black uppercase tracking-[0.15em] mb-0.5">Sesión</p>
+                                            <p className="text-rose-600 font-black text-xs tracking-tight">Cerrar Sesión Corporativa</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={16} className="text-rose-200 group-hover:text-rose-500 transition-colors" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {isEditModalOpen && (
@@ -293,6 +349,13 @@ function ProfileContent() {
                             onClose={() => setIsEditModalOpen(false)}
                             onSuccess={() => fetchInitialData()}
                             profile={profile}
+                        />
+                    )}
+
+                    {isPasswordModalOpen && (
+                        <ChangePasswordModal
+                            isOpen={isPasswordModalOpen}
+                            onClose={() => setIsPasswordModalOpen(false)}
                         />
                     )}
 

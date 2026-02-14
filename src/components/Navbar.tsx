@@ -62,8 +62,8 @@ export default function Navbar() {
 
                 {/* BLOQUE DERECHO: INTERRUPTOR + BOTÓN IA */}
                 <div className="flex items-center gap-3">
-                    {/* INTERRUPTOR (MANAGER O SUPERVISOR) */}
-                    {(userData?.role === 'manager' || userData?.role === 'supervisor') && (
+                    {/* INTERRUPTOR (SOLO MANAGER) */}
+                    {userData?.role === 'manager' && (
                         <button
                             onClick={() => router.push(isAdminMode ? '/staff/dashboard' : '/dashboard')}
                             className={`relative w-16 h-7 flex items-center rounded-full transition-all duration-300 shadow-inner border-2 border-white/30 p-1 ${isAdminMode ? 'bg-[#FF9800]' : 'bg-[#4CAF50]'
