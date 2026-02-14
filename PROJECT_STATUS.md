@@ -58,6 +58,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Notificaciones de Horario**: Implementación de sistema Web Push con botón "ENVIAR" en el editor de horarios para notificar a los empleados.
 - [x] **Reporte de Cierre Automático**: Notificaciones push automáticas a todos los managers con el resumen financiero (Ventas, Venta Neta, Ticket Medio) al realizar el cierre diario.
 - [x] **Refinamiento Recetas Staff**: Ajuste de fondo blanco para el modal de detalle de recetas cuando se accede desde el dashboard de personal.
+- [x] **Refinamiento Cierre de Caja**: Consolidación de ventas en un único campo, autocompletado desde tickets, redondeo a 2 decimales y adición de símbolo de euro.
+- [x] **Rediseño Histórico Admin**: KPIs de resumen actualizados (Ventas, Venta Neta, Ticket Medio) y nuevos filtros dinámicos por Periodo y Mes.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
