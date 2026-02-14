@@ -14,13 +14,11 @@ import {
 import CashClosingModal from '@/components/CashClosingModal';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { Share_Tech_Mono } from 'next/font/google';
 import { differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
-
-const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
+import WorkTimer from '@/components/ui/WorkTimer';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -76,7 +74,7 @@ export default function StaffDashboardView() {
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
-    const [elapsedTime, setElapsedTime] = useState('00:00');
+
     const [weekDays, setWeekDays] = useState<DailyLog[]>([]);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
@@ -98,30 +96,7 @@ export default function StaffDashboardView() {
 
     useEffect(() => { initialize(); }, []);
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (status === 'working' && todayLog?.clock_in) {
-            const updateTimer = () => {
-                const start = new Date(todayLog.clock_in).getTime();
-                const now = new Date().getTime();
-                const diff = now - start;
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-            };
-            updateTimer();
-            interval = setInterval(updateTimer, 1000);
-        } else if (status === 'finished' && todayLog?.total_hours) {
-            const rounded = roundHoursValue(todayLog.total_hours);
-            const h = Math.floor(rounded);
-            const m = Math.round((rounded - h) * 60);
-            setElapsedTime(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-        } else {
-            setElapsedTime('00:00');
-        }
-        return () => clearInterval(interval);
-    }, [status, todayLog]);
+
 
     const formatNumber = (val: number) => {
         if (Math.abs(val) < 0.1) return " ";
@@ -521,18 +496,7 @@ export default function StaffDashboardView() {
                                 </span>
                             )}
                         </button>
-                        {status !== 'idle' && (
-                            <div className="w-full h-12 md:h-16 bg-gray-900 rounded-2xl border-2 md:border-4 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-                                <span className={`${digitalFont.className} text-3xl md:text-4xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}>
-                                    {elapsedTime}
-                                </span>
-                            </div>
-                        )}
-                        {status === 'idle' && (
-                            <div className="w-full h-12 md:h-16 rounded-2xl bg-gray-50 border-2 border-gray-100 flex items-center justify-center">
-                                <span className="text-[10px] text-gray-400 text-center uppercase font-bold tracking-tight">No has fichado hoy</span>
-                            </div>
-                        )}
+                        <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
                     </div>
                 </div>
 

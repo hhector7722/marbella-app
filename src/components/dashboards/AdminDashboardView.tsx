@@ -18,6 +18,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { togglePaidStatus } from '@/app/actions/overtime';
+import PremiumCountUp from '@/components/ui/PremiumCountUp';
+import LiveClock from '@/components/ui/LiveClock';
 
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
@@ -283,12 +285,7 @@ export default function AdminDashboardView() {
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
     const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
-    const [now, setNow] = useState(new Date());
 
-    useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     const handleCreateWorker = async () => {
         if (!newWorkerData.first_name.trim()) { toast.error('El nombre es obligatorio'); return; }
@@ -521,14 +518,9 @@ export default function AdminDashboardView() {
                                 </div>
                             </div>
 
-                            {/* Reloj en vivo */}
-                            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-tight">
-                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90">
-                                    {format(now, "eee d MMM", { locale: es }).replace('.', '')}
-                                </span>
-                                <span className="text-[10px] md:text-xs font-medium tracking-[0.1em] text-white/70">
-                                    {format(now, "HH:mm:ss")}
-                                </span>
+                            {/* Reloj en vivo — Aislado */}
+                            <div className="absolute left-1/2 -translate-x-1/2">
+                                <LiveClock />
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -536,16 +528,18 @@ export default function AdminDashboardView() {
                             </div>
                         </div>
                         <div className="p-4 md:p-6 grid grid-cols-3 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1 items-center">
-                            {[
-                                { val: liveTickets.total > 0 ? `${liveTickets.total.toFixed(2)}€` : ' ', label: 'Ventas' },
-                                { val: liveTickets.total > 0 ? `${(liveTickets.total / 1.10).toFixed(2)}€` : ' ', label: 'Venta Neta', color: 'text-emerald-600' },
-                                { val: liveTickets.count > 0 ? `${(liveTickets.total / liveTickets.count).toFixed(2)}€` : ' ', label: 'Ticket Medio', color: 'text-blue-600' },
-                            ].map((item, i) => (
-                                <div key={i} className="flex flex-col items-center justify-center text-center">
-                                    <span className={cn("text-lg md:text-2xl font-black text-black leading-none", item.color)}>{item.val}</span>
-                                    <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{item.label}</span>
-                                </div>
-                            ))}
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg md:text-2xl font-black text-black leading-none" />
+                                <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg md:text-2xl font-black text-emerald-600 leading-none" />
+                                <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg md:text-2xl font-black text-blue-600 leading-none" />
+                                <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span>
+                            </div>
                         </div>
                     </div>
                     {/* 2. CAJAS Y MOVIMIENTOS */}
