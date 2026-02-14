@@ -3,8 +3,8 @@
  */
 
 export const MARBELLA_COORDS = {
-    lat: 41.396500,
-    lng: 2.209611
+    lat: 41.399772,
+    lng: 2.211856
 };
 
 export const MAX_DISTANCE_METERS = 150;
