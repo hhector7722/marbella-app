@@ -655,6 +655,184 @@ export default function AdminDashboardView() {
                     </div>
                 </div>
             </div>
+            {cashModalMode !== 'none' && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", cashModalMode === 'swap' ? "max-w-4xl" : "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                        {cashModalMode === 'menu' && (
+                            <>
+                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                                <div className="p-4 grid grid-cols-2 gap-4">
+                                    {selectedBox?.type === 'change' ? (
+                                        <>
+                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('swap'); }} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-16 h-16"><Image src="/icons/reverse.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" /></div><span className="font-black text-xl text-zinc-900">Cambiar</span></button>
+                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('audit'); }} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/change.png" alt="Arqueo" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Arqueo</span></button>
+                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); setBoxInventory(data || []); setCashModalMode('inventory'); }} className="bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/wallet.png" alt="Ver Desglose" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Ver Desglose</span></button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button onClick={() => setCashModalMode('in')} className="bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/in.png" alt="Entrada" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Entrada</span></button>
+                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('out'); }} className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/out.png" alt="Salida" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Salida</span></button>
+                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('audit'); }} className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/change.png" alt="Arqueo" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Arqueo</span></button>
+                                            <button onClick={() => router.push('/dashboard/movements')} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/admin.png" alt="Movimientos" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Movimientos</span></button>
+                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); setBoxInventory(data || []); setCashModalMode('inventory'); }} className="col-span-2 bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/wallet.png" alt="Ver Desglose" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Ver Desglose</span></button>
+                                        </>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                        {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && <CashDenominationForm type={cashModalMode as 'in' | 'out' | 'audit'} boxName={selectedBox?.name || 'Caja'} initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}} availableStock={boxInventoryMap} onCancel={() => setCashModalMode('menu')} onSubmit={handleCashTransaction} />}
+                        {cashModalMode === 'swap' && <SwapDenominationForm boxName={selectedBox?.name || 'Caja'} availableStock={boxInventoryMap} onCancel={() => setCashModalMode('menu')} onSubmit={handleCashTransaction} />}
+                        {cashModalMode === 'inventory' && <BoxInventoryView boxName={selectedBox?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('menu')} />}
+                    </div>
+                </div>
+            )}
+            {isStaffModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                            <div>
+                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Empleado ({allEmployees.length})</p>
+                            </div>
+                            <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
+                        </div>
+                        <div className="p-4 bg-gray-50/30 flex-1 overflow-y-auto">
+                            {/* Botón Crear Nuevo */}
+                            <button
+                                onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
+                                className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                            >
+                                <Plus size={18} /> Nuevo Trabajador
+                            </button>
+                            <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto no-scrollbar pb-2">
+                                {allEmployees.map((emp) => (
+                                    <button
+                                        key={emp.id}
+                                        onClick={() => router.push(`/profile?id=${emp.id}`)}
+                                        className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
+                                    >
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
+                                            {emp.first_name.substring(0, 1)}
+                                        </div>
+                                        <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
+                                            {emp.first_name.split(' ')[0]}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* MODAL: Crear Nuevo Trabajador */}
+            {isNewWorkerModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                            <div>
+                                <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Datos del empleado</p>
+                            </div>
+                            <button onClick={() => setIsNewWorkerModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90"><X size={20} strokeWidth={3} /></button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Nombre *</label>
+                                <input
+                                    type="text"
+                                    value={newWorkerData.first_name}
+                                    onChange={e => setNewWorkerData({ ...newWorkerData, first_name: e.target.value })}
+                                    placeholder="Nombre del trabajador"
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                    autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Apellidos</label>
+                                <input
+                                    type="text"
+                                    value={newWorkerData.last_name}
+                                    onChange={e => setNewWorkerData({ ...newWorkerData, last_name: e.target.value })}
+                                    placeholder="Opcional"
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={newWorkerData.email}
+                                    onChange={e => setNewWorkerData({ ...newWorkerData, email: e.target.value })}
+                                    placeholder="ejemplo@correo.com"
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Rol</label>
+                                <select
+                                    value={newWorkerData.role}
+                                    onChange={e => setNewWorkerData({ ...newWorkerData, role: e.target.value })}
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+                                >
+                                    <option value="staff">Staff</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="manager">Manager</option>
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Horas/Sem</label>
+                                    <input
+                                        type="number"
+                                        value={newWorkerData.contracted_hours_weekly}
+                                        onChange={e => setNewWorkerData({ ...newWorkerData, contracted_hours_weekly: Number(e.target.value) })}
+                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">€/h Extra</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={newWorkerData.overtime_cost_per_hour}
+                                        onChange={e => setNewWorkerData({ ...newWorkerData, overtime_cost_per_hour: Number(e.target.value) })}
+                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-zinc-100 flex gap-3">
+                            <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
+                            <button
+                                onClick={handleCreateWorker}
+                                disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
+                                className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
+                            >
+                                {newWorkerSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save size={18} /> Guardar</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {isProductModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                        <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+                            {[
+                                { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },
+                                { title: 'Ingredientes', img: '/icons/ingrediente.png', link: '/ingredients', hover: 'hover:bg-orange-50/30' },
+                                { title: 'Pedidos', img: '/icons/shipment.png', hover: 'hover:bg-emerald-50/30' },
+                                { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
+                                { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
+                                { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
+                            ].map((item, i) => (
+                                <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
             <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} />
         </div>
     );
