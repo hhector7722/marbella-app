@@ -176,20 +176,14 @@ function ProfileContent() {
                                         <img src="/icons/profile.png" alt={fullName} className="w-full h-full object-cover" />
                                     )}
                                 </div>
-                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white w-10 h-10 rounded-xl border-4 border-white flex items-center justify-center shadow-lg">
-                                    <CheckCircle2 size={16} />
-                                </div>
                             </div>
 
-                            <h1 className="text-xl font-black uppercase tracking-tight mb-0 truncate max-w-[280px] px-2">{fullName}</h1>
+                            <h1 className="text-lg font-black uppercase tracking-tight mb-0 px-2 whitespace-nowrap overflow-visible">
+                                {fullName}
+                            </h1>
                         </div>
 
-                        <button
-                            onClick={() => router.back()}
-                            className="absolute top-5 left-5 w-12 h-12 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
+                        {/* Removí la flecha de volver por solicitud del usuario */}
 
                         {isManager && (
                             <button
