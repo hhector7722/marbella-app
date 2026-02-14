@@ -213,7 +213,7 @@ function RecipesContent() {
                     onClick={() => setSelectedRecipeId(null)}
                 >
                     <div
-                        className="bg-[#5B8FB9] w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
+                        className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header del Modal */}
