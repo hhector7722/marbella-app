@@ -104,7 +104,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
         setTpvData(prev => ({
             ...prev,
-            totalSales: total,
+            totalSales: Math.round(total * 100) / 100, // Round to 2 decimals
             ticketsCount: count
         }));
     }
@@ -220,6 +220,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                 <div className="flex items-center">
                                     <input
                                         type="number"
+                                        step="0.01"
                                         className="w-full text-4xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0"
                                         placeholder="0.00"
                                         value={tpvData.totalSales || ''}
