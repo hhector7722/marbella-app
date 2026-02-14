@@ -164,12 +164,12 @@ function ProfileContent() {
                 <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* ENCABEZADO CORPORATIVO SÓLIDO */}
-                    <div className="bg-[#36606F] p-8 pt-10 text-white relative overflow-hidden">
+                    <div className="bg-[#36606F] p-5 pt-10 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center">
-                            <div className="w-28 h-28 rounded-[2rem] bg-white p-1.5 shadow-2xl mb-6 relative group transform -rotate-3 hover:rotate-0 transition-transform duration-500">
-                                <div className="w-full h-full rounded-[1.6rem] bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
+                            <div className="w-20 h-20 rounded-[1.5rem] bg-white p-1 shadow-2xl mb-4 relative group transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+                                <div className="w-full h-full rounded-[1.2rem] bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
                                     {profile.avatar_url ? (
                                         <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
                                     ) : (
@@ -181,24 +181,24 @@ function ProfileContent() {
                                 </div>
                             </div>
 
-                            <h1 className="text-3xl font-black tracking-tighter mb-1">{fullName}</h1>
-                            {isManager && (
-                                <button
-                                    onClick={() => setIsEditModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition-all mt-2 active:scale-95"
-                                >
-                                    <Settings size={12} className="text-white/70" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Editar Datos</span>
-                                </button>
-                            )}
+                            <h1 className="text-xl font-black uppercase tracking-tight mb-0 truncate max-w-[280px] px-2">{fullName}</h1>
                         </div>
 
                         <button
                             onClick={() => router.back()}
-                            className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                            className="absolute top-5 left-5 w-12 h-12 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
                         >
                             <ArrowLeft size={20} />
                         </button>
+
+                        {isManager && (
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="absolute top-5 right-5 w-12 h-12 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                            >
+                                <Settings size={20} />
+                            </button>
+                        )}
                     </div>
 
                     {/* SECCIONES BENTO DE ALTA DENSIDAD */}
