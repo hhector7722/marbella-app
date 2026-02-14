@@ -508,60 +508,84 @@ export default function AdminDashboardView() {
 
     return (
         <div className="pb-24 animate-in fade-in duration-500">
-            <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
-                            <div className="flex items-center gap-3">
-                                <div>
-                                    <h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3>
-                                </div>
+            <div className="p-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6">
+                {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
+                <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
+                    {/* Desktop Col 1: Ventas + Horas Extras */}
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
+                                <div className="flex items-center gap-3"><div><h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3></div></div>
+                                <div className="absolute left-1/2 -translate-x-1/2"><LiveClock /></div>
+                                <div className="flex items-center gap-3"><Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link></div>
                             </div>
-
-                            {/* Reloj en vivo — Aislado */}
-                            <div className="absolute left-1/2 -translate-x-1/2">
-                                <LiveClock />
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                            <div className="p-6 grid grid-cols-3 gap-y-10 gap-x-4 flex-1 items-center">
+                                <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-2xl font-black text-black leading-none" /><span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span></div>
+                                <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-2xl font-black text-emerald-600 leading-none" /><span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span></div>
+                                <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-2xl font-black text-blue-600 leading-none" /><span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span></div>
                             </div>
                         </div>
-                        <div className="p-4 md:p-6 grid grid-cols-3 gap-y-4 md:gap-y-10 gap-x-2 md:gap-x-4 flex-1 items-center">
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg md:text-2xl font-black text-black leading-none" />
-                                <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span>
+                        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden self-start">
+                            <div className="bg-purple-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                                <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
+                                <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg md:text-2xl font-black text-emerald-600 leading-none" />
-                                <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg md:text-2xl font-black text-blue-600 leading-none" />
-                                <span className="text-[7px] md:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span>
+                            <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
+                                {overtimeData.length === 0 ? (
+                                    <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
+                                ) : (
+                                    overtimeData.slice(0, 3).map((week) => {
+                                        const isFullyPaid = isWeekFullyPaid(week);
+                                        return (
+                                            <div key={week.weekId} className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
+                                                <button onClick={() => toggleWeek(week.weekId)} className={cn("w-full p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>{isFullyPaid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}</div>
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                                            <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
+                                                            <p className={cn("text-[10px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>{format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right flex items-center gap-3"><span className={cn("text-lg font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span></div>
+                                                </button>
+                                                {week.expanded && (
+                                                    <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                        {week.staff.map((s: any) => (
+                                                            <div key={s.id} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30">
+                                                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">{s.name.charAt(0)}</div><span className="text-xs font-bold text-gray-700 capitalize">{s.name}</span></div>
+                                                                <div className="flex items-center gap-3"><span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border-2 border-gray-200 text-transparent")}><CheckCircle2 className="w-4 h-4" /></button></div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </div>
                         </div>
                     </div>
-                    {/* 2. CAJAS Y MOVIMIENTOS */}
-                    <div className="space-y-4 md:space-y-6 flex flex-col order-2">
-                        <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex-1 flex flex-col">
+                    {/* Desktop Col 2: Cajas + Iconos */}
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
-                                    <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 md:py-4 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 md:mb-4 active:scale-95">
-                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
-                                        <span className="text-xl md:text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                    <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-4 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-4 active:scale-95">
+                                        <span className="text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
+                                        <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                     </button>
                                     <div className="flex flex-col flex-1 min-h-0">
-                                        <div className="flex justify-between items-center px-1 md:px-2 mb-2 md:mb-3">
-                                            <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
-                                            <Link href="/dashboard/movements" className="text-[8px] md:text-[10px] font-black text-[#5B8FB9] bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2 md:w-2.5 md:h-2.5" /></Link>
+                                        <div className="flex justify-between items-center px-2 mb-3">
+                                            <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
+                                            <Link href="/dashboard/movements" className="text-[10px] font-black text-[#5B8FB9] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2.5 h-2.5" /></Link>
                                         </div>
                                         <div className={cn("overflow-hidden transition-all duration-300", isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0")}>
-                                            <div className="space-y-1.5 md:space-y-2 py-1 max-h-[100px] md:max-h-[140px] overflow-y-auto no-scrollbar">
-                                                {boxMovements.length === 0 && <p className="text-[8px] md:text-[9px] text-gray-300 italic px-1 text-center py-2 md:py-4">Sin historial reciente</p>}
+                                            <div className="space-y-2 py-1 max-h-[140px] overflow-y-auto no-scrollbar">
+                                                {boxMovements.length === 0 && <p className="text-[9px] text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>}
                                                 {boxMovements.map(mov => (
-                                                    <div key={mov.id} className="flex justify-between items-center text-[9px] md:text-[11px] bg-gray-50 p-2 md:p-3 rounded-xl md:rounded-2xl border border-gray-100/50">
-                                                        <div className="flex items-center gap-1.5 md:gap-2 overflow-hidden">{mov.type === 'OUT' ? <ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-2.5 h-2.5 md:w-3 md:h-3 text-emerald-500 shrink-0" />}<span className="truncate max-w-[100px] md:max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span></div>
+                                                    <div key={mov.id} className="flex justify-between items-center text-[11px] bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
+                                                        <div className="flex items-center gap-2 overflow-hidden">{mov.type === 'OUT' ? <ArrowUpRight className="w-3 h-3 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-3 h-3 text-emerald-500 shrink-0" />}<span className="truncate max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span></div>
                                                         <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>{mov.type === 'OUT' ? '-' : '+'}{mov.amount.toFixed(2)}€</span>
                                                     </div>
                                                 ))}
@@ -571,20 +595,76 @@ export default function AdminDashboardView() {
                                 </div>
                             ))}
                         </div>
-                        <div className="grid grid-cols-2 gap-4 md:gap-6 h-12 md:h-16">
+                        <div className="grid grid-cols-2 gap-6 h-16">
                             {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl p-1.5 md:p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[7px] md:text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">Cambio {idx + 1}</span><span className="text-xs md:text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
+                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-white rounded-2xl p-3 shadow-lg border border-gray-100 hover:shadow-xl transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cambio {idx + 1}</span><span className="text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-4 gap-3">
+                            {[
+                                { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
+                                { title: 'Mano de Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
+                                { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
+                                { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
+                            ].map((card, i) => (
+                                <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-16 h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-1">{card.title}</span></button>
                             ))}
                         </div>
                     </div>
+                </div>
 
-                    {/* 3. HORAS EXTRAS - Reposicionado (Debajo de Ventas en Desktop, Debajo de Cajas en Mobile) */}
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden order-3 self-start">
+                {/* ============ MOBILE LAYOUT ============ */}
+                <div className="md:hidden space-y-4">
+                    {/* 1. VENTAS */}
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
+                            <div className="flex items-center gap-3"><div><h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3></div></div>
+                            <div className="absolute left-1/2 -translate-x-1/2"><LiveClock /></div>
+                            <div className="flex items-center gap-3"><Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link></div>
+                        </div>
+                        <div className="p-4 grid grid-cols-3 gap-y-4 gap-x-2 flex-1 items-center">
+                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg font-black text-black leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span></div>
+                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg font-black text-emerald-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span></div>
+                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg font-black text-blue-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span></div>
+                        </div>
+                    </div>
+
+                    {/* 2. CAJA INICIAL + MOVIMIENTOS */}
+                    <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
+                        {boxes.filter(b => b.type === 'operational').map(box => (
+                            <div key={box.id} className="flex flex-col h-full">
+                                <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 active:scale-95">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Caja Inicial</span>
+                                    <span className="text-xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                </button>
+                                <div className="flex flex-col flex-1 min-h-0">
+                                    <div className="flex justify-between items-center px-1 mb-2">
+                                        <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
+                                        <Link href="/dashboard/movements" className="text-[8px] font-black text-[#5B8FB9] bg-gray-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2" /></Link>
+                                    </div>
+                                    <div className={cn("overflow-hidden transition-all duration-300", isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0")}>
+                                        <div className="space-y-1.5 py-1 max-h-[100px] overflow-y-auto no-scrollbar">
+                                            {boxMovements.length === 0 && <p className="text-[8px] text-gray-300 italic px-1 text-center py-2">Sin historial reciente</p>}
+                                            {boxMovements.map(mov => (
+                                                <div key={mov.id} className="flex justify-between items-center text-[9px] bg-gray-50 p-2 rounded-xl border border-gray-100/50">
+                                                    <div className="flex items-center gap-1.5 overflow-hidden">{mov.type === 'OUT' ? <ArrowUpRight className="w-2.5 h-2.5 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-2.5 h-2.5 text-emerald-500 shrink-0" />}<span className="truncate max-w-[100px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span></div>
+                                                    <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>{mov.type === 'OUT' ? '-' : '+'}{mov.amount.toFixed(2)}€</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* 3. HORAS EXTRAS */}
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                         <div className="bg-purple-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                         </div>
-                        <div className="p-4 md:p-6 space-y-3 md:space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
+                        <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                             {overtimeData.length === 0 ? (
                                 <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
                             ) : (
@@ -592,39 +672,23 @@ export default function AdminDashboardView() {
                                     const isFullyPaid = isWeekFullyPaid(week);
                                     return (
                                         <div key={week.weekId} className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
-                                            <button onClick={() => toggleWeek(week.weekId)} className={cn("w-full p-2 md:p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
-                                                <div className="flex items-center gap-2 md:gap-3">
-                                                    <div className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>
-                                                        {isFullyPaid ? <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /> : <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />}
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                                        <h4 className={cn("text-xs md:text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
+                                            <button onClick={() => toggleWeek(week.weekId)} className={cn("w-full p-2 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>{isFullyPaid ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}</div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <h4 className={cn("text-xs font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
                                                         <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
-                                                        <p className={cn("text-[8px] md:text-[10px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>
-                                                            {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
-                                                        </p>
+                                                        <p className={cn("text-[8px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>{format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}</p>
                                                     </div>
                                                 </div>
-                                                <div className="text-right flex items-center gap-2 md:gap-3">
-                                                    <span className={cn("text-sm md:text-lg font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span>
-                                                </div>
+                                                <div className="text-right flex items-center gap-2"><span className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span></div>
                                             </button>
                                             {week.expanded && (
-                                                <div className="px-2.5 md:px-4 pb-2.5 md:pb-4 pt-1 space-y-1.5 md:space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                <div className="px-2.5 pb-2.5 pt-1 space-y-1.5 animate-in slide-in-from-top-2 duration-300">
                                                     {week.staff.map((s: any) => (
-                                                        <div key={s.id} className="flex items-center justify-between p-2 md:p-3 bg-white/60 rounded-xl md:rounded-2xl border border-purple-100/30">
-                                                            <div className="flex items-center gap-2 md:gap-3">
-                                                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-[10px] md:text-xs font-black capitalize">
-                                                                    {s.name.charAt(0)}
-                                                                </div>
-                                                                <span className="text-[10px] md:text-xs font-bold text-gray-700 capitalize">{s.name}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 md:gap-3">
-                                                                <span className="text-[10px] md:text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span>
-                                                                <button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border md:border-2 border-gray-200 text-transparent")}>
-                                                                    <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" />
-                                                                </button>
-                                                            </div>
+                                                        <div key={s.id} className="flex items-center justify-between p-2 bg-white/60 rounded-xl border border-purple-100/30">
+                                                            <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-[10px] font-black capitalize">{s.name.charAt(0)}</div><span className="text-[10px] font-bold text-gray-700 capitalize">{s.name}</span></div>
+                                                            <div className="flex items-center gap-2"><span className="text-[10px] font-black text-gray-800">{s.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border border-gray-200 text-transparent")}><CheckCircle2 className="w-3 h-3" /></button></div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -636,16 +700,32 @@ export default function AdminDashboardView() {
                         </div>
                     </div>
 
-                    {/* 4. ICONOS DE GESTIÓN - Reposicionado (Debajo de Cajas en Desktop) */}
-                    <div className="grid grid-cols-4 gap-2 md:gap-3 order-4">
-                        {[
-                            { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
-                            { title: 'Mano de Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
-                            { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
-                            { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
-                        ].map((card, i) => (
-                            <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl p-2 md:p-3 shadow-xl border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group hover:bg-gray-50/50 aspect-square"><div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" /></div><span className="text-[7px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 md:px-1">{card.title}</span></button>
-                        ))}
+                    {/* 4. FILA INFERIOR: Cajas de Cambio (izq) + Iconos (dcha) */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Columna izquierda: Cajas de cambio */}
+                        <div className="bg-white rounded-2xl p-3 shadow-xl border border-gray-100 flex flex-col justify-center gap-3">
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cajas</span>
+                            {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
+                                <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="flex items-center justify-between active:scale-95 transition-all">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider">Cambio {idx + 1}</span>
+                                    <span className="text-sm font-black text-[#5B8FB9]">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span>
+                                </button>
+                            ))}
+                        </div>
+                        {/* Columna derecha: 2x2 Iconos */}
+                        <div className="grid grid-cols-2 gap-2">
+                            {[
+                                { title: 'Asistencia', img: '/icons/calendar.png', color: 'bg-emerald-500', link: '/registros' },
+                                { title: 'Mano de Obra', img: '/icons/overtime.png', color: 'bg-blue-500', link: '/dashboard/labor' },
+                                { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
+                                { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
+                            ].map((card, i) => (
+                                <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group aspect-square">
+                                    <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={40} height={40} priority={true} className="w-full h-full object-contain" /></div>
+                                    <span className="text-[7px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{card.title}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
