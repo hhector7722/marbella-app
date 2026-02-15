@@ -94,12 +94,23 @@ export async function recalculateAllBalances() {
             // porque queremos permitir que el recalculo corrija errores históricos de contrato.
             const existingSnapshot = existingSnapshots?.find(s => s.user_id === userId);
 
-            // Si profile.contracted_hours_weekly es 0, lo respetamos.
-            const limit = profile.contracted_hours_weekly ?? 40;
+            // LÓGICA DE PRIORIDAD (User Request: Respetar Histórico y Respetar 0)
+            let limit = 0;
 
+            if (existingSnapshot?.contracted_hours_snapshot !== undefined && existingSnapshot?.contracted_hours_snapshot !== null) {
+                // 1. Histórico: Lo que tenía contratado en esa fecha exacta
+                limit = existingSnapshot.contracted_hours_snapshot;
+            } else if (profile.contracted_hours_weekly !== undefined && profile.contracted_hours_weekly !== null) {
+                // 2. Fallback al perfil actual (si no había snapshot previo)
+                limit = profile.contracted_hours_weekly;
+            } else {
+                // 3. Si no hay nada definido, asumimos 0 (no 40)
+                limit = 0;
+            }
+
+            const preferStock = profile.prefer_stock_hours || false;
             const isManager = profile.role === 'manager';
             const isFixedSalary = profile.is_fixed_salary || false;
-            const preferStock = profile.prefer_stock_hours || false;
 
             // Lógica de Agosto y Roles
             const weeklyBalance = (isAugust || isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
