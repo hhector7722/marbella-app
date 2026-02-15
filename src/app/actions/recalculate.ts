@@ -90,9 +90,12 @@ export async function recalculateAllBalances() {
             const userId = profile.id;
             const hoursWorked = userHoursThisWeek.get(userId) || 0;
 
-            // Si existe un snapshot, usamos sus horas de contrato históricas, si no, las del perfil
+            // Si existe un snapshot, lo buscamos para preservar is_paid, pero NO usamos sus horas de contrato
+            // porque queremos permitir que el recalculo corrija errores históricos de contrato.
             const existingSnapshot = existingSnapshots?.find(s => s.user_id === userId);
-            const limit = existingSnapshot?.contracted_hours_snapshot ?? (profile.contracted_hours_weekly ?? 40);
+
+            // Si profile.contracted_hours_weekly es 0, lo respetamos.
+            const limit = profile.contracted_hours_weekly ?? 40;
 
             const isManager = profile.role === 'manager';
             const isFixedSalary = profile.is_fixed_salary || false;
