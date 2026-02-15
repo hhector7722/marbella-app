@@ -136,7 +136,8 @@ export default function NewOrderPage() {
                     name: i.name,
                     quantity: i.quantity,
                     unit: i.unit,
-                    price: 0 // Se ignora en el PDF
+                    price: 0, // Se ignora en el PDF
+                    image: i.image_url // Pass image URL
                 })),
                 orderNumber: orderNum
             });

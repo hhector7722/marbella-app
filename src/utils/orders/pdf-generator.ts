@@ -9,6 +9,7 @@ interface OrderItem {
     quantity: number;
     unit: string;
     price: number;
+    image?: string | null;
 }
 
 interface OrderData {
@@ -18,20 +19,20 @@ interface OrderData {
 }
 
 const COMPANY_INFO = {
-    name: 'Fogó Torrat S.L',
-    nif: 'NIF: B09761628',
-    address: 'Avinguda Litoral 86,\n08005, Barcelona',
+    name: 'Fogo Torrat S.L.',
+    nif: 'NIF : B09761628',
+    address: 'Av. Litoral 86, 080055, Barcelona',
     phone: '647229309',
     email: 'fogotorrat@gmail.com'
 };
 
 const COLORS = {
     primary: [54, 96, 111] as [number, number, number], // #36606F
-    text: [30, 41, 59] as [number, number, number],    // Slate 800
+    secondary: [94, 53, 177] as [number, number, number], // Purple accent
+    text: [30, 41, 59] as [number, number, number],
     white: [255, 255, 255] as [number, number, number],
     tableHeader: [54, 96, 111] as [number, number, number],
-    tableRowEven: [248, 250, 252] as [number, number, number], // Slate 50
-    tableRowOdd: [255, 255, 255] as [number, number, number]
+    tableRowEven: [248, 250, 252] as [number, number, number],
 };
 
 export async function generateOrderPDF(data: OrderData): Promise<Blob> {
@@ -45,163 +46,209 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const margin = 15;
 
     // --------------------------------------------------------------------------
-    // 1. HEADER BACKGROUND
+    // 0. PRE-LOAD IMAGES (Logo + Products)
     // --------------------------------------------------------------------------
-    const headerHeight = 60;
+    const logoUrl = '/icons/logo-white.png';
+    const logoPromise = loadImage(logoUrl).catch(() => null);
+
+    // Process product images
+    // We'll store loaded images in a map or array matching items
+    const productImages = await Promise.all(
+        data.items.map(async (item) => {
+            if (!item.image) return null;
+            try {
+                return await loadImage(item.image);
+            } catch (e) {
+                return null;
+            }
+        })
+    );
+
+    const logoImage = await logoPromise;
+
+    // --------------------------------------------------------------------------
+    // 1. HEADER (Curved Blue Background)
+    // --------------------------------------------------------------------------
+    // Draw a shape with a bezier curve at bottom
+    // Approximate Height: 60mm
+
     doc.setFillColor(...COLORS.primary);
-    doc.rect(0, 0, pageWidth, headerHeight, 'F');
+
+    // Method: moveTo -> lineTo -> bezierCurveTo -> lineTo -> close
+    doc.lines(
+        [
+            [pageWidth, 0],           // Top edge
+            [0, 50],                  // Right edge down to 50
+            // Bezier curve from right(w, 50) to left(0, 50)
+            // We want a curve that dips slightly or waves. The reference shows a gentle wave.
+            // Let's do a simple convex curve for style.
+            [-pageWidth, 0, -pageWidth / 2, 15, -pageWidth, 0], // This syntax for lines is relative [dx, dy, x1, y1, x2, y2]
+            [0, -50]                  // Back to top left
+        ],
+        0,
+        0,
+        [1.0, 1.0],
+        'F',
+        true
+    );
+
+    // Let's use simpler explicit construction for the curve to be safe
+    doc.setFillColor(...COLORS.primary);
+    doc.rect(0, 0, pageWidth, 40, 'F'); // Base rect
+
+    // Draw the curve bottom
+    doc.moveTo(0, 40);
+    doc.bezierCurveTo(
+        pageWidth / 2, 55, // Control point 1
+        pageWidth / 2, 55, // Control point 2
+        pageWidth, 40      // End point
+    );
+    doc.lineTo(pageWidth, 0);
+    doc.lineTo(0, 0);
+    doc.fill();
 
     // --------------------------------------------------------------------------
-    // 2. LOGO (Simulated with circle + text if image loading fails, but we try image)
+    // 2. LOGO & TITLE
     // --------------------------------------------------------------------------
-    // Draw white circle for logo container
+    // Logo Circle (White) at top left
     doc.setFillColor(255, 255, 255);
-    doc.circle(30, 30, 22, 'F');
+    doc.circle(30, 28, 20, 'F');
 
-    try {
-        // Try to load the logo
-        // Note: In client-side, we need to fetch the image first
-        const logoUrl = '/icons/logo-white.png';
-        const logoImage = await loadImage(logoUrl);
-        // We might need a dark version for white background, or we use the white one and invert/colorize?
-        // Actually, the user image shows a blue logo on white background circle.
-        // If 'logo-white.png' is white text, it won't show on white circle.
-        // Let's assume for now we put the text "bar la marbella" or try to put the logo.
-        // If the logo is white, we should put it directly on the blue background? 
-        // The user mockup showed a white circle with blue text/logo.
-        // Let's try to fit the image. If it's white with transparent bg, it will be invisible on white circle.
-        // But let's assume standard behavior first. If fail, fall back to text.
-
-        // For safety/contrast, let's just put the text "bar la marbella" in blue if we can't style the logo perfectly via code without checking it.
-        // Actually, let's look at the user request image again... 
-        // "bar la marbella" is text inside the circle.
-
-        doc.addImage(logoImage, 'PNG', 12, 12, 36, 36);
-    } catch (e) {
-        // Fallback text logo
+    if (logoImage) {
+        doc.addImage(logoImage, 'PNG', 14, 12, 32, 32);
+    } else {
         doc.setTextColor(...COLORS.primary);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('bar', 22, 26);
-        doc.text('la marbella', 22, 32);
+        doc.setFontSize(8);
+        doc.text('NO LOGO', 30, 28, { align: 'center' });
     }
 
-    // --------------------------------------------------------------------------
-    // 3. COMPANY INFO (Left, White Text)
-    // --------------------------------------------------------------------------
+    // Title: "Pedido" (Top Right)
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    const startX = 60;
-    let currentY = 18;
+    doc.setFontSize(28);
+    doc.text('Pedido', pageWidth - margin, 25, { align: 'right' });
 
-    doc.text(COMPANY_INFO.name, startX, currentY);
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    currentY += 5;
-    doc.text(COMPANY_INFO.nif, startX, currentY);
-
-    currentY += 5;
-    const addressLines = doc.splitTextToSize(COMPANY_INFO.address, 60);
-    doc.text(addressLines, startX, currentY);
-
-    currentY += 10;
-    doc.text(COMPANY_INFO.phone, startX, currentY);
-
-    currentY += 5;
-    doc.text(COMPANY_INFO.email, startX, currentY);
-
-    // --------------------------------------------------------------------------
-    // 4. SUPPLIER & DATE (Right, White Text, Right Aligned)
-    // --------------------------------------------------------------------------
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    const rightMargin = pageWidth - margin;
-    currentY = 45; // Align towards bottom of header
-
-    // Date
+    // Date (Below Title)
     const today = format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
     const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
 
-    doc.text(formattedDate, rightMargin, currentY, { align: 'right' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(220, 220, 220); // Light gray text
+    doc.text(formattedDate, pageWidth - margin, 32, { align: 'right' });
 
-    // Supplier Name (Above date)
-    currentY -= 7;
+    // --------------------------------------------------------------------------
+    // 3. COMPANY INFO (Left, Below Header)
+    // --------------------------------------------------------------------------
+    let currentY = 75; // Start below the curve
+    const infoX = margin;
+
+    doc.setTextColor(...COLORS.primary);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(data.supplierName, rightMargin, currentY, { align: 'right' });
+    doc.text(COMPANY_INFO.name, infoX, currentY);
 
+    currentY += 6;
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.setFont('helvetica', 'normal');
+    doc.text(COMPANY_INFO.nif, infoX, currentY);
+
+    currentY += 5;
+    doc.text(COMPANY_INFO.address, infoX, currentY);
+
+    currentY += 5;
+    doc.text(COMPANY_INFO.phone, infoX, currentY);
+
+    currentY += 5;
+    doc.text(COMPANY_INFO.email, infoX, currentY);
 
     // --------------------------------------------------------------------------
-    // 5. TABLE
+    // 4. SUPPLIER (Right, Aligned with Company Info)
     // --------------------------------------------------------------------------
-    const tableData = data.items.map(item => [
-        item.name,
-        item.quantity.toString(),
-        item.unit
-    ]);
+    // We can put supplier info on the right side if needed, or keep it simple
+    // The reference image doesn't explicitly show supplier info block, but it's an order *to* a supplier.
+    // Let's add it for clarity on the right side.
+
+    // doc.text(data.supplierName, pageWidth - margin, 75, { align: 'right' });
+
+    // --------------------------------------------------------------------------
+    // 5. TABLE WITH IMAGES
+    // --------------------------------------------------------------------------
+    const startTableY = 110;
 
     autoTable(doc, {
-        startY: 80,
-        head: [['ARTÍCULO', 'CANTIDAD', 'UNIDAD']],
-        body: tableData,
-        theme: 'plain', // Custom styling
+        startY: startTableY,
+        head: [['', 'ARTÍCULO', 'CANTIDAD', 'UNIDAD']],
+        body: data.items.map(item => ['', item.name, item.quantity, item.unit]),
+        theme: 'plain',
+
+        // STYLES
         styles: {
             font: 'helvetica',
             fontSize: 10,
-            cellPadding: 6,
             textColor: COLORS.text,
-            lineColor: [240, 240, 240], // Light gray border
-            lineWidth: 0
+            cellPadding: 4,
+            valign: 'middle',
+            minCellHeight: 18 // Ensure height for images
         },
+
+        // HEADER STYLES
         headStyles: {
             fillColor: COLORS.tableHeader,
             textColor: 255,
-            fontSize: 10,
+            fontSize: 9,
             fontStyle: 'bold',
-            halign: 'left',
-            cellPadding: { top: 8, bottom: 8, left: 6, right: 6 }
+            halign: 'center',
+            cellPadding: 8
         },
-        bodyStyles: {
-            fillColor: [255, 255, 255]
+
+        // COLUMN STYLES
+        columnStyles: {
+            0: { cellWidth: 15 }, // Image column
+            1: { halign: 'left' }, // Article
+            2: { halign: 'center', cellWidth: 30 }, // Quantity
+            3: { halign: 'center', cellWidth: 30 }  // Unit
         },
+
+        // ALTERNATE ROW
         alternateRowStyles: {
             fillColor: COLORS.tableRowEven
         },
-        columnStyles: {
-            0: { halign: 'left' },   // Article
-            1: { halign: 'center' }, // Quantity
-            2: { halign: 'center' }  // Unit
-        },
-        // Simulate rounded corners for header? (Not easily supported in autoTable v3 without hooks)
-        didParseCell: function (data) {
-            // Add border between rows for cleaner look?
-            if (data.section === 'body' && data.row.index < tableData.length - 1) {
-                // content
+
+        // DRAW IMAGES HOOK
+        didDrawCell: function (data) {
+            if (data.section === 'body' && data.column.index === 0) {
+                const rowIndex = data.row.index;
+                const image = productImages[rowIndex];
+
+                if (image) {
+                    // Fit image in cell
+                    const cell = data.cell;
+                    const padding = 2;
+                    const dim = Math.min(cell.width, cell.height) - (padding * 2);
+                    const x = cell.x + (cell.width - dim) / 2;
+                    const y = cell.y + (cell.height - dim) / 2;
+
+                    doc.addImage(image, 'PNG', x, y, dim, dim);
+                }
             }
         },
+
+        // ROUNDED CORNERS (Simulated by drawing a border rect around the table if possible, or just standard)
+        // AutoTable doesn't support border-radius easily on the main table container.
+        // We'll trust standard look.
+
         margin: { left: margin, right: margin }
     });
 
-    // --------------------------------------------------------------------------
-    // 6. TOTALS and FOOTER
-    // --------------------------------------------------------------------------
-    const finalY = (doc as any).lastAutoTable.finalY + 15;
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...COLORS.primary);
-    doc.text('TOTAL ARTÍCULOS:', pageWidth - margin - 40, finalY, { align: 'right' });
-
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`${data.items.length}`, pageWidth - margin, finalY, { align: 'right' });
+    // White line separator for header columns?
+    // Not strictly needed with 'plain' theme but 'striped' or custom is better.
 
     return doc.output('blob');
 }
 
-// Helper to load image
+// Reuse helper
 function loadImage(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
         const img = new Image();
