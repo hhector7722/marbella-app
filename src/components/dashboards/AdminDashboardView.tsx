@@ -954,3 +954,5 @@ const AdminDashboardView = () => {
     );
 }
 
+export default AdminDashboardView;
+
