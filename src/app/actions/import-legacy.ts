@@ -264,8 +264,7 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
                 clock_in: clockIn.toISOString(),
                 clock_out: clockOut ? clockOut.toISOString() : null,
                 total_hours: totalHours > 0 ? totalHours : null,
-                is_manual_entry: true,
-                status: clockOut ? 'completed' : 'active'
+                is_manual_entry: true
             })
 
             successCount++

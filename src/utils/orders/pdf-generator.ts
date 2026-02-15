@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -65,7 +65,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         item.unit
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
         startY: 75,
         head: [['ARTÍCULO', 'CANTIDAD', 'UNIDAD']],
         body: tableData,
@@ -90,7 +90,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     });
 
     // --- Totals (Solo líneas) ---
-    const finalY = doc.lastAutoTable.finalY + 10;
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');

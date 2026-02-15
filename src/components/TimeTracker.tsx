@@ -112,7 +112,6 @@ export default function TimeTracker() {
                 .from('time_logs')
                 .update({
                     clock_out: now.toISOString(),
-                    status: 'completed',
                     total_hours: totalHours,
                     input_lat: lat,
                     input_lng: lng

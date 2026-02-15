@@ -71,10 +71,12 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Consistencia Visual (Loading Spinner)**: Adopción del nuevo componente `LoadingSpinner` en el detalle de recetas para alinearse con la identidad visual premium del proyecto.
 - [x] **Refinamiento Movimientos y Dashboard**: Exclusión de arqueos en historiales, filtro por defecto al mes actual e integración del indicador de "SALDO" acumulado.
 - [x] **Control de Apariencia**: Implementación de bloqueo de Modo Noche mediante `darkMode: 'class'` y forzado de clase `light` en el layout para preservar la estética corporativa.
+- [x] **Refinamiento de Pedidos**: Eliminación de botones redundantes en la generación de pedidos y corrección de error crítico en la exportación a PDF (`autoTable`).
 
 
 
 ## 📅 PENDIENTE
+- [x] **Rediseño Modal de Cambio**: Implementación de un nuevo layout de 3 columnas (Entra/Unidad/Sale) con fondos de color verde/rojo y estética neutra en ambos dashboards.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

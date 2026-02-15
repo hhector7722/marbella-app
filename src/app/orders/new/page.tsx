@@ -287,18 +287,6 @@ export default function NewOrderPage() {
                 ))}
             </div>
 
-            {/* FLOATING ACTION BUTTON */}
-            {totalSelected > 0 && !isSummaryOpen && !isSuccessOpen && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-300">
-                    <button
-                        onClick={() => setIsSummaryOpen(true)}
-                        className="bg-[#5E35B1] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all group"
-                    >
-                        <span>Ver Resumen ({totalSelected})</span>
-                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-            )}
 
             {/* MODALS */}
             <OrderSummaryModal

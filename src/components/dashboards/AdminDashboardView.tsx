@@ -114,73 +114,40 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
         }
     };
 
-    const renderDenomRow = (denom: number) => (
-        <div key={denom} className="flex items-center gap-1 md:gap-4 mb-2 group justify-center">
-            {/* ENTRA SECTION (MINI) */}
-            <div className="flex items-center gap-1 bg-gray-50/50 p-0.5 rounded-lg border border-gray-100 shadow-sm">
-                <button
-                    onClick={() => handleAdjust(denom, 'in', -1)}
-                    className="w-5 h-5 flex items-center justify-center bg-rose-500 text-white rounded-md active:scale-90 transition-transform shadow-sm"
-                >
-                    <MinusIcon size={10} strokeWidth={4} />
-                </button>
-                <input
-                    type="number" min="0"
-                    value={inCounts[denom] || ''}
-                    onChange={(e) => setInCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                    placeholder="0"
-                    className="w-8 text-center text-xs font-black bg-transparent outline-none text-emerald-600"
-                />
-                <button
-                    onClick={() => handleAdjust(denom, 'in', 1)}
-                    className="w-5 h-5 flex items-center justify-center bg-emerald-500 text-white rounded-md active:scale-90 transition-transform shadow-sm"
-                >
-                    <PlusIcon size={10} strokeWidth={4} />
-                </button>
-            </div>
-
-            {/* CURRENCY IMAGE (LARGE) */}
-            <div className="flex flex-col items-center justify-center w-20 shrink-0">
-                <div className="relative h-10 md:h-12 flex items-center justify-center">
-                    <Image
-                        src={CURRENCY_IMAGES[denom]}
-                        alt={`${denom}€`}
-                        width={80}
-                        height={60}
-                        className="h-full w-auto object-contain drop-shadow-sm scale-110"
-                    />
-                </div>
-                <span className="text-[8px] font-black text-gray-400 mt-[-2px] uppercase">{denom >= 5 ? `${denom}€` : denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-            </div>
-
-            {/* SALE SECTION (MINI) */}
-            <div className="flex items-center gap-1 bg-gray-50/50 p-0.5 rounded-lg border border-gray-100 shadow-sm">
-                <button
-                    onClick={() => handleAdjust(denom, 'out', -1)}
-                    className="w-5 h-5 flex items-center justify-center bg-rose-500 text-white rounded-md active:scale-90 transition-transform shadow-sm"
-                >
-                    <MinusIcon size={10} strokeWidth={4} />
-                </button>
-                <input
-                    type="number" min="0"
-                    value={outCounts[denom] || ''}
-                    onChange={(e) => setOutCounts(p => ({ ...p, [denom]: parseInt(e.target.value) || 0 }))}
-                    placeholder="0"
-                    className="w-8 text-center text-xs font-black bg-transparent outline-none text-rose-600"
-                />
-                <button
-                    onClick={() => handleAdjust(denom, 'out', 1)}
-                    className="w-5 h-5 flex items-center justify-center bg-emerald-500 text-white rounded-md active:scale-90 transition-transform shadow-sm"
-                >
-                    <PlusIcon size={10} strokeWidth={4} />
-                </button>
-            </div>
+    const DenomControl = ({ denom, count, side }: { denom: number, count: number, side: 'in' | 'out' }) => (
+        <div className="flex items-center justify-center gap-2 h-14 w-full px-2">
+            <button
+                onClick={() => handleAdjust(denom, side, -1)}
+                className="w-10 h-10 flex items-center justify-center bg-white/80 text-zinc-400 rounded-xl active:scale-90 transition-all shadow-sm border border-zinc-100 hover:text-zinc-600"
+            >
+                <MinusIcon size={18} strokeWidth={3} />
+            </button>
+            <input
+                type="number" min="0"
+                value={count || ''}
+                onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    if (side === 'in') setInCounts(p => ({ ...p, [denom]: val }));
+                    else setOutCounts(p => ({ ...p, [denom]: val }));
+                }}
+                placeholder="0"
+                className={cn(
+                    "w-12 text-center text-lg font-black bg-white/50 rounded-lg h-10 outline-none transition-colors",
+                    count > 0 ? (side === 'in' ? "text-emerald-700" : "text-rose-700") : "text-zinc-300"
+                )}
+            />
+            <button
+                onClick={() => handleAdjust(denom, side, 1)}
+                className="w-10 h-10 flex items-center justify-center bg-white/80 text-zinc-400 rounded-xl active:scale-90 transition-all shadow-sm border border-zinc-100 hover:text-zinc-600"
+            >
+                <PlusIcon size={18} strokeWidth={3} />
+            </button>
         </div>
     );
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
-            {/* STICKY HEADER WITH FUSED TOTALS & ACTION */}
+            {/* STICKY HEADER */}
             <div className="bg-[#36606F] shrink-0 shadow-md z-10">
                 <div className="px-6 py-2 flex items-center justify-between border-b border-white/5">
                     <div className="flex flex-col">
@@ -192,7 +159,6 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                     </button>
                 </div>
 
-                {/* FUSED TOTALS & CONFIRM BAR */}
                 <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between gap-2">
                     <div className="flex flex-col items-start min-w-[60px]">
                         <span className="text-[7px] font-black text-white/40 uppercase">Entra</span>
@@ -225,12 +191,40 @@ const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {}
                 </div>
             </div>
 
-            {/* SCROLLABLE CONTENT (MAXIMIZED) */}
-            <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-white">
-                <div className="max-w-md mx-auto py-1">
-                    {ALL_DENOMS.map(renderDenomRow)}
-                    {/* SPACER TO ENSURE LAST ITEM IS FULLY VISIBLE */}
-                    <div className="h-4" />
+            {/* 3-COLUMN LAYOUT CONTENT */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex">
+                {/* COLUMN LEFT: ENTRA */}
+                <div className="flex-1 bg-emerald-50/50 flex flex-col py-2">
+                    <div className="text-center mb-2"><span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Entra</span></div>
+                    {ALL_DENOMS.map(denom => (
+                        <DenomControl key={`in-${denom}`} denom={denom} count={inCounts[denom] || 0} side="in" />
+                    ))}
+                </div>
+
+                {/* COLUMN CENTER: DENOMINATIONS */}
+                <div className="w-20 md:w-24 bg-white flex flex-col py-2 border-x border-zinc-100 shadow-sm z-10">
+                    <div className="text-center mb-2"><span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Unidad</span></div>
+                    {ALL_DENOMS.map(denom => (
+                        <div key={`img-${denom}`} className="h-14 flex flex-col items-center justify-center shrink-0">
+                            <div className="relative h-8 w-12 flex items-center justify-center">
+                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={48} height={40} className="h-full w-auto object-contain drop-shadow-sm" />
+                            </div>
+                            <span className="text-[7px] font-black text-zinc-500 uppercase mt-0.5">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* COLUMN RIGHT: SALE */}
+                <div className="flex-1 bg-rose-50/50 flex flex-col py-2">
+                    <div className="text-center mb-2"><span className="text-[8px] font-black text-rose-600 uppercase tracking-widest">Sale</span></div>
+                    {ALL_DENOMS.map(denom => (
+                        <div key={`out-row-${denom}`} className="relative h-14">
+                            <DenomControl denom={denom} count={outCounts[denom] || 0} side="out" />
+                            {availableStock[denom] > 0 && (
+                                <span className="absolute bottom-1 right-2 text-[6px] font-bold text-rose-400 uppercase opacity-70">Disp: {availableStock[denom]}</span>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
