@@ -195,7 +195,8 @@ export default function StaffDashboard() {
             }
             setWeekDays(daysStructure);
 
-            const weekDifference = totalWeekHours - contractHours;
+            const isAugust = monday.getMonth() === 7;
+            const weekDifference = isAugust ? totalWeekHours : (totalWeekHours - contractHours);
             const projectedBalance = historicalBalance + weekDifference;
             let payout = 0;
             let balanceForDisplay = projectedBalance;

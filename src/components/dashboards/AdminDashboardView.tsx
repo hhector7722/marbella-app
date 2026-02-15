@@ -469,7 +469,8 @@ export default function AdminDashboardView() {
                             const isManager = userProfile.role === 'manager';
                             const isFixedSalary = userProfile.is_fixed_salary || false;
                             const preferStock = userProfile.prefer_stock_hours || false;
-                            const weeklyBalance = (isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
+                            const isAugust = monday.getMonth() === 7;
+                            const weeklyBalance = (isAugust || isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
                             let pendingBalance = 0;
                             const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekId);
                             if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) pendingBalance = (!preferStock && prevSnapshot.final_balance > 0) ? 0 : prevSnapshot.final_balance;

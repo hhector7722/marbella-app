@@ -117,7 +117,8 @@ export async function getOvertimeData(startDate: string, endDate: string) {
                 const isManager = profile.role === 'manager';
                 const isFixedSalary = profile.is_fixed_salary || false;
 
-                const weeklyBalance = (isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
+                const isAugust = mondayDate.getMonth() === 7;
+                const weeklyBalance = (isAugust || isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
 
                 let pendingBalance = 0;
                 const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekISO);

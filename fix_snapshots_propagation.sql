@@ -113,8 +113,13 @@ BEGIN
         v_snapshot_contracted_hours := COALESCE(v_snapshot_contracted_hours, v_current_contracted_hours);
         v_is_paid_current := COALESCE(v_is_paid_current, false);
 
-        -- 3. Calcular Balance Semanal según Rol (CORRECCIÓN MANAGER)
-        IF v_role = 'manager' THEN
+        -- 3. Calcular Balance Semanal según Rol (O Regla de Agosto)
+        IF extract(month from v_current_week) = 8 THEN
+            -- REGLA DE AGOSTO: Contrato efectivo = 0.
+            -- Todo lo que trabajen suma, si no trabajan el balance es 0 (no deuda).
+            v_total_hours_week := v_logs_sum;
+            v_weekly_balance := v_logs_sum;
+        ELSIF v_role = 'manager' THEN
             -- Manager: Sueldo fijo. Solo lo fichado cuenta como extra/balance.
             v_total_hours_week := 40 + v_logs_sum; 
             v_weekly_balance := v_logs_sum; 

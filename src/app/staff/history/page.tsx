@@ -204,7 +204,8 @@ export default function HistoryPage() {
                 const weekDays: DailyLog[] = [];
                 let weekTotalHours = 0;
                 let currentAccumulated = 0;
-                const effContract = (isTargetManager || isFixedSalary) ? 0 : contractHours;
+                const isAugust = currentWeekStart.getMonth() === 7;
+                const effContract = (isAugust || isTargetManager || isFixedSalary) ? 0 : contractHours;
 
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(currentWeekStart); d.setDate(currentWeekStart.getDate() + i);
@@ -251,7 +252,7 @@ export default function HistoryPage() {
                 if (isCurrentWeek) {
                     // Semana en curso: cálculo dinámico como el dashboard
                     summaryTotalHours = weekTotalHours;
-                    if (isTargetManager || isFixedSalary) {
+                    if (isAugust || isTargetManager || isFixedSalary) {
                         summaryWeeklyBalance = weekTotalHours;
                     } else {
                         summaryWeeklyBalance = weekTotalHours - contractHours;
@@ -265,7 +266,7 @@ export default function HistoryPage() {
                     summaryFinalBalance = snapshot.final_balance ?? (snapshot.pending_balance + snapshot.balance_hours);
                 } else {
                     summaryTotalHours = weekTotalHours;
-                    if (isTargetManager || isFixedSalary) {
+                    if (isAugust || isTargetManager || isFixedSalary) {
                         summaryWeeklyBalance = weekTotalHours;
                         summaryTotalHours = 40 + weekTotalHours;
                     } else {
