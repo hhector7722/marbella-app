@@ -311,7 +311,14 @@ export default function HistoryPage() {
                 currentWeekStart.setDate(currentWeekStart.getDate() + 7);
             }
 
-            setWeeksData(weeks.reverse());
+            // --- ORDENACIÓN CONDICIONAL ---
+            // Por defecto (sin filtro): Más reciente arriba (reverse)
+            // Con filtro activo: Más antiguo arriba (natural order) para lectura cronológica
+            if (isFilterActive) {
+                setWeeksData(weeks);
+            } else {
+                setWeeksData(weeks.reverse());
+            }
 
         } catch (error) { console.error(error); }
         finally { setLoading(false); }

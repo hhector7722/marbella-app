@@ -73,6 +73,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Control de Apariencia**: Implementación de bloqueo de Modo Noche mediante `darkMode: 'class'` y forzado de clase `light` en el layout para preservar la estética corporativa.
 - [x] **Refinamiento de Pedidos**: Eliminación de botones redundantes en la generación de pedidos y corrección de error crítico en la exportación a PDF (`autoTable`).
 - [x] **Importador Legacy (v2)**: Mejora de la lógica de importación de fichajes para permitir la sobrescritura de registros existentes eliminando conflictos de la restricción `idx_one_shift_per_day`.
+- [x] **Corrección Zona Horaria**: Script de emergencia `fix_import_timezones.sql` para corregir el desfase de horas en importaciones masivas.
+- [x] **Visualización Inteligente de Horas (Staff)**: Lógica condicional para mostrar `Contrato + Horas` en lugar de solo trabajadas para perfiles de Manager y Salario Fijo.
+- [x] **Ordenación Cronológica Dinámica**: El historial de fichajes ahora se ordena de más reciente a más antiguo por defecto, invirtiéndose automáticamente al aplicar filtros de fecha para facilitar la lectura secuencial.
 
 
 

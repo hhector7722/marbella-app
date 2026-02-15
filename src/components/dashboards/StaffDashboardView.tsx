@@ -219,10 +219,19 @@ export default function StaffDashboardView() {
             setWeekDays(daysStructure);
 
             let weekDifference = 0;
+            let displayHours = totalWeekHours;
+
             if (profile?.role === 'manager' || isFixedSalary) {
                 weekDifference = totalWeekHours;
+                // REGLA SOLICITADA: Mostrar 40 si hay 0 horas, o 40 + horas si hay horas
+                if (totalWeekHours === 0) {
+                    displayHours = contractHours;
+                } else {
+                    displayHours = contractHours + totalWeekHours;
+                }
             } else {
                 weekDifference = totalWeekHours - contractHours;
+                displayHours = totalWeekHours;
             }
 
             const currentTotalBalance = historicalBalance + weekDifference;
@@ -232,7 +241,7 @@ export default function StaffDashboardView() {
             }
 
             setWeeklySummary({
-                totalHours: totalWeekHours,
+                totalHours: displayHours,
                 hoursDifference: weekDifference,
                 currentBalance: currentTotalBalance,
                 estimatedPayout: payout,
