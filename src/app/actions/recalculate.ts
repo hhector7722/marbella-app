@@ -102,6 +102,12 @@ export async function recalculateAllBalances() {
                 // Ejemplo: Semana termina el 7 Enero, Usuario entra el 10 Enero -> Salta.
                 // Ejemplo: Semana termina el 14 Enero, Usuario entra el 10 Enero -> Procesa (semana parcial o completa).
                 if (isBefore(weekEndDate, joiningDate)) {
+                    // [CLEANUP] Si existe un snapshot antiguo para una semana donde no debería estar, lo borramos.
+                    const existingSnapshotToDelete = existingSnapshots?.find(s => s.user_id === userId);
+                    if (existingSnapshotToDelete) {
+                        await supabase.from('weekly_snapshots').delete().match({ user_id: userId, week_start: weekStartStr });
+                        console.log(`Deleted invalid snapshot for user ${profile.first_name} on week ${weekStartStr}`);
+                    }
                     continue;
                 }
             }
