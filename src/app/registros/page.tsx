@@ -429,22 +429,51 @@ export default function RegistrosPage() {
                                             <div
                                                 key={log.user_id}
                                                 className={cn(
-                                                    "w-full flex items-center gap-1.5 px-1.5 py-0.5 rounded-lg border transition-colors",
+                                                    "w-full flex items-center rounded-lg border transition-colors relative group",
+                                                    // Mobile styles
+                                                    "p-1 gap-1.5",
+                                                    // Desktop styles
+                                                    "md:px-2 md:py-1 md:gap-2",
                                                     isFinished
                                                         ? "bg-emerald-50 border-emerald-100/50 text-emerald-700"
                                                         : "bg-rose-50 border-rose-100/50 text-rose-600"
                                                 )}
                                             >
-                                                <div className={cn(
-                                                    "w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[7px] font-black shrink-0",
-                                                    isFinished ? "bg-emerald-500" : "bg-rose-500"
-                                                )}>
-                                                    {initials}
+                                                {/* VISTA MÓVIL (Original) */}
+                                                <div className="flex items-center gap-1.5 md:hidden w-full">
+                                                    <div className={cn(
+                                                        "w-3.5 h-3.5 rounded-full text-white flex items-center justify-center text-[7px] font-black shrink-0",
+                                                        isFinished ? "bg-emerald-500" : "bg-rose-500"
+                                                    )}>
+                                                        {initials}
+                                                    </div>
+                                                    <span className="text-[9px] font-black truncate">
+                                                        {format(parseISO(log.clock_in), 'HH:mm')}
+                                                        {log.clock_out && ` - ${format(parseISO(log.clock_out), 'HH:mm')}`}
+                                                    </span>
                                                 </div>
-                                                <span className="text-[9px] font-black truncate">
-                                                    {format(parseISO(log.clock_in), 'HH:mm')}
-                                                    {log.clock_out && ` - ${format(parseISO(log.clock_out), 'HH:mm')}`}
-                                                </span>
+
+                                                {/* VISTA ESCRITORIO (Nombre + Horas Colores) */}
+                                                <div className="hidden md:flex items-center justify-between w-full min-w-0">
+                                                    <span className="text-[10px] font-bold truncate text-gray-700 group-hover:text-black transition-colors mr-2">
+                                                        {log.first_name || log.employee_name}
+                                                    </span>
+
+                                                    <div className="flex items-center gap-1 text-[9px] font-mono font-black bg-white/60 px-1.5 py-0.5 rounded border border-gray-100/50 shadow-sm ml-auto whitespace-nowrap">
+                                                        <span className="text-emerald-600">
+                                                            {format(parseISO(log.clock_in), 'HH:mm')}
+                                                        </span>
+
+                                                        {log.clock_out && (
+                                                            <>
+                                                                <span className="text-gray-300 mx-0.5">|</span>
+                                                                <span className="text-rose-600">
+                                                                    {format(parseISO(log.clock_out), 'HH:mm')}
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         );
                                     })}

@@ -146,9 +146,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
-                        className="w-12 h-12 flex items-center justify-center bg-rose-500 text-white rounded-full shadow-lg active:scale-95 disabled:opacity-20 transition-all shrink-0"
+                        className="w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-full shadow-lg active:scale-95 disabled:opacity-20 transition-all shrink-0"
                     >
-                        <Minus size={24} strokeWidth={3} />
+                        <Minus size={16} strokeWidth={3} />
                     </button>
 
                     <div className="flex-1 flex items-center justify-center">
@@ -166,9 +166,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
                     <button
                         onClick={handleIncrement}
-                        className="w-12 h-12 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-lg active:scale-95 transition-all shrink-0"
+                        className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-lg active:scale-95 transition-all shrink-0"
                     >
-                        <Plus size={24} strokeWidth={3} />
+                        <Plus size={16} strokeWidth={3} />
                     </button>
                 </div>
 

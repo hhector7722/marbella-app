@@ -82,6 +82,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Filtros Historial**: Unificación visual de filtros (Mes/Trabajador) en una sola fila para managers e implementación de "badge" con cruz roja para limpiar la selección activa.
 - [x] Ajuste Posición Sello: Corrección de estilos CSS en el historial para permitir que el sello de "PAGADO" sobresalga de la tarjeta (overflow visible) y se posicione en la esquina inferior derecha.
 - [x] **Corrección Crítica UUID Pedidos**: Migración de `supplier_id` a TEXT en `purchase_orders` para soportar IDs legacy y rediseño completo del modal de éxito ("Pedido Guardado") siguiendo el estándar Bento Grid y colores corporativos.
+- [x] **Refinamiento Registros**: Diferenciación de vista Escritorio (Nombre + Horas Entrada/Salida en verde/rojo) y Móvil (Compacto con iniciales), manteniendo coherencia estética.
 
 
 ## 📅 PENDIENTE
