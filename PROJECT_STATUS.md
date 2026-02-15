@@ -72,6 +72,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Movimientos y Dashboard**: Exclusión de arqueos en historiales, filtro por defecto al mes actual e integración del indicador de "SALDO" acumulado.
 - [x] **Control de Apariencia**: Implementación de bloqueo de Modo Noche mediante `darkMode: 'class'` y forzado de clase `light` en el layout para preservar la estética corporativa.
 - [x] **Refinamiento de Pedidos**: Eliminación de botones redundantes en la generación de pedidos y corrección de error crítico en la exportación a PDF (`autoTable`).
+- [x] **Importador Legacy (v2)**: Mejora de la lógica de importación de fichajes para permitir la sobrescritura de registros existentes eliminando conflictos de la restricción `idx_one_shift_per_day`.
 
 
 

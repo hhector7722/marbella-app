@@ -287,8 +287,27 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
     }
 
     if (logsToInsert.length > 0) {
-        // We do chunks of 100 to avoid payload size limits if data was huge,
-        // though 454 is fine for a single call.
+        // OVERWRITE LOGIC: Delete existing logs for the days we are importing
+        // 1. Get unique (user_id, date) pairs from logsToInsert
+        const userDatePairs = logsToInsert.map(log => ({
+            user_id: log.user_id,
+            date: log.clock_in.split('T')[0]
+        }))
+
+        // 2. Identify unique pairs and prepare filter
+        // Since we can't easily do a bulk delete with multiple OR conditions in a simple way for many records,
+        // and we usually import by batches/weeks, we'll delete by user and date range or specific dates.
+        for (const log of logsToInsert) {
+            const dateStr = log.clock_in.split('T')[0]
+            await supabase
+                .from('time_logs')
+                .delete()
+                .eq('user_id', log.user_id)
+                .gte('clock_in', `${dateStr}T00:00:00`)
+                .lte('clock_in', `${dateStr}T23:59:59`)
+        }
+
+        // 3. Now perform the insert
         const { error: logError } = await supabase
             .from('time_logs')
             .insert(logsToInsert)
