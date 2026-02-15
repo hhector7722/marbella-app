@@ -969,9 +969,9 @@ export default function HistoryPage() {
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center gap-2 bg-white border border-zinc-100 rounded-xl p-3 shadow-sm">
-                                                <div className={cn("w-3 h-3 rounded-full", eventConfig?.color.split(' ')[0] || 'bg-gray-400')} />
+                                                <div className={cn("w-3 h-3 rounded-full", (eventConfig?.color || 'bg-gray-400').split(' ')[0])} />
                                                 <span className="text-xs font-black text-zinc-500 uppercase">
-                                                    8 Horas - {eventConfig?.label}
+                                                    8 Horas - {eventConfig?.label || 'Evento'}
                                                 </span>
                                             </div>
                                         )}
