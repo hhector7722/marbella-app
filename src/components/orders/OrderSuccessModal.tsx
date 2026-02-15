@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCircle2, Download, Share2, LogOut, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle2, Download, Share2, LogOut, FileText } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from "@/lib/utils";
 
 interface OrderSuccessModalProps {
@@ -50,7 +51,7 @@ export function OrderSuccessModal({ isOpen, pdfUrl, isUploading, onClose, onDown
                 <div className="bg-zinc-50 rounded-[2rem] p-8 mb-10 flex flex-col items-center border border-zinc-100">
                     {isUploading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <Loader2 className="w-10 h-10 text-[#5E35B1] animate-spin" />
+                            <LoadingSpinner size="lg" className="text-[#36606F]" />
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subiendo PDF...</span>
                         </div>
                     ) : (

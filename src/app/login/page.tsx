@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Image from 'next/image';
 import { toast, Toaster } from 'sonner';
 
@@ -107,7 +108,7 @@ export default function LoginPage() {
                         className="w-full bg-[#5B8FB9] hover:bg-[#2A4D59] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
                     >
                         {loading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <LoadingSpinner size="sm" className="text-white" />
                         ) : (
                             <>
                                 ENTRAR AL SISTEMA

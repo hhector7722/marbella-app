@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    X, Save, Banknote, Coins, Calculator, Loader2,
+    X, Save, Banknote, Coins, Calculator,
     CreditCard, UserMinus, ArchiveRestore, Store,
     AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
     CheckCircle2, TrendingUp
 } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -400,7 +401,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                             step === 'summary' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-[#5B8FB9] shadow-blue-900/20'
                         )}
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : (
+                        {loading ? <LoadingSpinner size="sm" className="text-white" /> : (
                             <>
                                 {step === 'summary' ? '' : ''}
                                 {step === 'summary' ? 'Confirmar Cierre' : (step === 'count' ? 'Ver Resumen' : 'Siguiente')}

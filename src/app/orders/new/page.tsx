@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search, ChevronDown, Check, Loader2, ArrowRight } from 'lucide-react';
+import { Search, ChevronDown, Check, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
 import { toast, Toaster } from 'sonner';
@@ -198,7 +199,7 @@ export default function NewOrderPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-[#5B8FB9]">
-                <Loader2 className="w-12 h-12 text-white animate-spin" />
+                <LoadingSpinner size="xl" className="text-white" />
             </div>
         );
     }

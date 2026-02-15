@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, Loader2, ChevronLeft, ChevronRight, Beaker } from 'lucide-react';
+import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Beaker } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import CreateIngredientModal from '@/components/CreateIngredientModal';
 
@@ -312,7 +313,7 @@ function RecipeDetailContent() {
         return <input {...props} type="number" step="0.01" className={className} value={localValue} onChange={handleChange} onBlur={handleBlurLocal} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />;
     };
 
-    if (loading) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
+    if (loading) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white"><LoadingSpinner size="xl" className="text-white" /></div>;
     if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
@@ -335,7 +336,7 @@ function RecipeDetailContent() {
                                     <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
                                 </label>
                             )}
-                            {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-600" /></div>}
+                            {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="sm" className="text-blue-600" /></div>}
                         </div>
                     </div>
                     <button onClick={handleNextRecipe} disabled={currentRecipeIndex >= allRecipes.length - 1} className="w-8 h-8 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition disabled:opacity-30"><ChevronRight className="w-5 h-5 text-gray-700" /></button>

@@ -8,13 +8,13 @@ import {
     FileText,
     CheckCircle2,
     AlertCircle,
-    Loader2,
     ChevronLeft,
     Database,
     AlertTriangle,
     X,
     FileUp
 } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Papa from 'papaparse';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -318,7 +318,7 @@ export default function BulkImportPage() {
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between px-2">
                                                 <div className="flex items-center gap-2">
-                                                    <Loader2 className="animate-spin text-[#5B8FB9]" size={16} />
+                                                    <LoadingSpinner size="sm" className="text-[#5B8FB9]" />
                                                     <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Procesando...</span>
                                                 </div>
                                                 <span className="text-xs font-black text-[#5B8FB9]">{progress}%</span>

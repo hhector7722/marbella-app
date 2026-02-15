@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
-import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database, Loader2 } from 'lucide-react'
+import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 // import { Button } from '@/components/ui/button' // Removed
 // import { Card, ... } from '@/components/ui/card' // Removed
 // import { Alert, ... } from '@/components/ui/alert' // Removed
@@ -236,7 +237,7 @@ export default function ImportPage() {
                                         >
                                             {isUploading ? (
                                                 <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    <LoadingSpinner size="sm" className="mr-2" />
                                                     Importando...
                                                 </>
                                             ) : (

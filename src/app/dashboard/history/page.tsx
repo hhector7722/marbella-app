@@ -22,9 +22,9 @@ import {
     PiggyBank,
     Pencil,
     Trash2,
-    Save,
-    Loader2
+    Save
 } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -50,7 +50,7 @@ export default function HistoryPage() {
     const router = useRouter();
 
     // Estados de Filtro
-    const [filterMode, setFilterMode] = useState<'single' | 'range' | 'all'>('range');
+    const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
     const [selectedDateFilter, setSelectedDateFilter] = useState<string>(() => new Date().toISOString().split('T')[0]);
     const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
@@ -130,13 +130,13 @@ export default function HistoryPage() {
 
             const { data: closingsData } = await query;
 
-            // Para labor cost necesitamos fichajes (solo si no es mode 'all' para no saturar)
+            // Para labor cost necesitamos fichajes
             let logsQuery = supabase
                 .from('time_logs')
                 .select('total_hours')
                 .not('clock_out', 'is', null);
 
-            if (filterMode !== 'all' && startISO && endISO) {
+            if (startISO && endISO) {
                 logsQuery = logsQuery.gte('clock_in', startISO).lte('clock_in', endISO);
             }
 
@@ -368,16 +368,13 @@ export default function HistoryPage() {
                                 </div>
                                 <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global:</span>
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Mes:</span>
                                     <button
-                                        onClick={() => setFilterMode('all')}
-                                        className={cn(
-                                            "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 font-black uppercase",
-                                            filterMode === 'all' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-[#5B8FB9] hover:border-gray-200"
-                                        )}
+                                        onClick={() => setShowMonthPicker(true)}
+                                        className="h-8 px-3 rounded-lg text-[10px] font-bold border-2 bg-gray-50 border-gray-100 text-[#5B8FB9] hover:border-gray-200 transition-all flex items-center gap-1.5 font-black uppercase"
                                     >
                                         <Filter size={12} />
-                                        Todos
+                                        Mes
                                     </button>
                                 </div>
                             </div>
@@ -674,7 +671,7 @@ export default function HistoryPage() {
                                         disabled={loading}
                                         className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl shadow-xl shadow-emerald-200 flex items-center justify-center gap-2 font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" /> : (
+                                        {loading ? <LoadingSpinner size="sm" className="text-white" /> : (
                                             <>
                                                 <Save size={20} />
                                                 Guardar Cambios

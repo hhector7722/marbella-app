@@ -65,7 +65,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Optimización de Capas (Z-Index)**: Ajuste de nivel en la navegación inferior (`z-30`) para permitir el difuminado (blur) correcto cuando hay modales abiertos.
 - [x] **Refinamiento Historial y Gestión de Cierres**: Rediseño del modal de histórico con KPIs de negocio e implementación de edición/borrado de cierres con sincronización robusta y políticas RLS corregidas.
 - [x] **Importador Legacy**: Nueva skill `importador-legacy-marbella` y asistente interactivo en `/dashboard/import` para la carga masiva de datos (Proveedores, Productos) desde Excel/CSV.
-- [x] **Visibilidad Histórico de Cierres**: Refactorización del filtro por defecto a "Mes Actual" y adición de opción "Ver Todo" para garantizar la consulta permanente de cierres anteriores.
+- [x] **Visibilidad Histórico de Cierres**: Refactorización del filtro por defecto a "Mes Actual" e implementación de seleccionador dinámico por meses para navegación ágil.
+- [x] **Identidad Visual (Loading Spinner)**: Implementación de un cargador dinámico radial personalizado (`LoadingSpinner`) y sustitución global de todos los iconos de carga genéricos para mejorar la estética premium.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

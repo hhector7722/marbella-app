@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Package, Plus, Trash2, Upload, Camera, Loader2, X, ChevronDown } from 'lucide-react';
+import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 
 interface Ingredient {
@@ -236,7 +237,7 @@ export default function IngredientsPage() {
                                 <div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden group cursor-pointer border-2 border-dashed border-gray-300 hover:border-[#5E35B1]">
                                     {editForm.image_url ? <img src={editForm.image_url} className="w-full h-full object-contain" /> : <div className="text-center text-gray-400"><Camera className="w-8 h-8 mx-auto mb-1" /><span className="text-xs">Subir</span></div>}
                                     <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-bold text-xs transition cursor-pointer">CAMBIAR<input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'edit')} disabled={uploadingImage} /></label>
-                                    {uploadingImage && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><Loader2 className="animate-spin text-[#5E35B1]" /></div>}
+                                    {uploadingImage && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="md" className="text-[#5E35B1]" /></div>}
                                 </div>
                             </div>
                             <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" />
