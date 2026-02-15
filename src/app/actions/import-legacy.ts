@@ -177,7 +177,11 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
         )
     }
 
-    // Process data
+    // Data structures for bulk operations
+    const logsToInsert: any[] = []
+    const snapshotsToUpsertMap = new Map<string, any>()
+
+    // Process data locally first
     for (const row of data) {
         try {
             const empIdentifier = row.empleado || row.worker || row.nombre
@@ -214,10 +218,7 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
                 totalHours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60)
             }
 
-            // 1. Upsert Weekly Snapshot with contract hours for the week
-            // We use the same get_iso_week_start logic to ensure consistency
-            // Note: Since we don't have get_iso_week_start in JS easily available here 
-            // without duplicating, we'll use a simple Monday-based week start.
+            // Prepare Snapshot data
             const dateObj = new Date(clockIn)
             const day = dateObj.getDay()
             const diffToMonday = dateObj.getDate() - day + (day === 0 ? -6 : 1)
@@ -225,23 +226,16 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
             weekStart.setHours(0, 0, 0, 0)
             const weekStartStr = weekStart.toISOString().split('T')[0]
 
-            // Insert/Update snapshot to set the historical contract hours
-            const { error: snapshotError } = await supabase
-                .from('weekly_snapshots')
-                .upsert({
-                    user_id: profile.id,
-                    week_start: weekStartStr,
-                    contracted_hours_snapshot: contractHours,
-                    // Minimal fields, the trigger/recalc action will populate the rest if needed
-                    week_end: new Date(new Date(weekStart).setDate(weekStart.getDate() + 6)).toISOString().split('T')[0]
-                }, { onConflict: 'user_id, week_start' })
+            const snapshotKey = `${profile.id}-${weekStartStr}`
+            snapshotsToUpsertMap.set(snapshotKey, {
+                user_id: profile.id,
+                week_start: weekStartStr,
+                contracted_hours_snapshot: contractHours,
+                week_end: new Date(new Date(weekStart).setDate(weekStart.getDate() + 6)).toISOString().split('T')[0]
+            })
 
-            if (snapshotError) {
-                errors.push(`Error actualizando horas de contrato para ${empIdentifier}: ${snapshotError.message}`)
-            }
-
-            // 2. Insert Time Log
-            const { error: logError } = await supabase.from('time_logs').insert({
+            // Prepare Log data
+            logsToInsert.push({
                 user_id: profile.id,
                 clock_in: clockIn.toISOString(),
                 clock_out: clockOut ? clockOut.toISOString() : null,
@@ -250,12 +244,36 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
                 status: clockOut ? 'completed' : 'active'
             })
 
-            if (logError) throw logError
             successCount++
 
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : String(e)
-            errors.push(`Error importando registro para ${row.empleado}: ${message}`)
+            errors.push(`Error procesando fila para ${row.empleado}: ${message}`)
+        }
+    }
+
+    // Execute Bulk Operations
+    if (snapshotsToUpsertMap.size > 0) {
+        const { error: snapshotError } = await supabase
+            .from('weekly_snapshots')
+            .upsert(Array.from(snapshotsToUpsertMap.values()), { onConflict: 'user_id, week_start' })
+
+        if (snapshotError) {
+            errors.push(`Error masivo actualizando horas de contrato: ${snapshotError.message}`)
+        }
+    }
+
+    if (logsToInsert.length > 0) {
+        // We do chunks of 100 to avoid payload size limits if data was huge,
+        // though 454 is fine for a single call.
+        const { error: logError } = await supabase
+            .from('time_logs')
+            .insert(logsToInsert)
+
+        if (logError) {
+            errors.push(`Error masivo insertando registros: ${logError.message}`)
+            // If bulk insert fails, we revert successCount
+            successCount = 0
         }
     }
 
