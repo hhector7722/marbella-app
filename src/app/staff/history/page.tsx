@@ -667,6 +667,11 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    {week.summary.isPaid && (
+                                        <div className="absolute bottom-2 right-2 w-24 h-24 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-2xl">
+                                            <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
