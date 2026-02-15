@@ -575,11 +575,7 @@ export default function HistoryPage() {
 
                                     <div className="p-2 relative">
                                         <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                                            {week.summary.isPaid && (
-                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-xl">
-                                                    <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                                                </div>
-                                            )}
+
                                             <div className="grid grid-cols-7 border-b border-gray-100">
                                                 {week.days.map((day, i) => (
                                                     <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">

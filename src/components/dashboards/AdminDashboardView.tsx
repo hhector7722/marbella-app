@@ -21,6 +21,8 @@ import { togglePaidStatus } from '@/app/actions/overtime';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { recalculateAllBalances } from '@/app/actions/recalculate';
+import { RotateCcw } from 'lucide-react';
 
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
@@ -258,24 +260,27 @@ const BoxInventoryView = ({ boxName, inventory, onBack }: { boxName: string, inv
     );
 };
 
-export default function AdminDashboardView() {
+type CashModalMode = 'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory';
+
+const AdminDashboardView = () => {
     const supabase = createClient();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [dailyStats, setDailyStats] = useState<any>(null);
-    const [liveTickets, setLiveTickets] = useState<{ total: number, count: number }>({ total: 0, count: 0 });
+    const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
+    const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
     const [boxes, setBoxes] = useState<any[]>([]);
     const [boxMovements, setBoxMovements] = useState<any[]>([]);
     const [overtimeData, setOvertimeData] = useState<any[]>([]);
+    const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>([]);
-    const [cashModalMode, setCashModalMode] = useState<'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory'>('none');
+    const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
+    const [isRecalculating, setIsRecalculating] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
-    const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
-    const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
@@ -500,6 +505,22 @@ export default function AdminDashboardView() {
         } catch (error) { console.error(error); alert("Error"); }
     };
 
+    const handleRecalculate = async () => {
+        if (!confirm("¿Seguro que quieres recalcular todos los balances? Esto afectará al histórico de todos los trabajadores.")) return;
+        setIsRecalculating(true);
+        try {
+            const res = await recalculateAllBalances();
+            if (res.success) {
+                toast.success(res.message);
+                fetchData();
+            }
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setIsRecalculating(false);
+        }
+    }
+
     if (loading) return (
         <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
             <LoadingSpinner size="xl" className="text-white" />
@@ -530,7 +551,17 @@ export default function AdminDashboardView() {
                         <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden self-start">
                             <div className="bg-purple-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                                 <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
-                                <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={handleRecalculate}
+                                        disabled={isRecalculating}
+                                        className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
+                                    >
+                                        {isRecalculating ? <LoadingSpinner size="sm" /> : <RotateCcw size={12} />}
+                                        Recalcular
+                                    </button>
+                                    <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                                </div>
                             </div>
                             <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                                 {overtimeData.length === 0 ? (

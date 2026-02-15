@@ -139,13 +139,11 @@ BEGIN
 
         IF v_prev_final_balance IS NOT NULL THEN
             IF v_prev_final_balance > 0 THEN
-                -- CRÉDITO (Empresa debe dinero): Se borra si se pagó, salvo Stock.
+                -- CRÉDITO: Solo se arrastra si es Bolsa de Horas (prefer_stock)
                 IF v_prefer_stock THEN
                     v_pending_balance := v_prev_final_balance;
                 ELSE
-                    IF v_prev_is_paid THEN v_pending_balance := 0;
-                    ELSE v_pending_balance := v_prev_final_balance;
-                    END IF;
+                    v_pending_balance := 0; -- Se resetea cada semana si es positivo
                 END IF;
             ELSE
                 -- DEUDA (Empleado debe horas): INDESTRUCTIBLE. Se arrastra siempre.
