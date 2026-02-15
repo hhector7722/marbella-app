@@ -47,8 +47,9 @@ export async function recalculateAllBalances() {
     // Inicializamos con el balance base del perfil (si lo hubiera, aunque normalmente el histórico es lo que manda)
     const userBalanceMap = new Map<string, number>();
     profiles.forEach(p => {
-        // El balance inicial del perfil se considera el "punto de partida" histórico antes del primer log
-        userBalanceMap.set(p.id, p.hours_balance || 0);
+        // [FIX] Inicializamos el balance en 0 para reconstruir la historia limpiamente.
+        // Usar p.hours_balance aquí era un error porque sumaba el balance actual al inicio de los tiempos.
+        userBalanceMap.set(p.id, 0);
     });
 
     console.log(`Iniciando recalculo desde ${format(currentMonday, 'yyyy-MM-dd')}`);
