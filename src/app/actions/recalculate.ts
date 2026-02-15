@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
+import { calculateRoundedHours } from "@/lib/utils";
 import { startOfWeek, endOfWeek, format, parseISO, addWeeks, isBefore, isAfter } from "date-fns";
 import { revalidatePath } from "next/cache";
 
@@ -130,7 +131,10 @@ export async function recalculateAllBalances() {
             const isFixedSalary = profile.is_fixed_salary || false;
 
             // Lógica de Agosto y Roles
-            const weeklyBalance = (isAugust || isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
+            // [ROUNDING] Aplicamos redondeo a la media hora más cercana usando la lógica corporativa
+            let weeklyBalance = (isAugust || isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
+            weeklyBalance = calculateRoundedHours(weeklyBalance);
+
 
             // Balance que arrastra de la semana anterior
             let pendingFromPrev = userBalanceMap.get(userId) || 0;

@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, calculateRoundedHours } from '@/lib/utils';
 import Image from 'next/image';
 import { togglePaidStatus } from '@/app/actions/overtime';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
@@ -469,7 +469,8 @@ const AdminDashboardView = () => {
                             const isFixedSalary = userProfile.is_fixed_salary || false;
                             const preferStock = userProfile.prefer_stock_hours || false;
                             const isAugust = monday.getMonth() === 7;
-                            const weeklyBalance = (isAugust || isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
+                            let weeklyBalance = (isAugust || isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
+                            weeklyBalance = calculateRoundedHours(weeklyBalance);
                             let pendingBalance = 0;
                             const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekId);
                             if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) pendingBalance = (!preferStock && prevSnapshot.final_balance > 0) ? 0 : prevSnapshot.final_balance;
