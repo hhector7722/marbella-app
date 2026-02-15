@@ -196,7 +196,7 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
     }
 
     // Data structures for bulk operations
-    const logsToInsert: any[] = []
+    const logsToInsertMap = new Map<string, any>()
     const snapshotsToUpsertMap = new Map<string, any>()
 
     // Process data locally first
@@ -244,6 +244,7 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
 
             // Prepare Snapshot data
             const dateObj = new Date(clockIn)
+            const dateStr = dateObj.toISOString().split('T')[0]
             const day = dateObj.getDay()
             const diffToMonday = dateObj.getDate() - day + (day === 0 ? -6 : 1)
             const weekStart = new Date(dateObj.setDate(diffToMonday))
@@ -258,22 +259,34 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
                 week_end: new Date(new Date(weekStart).setDate(weekStart.getDate() + 6)).toISOString().split('T')[0]
             })
 
-            // Prepare Log data
-            logsToInsert.push({
+            // Deduplicate Log data (one shift per day per user)
+            const logKey = `${profile.id}-${dateStr}`
+            const newLog = {
                 user_id: profile.id,
                 clock_in: clockIn.toISOString(),
                 clock_out: clockOut ? clockOut.toISOString() : null,
                 total_hours: totalHours > 0 ? totalHours : null,
                 is_manual_entry: true
-            })
+            }
 
-            successCount++
+            if (logsToInsertMap.has(logKey)) {
+                // Keep the record with more hours if a duplicate exists for the same day in the CSV
+                const existing = logsToInsertMap.get(logKey)
+                if ((newLog.total_hours || 0) > (existing.total_hours || 0)) {
+                    logsToInsertMap.set(logKey, newLog)
+                }
+            } else {
+                logsToInsertMap.set(logKey, newLog)
+                successCount++
+            }
 
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : String(e)
             errors.push(`Error procesando fila para ${row.empleado}: ${message}`)
         }
     }
+
+    const logsToInsert = Array.from(logsToInsertMap.values())
 
     // Execute Bulk Operations
     if (snapshotsToUpsertMap.size > 0) {
@@ -288,15 +301,7 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
 
     if (logsToInsert.length > 0) {
         // OVERWRITE LOGIC: Delete existing logs for the days we are importing
-        // 1. Get unique (user_id, date) pairs from logsToInsert
-        const userDatePairs = logsToInsert.map(log => ({
-            user_id: log.user_id,
-            date: log.clock_in.split('T')[0]
-        }))
-
-        // 2. Identify unique pairs and prepare filter
-        // Since we can't easily do a bulk delete with multiple OR conditions in a simple way for many records,
-        // and we usually import by batches/weeks, we'll delete by user and date range or specific dates.
+        // Since logsToInsert is now deduplicated by day, this runs once per day/user
         for (const log of logsToInsert) {
             const dateStr = log.clock_in.split('T')[0]
             await supabase
@@ -307,14 +312,13 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
                 .lte('clock_in', `${dateStr}T23:59:59`)
         }
 
-        // 3. Now perform the insert
+        // Now perform the insert
         const { error: logError } = await supabase
             .from('time_logs')
             .insert(logsToInsert)
 
         if (logError) {
             errors.push(`Error masivo insertando registros: ${logError.message}`)
-            // If bulk insert fails, we revert successCount
             successCount = 0
         }
     }
