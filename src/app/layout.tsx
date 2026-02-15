@@ -54,7 +54,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="es">
+    <html lang="es" className="light">
       <body className={`${inter.className} bg-[#5B8FB9]`}>
         <ServiceWorkerRegistration />
         <Navbar />

@@ -70,6 +70,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento de Recetas (Staff)**: Actualización del modal de detalle con fondo gris apagado (`bg-zinc-100`) para resaltar tarjetas, integración de imagen de la receta en la cabecera e implementación del `LoadingSpinner` corporativo.
 - [x] **Consistencia Visual (Loading Spinner)**: Adopción del nuevo componente `LoadingSpinner` en el detalle de recetas para alinearse con la identidad visual premium del proyecto.
 - [x] **Refinamiento Movimientos y Dashboard**: Exclusión de arqueos en historiales, filtro por defecto al mes actual e integración del indicador de "SALDO" acumulado.
+- [x] **Control de Apariencia**: Implementación de bloqueo de Modo Noche mediante `darkMode: 'class'` y forzado de clase `light` en el layout para preservar la estética corporativa.
+
 
 
 ## 📅 PENDIENTE
