@@ -19,7 +19,7 @@ import {
     PiggyBank,
     ArrowRightLeft
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -37,10 +37,10 @@ export default function MovementsPage() {
     const router = useRouter();
 
     // Estados de Filtro
-    const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
+    const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-    const [rangeStart, setRangeStart] = useState<string | null>(null);
-    const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+    const [rangeStart, setRangeStart] = useState<string | null>(() => startOfMonth(new Date()).toISOString().split('T')[0]);
+    const [rangeEnd, setRangeEnd] = useState<string | null>(() => endOfMonth(new Date()).toISOString().split('T')[0]);
 
     // Estados de UI
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
@@ -52,7 +52,8 @@ export default function MovementsPage() {
     const [summary, setSummary] = useState({
         income: 0,
         expense: 0,
-        balance: 0
+        balance: 0,
+        currentBalance: 0
     });
 
     useEffect(() => {
@@ -77,7 +78,7 @@ export default function MovementsPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setMovements([]);
-                    setSummary({ income: 0, expense: 0, balance: 0 });
+                    setSummary({ income: 0, expense: 0, balance: 0, currentBalance: box.current_balance });
                     setLoading(false);
                     return;
                 }
@@ -93,6 +94,7 @@ export default function MovementsPage() {
                 .from('treasury_log')
                 .select('*')
                 .eq('box_id', box.id)
+                .neq('type', 'ADJUSTMENT')
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .order('created_at', { ascending: false });
@@ -107,7 +109,8 @@ export default function MovementsPage() {
                 setSummary({
                     income: inc,
                     expense: exp,
-                    balance: inc - exp
+                    balance: inc - exp,
+                    currentBalance: box.current_balance
                 });
             }
         } catch (error) { console.error(error); } finally { setLoading(false); }
@@ -202,22 +205,28 @@ export default function MovementsPage() {
                         </div>
 
                         {/* Clean KPI Summary */}
-                        <div className="grid grid-cols-3 gap-8 py-6 px-4 border-b border-gray-100 mb-8">
+                        <div className="grid grid-cols-4 gap-4 py-6 px-4 border-b border-gray-100 mb-8">
                             <div className="flex flex-col items-center">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Entradas</span>
-                                <span className="text-2xl font-black text-emerald-500">+{summary.income.toFixed(0)}€</span>
+                                <span className="text-xl font-black text-emerald-500">+{summary.income.toFixed(0)}€</span>
                             </div>
                             <div className="flex flex-col items-center border-x border-gray-50">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Salidas</span>
-                                <span className="text-2xl font-black text-rose-500">-{summary.expense.toFixed(0)}€</span>
+                                <span className="text-xl font-black text-rose-500">-{summary.expense.toFixed(0)}€</span>
                             </div>
-                            <div className="flex flex-col items-center">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Balance Neto</span>
+                            <div className="flex flex-col items-center border-r border-gray-50">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Neto</span>
                                 <span className={cn(
-                                    "text-2xl font-black",
-                                    summary.balance >= 0 ? "text-[#5B8FB9]" : "text-orange-500"
+                                    "text-xl font-black",
+                                    summary.balance >= 0 ? "text-emerald-600" : "text-orange-500"
                                 )}>
                                     {summary.balance.toFixed(0)}€
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saldo</span>
+                                <span className="text-xl font-black text-[#5B8FB9]">
+                                    {summary.currentBalance.toFixed(0)}€
                                 </span>
                             </div>
                         </div>

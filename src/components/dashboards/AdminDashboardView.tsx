@@ -431,7 +431,7 @@ export default function AdminDashboardView() {
                 setBoxes(sorted);
                 const opBox = sorted.find(b => b.type === 'operational');
                 if (opBox) {
-                    const { data: moves } = await supabase.from('treasury_log').select('*').eq('box_id', opBox.id).order('created_at', { ascending: false }).limit(3);
+                    const { data: moves } = await supabase.from('treasury_log').select('*').eq('box_id', opBox.id).neq('type', 'ADJUSTMENT').order('created_at', { ascending: false }).limit(3);
                     setBoxMovements(moves || []);
                 }
             }
@@ -506,9 +506,8 @@ export default function AdminDashboardView() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
-            <LoadingSpinner size="xl" className="text-white mb-4" />
-            <p className="text-white/60 font-black uppercase tracking-[0.2em] text-xs animate-pulse">Cargando Administrador...</p>
+        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
+            <LoadingSpinner size="xl" className="text-white" />
         </div>
     );
 

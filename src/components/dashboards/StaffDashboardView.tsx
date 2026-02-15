@@ -371,9 +371,8 @@ export default function StaffDashboardView() {
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
-            <LoadingSpinner size="xl" className="text-white mb-4" />
-            <p className="text-white/60 font-black uppercase tracking-[0.2em] text-xs animate-pulse">Cargando Panel...</p>
+        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
+            <LoadingSpinner size="xl" className="text-white" />
         </div>
     );
 
