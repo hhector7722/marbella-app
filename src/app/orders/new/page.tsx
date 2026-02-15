@@ -41,6 +41,7 @@ export default function NewOrderPage() {
     const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
     const [showSupplierPopup, setShowSupplierPopup] = useState(false);
     const [suppliers, setSuppliers] = useState<string[]>([]);
+    const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string }[]>([]);
 
     // UI Modals
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -67,6 +68,11 @@ export default function NewOrderPage() {
             const { data: ingData } = await supabase.from('ingredients').select('*').order('name');
             setIngredients(ingData || []);
 
+            // Fetch registered suppliers for ID lookup
+            const { data: supData } = await supabase.from('suppliers').select('id, name');
+            setDbSuppliers(supData || []);
+
+            // Unique suppliers from ingredients for the filter dropdown
             const uniqueSuppliers = Array.from(new Set((ingData || []).map(i => i.supplier).filter(Boolean))) as string[];
             setSuppliers(uniqueSuppliers);
 
@@ -104,15 +110,28 @@ export default function NewOrderPage() {
 
     const handleFinalize = async () => {
         if (selectedItems.length === 0) {
-            toast.error('No hay productos del proveedor seleccionado');
+            toast.error('No hay productos seleccionados');
             return;
         }
+
+        // Validate Validation: Must have a selected supplier for the ID
+        if (!selectedSupplier) {
+            toast.error('Debes seleccionar un proveedor para generar el pedido');
+            return;
+        }
+
+        const targetSupplier = dbSuppliers.find(s => s.name.toLowerCase() === selectedSupplier.toLowerCase());
+        if (!targetSupplier) {
+            toast.error(`El proveedor "${selectedSupplier}" no está registrado en la base de datos (Falta ID).`);
+            return;
+        }
+
         setIsProcessing(true);
         try {
             // 1. Generate PDF (Precios eliminados en pdf-generator)
             const orderNum = `ORD-${Date.now().toString().slice(-6)}`;
             const blob = await generateOrderPDF({
-                supplierName: selectedSupplier || 'Varios Proveedores',
+                supplierName: selectedSupplier,
                 items: selectedItems.map(i => ({
                     name: i.name,
                     quantity: i.quantity,
@@ -132,7 +151,8 @@ export default function NewOrderPage() {
             const { data: order, error: orderError } = await supabase.from('purchase_orders').insert({
                 order_number: orderNum,
                 created_by: userId,
-                supplier_name: selectedSupplier || 'Varios Proveedores',
+                supplier_id: targetSupplier.id, // CRITICAL FIX: Added supplier_id
+                supplier_name: selectedSupplier,
                 total_items: selectedItems.length,
                 status: 'SENT'
             }).select().single();

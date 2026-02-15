@@ -12,6 +12,7 @@ import {
     Plus, Minus
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
+import { CashChangeModal } from '@/components/CashChangeModal';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { differenceInMinutes } from 'date-fns';
@@ -92,8 +93,6 @@ export default function StaffDashboardView() {
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [showSwapModal, setShowSwapModal] = useState(false);
-    const [swapInCounts, setSwapInCounts] = useState<Record<number, number>>({});
-    const [swapOutCounts, setSwapOutCounts] = useState<Record<number, number>>({});
 
     useEffect(() => { initialize(); }, []);
 
@@ -567,12 +566,6 @@ export default function StaffDashboardView() {
                         <div className="grid grid-cols-2 xl:grid-cols-2 gap-1.5 md:gap-3 w-1/2 md:w-full xl:w-44 shrink-0 px-0 md:px-2 lg:px-0">
                             <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
                                 if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
-                                const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', changeBox.id).gt('quantity', 0);
-                                const initial: any = {};
-                                data?.forEach((d: any) => initial[d.denomination] = d.quantity);
-                                setChangeBoxInventoryMap(initial);
-                                setSwapInCounts({});
-                                setSwapOutCounts({});
                                 setShowSwapModal(true);
                             }} />
                             <IOSIconBoxed
@@ -708,167 +701,14 @@ export default function StaffDashboardView() {
             )}
 
             {/* MODAL: Cambio de Efectivo (Cambio 1) */}
-            {showSwapModal && changeBox && (() => {
-                const BILLS = [100, 50, 20, 10, 5];
-                const COINS = [2, 1, 0.50, 0.20, 0.10];
-                const ALL_DENOMS = [...BILLS, ...COINS];
-
-                const CURRENCY_IMAGES: Record<number, string> = {
-                    100: '/currency/100e-Photoroom.png', 50: '/currency/50e-Photoroom.png', 20: '/currency/20-Photoroom.png',
-                    10: '/currency/10e-Photoroom.png', 5: '/currency/5eur-Photoroom.png', 2: '/currency/2eur-Photoroom.png',
-                    1: '/currency/1eur-Photoroom.png', 0.50: '/currency/50ct-Photoroom.png', 0.20: '/currency/20ct-Photoroom.png',
-                    0.10: '/currency/10ct-Photoroom.png',
-                };
-
-                const totalIn = ALL_DENOMS.reduce((acc, val) => acc + (val * (swapInCounts[val] || 0)), 0);
-                const totalOut = ALL_DENOMS.reduce((acc, val) => acc + (val * (swapOutCounts[val] || 0)), 0);
-                const handleSwapAdjust = (denom: number, side: 'in' | 'out', delta: number) => {
-                    if (side === 'in') {
-                        setSwapInCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
-                    } else {
-                        setSwapOutCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
-                    }
-                };
-
-                const isBalanced = Math.abs(totalIn - totalOut) < 0.01; // Adjusted for floating point comparison
-                const hasStockIssue = Object.entries(swapOutCounts).some(([d, q]) => q > (changeBoxInventoryMap[Number(d)] || 0));
-
-                const handleSwapSubmit = async () => {
-                    try {
-                        await supabase.from('treasury_log').insert({
-                            box_id: changeBox.id, type: 'SWAP', amount: totalIn,
-                            breakdown: { in: swapInCounts, out: swapOutCounts },
-                            notes: `Cambio: Entra ${totalIn.toFixed(2)}€`
-                        });
-                        setShowSwapModal(false);
-                        toast.success('Cambio realizado correctamente');
-                        initialize();
-                    } catch (error) { console.error(error); toast.error('Error al realizar cambio'); }
-                };
-
-                const DenomControl = ({ denom, count, side }: { denom: number, count: number, side: 'in' | 'out' }) => (
-                    <div className="flex items-center justify-center gap-1.5 h-14 w-full px-1">
-                        <button
-                            onClick={() => handleSwapAdjust(denom, side, -1)}
-                            className="w-9 h-9 flex items-center justify-center bg-white/80 text-zinc-400 rounded-xl active:scale-90 transition-all shadow-sm border border-zinc-100"
-                        >
-                            <Minus size={14} strokeWidth={3} />
-                        </button>
-                        <input
-                            type="number" min="0" show-step-buttons="false"
-                            value={count || ''}
-                            onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                if (side === 'in') setSwapInCounts(p => ({ ...p, [denom]: val }));
-                                else setSwapOutCounts(p => ({ ...p, [denom]: val }));
-                            }}
-                            placeholder="0"
-                            className={cn(
-                                "w-10 text-center text-base font-black bg-white/50 rounded-lg h-9 outline-none transition-colors",
-                                count > 0 ? (side === 'in' ? "text-emerald-700" : "text-rose-700") : "text-zinc-300"
-                            )}
-                        />
-                        <button
-                            onClick={() => handleSwapAdjust(denom, side, 1)}
-                            className="w-9 h-9 flex items-center justify-center bg-white/80 text-zinc-400 rounded-xl active:scale-90 transition-all shadow-sm border border-zinc-100"
-                        >
-                            <Plus size={14} strokeWidth={3} />
-                        </button>
-                    </div>
-                );
-
-                return (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-2 animate-in fade-in" onClick={() => setShowSwapModal(false)}>
-                        <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-                            {/* HEADER */}
-                            <div className="bg-[#36606F] shrink-0">
-                                <div className="px-6 py-3 flex items-center justify-between border-b border-white/5">
-                                    <div className="flex flex-col">
-                                        <h2 className="text-base font-black text-white uppercase tracking-wider leading-tight">Cambio Efectivo</h2>
-                                        <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest leading-none">Caja {changeBox.name}</p>
-                                    </div>
-                                    <button onClick={() => setShowSwapModal(false)} className="p-2 bg-white/10 rounded-xl text-white active:scale-90 transition-all">
-                                        <X size={20} />
-                                    </button>
-                                </div>
-
-                                <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between gap-2">
-                                    <div className="flex flex-col items-start min-w-[60px]">
-                                        <span className="text-[7px] font-black text-white/40 uppercase tracking-widest">Entra</span>
-                                        <span className="text-sm font-black text-emerald-400 leading-none">{totalIn.toFixed(2)}€</span>
-                                    </div>
-
-                                    <div className="flex-1 flex items-center justify-center gap-3">
-                                        <div className={cn(
-                                            "px-3 py-1 rounded-lg font-black text-[10px] transition-all border",
-                                            isBalanced ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                                        )}>
-                                            DIF: {(totalIn - totalOut).toFixed(2)}€
-                                        </div>
-
-                                        <button
-                                            onClick={handleSwapSubmit}
-                                            disabled={!isBalanced || (totalIn === 0 && totalOut === 0) || hasStockIssue}
-                                            className={cn(
-                                                "h-10 px-6 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-[0.95]",
-                                                (isBalanced && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
-                                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-200 cursor-pointer'
-                                                    : 'bg-zinc-100 text-zinc-300 cursor-not-allowed shadow-none'
-                                            )}
-                                        >
-                                            {hasStockIssue ? 'STOCK!' : 'CONFIRMAR'}
-                                        </button>
-                                    </div>
-
-                                    <div className="flex flex-col items-end min-w-[60px]">
-                                        <span className="text-[7px] font-black text-white/40 uppercase tracking-widest">Sale</span>
-                                        <span className="text-sm font-black text-rose-400 leading-none">{totalOut.toFixed(2)}€</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 3-COLUMN CONTENT */}
-                            <div className="flex-1 overflow-y-auto no-scrollbar flex bg-white">
-                                {/* ENTRA */}
-                                <div className="flex-1 bg-emerald-50/50 flex flex-col py-3">
-                                    <div className="text-center mb-3"><span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em]">Entra</span></div>
-                                    {ALL_DENOMS.map(denom => (
-                                        <DenomControl key={`in-${denom}`} denom={denom} count={swapInCounts[denom] || 0} side="in" />
-                                    ))}
-                                </div>
-
-                                {/* UNIDAD */}
-                                <div className="w-20 md:w-28 flex flex-col py-3 border-x border-zinc-100 shadow-sm z-10 bg-white">
-                                    <div className="text-center mb-3"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Unidad</span></div>
-                                    {ALL_DENOMS.map(denom => (
-                                        <div key={`img-${denom}`} className="h-14 flex flex-col items-center justify-center shrink-0">
-                                            <div className="relative h-8 w-14 flex items-center justify-center">
-                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={48} height={40} className="h-full w-auto object-contain drop-shadow-sm transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="text-[8px] font-black text-zinc-500 uppercase mt-0.5">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* SALE */}
-                                <div className="flex-1 bg-rose-50/50 flex flex-col py-3">
-                                    <div className="text-center mb-3"><span className="text-[9px] font-black text-rose-600 uppercase tracking-[0.2em]">Sale</span></div>
-                                    {ALL_DENOMS.map(denom => (
-                                        <div key={`out-row-${denom}`} className="relative h-14">
-                                            <DenomControl denom={denom} count={swapOutCounts[denom] || 0} side="out" />
-                                            {(changeBoxInventoryMap[denom] || 0) > 0 && (
-                                                <span className="absolute bottom-1 right-2 text-[7px] font-bold text-rose-400 uppercase opacity-60">
-                                                    D: {changeBoxInventoryMap[denom]}
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            {showSwapModal && changeBox && (
+                <CashChangeModal
+                    boxId={changeBox.id}
+                    boxName={changeBox.name}
+                    onClose={() => setShowSwapModal(false)}
+                    onSuccess={() => { initialize(); setShowSwapModal(false); }}
+                />
+            )}
 
             <CashClosingModal
                 isOpen={isClosingModalOpen}

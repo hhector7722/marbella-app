@@ -72,16 +72,17 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Movimientos y Dashboard**: Exclusión de arqueos en historiales, filtro por defecto al mes actual e integración del indicador de "SALDO" acumulado.
 - [x] **Control de Apariencia**: Implementación de bloqueo de Modo Noche mediante `darkMode: 'class'` y forzado de clase `light` en el layout para preservar la estética corporativa.
 - [x] **Refinamiento de Pedidos**: Eliminación de botones redundantes en la generación de pedidos y corrección de error crítico en la exportación a PDF (`autoTable`).
+- [x] **Corrección Creación Pedidos**: Resolución de error `supplier_id` null y ajuste de proporciones en modal de éxito (UX Kiosco).
 - [x] **Importador Legacy (v2)**: Mejora de la lógica de importación de fichajes para permitir la sobrescritura de registros existentes eliminando conflictos de la restricción `idx_one_shift_per_day`.
 - [x] **Corrección Zona Horaria**: Script de emergencia `fix_import_timezones.sql` para corregir el desfase de horas en importaciones masivas.
 - [x] **Visualización Inteligente de Horas (Staff)**: Lógica condicional para mostrar `Contrato + Horas` en lugar de solo trabajadas para perfiles de Manager y Salario Fijo.
 - [x] **Ordenación Cronológica Dinámica**: El historial de fichajes ahora se ordena de más reciente a más antiguo por defecto, invirtiéndose automáticamente al aplicar filtros de fecha para facilitar la lectura secuencial.
 - [x] **Optimización Geolocalización**: Aumento del radio de fichaje a 300m y corrección de coordenadas a Plus Code `96X6+VQ` (CEM La Mar Bella) para compensar la deriva del GPS.
-
+- [x] **Rediseño Modal de Cambio**: Implementación de un nuevo layout de 3 columnas (Entra/Unidad/Sale) con fondos de color verde/rojo y estética neutra en ambos dashboards.
+- [x] **Refinamiento Filtros Historial**: Unificación visual de filtros (Mes/Trabajador) en una sola fila para managers e implementación de "badge" con cruz roja para limpiar la selección activa.
 
 
 ## 📅 PENDIENTE
-- [x] **Rediseño Modal de Cambio**: Implementación de un nuevo layout de 3 columnas (Entra/Unidad/Sale) con fondos de color verde/rojo y estética neutra en ambos dashboards.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---

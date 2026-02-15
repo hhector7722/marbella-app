@@ -11,6 +11,7 @@ import {
     PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
+import { CashChangeModal } from '@/components/CashChangeModal';
 import Link from 'next/link';
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -23,6 +24,7 @@ import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { recalculateAllBalances } from '@/app/actions/recalculate';
 import { RotateCcw } from 'lucide-react';
+import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
@@ -95,143 +97,7 @@ const CashDenominationForm = ({ type, boxName, onSubmit, onCancel, initialCounts
     );
 };
 
-const SwapDenominationForm = ({ boxName, onSubmit, onCancel, availableStock = {} }: { boxName: string, onSubmit: (total: number, inBreakdown: any, outBreakdown: any) => void, onCancel: () => void, availableStock?: Record<number, number> }) => {
-    const BILLS = [100, 50, 20, 10, 5];
-    const COINS = [2, 1, 0.50, 0.20, 0.10];
-    const ALL_DENOMS = [...BILLS, ...COINS];
 
-    const [inCounts, setInCounts] = useState<Record<number, number>>({});
-    const [outCounts, setOutCounts] = useState<Record<number, number>>({});
-
-    const totalIn = ALL_DENOMS.reduce((acc, val) => acc + (val * (inCounts[val] || 0)), 0);
-    const totalOut = ALL_DENOMS.reduce((acc, val) => acc + (val * (outCounts[val] || 0)), 0);
-    const hasStockIssue = Object.entries(outCounts).some(([d, q]) => q > (availableStock[Number(d)] || 0));
-    const diff = totalIn - totalOut;
-
-    const handleAdjust = (denom: number, side: 'in' | 'out', delta: number) => {
-        if (side === 'in') {
-            setInCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
-        } else {
-            setOutCounts(prev => ({ ...prev, [denom]: Math.max(0, (prev[denom] || 0) + delta) }));
-        }
-    };
-
-    const DenomControl = ({ denom, count, side }: { denom: number, count: number, side: 'in' | 'out' }) => (
-        <div className="flex items-center justify-center gap-2 h-14 w-full px-2">
-            <button
-                onClick={() => handleAdjust(denom, side, -1)}
-                className="w-10 h-10 flex items-center justify-center bg-white/80 text-zinc-400 rounded-xl active:scale-90 transition-all shadow-sm border border-zinc-100 hover:text-zinc-600"
-            >
-                <MinusIcon size={18} strokeWidth={3} />
-            </button>
-            <input
-                type="number" min="0"
-                value={count || ''}
-                onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    if (side === 'in') setInCounts(p => ({ ...p, [denom]: val }));
-                    else setOutCounts(p => ({ ...p, [denom]: val }));
-                }}
-                placeholder="0"
-                className={cn(
-                    "w-12 text-center text-lg font-black bg-white/50 rounded-lg h-10 outline-none transition-colors",
-                    count > 0 ? (side === 'in' ? "text-emerald-700" : "text-rose-700") : "text-zinc-300"
-                )}
-            />
-            <button
-                onClick={() => handleAdjust(denom, side, 1)}
-                className="w-10 h-10 flex items-center justify-center bg-white/80 text-zinc-400 rounded-xl active:scale-90 transition-all shadow-sm border border-zinc-100 hover:text-zinc-600"
-            >
-                <PlusIcon size={18} strokeWidth={3} />
-            </button>
-        </div>
-    );
-
-    return (
-        <div className="flex flex-col h-full overflow-hidden bg-white">
-            {/* STICKY HEADER */}
-            <div className="bg-[#36606F] shrink-0 shadow-md z-10">
-                <div className="px-6 py-2 flex items-center justify-between border-b border-white/5">
-                    <div className="flex flex-col">
-                        <h2 className="text-base font-black text-white uppercase tracking-wider leading-tight">Cambio Efectivo</h2>
-                        <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest leading-none">{boxName}</p>
-                    </div>
-                    <button onClick={onCancel} className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-white">
-                        <X size={18} />
-                    </button>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-sm px-4 py-2 flex items-center justify-between gap-2">
-                    <div className="flex flex-col items-start min-w-[60px]">
-                        <span className="text-[7px] font-black text-white/40 uppercase">Entra</span>
-                        <span className="text-sm font-black text-emerald-400 leading-none">{totalIn.toFixed(2)}€</span>
-                    </div>
-
-                    <div className="flex-1 flex items-center justify-center gap-2">
-                        <div className={`px-2 py-1 rounded-lg font-black text-[9px] transition-all ${Math.abs(diff) < 0.01 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
-                            DIF: {diff.toFixed(2)}€
-                        </div>
-
-                        <button
-                            onClick={() => onSubmit((totalIn - totalOut), inCounts, outCounts)}
-                            disabled={Math.abs(diff) > 0.01 || (totalIn === 0 && totalOut === 0) || hasStockIssue}
-                            className={`
-                                h-8 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-[0.95]
-                                ${(Math.abs(diff) < 0.01 && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
-                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer'
-                                    : 'bg-white/10 text-white/20 cursor-not-allowed shadow-none'}
-                            `}
-                        >
-                            {hasStockIssue ? 'STOCK!' : 'OK'}
-                        </button>
-                    </div>
-
-                    <div className="flex flex-col items-end min-w-[60px]">
-                        <span className="text-[7px] font-black text-white/40 uppercase">Sale</span>
-                        <span className="text-sm font-black text-rose-400 leading-none">{totalOut.toFixed(2)}€</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* 3-COLUMN LAYOUT CONTENT */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex">
-                {/* COLUMN LEFT: ENTRA */}
-                <div className="flex-1 bg-emerald-50/50 flex flex-col py-2">
-                    <div className="text-center mb-2"><span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Entra</span></div>
-                    {ALL_DENOMS.map(denom => (
-                        <DenomControl key={`in-${denom}`} denom={denom} count={inCounts[denom] || 0} side="in" />
-                    ))}
-                </div>
-
-                {/* COLUMN CENTER: DENOMINATIONS */}
-                <div className="w-20 md:w-24 bg-white flex flex-col py-2 border-x border-zinc-100 shadow-sm z-10">
-                    <div className="text-center mb-2"><span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Unidad</span></div>
-                    {ALL_DENOMS.map(denom => (
-                        <div key={`img-${denom}`} className="h-14 flex flex-col items-center justify-center shrink-0">
-                            <div className="relative h-8 w-12 flex items-center justify-center">
-                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={48} height={40} className="h-full w-auto object-contain drop-shadow-sm" />
-                            </div>
-                            <span className="text-[7px] font-black text-zinc-500 uppercase mt-0.5">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                        </div>
-                    ))}
-                </div>
-
-                {/* COLUMN RIGHT: SALE */}
-                <div className="flex-1 bg-rose-50/50 flex flex-col py-2">
-                    <div className="text-center mb-2"><span className="text-[8px] font-black text-rose-600 uppercase tracking-widest">Sale</span></div>
-                    {ALL_DENOMS.map(denom => (
-                        <div key={`out-row-${denom}`} className="relative h-14">
-                            <DenomControl denom={denom} count={outCounts[denom] || 0} side="out" />
-                            {availableStock[denom] > 0 && (
-                                <span className="absolute bottom-1 right-2 text-[6px] font-bold text-rose-400 uppercase opacity-70">Disp: {availableStock[denom]}</span>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
 
 
 
@@ -285,6 +151,19 @@ const AdminDashboardView = () => {
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
     const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0 });
+
+    // [MODAL HISTORIAL] State for worker history modal
+    const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
+    // [SECURITY] State for user email
+    const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.email) setCurrentUserEmail(user.email);
+        };
+        getUser();
+    }, []);
 
 
     const handleCreateWorker = async () => {
@@ -500,7 +379,7 @@ const AdminDashboardView = () => {
         try {
             if (!selectedBox) return;
             if (cashModalMode === 'audit') await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: 'ADJUSTMENT', amount: total, breakdown: breakdown, notes: 'Arqueo de caja' });
-            else if (cashModalMode === 'swap') await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: 'SWAP', amount: total, breakdown: { in: breakdown, out: notesOrOutBreakdown }, notes: `Cambio: Entra ${total.toFixed(2)}€` });
+            if (cashModalMode === 'audit') await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: 'ADJUSTMENT', amount: total, breakdown: breakdown, notes: 'Arqueo de caja' });
             else await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: cashModalMode === 'in' ? 'IN' : 'OUT', amount: total, breakdown: breakdown, notes: notesOrOutBreakdown as string });
             setCashModalMode('none'); setSelectedBox(null); fetchData();
         } catch (error) { console.error(error); alert("Error"); }
@@ -553,14 +432,16 @@ const AdminDashboardView = () => {
                             <div className="bg-purple-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                                 <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                                 <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={handleRecalculate}
-                                        disabled={isRecalculating}
-                                        className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
-                                    >
-                                        {isRecalculating ? <LoadingSpinner size="sm" /> : <RotateCcw size={12} />}
-                                        Recalcular
-                                    </button>
+                                    {currentUserEmail === 'hhector7722@gmail.com' && (
+                                        <button
+                                            onClick={handleRecalculate}
+                                            disabled={isRecalculating}
+                                            className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
+                                        >
+                                            {isRecalculating ? <LoadingSpinner size="sm" /> : <RotateCcw size={12} />}
+                                            Recalcular
+                                        </button>
+                                    )}
                                     <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                                 </div>
                             </div>
@@ -586,8 +467,8 @@ const AdminDashboardView = () => {
                                                 {week.expanded && (
                                                     <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
                                                         {week.staff.map((s: any) => (
-                                                            <div key={s.id} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30">
-                                                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">{s.name.charAt(0)}</div><span className="text-xs font-bold text-gray-700 capitalize">{s.name}</span></div>
+                                                            <div key={s.id} onClick={() => setSelectedHistory({ workerId: s.id, weekId: week.weekId })} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
+                                                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">{s.name.charAt(0)}</div><span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors">{s.name}</span></div>
                                                                 <div className="flex items-center gap-3"><span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border-2 border-gray-200 text-transparent")}><CheckCircle2 className="w-4 h-4" /></button></div>
                                                             </div>
                                                         ))}
@@ -781,7 +662,7 @@ const AdminDashboardView = () => {
                                 <div className="p-4 grid grid-cols-2 gap-4">
                                     {selectedBox?.type === 'change' ? (
                                         <>
-                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('swap'); }} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-16 h-16"><Image src="/icons/reverse.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" /></div><span className="font-black text-xl text-zinc-900">Cambiar</span></button>
+                                            <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-16 h-16"><Image src="/icons/reverse.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" /></div><span className="font-black text-xl text-zinc-900">Cambiar</span></button>
                                             <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('audit'); }} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/change.png" alt="Arqueo" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Arqueo</span></button>
                                             <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); setBoxInventory(data || []); setCashModalMode('inventory'); }} className="bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/wallet.png" alt="Ver Desglose" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Ver Desglose</span></button>
                                         </>
@@ -798,160 +679,174 @@ const AdminDashboardView = () => {
                             </>
                         )}
                         {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && <CashDenominationForm type={cashModalMode as 'in' | 'out' | 'audit'} boxName={selectedBox?.name || 'Caja'} initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}} availableStock={boxInventoryMap} onCancel={() => setCashModalMode('menu')} onSubmit={handleCashTransaction} />}
-                        {cashModalMode === 'swap' && <SwapDenominationForm boxName={selectedBox?.name || 'Caja'} availableStock={boxInventoryMap} onCancel={() => setCashModalMode('menu')} onSubmit={handleCashTransaction} />}
+                        {cashModalMode === 'swap' && <CashChangeModal boxId={selectedBox?.id} boxName={selectedBox?.name || 'Caja'} onClose={() => setCashModalMode('menu')} onSuccess={() => { fetchData(); setCashModalMode('menu'); }} />}
                         {cashModalMode === 'inventory' && <BoxInventoryView boxName={selectedBox?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('menu')} />}
                     </div>
                 </div>
             )}
-            {isStaffModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                            <div>
-                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Empleado ({allEmployees.length})</p>
+            {
+                isStaffModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                <div>
+                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Empleado ({allEmployees.length})</p>
+                                </div>
+                                <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
                             </div>
-                            <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
+                            <div className="p-4 bg-gray-50/30 flex-1 overflow-y-auto">
+                                {/* Botón Crear Nuevo */}
+                                <button
+                                    onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
+                                    className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                                >
+                                    <Plus size={18} /> Nuevo Trabajador
+                                </button>
+                                <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto no-scrollbar pb-2">
+                                    {allEmployees.map((emp) => (
+                                        <button
+                                            key={emp.id}
+                                            onClick={() => router.push(`/profile?id=${emp.id}`)}
+                                            className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
+                                                {emp.first_name.substring(0, 1)}
+                                            </div>
+                                            <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
+                                                {emp.first_name.split(' ')[0]}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                        <div className="p-4 bg-gray-50/30 flex-1 overflow-y-auto">
-                            {/* Botón Crear Nuevo */}
-                            <button
-                                onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
-                                className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
-                            >
-                                <Plus size={18} /> Nuevo Trabajador
-                            </button>
-                            <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto no-scrollbar pb-2">
-                                {allEmployees.map((emp) => (
-                                    <button
-                                        key={emp.id}
-                                        onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                        className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
+                    </div>
+                )
+            }
+            {/* MODAL: Crear Nuevo Trabajador */}
+            {
+                isNewWorkerModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                                <div>
+                                    <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Datos del empleado</p>
+                                </div>
+                                <button onClick={() => setIsNewWorkerModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90"><X size={20} strokeWidth={3} /></button>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                <div>
+                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Nombre *</label>
+                                    <input
+                                        type="text"
+                                        value={newWorkerData.first_name}
+                                        onChange={e => setNewWorkerData({ ...newWorkerData, first_name: e.target.value })}
+                                        placeholder="Nombre del trabajador"
+                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Apellidos</label>
+                                    <input
+                                        type="text"
+                                        value={newWorkerData.last_name}
+                                        onChange={e => setNewWorkerData({ ...newWorkerData, last_name: e.target.value })}
+                                        placeholder="Opcional"
+                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
+                                    <input
+                                        type="email"
+                                        value={newWorkerData.email}
+                                        onChange={e => setNewWorkerData({ ...newWorkerData, email: e.target.value })}
+                                        placeholder="ejemplo@correo.com"
+                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Rol</label>
+                                    <select
+                                        value={newWorkerData.role}
+                                        onChange={e => setNewWorkerData({ ...newWorkerData, role: e.target.value })}
+                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
                                     >
-                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
-                                            {emp.first_name.substring(0, 1)}
-                                        </div>
-                                        <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
-                                            {emp.first_name.split(' ')[0]}
-                                        </span>
-                                    </button>
+                                        <option value="staff">Staff</option>
+                                        <option value="supervisor">Supervisor</option>
+                                        <option value="manager">Manager</option>
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Horas/Sem</label>
+                                        <input
+                                            type="number"
+                                            value={newWorkerData.contracted_hours_weekly}
+                                            onChange={e => setNewWorkerData({ ...newWorkerData, contracted_hours_weekly: Number(e.target.value) })}
+                                            className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">€/h Extra</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={newWorkerData.overtime_cost_per_hour}
+                                            onChange={e => setNewWorkerData({ ...newWorkerData, overtime_cost_per_hour: Number(e.target.value) })}
+                                            className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-4 border-t border-zinc-100 flex gap-3">
+                                <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
+                                <button
+                                    onClick={handleCreateWorker}
+                                    disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
+                                    className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
+                                >
+                                    {newWorkerSaving ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {
+                isProductModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
+                        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                            <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+                                {[
+                                    { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },
+                                    { title: 'Ingredientes', img: '/icons/ingrediente.png', link: '/ingredients', hover: 'hover:bg-orange-50/30' },
+                                    { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new', hover: 'hover:bg-emerald-50/30' },
+                                    { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
+                                    { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
+                                    { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
+                                ].map((item, i) => (
+                                    <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
                                 ))}
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-            {/* MODAL: Crear Nuevo Trabajador */}
-            {isNewWorkerModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
-                            <div>
-                                <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Datos del empleado</p>
-                            </div>
-                            <button onClick={() => setIsNewWorkerModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90"><X size={20} strokeWidth={3} /></button>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Nombre *</label>
-                                <input
-                                    type="text"
-                                    value={newWorkerData.first_name}
-                                    onChange={e => setNewWorkerData({ ...newWorkerData, first_name: e.target.value })}
-                                    placeholder="Nombre del trabajador"
-                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
-                                    autoFocus
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Apellidos</label>
-                                <input
-                                    type="text"
-                                    value={newWorkerData.last_name}
-                                    onChange={e => setNewWorkerData({ ...newWorkerData, last_name: e.target.value })}
-                                    placeholder="Opcional"
-                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
-                                <input
-                                    type="email"
-                                    value={newWorkerData.email}
-                                    onChange={e => setNewWorkerData({ ...newWorkerData, email: e.target.value })}
-                                    placeholder="ejemplo@correo.com"
-                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Rol</label>
-                                <select
-                                    value={newWorkerData.role}
-                                    onChange={e => setNewWorkerData({ ...newWorkerData, role: e.target.value })}
-                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
-                                >
-                                    <option value="staff">Staff</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="manager">Manager</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Horas/Sem</label>
-                                    <input
-                                        type="number"
-                                        value={newWorkerData.contracted_hours_weekly}
-                                        onChange={e => setNewWorkerData({ ...newWorkerData, contracted_hours_weekly: Number(e.target.value) })}
-                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">€/h Extra</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={newWorkerData.overtime_cost_per_hour}
-                                        onChange={e => setNewWorkerData({ ...newWorkerData, overtime_cost_per_hour: Number(e.target.value) })}
-                                        className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-4 border-t border-zinc-100 flex gap-3">
-                            <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
-                            <button
-                                onClick={handleCreateWorker}
-                                disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
-                                className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
-                            >
-                                {newWorkerSaving ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {isProductModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
-                        <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
-                            {[
-                                { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },
-                                { title: 'Ingredientes', img: '/icons/ingrediente.png', link: '/ingredients', hover: 'hover:bg-orange-50/30' },
-                                { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new', hover: 'hover:bg-emerald-50/30' },
-                                { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
-                                { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
-                                { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
-                            ].map((item, i) => (
-                                <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+                )
+            }
             <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} />
-        </div>
+
+            {/* MODAL HISTORIAL TRABAJADOR */}
+            <WorkerWeeklyHistoryModal
+                isOpen={!!selectedHistory}
+                onClose={() => setSelectedHistory(null)}
+                workerId={selectedHistory?.workerId || ''}
+                weekStart={selectedHistory?.weekId || ''}
+            />
+        </div >
     );
 }
 

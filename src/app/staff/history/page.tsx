@@ -449,81 +449,102 @@ export default function HistoryPage() {
 
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
 
-                {/* Filtro por empleado (solo manager) - Popup Rediseñado */}
-                {isManager && (
-                    <div className="flex justify-center mb-2">
-                        <button
-                            onClick={() => setShowEmployeeDropdown(true)}
-                            className="px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-800 active:scale-95 transition-all hover:bg-zinc-50"
-                        >
-                            <span>Seleccionar Empleado</span>
-                        </button>
+                {/* PANEL DE FILTROS UNIFICADO (MANAGER + FECHA) */}
+                <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
 
-                        {showEmployeeDropdown && (
-                            <div
-                                className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
-                                onClick={() => setShowEmployeeDropdown(false)}
-                            >
-                                <div
-                                    className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[80vh]"
-                                    onClick={(e) => e.stopPropagation()}
+                    {/* 1. FILTRO EMPLEADO (SOLO MANAGER) */}
+                    {isManager && (
+                        <>
+                            <div className="relative z-20">
+                                <button
+                                    onClick={() => setShowEmployeeDropdown(true)}
+                                    className={cn(
+                                        "px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 active:scale-95",
+                                        viewingOther ? "text-blue-600 ring-2 ring-blue-100" : "text-zinc-800"
+                                    )}
                                 >
-                                    <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100 shrink-0">
-                                        <div className="flex flex-col">
-                                            <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
-                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setShowEmployeeDropdown(false)}
-                                            className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
-                                        >
-                                            <X size={20} />
-                                        </button>
-                                    </div>
+                                    <span>{viewingOther ? selectedEmployeeName : "Seleccionar Empleado"}</span>
+                                </button>
 
-                                    <div className="p-4 overflow-y-auto custom-scrollbar">
-                                        <button
-                                            onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
-                                            className={cn(
-                                                "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
-                                                selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
-                                            )}
-                                        >
-                                            <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
-                                            Mi Historial
-                                        </button>
+                                {viewingOther && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedEmployeeId(currentUserId);
+                                        }}
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
+                                    >
+                                        <X size={12} strokeWidth={3} />
+                                    </button>
+                                )}
+                            </div>
 
-                                        <div className="h-px bg-zinc-100 my-4" />
-
-                                        {employees.filter(e => e.id !== currentUserId).map(emp => (
+                            {/* DROPDOWN PORTAL */}
+                            {showEmployeeDropdown && (
+                                <div
+                                    className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
+                                    onClick={() => setShowEmployeeDropdown(false)}
+                                >
+                                    <div
+                                        className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[80vh]"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100 shrink-0">
+                                            <div className="flex flex-col">
+                                                <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
+                                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
+                                            </div>
                                             <button
-                                                key={emp.id}
-                                                onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
+                                                onClick={() => setShowEmployeeDropdown(false)}
+                                                className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
+                                            >
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+
+                                        <div className="p-4 overflow-y-auto custom-scrollbar">
+                                            <button
+                                                onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
                                                 className={cn(
                                                     "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
-                                                    selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
+                                                    selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
                                                 )}
                                             >
-                                                <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
-                                                {emp.first_name} {emp.last_name}
+                                                <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
+                                                Mi Historial
                                             </button>
-                                        ))}
+
+                                            <div className="h-px bg-zinc-100 my-4" />
+
+                                            {employees.filter(e => e.id !== currentUserId).map(emp => (
+                                                <button
+                                                    key={emp.id}
+                                                    onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
+                                                    className={cn(
+                                                        "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
+                                                        selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
+                                                    )}
+                                                >
+                                                    <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
+                                                    {emp.first_name} {emp.last_name}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
+                        </>
+                    )}
 
-                {/* Botón Central de Filtrado de Mes (Rediseño) */}
-                {!loading && (
-                    <div className="flex justify-center py-4 animate-in fade-in slide-in-from-top-4 duration-700">
-                        <div className="flex items-center gap-2">
+                    {/* 2. FILTRO FECHA */}
+                    {!loading && (
+                        <div className="relative z-10">
                             <button
                                 onClick={() => setShowFilter(true)}
                                 className={cn(
                                     "flex items-center gap-3 px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100",
-                                    "text-[11px] font-black text-zinc-800 uppercase tracking-[0.25em]",
+                                    "text-[10px] font-black uppercase tracking-[0.2em]",
+                                    isFilterActive ? "text-blue-600 ring-2 ring-blue-100" : "text-zinc-800",
                                     "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl"
                                 )}
                             >
@@ -532,16 +553,18 @@ export default function HistoryPage() {
 
                             {isFilterActive && (
                                 <button
-                                    onClick={clearFilter}
-                                    className="w-12 h-12 flex items-center justify-center bg-white/10 text-white rounded-full hover:bg-white/20 backdrop-blur-md transition-all active:scale-90 border border-white/20"
-                                    title="Quitar filtro"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearFilter();
+                                    }}
+                                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
                                 >
-                                    <X size={20} />
+                                    <X size={12} strokeWidth={3} />
                                 </button>
                             )}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {loading ? (
                     <div className="py-10 flex justify-center">
