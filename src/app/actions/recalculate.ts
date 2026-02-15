@@ -94,19 +94,35 @@ export async function recalculateAllBalances() {
             // porque queremos permitir que el recalculo corrija errores históricos de contrato.
             const existingSnapshot = existingSnapshots?.find(s => s.user_id === userId);
 
-            // LÓGICA DE PRIORIDAD (User Request: Respetar Histórico y Respetar 0)
+            // LÓGICA DE PRIORIDAD REFINADA
             let limit = 0;
+            let source = 'default';
 
-            if (existingSnapshot?.contracted_hours_snapshot !== undefined && existingSnapshot?.contracted_hours_snapshot !== null) {
-                // 1. Histórico: Lo que tenía contratado en esa fecha exacta
-                limit = existingSnapshot.contracted_hours_snapshot;
-            } else if (profile.contracted_hours_weekly !== undefined && profile.contracted_hours_weekly !== null) {
-                // 2. Fallback al perfil actual (si no había snapshot previo)
-                limit = profile.contracted_hours_weekly;
-            } else {
-                // 3. Si no hay nada definido, asumimos 0 (no 40)
+            // 1. REGLA MAESTRA "CERO": Si el perfil actual tiene 0 horas, mandamos 0 SIEMPRE.
+            // Esto corrige el problema de que una configuración de 0 no sobrescribía snapshots antiguos con 40.
+            if (profile.contracted_hours_weekly === 0) {
                 limit = 0;
+                source = 'profile_forced_zero';
             }
+            // 2. Si no es 0, priorizamos el histórico (si existe) para respetar cambios de contrato reales
+            else if (existingSnapshot?.contracted_hours_snapshot !== undefined && existingSnapshot?.contracted_hours_snapshot !== null) {
+                limit = existingSnapshot.contracted_hours_snapshot;
+                source = 'snapshot';
+            }
+            // 3. Fallback al perfil actual
+            else if (profile.contracted_hours_weekly !== undefined && profile.contracted_hours_weekly !== null) {
+                limit = profile.contracted_hours_weekly;
+                source = 'profile';
+            }
+            // 4. Último recurso
+            else {
+                limit = 0;
+                source = 'zero_default';
+            }
+
+            // DEBUG LOG
+            console.log(`User: ${profile.first_name}, Week: ${weekStartStr}, Limit: ${limit}, Source: ${source}`);
+
 
             const preferStock = profile.prefer_stock_hours || false;
             const isManager = profile.role === 'manager';
