@@ -13,11 +13,23 @@ import { cn } from '@/lib/utils';
 
 // --- TIPOS ---
 interface DailyLog {
-    date: Date; dayName: string; dayNumber: number; hasLog: boolean; clockIn: string; clockOut: string; totalHours: number; extraHours: number; isToday: boolean;
+    date: Date;
+    dayName: string;
+    dayNumber: number;
+    hasLog: boolean;
+    clockIn: string;
+    clockOut: string;
+    totalHours: number;
+    extraHours: number;
+    isToday: boolean;
+    eventType?: string; // Add eventType
 }
 
 interface WeeklyData {
-    weekNumber: number; startDate: Date; endDate: Date; days: DailyLog[];
+    weekNumber: number;
+    startDate: Date;
+    endDate: Date;
+    days: DailyLog[];
     isCurrentWeek: boolean;
     summary: {
         totalHours: number;
@@ -34,9 +46,19 @@ interface TimeLogEntry {
     date: string;
     clock_in: string;
     clock_out: string;
+    event_type: string; // Add event_type
     isNew?: boolean;
     toDelete?: boolean;
 }
+
+// --- CONSTANTES ---
+const EVENT_TYPES = [
+    { value: 'regular', label: 'Regular' },
+    { value: 'festivo', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'enfermedad', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'baja', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
+    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
+];
 
 // --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
 const applyRoundingRule = (totalMinutes: number): number => {
@@ -217,11 +239,14 @@ export default function HistoryPage() {
                     });
 
                     let h = 0, cin = '', cout = '', dayExtras = 0;
+                    let eventType = undefined;
+
                     if (log) {
                         const inD = new Date(log.clock_in); cin = inD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                         if (log.clock_out) { const outD = new Date(log.clock_out); cout = outD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
                         h = log.total_hours ? roundHoursValue(log.total_hours) : 0;
                         weekTotalHours += h;
+                        eventType = log.event_type;
 
                         const newAccumulated = currentAccumulated + h;
                         if (newAccumulated > effContract) {
@@ -232,7 +257,7 @@ export default function HistoryPage() {
 
                     weekDays.push({
                         date: d, dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i], dayNumber: d.getDate(),
-                        hasLog: !!log, clockIn: cin, clockOut: cout, totalHours: h, extraHours: dayExtras, isToday: isToday
+                        hasLog: !!log, clockIn: cin, clockOut: cout, totalHours: h, extraHours: dayExtras, isToday: isToday, eventType: eventType
                     });
                 }
 
@@ -339,7 +364,7 @@ export default function HistoryPage() {
         const sundayISO = format(sundayDate, 'yyyy-MM-dd');
 
         const { data: logs } = await supabase.from('time_logs')
-            .select('id, clock_in, clock_out')
+            .select('id, clock_in, clock_out, event_type')
             .eq('user_id', targetUserId)
             .gte('clock_in', `${mondayISO}T00:00:00.000Z`)
             .lte('clock_in', `${sundayISO}T23:59:59.999Z`)
@@ -350,6 +375,7 @@ export default function HistoryPage() {
             date: new Date(l.clock_in).toISOString().split('T')[0],
             clock_in: new Date(l.clock_in).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
             clock_out: l.clock_out ? new Date(l.clock_out).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '',
+            event_type: l.event_type || 'regular'
         }));
 
         setEditEntries(entries);
@@ -360,7 +386,7 @@ export default function HistoryPage() {
         if (editingWeekIdx === null) return;
         const week = weeksData[editingWeekIdx];
         const dateStr = format(week.startDate, 'yyyy-MM-dd');
-        setEditEntries([...editEntries, { date: dateStr, clock_in: '09:00', clock_out: '17:00', isNew: true }]);
+        setEditEntries([...editEntries, { date: dateStr, clock_in: '09:00', clock_out: '17:00', event_type: 'regular', isNew: true }]);
     };
 
     const removeEntry = (idx: number) => {
@@ -377,6 +403,13 @@ export default function HistoryPage() {
     const updateEntry = (idx: number, field: keyof TimeLogEntry, value: string) => {
         const updated = [...editEntries];
         updated[idx] = { ...updated[idx], [field]: value };
+
+        // Si cambia el tipo a uno especial, forzar 8h
+        if (field === 'event_type' && value !== 'regular') {
+            updated[idx].clock_in = '09:00';
+            updated[idx].clock_out = '17:00';
+        }
+
         setEditEntries(updated);
     };
 
@@ -395,36 +428,58 @@ export default function HistoryPage() {
             // 2. Update existing entries
             const toUpdate = editEntries.filter(e => !e.isNew && !e.toDelete && e.id);
             for (const entry of toUpdate) {
-                const clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
-                const clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
+                let clockInDT: Date;
+                let clockOutDT: Date | null = null;
                 let totalHours: number | null = null;
-                if (clockOutDT) {
-                    const diffMinutes = (clockOutDT.getTime() - clockInDT.getTime()) / 60000;
-                    totalHours = applyRoundingRule(diffMinutes);
+
+                if (entry.event_type !== 'regular') {
+                    clockInDT = new Date(`${entry.date}T09:00:00`);
+                    clockOutDT = new Date(`${entry.date}T17:00:00`);
+                    totalHours = 8;
+                } else {
+                    clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
+                    clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
+                    if (clockOutDT) {
+                        const diffMinutes = (clockOutDT.getTime() - clockInDT.getTime()) / 60000;
+                        totalHours = applyRoundingRule(diffMinutes);
+                    }
                 }
+
                 await supabase.from('time_logs').update({
                     clock_in: clockInDT.toISOString(),
                     clock_out: clockOutDT ? clockOutDT.toISOString() : null,
                     total_hours: totalHours,
+                    event_type: entry.event_type
                 }).eq('id', entry.id!);
             }
 
             // 3. Insert new entries
             const toInsert = editEntries.filter(e => e.isNew && !e.toDelete);
             for (const entry of toInsert) {
-                const clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
-                const clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
+                let clockInDT: Date;
+                let clockOutDT: Date | null = null;
                 let totalHours: number | null = null;
-                if (clockOutDT) {
-                    const diffMinutes = (clockOutDT.getTime() - clockInDT.getTime()) / 60000;
-                    totalHours = applyRoundingRule(diffMinutes);
+
+                if (entry.event_type !== 'regular') {
+                    clockInDT = new Date(`${entry.date}T09:00:00`);
+                    clockOutDT = new Date(`${entry.date}T17:00:00`);
+                    totalHours = 8;
+                } else {
+                    clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
+                    clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
+                    if (clockOutDT) {
+                        const diffMinutes = (clockOutDT.getTime() - clockInDT.getTime()) / 60000;
+                        totalHours = applyRoundingRule(diffMinutes);
+                    }
                 }
+
                 await supabase.from('time_logs').insert({
                     user_id: targetUserId,
                     clock_in: clockInDT.toISOString(),
                     clock_out: clockOutDT ? clockOutDT.toISOString() : null,
                     total_hours: totalHours,
                     is_manual_entry: true,
+                    event_type: entry.event_type
                 });
             }
 
@@ -577,12 +632,12 @@ export default function HistoryPage() {
                         {weeksData.map((week, idx) => {
                             return (
                                 <div key={idx} className={cn(
-                                    "bg-white rounded-2xl shadow-xl overflow-hidden",
+                                    "bg-white rounded-2xl shadow-xl",
                                     "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4"
                                 )} style={{ animationDelay: `${idx * 50}ms` }}>
 
                                     {/* Header Sólido Azul Marbella */}
-                                    <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                                    <div className="bg-[#36606F] rounded-t-2xl px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                                         <div className="flex items-center gap-3">
                                             <span className="text-[10px] font-black uppercase tracking-widest leading-none">
                                                 {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
@@ -607,48 +662,66 @@ export default function HistoryPage() {
                                         <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
 
                                             <div className="grid grid-cols-7 border-b border-gray-100">
-                                                {week.days.map((day, i) => (
-                                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                                        </div>
-                                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0">
-                                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
-                                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                                    {day.hasLog ? (
-                                                                        <>
-                                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                        </>
-                                                                    ) : null}
+                                                {week.days.map((day, i) => {
+                                                    const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
+                                                    const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
+
+                                                    return (
+                                                        <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                                            <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                                            </div>
+                                                            <div className="flex-1 p-1 flex flex-col items-center relative z-0">
+                                                                <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                                                <div className="flex-1 flex items-center justify-center w-full mt-4">
+                                                                    {isSpecial ? (
+                                                                        // Render SPECIAL EMOJI/INITIAL
+                                                                        <div className={cn(
+                                                                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg mb-2",
+                                                                            eventConfig.color
+                                                                        )}>
+                                                                            {eventConfig.initial}
+                                                                        </div>
+                                                                    ) : (
+                                                                        // Render REGULAR DOTS/TIMES
+                                                                        <div className="flex flex-col justify-center gap-0.5 w-full pb-1">
+                                                                            <div className="h-3 flex items-center justify-center gap-1">
+                                                                                {day.hasLog ? (
+                                                                                    <>
+                                                                                        <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                                    </>
+                                                                                ) : null}
+                                                                            </div>
+                                                                            <div className="h-3 flex items-center justify-center gap-1">
+                                                                                {day.hasLog && day.clockOut ? (
+                                                                                    <>
+                                                                                        <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                                    </>
+                                                                                ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                                    {day.hasLog && day.clockOut ? (
-                                                                        <>
-                                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                        </>
-                                                                    ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                                <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                                    {day.hasLog && day.totalHours > 0 ? (
+                                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                            <span className="ml-0.5">H</span>
+                                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
+                                                                        </div>
+                                                                    ) : <div className="h-3" />}
+                                                                    {day.extraHours > 0.1 ? (
+                                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                            <span className="ml-0.5">Ex</span>
+                                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
+                                                                        </div>
+                                                                    ) : <div className="h-3" />}
                                                                 </div>
                                                             </div>
-                                                            <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                                {day.hasLog && day.totalHours > 0 ? (
-                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                        <span className="ml-0.5">H</span>
-                                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
-                                                                    </div>
-                                                                ) : <div className="h-3" />}
-                                                                {day.extraHours > 0.1 ? (
-                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                        <span className="ml-0.5">Ex</span>
-                                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
-                                                                    </div>
-                                                                ) : <div className="h-3" />}
-                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         </div>
 
@@ -698,7 +771,7 @@ export default function HistoryPage() {
                                         </div>
                                     </div>
                                     {week.summary.isPaid && (
-                                        <div className="absolute bottom-2 right-2 w-24 h-24 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-2xl">
+                                        <div className="absolute -bottom-6 -right-4 w-28 h-28 rotate-[-12deg] opacity-95 pointer-events-none z-30 drop-shadow-2xl">
                                             <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
                                         </div>
                                     )}
@@ -844,42 +917,64 @@ export default function HistoryPage() {
                             )}
                             {editEntries.map((entry, idx) => {
                                 if (entry.toDelete) return null;
+                                const isRegular = entry.event_type === 'regular';
+                                const eventConfig = EVENT_TYPES.find(t => t.value === entry.event_type);
+
                                 return (
                                     <div key={idx} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 space-y-2">
                                         <div className="flex items-center gap-2">
+                                            <select
+                                                value={entry.event_type}
+                                                onChange={(e) => updateEntry(idx, 'event_type', e.target.value)}
+                                                className="bg-white text-[10px] font-black uppercase text-zinc-500 rounded-lg border border-zinc-200 h-8 px-2 outline-none focus:border-blue-400"
+                                            >
+                                                {EVENT_TYPES.map(type => (
+                                                    <option key={type.value} value={type.value}>{type.label}</option>
+                                                ))}
+                                            </select>
                                             <input
                                                 type="date"
                                                 value={entry.date}
                                                 onChange={(e) => updateEntry(idx, 'date', e.target.value)}
-                                                className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                                                className="flex-1 h-8 px-2 rounded-lg border border-zinc-200 text-xs font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
                                             />
                                             <button
                                                 onClick={() => removeEntry(idx)}
-                                                className="w-10 h-10 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-90 shrink-0"
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-90 shrink-0"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 flex items-center gap-1.5">
-                                                <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                                                <input
-                                                    type="time"
-                                                    value={entry.clock_in}
-                                                    onChange={(e) => updateEntry(idx, 'clock_in', e.target.value)}
-                                                    className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none"
-                                                />
+
+                                        {isRegular ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 flex items-center gap-1.5">
+                                                    <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                                                    <input
+                                                        type="time"
+                                                        value={entry.clock_in}
+                                                        onChange={(e) => updateEntry(idx, 'clock_in', e.target.value)}
+                                                        className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 flex items-center gap-1.5">
+                                                    <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                                                    <input
+                                                        type="time"
+                                                        value={entry.clock_out}
+                                                        onChange={(e) => updateEntry(idx, 'clock_out', e.target.value)}
+                                                        className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="flex-1 flex items-center gap-1.5">
-                                                <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                                                <input
-                                                    type="time"
-                                                    value={entry.clock_out}
-                                                    onChange={(e) => updateEntry(idx, 'clock_out', e.target.value)}
-                                                    className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
-                                                />
+                                        ) : (
+                                            <div className="flex items-center justify-center gap-2 bg-white border border-zinc-100 rounded-xl p-3 shadow-sm">
+                                                <div className={cn("w-3 h-3 rounded-full", eventConfig?.color.split(' ')[0] || 'bg-gray-400')} />
+                                                <span className="text-xs font-black text-zinc-500 uppercase">
+                                                    8 Horas - {eventConfig?.label}
+                                                </span>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
                                 );
                             })}

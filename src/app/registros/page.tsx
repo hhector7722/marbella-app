@@ -63,6 +63,15 @@ type EditingLog = {
     is_deleted?: boolean;
 };
 
+// --- CONSTANTES ---
+const EVENT_TYPES = [
+    { value: 'regular', label: 'Regular' },
+    { value: 'festivo', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'enfermedad', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'baja', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
+    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
+];
+
 // --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
 const calculateRoundedHours = (start: Date, end: Date): number => {
     const totalMinutes = differenceInMinutes(end, start);
@@ -191,6 +200,13 @@ export default function RegistrosPage() {
     const updateLogField = (index: number, field: keyof EditingLog, value: any) => {
         const newLogs = [...modalLogs];
         newLogs[index] = { ...newLogs[index], [field]: value };
+
+        // Si cambia a un tipo especial, forzamos valores por defecto
+        if (field === 'event_type' && value !== 'regular') {
+            newLogs[index].in_time = '09:00';
+            newLogs[index].out_time = '17:00';
+        }
+
         setModalLogs(newLogs);
         setHasUnsavedChanges(true);
     };
@@ -230,18 +246,27 @@ export default function RegistrosPage() {
                 if (log.is_deleted) return Promise.resolve();
 
                 // PREPARAR DATOS
-                const [inH, inM] = log.in_time.split(':').map(Number);
-                const clockInDate = setMinutes(setHours(selectedDate, inH), inM);
-
-                let clockOutDate = null;
+                let clockInDate: Date;
+                let clockOutDate: Date | null = null;
                 let totalHours = 0;
 
-                if (log.out_time) {
-                    const [outH, outM] = log.out_time.split(':').map(Number);
-                    clockOutDate = setMinutes(setHours(selectedDate, outH), outM);
+                if (log.event_type !== 'regular') {
+                    // Tipos especiales: Fijo 8h, 09:00 - 17:00
+                    clockInDate = setMinutes(setHours(selectedDate, 9), 0);
+                    clockOutDate = setMinutes(setHours(selectedDate, 17), 0);
+                    totalHours = 8;
+                } else {
+                    // Regular: Calcular según inputs
+                    const [inH, inM] = log.in_time.split(':').map(Number);
+                    clockInDate = setMinutes(setHours(selectedDate, inH), inM);
 
-                    // APLICAR LÓGICA DE NEGOCIO (REDONDEO)
-                    totalHours = calculateRoundedHours(clockInDate, clockOutDate);
+                    if (log.out_time) {
+                        const [outH, outM] = log.out_time.split(':').map(Number);
+                        clockOutDate = setMinutes(setHours(selectedDate, outH), outM);
+
+                        // APLICAR LÓGICA DE NEGOCIO (REDONDEO)
+                        totalHours = calculateRoundedHours(clockInDate, clockOutDate);
+                    }
                 }
 
                 const payload = {
@@ -377,7 +402,29 @@ export default function RegistrosPage() {
                                     }, {} as Record<string, TimeLog>)).map((log) => {
                                         const initials = `${(log.first_name || '').charAt(0)}${(log.last_name || '').charAt(0)}`.toUpperCase() || '?';
                                         const isFinished = !!log.clock_out;
+                                        const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type); // Configuración del tipo
 
+                                        if (eventConfig && log.event_type !== 'regular') {
+                                            // RENDERIZADO TIPO ESPECIAL (F, E, B, P)
+                                            return (
+                                                <div
+                                                    key={log.id}
+                                                    className={cn(
+                                                        "w-full flex items-center justify-center rounded-lg border py-0.5",
+                                                        eventConfig.border
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm",
+                                                        eventConfig.color
+                                                    )}>
+                                                        {eventConfig.initial}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        // RENDERIZADO REGULAR
                                         return (
                                             <div
                                                 key={log.user_id}
@@ -470,6 +517,8 @@ export default function RegistrosPage() {
                             <div className="space-y-2">
                                 {modalLogs.map((log, idx) => {
                                     if (log.is_deleted) return null;
+                                    const isRegular = log.event_type === 'regular';
+                                    const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
 
                                     return (
                                         <div key={idx} className="bg-white p-1.5 rounded-xl border border-gray-200 flex items-center gap-1.5 shadow-sm hover:border-[#5B8FB9] transition-all">
@@ -489,28 +538,34 @@ export default function RegistrosPage() {
                                                     onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
                                                     className="w-full bg-transparent text-[8px] font-black text-gray-400 uppercase focus:outline-none cursor-pointer"
                                                 >
-                                                    <option value="regular">Regular</option>
-                                                    <option value="overtime">Extra</option>
-                                                    <option value="weekend">Finde</option>
-                                                    <option value="holiday">Festivo</option>
-                                                    <option value="personal">Personal</option>
-                                                    <option value="adjustment">Ajuste</option>
+                                                    {EVENT_TYPES.map(type => (
+                                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                                    ))}
                                                 </select>
                                             </div>
 
-                                            <input
-                                                type="time"
-                                                value={log.in_time}
-                                                onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
-                                                className="w-16 text-center bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-mono text-green-700 font-black focus:ring-1 focus:ring-green-500 focus:outline-none p-1 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
-                                            />
+                                            {isRegular ? (
+                                                <>
+                                                    <input
+                                                        type="time"
+                                                        value={log.in_time}
+                                                        onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
+                                                        className="w-16 text-center bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-mono text-green-700 font-black focus:ring-1 focus:ring-green-500 focus:outline-none p-1 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                                                    />
 
-                                            <input
-                                                type="time"
-                                                value={log.out_time}
-                                                onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
-                                                className="w-16 text-center bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-mono text-red-600 font-black focus:ring-1 focus:ring-red-500 focus:outline-none p-1 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
-                                            />
+                                                    <input
+                                                        type="time"
+                                                        value={log.out_time}
+                                                        onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
+                                                        className="w-16 text-center bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-mono text-red-600 font-black focus:ring-1 focus:ring-red-500 focus:outline-none p-1 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                                                    />
+                                                </>
+                                            ) : (
+                                                <div className="flex-1 flex items-center justify-center gap-2 bg-gray-50 rounded-lg px-2 py-1">
+                                                    <div className={cn("w-2 h-2 rounded-full", eventConfig?.color?.split(' ')[0] || 'bg-gray-400')} />
+                                                    <span className="text-[9px] font-bold text-gray-500 uppercase">8h - {eventConfig?.label}</span>
+                                                </div>
+                                            )}
 
                                             <button
                                                 onClick={() => deleteLog(idx)}
