@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Minus, Plus, Trash2, Package } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface Ingredient {
     id: string;
@@ -90,7 +91,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     )}
                     {isUpdating && (
                         <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px]">
-                            <div className="w-6 h-6 border-3 border-[#5E35B1] border-t-transparent rounded-full animate-spin"></div>
+                            <LoadingSpinner size="sm" className="text-[#5E35B1]" />
                         </div>
                     )}
                 </div>

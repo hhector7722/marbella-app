@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function AdminDashboardPage() {
     const supabase = createClient();
@@ -32,7 +33,9 @@ export default function AdminDashboardPage() {
     }, [router, supabase]);
 
     if (loading) return (
-        <div className="min-h-screen bg-[#5B8FB9]"></div>
+        <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center">
+            <LoadingSpinner size="xl" className="text-white" />
+        </div>
     );
 
     return <DashboardSwitcher userRole={userRole || 'staff'} initialView="admin" />;

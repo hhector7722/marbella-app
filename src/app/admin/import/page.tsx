@@ -218,7 +218,7 @@ export default function BulkImportPage() {
 
     if (loading) return (
         <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
-            <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+            <LoadingSpinner size="xl" className="text-white mb-4" />
             <p className="text-white/80 font-black uppercase tracking-widest text-[10px] animate-pulse">Verificando acceso...</p>
         </div>
     );

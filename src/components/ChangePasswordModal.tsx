@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Lock, Eye, EyeOff, Save, CheckCircle2 } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -146,7 +147,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                             )}
                         >
                             {loading ? (
-                                <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <LoadingSpinner size="sm" className="text-white" />
                             ) : (
                                 <><Save size={20} strokeWidth={3} /> Actualizar</>
                             )}

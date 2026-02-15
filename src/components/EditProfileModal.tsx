@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { updateProfile } from '@/app/actions/profile';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -110,7 +111,7 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
                             className="flex-[2] h-14 bg-[#36606F] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-[#36606F]/20 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
                             {loading ? (
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <LoadingSpinner size="sm" className="text-white" />
                             ) : (
                                 <><Save size={18} strokeWidth={3} /> Guardar Cambios</>
                             )}

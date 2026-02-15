@@ -6,6 +6,9 @@ import {
     Calendar, ChevronDown, Filter, X, Check, Pencil, Plus, Trash2, Save
 } from 'lucide-react';
 import { isSameWeek, format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // --- TIPOS ---
@@ -533,7 +536,9 @@ export default function HistoryPage() {
                 )}
 
                 {loading ? (
-                    <div className="py-10 flex justify-center"><div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div></div>
+                    <div className="py-10 flex justify-center">
+                        <LoadingSpinner size="md" className="text-white" />
+                    </div>
                 ) : weeksData.length === 0 ? (
                     <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto"><Calendar size={40} fill="currentColor" className="mx-auto mb-2 opacity-50" /><p>No hay registros este mes</p></div>
                 ) : (
@@ -862,7 +867,7 @@ export default function HistoryPage() {
                                 className="flex-1 h-12 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
                             >
                                 {savingEdit ? (
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <LoadingSpinner size="sm" className="text-white" />
                                 ) : (
                                     <><Save size={18} /> Guardar</>
                                 )}

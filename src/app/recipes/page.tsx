@@ -8,6 +8,7 @@ import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, BookOpen, Utensil
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 
 interface Recipe {
@@ -213,20 +214,29 @@ function RecipesContent() {
                     onClick={() => setSelectedRecipeId(null)}
                 >
                     <div
-                        className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
+                        className="bg-zinc-100 w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header del Modal */}
-                        <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0">
-                            <div className="flex flex-col">
-                                <h3 className="text-white text-xl font-black uppercase tracking-widest leading-tight">
-                                    {fullRecipeData?.name || 'Cargando...'}
-                                </h3>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{fullRecipeData?.category}</span>
-                                    <div className="flex items-center gap-1.5 text-white/50 text-[10px] font-bold">
-                                        <Users className="w-3 h-3" />
-                                        <span>{fullRecipeData?.servings || 1} raciones</span>
+                        <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0 border-b border-white/10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0">
+                                    {fullRecipeData?.photo_url ? (
+                                        <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <ChefHat className="w-8 h-8 text-zinc-200" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <h3 className="text-white text-xl font-black uppercase tracking-widest leading-tight">
+                                        {fullRecipeData?.name || 'Cargando...'}
+                                    </h3>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{fullRecipeData?.category}</span>
+                                        <div className="flex items-center gap-1.5 text-white/50 text-[10px] font-bold">
+                                            <Users className="w-3 h-3" />
+                                            <span>{fullRecipeData?.servings || 1} raciones</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -241,8 +251,8 @@ function RecipesContent() {
                         {/* Contenido Scrollable */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
                             {loadingDetails ? (
-                                <div className="h-64 flex flex-col items-center justify-center text-white/60">
-                                    <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+                                <div className="h-64 flex flex-col items-center justify-center text-[#36606F]/60">
+                                    <LoadingSpinner size="lg" className="text-[#36606F] mb-4" />
                                     <p className="text-[10px] font-black uppercase tracking-widest">Cargando receta...</p>
                                 </div>
                             ) : (

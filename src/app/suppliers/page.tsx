@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { Search, Plus, Trash2, X, ChevronDown, Phone, Mail, User, Package, Truck } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -161,7 +162,7 @@ export default function SuppliersPage() {
                         placeholder="Buscar proveedor..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1]"
+                        className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1]"
                     />
                 </div>
 
@@ -171,7 +172,7 @@ export default function SuppliersPage() {
                             <div className="relative">
                                 <button
                                     onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                                    className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
+                                    className="px-5 py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50"
                                 >
                                     Categoría <ChevronDown size={14} className="text-zinc-400" />
                                 </button>
@@ -217,7 +218,7 @@ export default function SuppliersPage() {
 
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="bg-[#5E35B1] text-white w-10 h-10 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
+                        className="bg-[#5E35B1] text-white w-12 h-12 rounded-xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 shrink-0"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
@@ -260,10 +261,8 @@ export default function SuppliersPage() {
             )}
 
             {loading && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-6">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                        <div key={i} className="bg-white/10 rounded-xl h-24 animate-pulse"></div>
-                    ))}
+                <div className="flex items-center justify-center py-20 w-full">
+                    <LoadingSpinner size="xl" className="text-white" />
                 </div>
             )}
 
@@ -366,11 +365,14 @@ export default function SuppliersPage() {
                             </div>
 
                             <button
-                                onClick={handleCreateSupplier}
-                                disabled={isCreating}
-                                className="w-full py-3 bg-[#5E35B1] text-white rounded-xl font-bold mt-2 shadow-lg hover:brightness-110 active:scale-95 transition-all"
+                                className="w-full py-4 bg-[#5E35B1] text-white rounded-xl font-bold mt-2 shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
-                                {isCreating ? 'Guardando...' : 'Crear Proveedor'}
+                                {isCreating ? (
+                                    <>
+                                        <LoadingSpinner size="sm" className="text-white" />
+                                        <span>Guardando...</span>
+                                    </>
+                                ) : 'Crear Proveedor'}
                             </button>
                         </div>
                     </div>

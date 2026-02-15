@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 // import { Button } from '@/components/ui/button' // Removed
 // import { Card, ... } from '@/components/ui/card' // Removed
 // import { Alert, ... } from '@/components/ui/alert' // Removed
-import { importSuppliers, importProducts, ImportResult } from '@/app/actions/import-legacy'
+import { importSuppliers, importProducts, importLogs, ImportResult } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
 type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs'
@@ -62,6 +62,8 @@ export default function ImportPage() {
                 result = await importSuppliers(fileData)
             } else if (currentStep === 'products') {
                 result = await importProducts(fileData)
+            } else if (currentStep === 'logs') {
+                result = await importLogs(fileData)
             } else {
                 result = { success: false, message: "Este paso aún no está implementado." }
             }
@@ -103,8 +105,14 @@ export default function ImportPage() {
                     return (
                         <div
                             key={step.id}
+                            onClick={() => {
+                                setCurrentStep(step.id)
+                                setFileData([])
+                                setFileName(null)
+                                setImportResult(null)
+                            }}
                             className={cn(
-                                "flex flex-col items-center p-4 border rounded-xl transition-all",
+                                "flex flex-col items-center p-4 border rounded-xl transition-all cursor-pointer hover:bg-zinc-50",
                                 isActive ? "border-[#36606F] bg-blue-50/50" : "border-zinc-200 bg-white",
                                 isPast ? "opacity-60" : ""
                             )}
@@ -153,6 +161,14 @@ export default function ImportPage() {
                             )}
                             {currentStep === 'recipes' && (
                                 <p className="italic text-xs">Aún no disponible.</p>
+                            )}
+                            {currentStep === 'logs' && (
+                                <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded">
+                                    <li>empleado (req: nombre)</li>
+                                    <li>entrada (req: YYYY-MM-DD HH:MM)</li>
+                                    <li>salida (YYYY-MM-DD HH:MM)</li>
+                                    <li>horas_contrato (def: 40)</li>
+                                </ul>
                             )}
                         </div>
                     </div>

@@ -2,6 +2,7 @@
 
 import { X, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface Ingredient {
     id: string;
@@ -87,7 +88,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                     >
                         {isProcessing ? (
                             <>
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <LoadingSpinner size="sm" className="text-white" />
                                 <span>Procesando...</span>
                             </>
                         ) : (

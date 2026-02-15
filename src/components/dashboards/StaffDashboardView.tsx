@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import WorkTimer from '@/components/ui/WorkTimer';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -369,7 +370,12 @@ export default function StaffDashboardView() {
 
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); };
 
-    if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
+    if (loading) return (
+        <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+            <LoadingSpinner size="xl" className="text-white mb-4" />
+            <p className="text-white/60 font-black uppercase tracking-[0.2em] text-xs animate-pulse">Cargando Panel...</p>
+        </div>
+    );
 
     return (
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -490,7 +496,14 @@ export default function StaffDashboardView() {
                                 status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
                                 status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
                             )}>
-                            {actionLoading ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
+                            {actionLoading ? (
+                                <>
+                                    <LoadingSpinner size="sm" className="text-white" />
+                                    <span className="text-xl font-black uppercase tracking-wider">
+                                        {modalAction === 'in' ? 'Iniciando...' : 'Cerrando...'}
+                                    </span>
+                                </>
+                            ) : (
                                 <span className="text-xl font-black uppercase tracking-wider">
                                     {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
                                 </span>

@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { togglePaidStatus } from '@/app/actions/overtime';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
@@ -504,7 +505,12 @@ export default function AdminDashboardView() {
         } catch (error) { console.error(error); alert("Error"); }
     };
 
-    if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
+    if (loading) return (
+        <div className="min-h-screen bg-[#5B8FB9] flex flex-col items-center justify-center p-4">
+            <LoadingSpinner size="xl" className="text-white mb-4" />
+            <p className="text-white/60 font-black uppercase tracking-[0.2em] text-xs animate-pulse">Cargando Administrador...</p>
+        </div>
+    );
 
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
 
@@ -893,7 +899,7 @@ export default function AdminDashboardView() {
                                 disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
                                 className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
                             >
-                                {newWorkerSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save size={18} /> Guardar</>}
+                                {newWorkerSaving ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
                             </button>
                         </div>
                     </div>

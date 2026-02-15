@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Euro, Plus, X, Download, Trash2, Calendar } from 'lucide-react';
+import { Download, Trash2, FileText, CheckCircle2, X, Plus, PlusCircle, Euro, AlertCircle, Calendar } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { createClient } from '@/utils/supabase/client';
 import { addEmployeeDocument, getEmployeeDocuments, deleteEmployeeDocument } from '@/app/actions/profile';
 import { toast } from 'sonner';
@@ -135,8 +136,8 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
             {/* Listado */}
             <div className="grid gap-3">
                 {loading ? (
-                    <div className="py-10 flex flex-col items-center">
-                        <div className="w-8 h-8 border-3 border-[#36606F]/20 border-t-[#36606F] rounded-full animate-spin"></div>
+                    <div className="flex justify-center p-8">
+                        <LoadingSpinner size="md" className="text-[#36606F]" />
                     </div>
                 ) : (
                     <>
@@ -217,7 +218,7 @@ export default function DocumentManager({ userId, isManager, initialType = 'cont
                                     )}
                                 >
                                     {uploading ? (
-                                        <div className="w-10 h-10 border-4 border-[#36606F]/20 border-t-[#36606F] rounded-full animate-spin"></div>
+                                        <LoadingSpinner size="sm" className="text-[#36606F]" />
                                     ) : (
                                         <>
                                             <Plus size={32} className="text-[#36606F] mb-3" />

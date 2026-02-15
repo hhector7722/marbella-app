@@ -150,3 +150,122 @@ export async function importRecipes(data: Record<string, any>[]): Promise<Import
     // Conceptual implementation - requires complex parsing of ingredients
     return { success: false, message: "Importación de recetas aún no implementada completamente." }
 }
+
+export async function importLogs(data: Record<string, any>[]): Promise<ImportResult> {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { success: false, message: 'Usuario no autenticado' }
+    }
+
+    const errors: string[] = []
+    let successCount = 0
+
+    // Pre-fetch all profiles to map names to user_ids
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, email')
+    if (!profiles) return { success: false, message: 'No se pudieron cargar los perfiles de usuario' }
+
+    // Helper to find profile by name or email
+    const findProfile = (identifier: string) => {
+        const idLower = identifier.trim().toLowerCase()
+        return profiles.find(p =>
+            p.first_name.toLowerCase() === idLower ||
+            (p.email && p.email.toLowerCase() === idLower)
+        )
+    }
+
+    // Process data
+    for (const row of data) {
+        try {
+            const empIdentifier = row.empleado || row.worker || row.nombre
+            if (!empIdentifier) {
+                errors.push(`Fila omitida: Falta identificador de empleado`)
+                continue
+            }
+
+            const profile = findProfile(String(empIdentifier))
+            if (!profile) {
+                errors.push(`Empleado no encontrado: ${empIdentifier}`)
+                continue
+            }
+
+            const clockInRaw = row.entrada || row.clock_in || row.inicio
+            const clockOutRaw = row.salida || row.clock_out || row.fin
+            const contractHours = parseFloat(row.horas_contrato || row.contract_hours || '40')
+
+            if (!clockInRaw) {
+                errors.push(`Falta hora de entrada para ${empIdentifier}`)
+                continue
+            }
+
+            const clockIn = new Date(clockInRaw)
+            const clockOut = clockOutRaw ? new Date(clockOutRaw) : null
+
+            if (isNaN(clockIn.getTime())) {
+                errors.push(`Formato de fecha inválido (entrada) para ${empIdentifier}: ${clockInRaw}`)
+                continue
+            }
+
+            let totalHours = 0
+            if (clockOut && !isNaN(clockOut.getTime())) {
+                totalHours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60)
+            }
+
+            // 1. Upsert Weekly Snapshot with contract hours for the week
+            // We use the same get_iso_week_start logic to ensure consistency
+            // Note: Since we don't have get_iso_week_start in JS easily available here 
+            // without duplicating, we'll use a simple Monday-based week start.
+            const dateObj = new Date(clockIn)
+            const day = dateObj.getDay()
+            const diffToMonday = dateObj.getDate() - day + (day === 0 ? -6 : 1)
+            const weekStart = new Date(dateObj.setDate(diffToMonday))
+            weekStart.setHours(0, 0, 0, 0)
+            const weekStartStr = weekStart.toISOString().split('T')[0]
+
+            // Insert/Update snapshot to set the historical contract hours
+            const { error: snapshotError } = await supabase
+                .from('weekly_snapshots')
+                .upsert({
+                    user_id: profile.id,
+                    week_start: weekStartStr,
+                    contracted_hours_snapshot: contractHours,
+                    // Minimal fields, the trigger/recalc action will populate the rest if needed
+                    week_end: new Date(new Date(weekStart).setDate(weekStart.getDate() + 6)).toISOString().split('T')[0]
+                }, { onConflict: 'user_id, week_start' })
+
+            if (snapshotError) {
+                errors.push(`Error actualizando horas de contrato para ${empIdentifier}: ${snapshotError.message}`)
+            }
+
+            // 2. Insert Time Log
+            const { error: logError } = await supabase.from('time_logs').insert({
+                user_id: profile.id,
+                clock_in: clockIn.toISOString(),
+                clock_out: clockOut ? clockOut.toISOString() : null,
+                total_hours: totalHours > 0 ? totalHours : null,
+                is_manual_entry: true,
+                status: clockOut ? 'completed' : 'active'
+            })
+
+            if (logError) throw logError
+            successCount++
+
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            errors.push(`Error importando registro para ${row.empleado}: ${message}`)
+        }
+    }
+
+    revalidatePath('/dashboard/labor')
+    revalidatePath('/staff/history')
+
+    return {
+        success: true,
+        message: `Importados ${successCount} registros de fichaje`,
+        count: successCount,
+        errors
+    }
+}

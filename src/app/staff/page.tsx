@@ -15,7 +15,8 @@ import { Share_Tech_Mono } from 'next/font/google';
 import { cn, formatDisplayValue } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
-
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { addEmployeeDocument, getEmployeeDocuments, deleteEmployeeDocument, updateProfile } from '@/app/actions/profile';
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
 // --- DATA: CONTACTOS ---
@@ -477,7 +478,7 @@ export default function StaffDashboard() {
                                 ${status === 'working' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' : ''}
                                 ${status === 'finished' ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-100' : ''}
                             `}>
-                            {actionLoading ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div> : (
+                            {actionLoading ? <LoadingSpinner size="sm" className="text-white" /> : (
                                 <><span className="text-2xl font-black uppercase tracking-wider">
                                     {status === 'idle' ? 'FICHAR ENTRADA' : (status === 'working' ? 'FICHAR SALIDA' : 'JORNADA FINALIZADA')}
                                 </span></>

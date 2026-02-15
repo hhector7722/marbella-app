@@ -7,6 +7,7 @@ import { Lock, Eye, EyeOff, Save, CheckCircle2, ChevronRight, Smartphone, Share,
 import { cn } from '@/lib/utils';
 import { completeOnboarding } from '@/app/actions/profile';
 import Image from 'next/image';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface OnboardingOverlayProps {
@@ -177,7 +178,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                     )}
                                 >
                                     {loading ? (
-                                        <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <LoadingSpinner size="sm" className="text-white" />
                                     ) : (
                                         <>Continuar <ChevronRight size={20} strokeWidth={3} /></>
                                     )}
@@ -256,7 +257,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                 className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
                                 {loading ? (
-                                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <LoadingSpinner size="sm" className="text-white" />
                                 ) : (
                                     <>¡Entendido, vamos! <CheckCircle2 size={20} strokeWidth={3} /></>
                                 )}
