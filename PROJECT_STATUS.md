@@ -76,6 +76,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Corrección Zona Horaria**: Script de emergencia `fix_import_timezones.sql` para corregir el desfase de horas en importaciones masivas.
 - [x] **Visualización Inteligente de Horas (Staff)**: Lógica condicional para mostrar `Contrato + Horas` en lugar de solo trabajadas para perfiles de Manager y Salario Fijo.
 - [x] **Ordenación Cronológica Dinámica**: El historial de fichajes ahora se ordena de más reciente a más antiguo por defecto, invirtiéndose automáticamente al aplicar filtros de fecha para facilitar la lectura secuencial.
+- [x] **Optimización Geolocalización**: Aumento del radio de fichaje a 300m y corrección de coordenadas a Plus Code `96X6+VQ` (CEM La Mar Bella) para compensar la deriva del GPS.
 
 
 

@@ -3,11 +3,11 @@
  */
 
 export const MARBELLA_COORDS = {
-    lat: 41.399772,
-    lng: 2.211856
+    lat: 41.4000657,
+    lng: 2.2117822
 };
 
-export const MAX_DISTANCE_METERS = 150;
+export const MAX_DISTANCE_METERS = 300;
 
 /**
  * Calculates the distance between two points in meters using the Haversine formula.
