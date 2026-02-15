@@ -26,7 +26,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { format, addDays } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -50,10 +50,10 @@ export default function HistoryPage() {
     const router = useRouter();
 
     // Estados de Filtro
-    const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
+    const [filterMode, setFilterMode] = useState<'single' | 'range' | 'all'>('range');
     const [selectedDateFilter, setSelectedDateFilter] = useState<string>(() => new Date().toISOString().split('T')[0]);
-    const [rangeStart, setRangeStart] = useState<string | null>(null);
-    const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+    const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
     // Estados de UI
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
@@ -97,8 +97,13 @@ export default function HistoryPage() {
     async function fetchHistory() {
         setLoading(true);
         try {
-            let startISO: string;
-            let endISO: string;
+            let startISO: string | undefined;
+            let endISO: string | undefined;
+
+            let query = supabase
+                .from('cash_closings')
+                .select('*')
+                .order('closed_at', { ascending: false });
 
             if (filterMode === 'single') {
                 const d = new Date(selectedDateFilter);
@@ -106,7 +111,8 @@ export default function HistoryPage() {
                 startISO = d.toISOString();
                 d.setHours(23, 59, 59, 999);
                 endISO = d.toISOString();
-            } else {
+                query = query.gte('closed_at', startISO).lte('closed_at', endISO);
+            } else if (filterMode === 'range') {
                 if (!rangeStart || !rangeEnd) {
                     setClosings([]);
                     setSummary({ totalGrossSales: 0, totalNetSales: 0, avgTicket: 0, totalClosings: 0 });
@@ -119,22 +125,22 @@ export default function HistoryPage() {
                 e.setHours(23, 59, 59, 999);
                 startISO = s.toISOString();
                 endISO = e.toISOString();
+                query = query.gte('closed_at', startISO).lte('closed_at', endISO);
             }
 
-            const { data: closingsData } = await supabase
-                .from('cash_closings')
-                .select('*')
-                .gte('closed_at', startISO)
-                .lte('closed_at', endISO)
-                .order('closed_at', { ascending: false });
+            const { data: closingsData } = await query;
 
-            // Para labor cost necesitamos fichajes
-            const { data: logsData } = await supabase
+            // Para labor cost necesitamos fichajes (solo si no es mode 'all' para no saturar)
+            let logsQuery = supabase
                 .from('time_logs')
                 .select('total_hours')
-                .gte('clock_in', startISO)
-                .lte('clock_in', endISO)
                 .not('clock_out', 'is', null);
+
+            if (filterMode !== 'all' && startISO && endISO) {
+                logsQuery = logsQuery.gte('clock_in', startISO).lte('clock_in', endISO);
+            }
+
+            const { data: logsData } = await logsQuery;
 
             if (closingsData) {
                 setClosings(closingsData);
@@ -362,13 +368,16 @@ export default function HistoryPage() {
                                 </div>
                                 <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Mes:</span>
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global:</span>
                                     <button
-                                        onClick={() => setShowMonthPicker(true)}
-                                        className="h-8 px-3 rounded-lg text-[10px] font-bold border-2 bg-gray-50 border-gray-100 text-[#5B8FB9] hover:border-gray-200 transition-all flex items-center gap-1.5 font-black uppercase"
+                                        onClick={() => setFilterMode('all')}
+                                        className={cn(
+                                            "h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 font-black uppercase",
+                                            filterMode === 'all' ? "bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm" : "bg-gray-50 border-gray-100 text-[#5B8FB9] hover:border-gray-200"
+                                        )}
                                     >
                                         <Filter size={12} />
-                                        Mes
+                                        Todos
                                     </button>
                                 </div>
                             </div>

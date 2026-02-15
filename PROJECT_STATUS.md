@@ -51,6 +51,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] Identificación Visual Tesorería: Integración de imágenes de billetes y monedas en todos los formularios de desglose de efectivo (Caja Inicial, Cambio, Arqueo).
 - [x] **Refinamiento UI Marbella (Fase 4)**: Historial sin bordes azules, eliminación de icono calendario en filtros, integración de popup de empleado en registros y unificación de configuración en el perfil.
 - [x] **Optimización Bottom Nav**: Reorganización de ítems (Horarios, Asistencia, Inicio, Pedidos, Cuenta) con nuevos iconos PNG y acceso directo a pedidos.
+- [x] **Modales de Gestión**: Actualización estética del modal "Gestión Stock" en Staff (#36606F) y vinculación de accesos directos (Pedidos -> /orders/new, Proveedores -> /suppliers) en ambos dashboards.
 - [x] **Estabilidad Dashboard Admin**: Corrección de layout en 2 columnas, reordenación inteligente para móvil/desktop y ajuste cromático de Horas Extras a púrpura corporativo.
 - [x] **Visibilidad Selectiva ADM/Staff**: Restricción del toggle de la cabecera exclusivamente para usuarios con rol de Manager.
 - [x] **Cierre de Caja Full Integration**: Implementación de botón "+ CIERRE" en la cabecera fija para usuarios específicos, con mapeo al nuevo esquema de `cash_closings` e integración automática con la tesorería de la "Caja Inicial" mediante desglose de unidades.
@@ -63,6 +64,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento de Perfil**: Cabecera compacta, reducción de fuentes, nombre en una sola fila y migración del botón de edición a icono superior derecho para managers.
 - [x] **Optimización de Capas (Z-Index)**: Ajuste de nivel en la navegación inferior (`z-30`) para permitir el difuminado (blur) correcto cuando hay modales abiertos.
 - [x] **Refinamiento Historial y Gestión de Cierres**: Rediseño del modal de histórico con KPIs de negocio e implementación de edición/borrado de cierres con sincronización robusta y políticas RLS corregidas.
+- [x] **Importador Legacy**: Nueva skill `importador-legacy-marbella` y asistente interactivo en `/dashboard/import` para la carga masiva de datos (Proveedores, Productos) desde Excel/CSV.
+- [x] **Visibilidad Histórico de Cierres**: Refactorización del filtro por defecto a "Mes Actual" y adición de opción "Ver Todo" para garantizar la consulta permanente de cierres anteriores.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

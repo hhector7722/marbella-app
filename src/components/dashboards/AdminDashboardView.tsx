@@ -907,7 +907,7 @@ export default function AdminDashboardView() {
                             {[
                                 { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },
                                 { title: 'Ingredientes', img: '/icons/ingrediente.png', link: '/ingredients', hover: 'hover:bg-orange-50/30' },
-                                { title: 'Pedidos', img: '/icons/shipment.png', hover: 'hover:bg-emerald-50/30' },
+                                { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new', hover: 'hover:bg-emerald-50/30' },
                                 { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
                                 { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
                                 { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },

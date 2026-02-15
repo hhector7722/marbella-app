@@ -657,7 +657,7 @@ export default function StaffDashboardView() {
                         )}
                         {activeMenu === 'pedidos' && (
                             <>
-                                <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                                     <div className="flex flex-col">
                                         <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
                                         <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
@@ -668,11 +668,11 @@ export default function StaffDashboardView() {
                                 </div>
                                 <div className="p-8 grid grid-cols-2 gap-4 bg-transparent overflow-y-auto">
                                     {[
-                                        { title: 'Pedidos', img: '/icons/shipment.png' },
+                                        { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new' },
                                         { title: 'Inventario', img: '/icons/inventory.png' },
-                                        { title: 'Proveedores', img: '/icons/suplier.png' },
+                                        { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers' },
                                     ].map((item, i) => (
-                                        <button key={i} onClick={() => toast.info(`${item.title} próximamente`)} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
+                                        <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
                                             <div className="w-14 h-14 transition-transform group-hover:scale-110">
                                                 <Image src={item.img} alt={item.title} width={56} height={56} className="w-full h-full object-contain" />
                                             </div>
