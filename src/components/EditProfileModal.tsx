@@ -18,6 +18,7 @@ interface EditProfileModalProps {
         bank_account: string | null;
         phone: string | null;
         email: string;
+        joining_date?: string | null;
     };
 }
 
@@ -25,6 +26,7 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
     const [dni, setDni] = useState(profile.dni || '');
     const [iban, setIban] = useState(profile.bank_account || '');
     const [phone, setPhone] = useState(profile.phone || '');
+    const [joiningDate, setJoiningDate] = useState(profile.joining_date || '');
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -35,7 +37,8 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
         const result = await updateProfile(profile.id, {
             dni: dni.trim() || undefined,
             bank_account: iban.trim() || undefined,
-            phone: phone.trim() || undefined
+            phone: phone.trim() || undefined,
+            joining_date: joiningDate || undefined
         });
         setLoading(false);
 
@@ -96,6 +99,16 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
                                 value={phone}
                                 onChange={e => setPhone(e.target.value)}
                                 placeholder="600 000 000"
+                                className="w-full h-14 px-5 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-300"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Fecha Incorporación</label>
+                            <input
+                                type="date"
+                                value={joiningDate}
+                                onChange={e => setJoiningDate(e.target.value)}
                                 className="w-full h-14 px-5 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-300"
                             />
                         </div>

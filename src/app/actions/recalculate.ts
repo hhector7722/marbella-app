@@ -16,7 +16,7 @@ export async function recalculateAllBalances() {
     // 1. Obtener todos los perfiles
     const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, role, contracted_hours_weekly, prefer_stock_hours, is_fixed_salary, hours_balance');
+        .select('id, first_name, last_name, role, contracted_hours_weekly, prefer_stock_hours, is_fixed_salary, hours_balance, joining_date');
 
     if (profilesError || !profiles) {
         throw new Error(`Error al obtener perfiles: ${profilesError?.message}`);
@@ -60,6 +60,7 @@ export async function recalculateAllBalances() {
         const weekStartStr = format(currentMonday, 'yyyy-MM-dd');
         const nextMonday = addWeeks(currentMonday, 1);
         const weekEndStr = format(new Date(nextMonday.getTime() - 1), 'yyyy-MM-dd');
+        const weekEndDate = new Date(nextMonday.getTime() - 1); // Sunday end of day
 
         // Obtener logs de esta semana
         const { data: weekLogs, error: weekLogsError } = await supabase
@@ -90,6 +91,21 @@ export async function recalculateAllBalances() {
 
         for (const profile of profiles) {
             const userId = profile.id;
+
+            // [JOINING DATE CHECK]
+            // Si el perfil tiene fecha de incorporación, y el fin de esta semana es ANTERIOR a esa fecha,
+            // SALTAMOS el cálculo para este usuario (no generamos snapshot 0 ni nada).
+            // Esto evita llenar el histórico de semanas vacías.
+            if (profile.joining_date) {
+                const joiningDate = parseISO(profile.joining_date);
+                // Si la semana termina ANTES de que el usuario se incorpore, saltar.
+                // Ejemplo: Semana termina el 7 Enero, Usuario entra el 10 Enero -> Salta.
+                // Ejemplo: Semana termina el 14 Enero, Usuario entra el 10 Enero -> Procesa (semana parcial o completa).
+                if (isBefore(weekEndDate, joiningDate)) {
+                    continue;
+                }
+            }
+
             const hoursWorked = userHoursThisWeek.get(userId) || 0;
 
             // Si existe un snapshot, lo buscamos para preservar is_paid, pero NO usamos sus horas de contrato

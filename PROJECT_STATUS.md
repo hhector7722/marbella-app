@@ -84,6 +84,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Corrección Crítica UUID Pedidos**: Migración de `supplier_id` a TEXT en `purchase_orders` para soportar IDs legacy y rediseño completo del modal de éxito ("Pedido Guardado") siguiendo el estándar Bento Grid y colores corporativos.
 - [x] **Refinamiento Registros**: Diferenciación de vista Escritorio (Nombre + Horas Colores) y Móvil (Compacto), manteniendo coherencia estética.
 - [x] **Fix Registros**: Habilitado guardado de tipos no regulares (Festivo, Baja, etc) añadiendo columna `event_type` a `time_logs`.
+- [x] **Employee Joining Date**: Implementado campo `joining_date` en perfiles, lógica de backend para ignorar semanas previas y UI en alta/edición de empleados.
 
 
 ## 📅 PENDIENTE

@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function updateProfile(userId: string, data: { dni?: string; bank_account?: string; phone?: string; email?: string }) {
+export async function updateProfile(userId: string, data: { dni?: string; bank_account?: string; phone?: string; email?: string; joining_date?: string }) {
     const supabase = await createClient();
 
     // Verificar si el usuario que hace la petición es manager
