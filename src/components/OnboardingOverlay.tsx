@@ -16,7 +16,8 @@ interface OnboardingOverlayProps {
 
 export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlayProps) {
     const [isVisible, setIsVisible] = useState(false);
-    const [step, setStep] = useState(1); // 1: Guide, 2: Password, 3: PWA
+    const [step, setStep] = useState(1); // 1: Guide, 2: Credentials, 3: Password, 4: PWA
+    const [userEmail, setUserEmail] = useState<string | null>(null);
     const supabase = createClient();
 
     // Password State
@@ -30,6 +31,12 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
     useEffect(() => {
         if (needsOnboarding) {
             setIsVisible(true);
+
+            // Get user email
+            supabase.auth.getUser().then(({ data }) => {
+                if (data.user) setUserEmail(data.user.email ?? null);
+            });
+
             // Detect OS
             const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
             if (/iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream) {
@@ -64,7 +71,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
             if (error) throw error;
 
             toast.success('Contraseña actualizada');
-            setStep(3); // Move to PWA step
+            setStep(4); // Move to PWA step
         } catch (error: any) {
             console.error('Error updating password:', error);
             toast.error(error.message || 'Error al actualizar la contraseña');
@@ -107,17 +114,17 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                 <div className="bg-[#36606F] text-white p-8 text-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
                     <h1 className="text-2xl font-black uppercase tracking-widest mb-2 relative z-10">
-                        {step === 1 ? 'Bienvenido' : step === 2 ? 'Seguridad' : 'Instalación'}
+                        {step === 1 ? 'Bienvenido' : step === 2 ? 'Acceso' : step === 3 ? 'Seguridad' : 'Instalación'}
                     </h1>
                     <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">
-                        Paso {step} de 3
+                        Paso {step} de 4
                     </p>
                 </div>
 
                 <div className="p-8">
                     {step === 1 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-sm">
+                            <div className="relative aspect-[9/16] w-full max-h-[300px] rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-sm flex items-center justify-center">
                                 <Image
                                     src="/examples/guia-inicial.png"
                                     alt="Guía de inicio"
@@ -141,6 +148,43 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                     )}
 
                     {step === 2 && (
+                        <div className="space-y-8 animate-in slide-in-from-right duration-300 text-center">
+                            <div className="space-y-4">
+                                <p className="text-gray-500 font-medium text-sm">
+                                    Utiliza estos datos para tus próximos inicios de sesión:
+                                </p>
+
+                                <div className="bg-zinc-50 p-6 rounded-2xl border-2 border-zinc-100 space-y-4">
+                                    <div className="space-y-1">
+                                        <span className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest">Tu Email</span>
+                                        <span className="text-lg font-bold text-zinc-900 break-all">{userEmail || 'Cargando...'}</span>
+                                    </div>
+                                    <div className="h-px bg-zinc-200"></div>
+                                    <div className="space-y-1">
+                                        <span className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest">Contraseña Temporal</span>
+                                        <div className="flex items-center justify-center gap-2">
+                                            <span className="text-2xl font-black text-[#5B8FB9] tracking-wider">Marbella2026</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                    <p className="text-[10px] text-orange-700 font-bold uppercase leading-relaxed">
+                                        ⚠️ En el siguiente paso deberás cambiarla por una personal.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setStep(3)}
+                                className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
+                            >
+                                Entendido <ChevronRight size={20} strokeWidth={3} />
+                            </button>
+                        </div>
+                    )}
+
+                    {step === 3 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
                             <p className="text-center text-gray-500 font-medium text-sm">
                                 Para garantizar la seguridad de tu cuenta, por favor establece una nueva contraseña personal.
@@ -212,7 +256,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                         </div>
                     )}
 
-                    {step === 3 && (
+                    {step === 4 && (
                         <div className="space-y-8 animate-in slide-in-from-right duration-300">
                             <div className="text-center space-y-2">
                                 <div className="w-20 h-20 bg-[#36606F]/10 text-[#36606F] rounded-3xl flex items-center justify-center mx-auto mb-4">
