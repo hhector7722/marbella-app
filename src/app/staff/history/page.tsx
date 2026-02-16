@@ -733,14 +733,7 @@ export default function HistoryPage() {
                                                 <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                             </div>
 
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                        {formatBalance(week.summary.weeklyBalance)}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
-                                            </div>
+
 
                                             <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
                                                 <div className="h-4 flex items-center">

@@ -98,7 +98,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
     // Draw the curve bottom
     doc.moveTo(0, 40);
-    doc.bezierCurveTo(
+    doc.curveTo(
         pageWidth / 2, 55, // Control point 1
         pageWidth / 2, 55, // Control point 2
         pageWidth, 40      // End point
