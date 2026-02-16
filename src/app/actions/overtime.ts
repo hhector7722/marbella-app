@@ -241,3 +241,34 @@ export async function togglePaidStatus(userId: string, weekStart: string, newSta
 
     return { success: true };
 }
+
+export async function updateWeeklyContractHours(userId: string, weekStart: string, newHours: number) {
+    const supabase = await createClient();
+
+    // 1. Upsert snapshot with new contracted hours
+    // We don't need to fill all fields, the DB trigger/RPC will fix them
+    const { error } = await supabase
+        .from('weekly_snapshots')
+        .upsert({
+            user_id: userId,
+            week_start: weekStart,
+            contracted_hours_snapshot: newHours,
+        }, { onConflict: 'user_id, week_start' });
+
+    if (error) throw error;
+
+    // 2. Trigger propagation starting from that week
+    const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+        p_user_id: userId,
+        p_start_date: weekStart
+    });
+
+    if (rpcError) throw rpcError;
+
+    // 3. Revalidate paths
+    revalidatePath('/staff/history');
+    revalidatePath('/dashboard/overtime');
+    revalidatePath('/dashboard');
+
+    return { success: true };
+}
