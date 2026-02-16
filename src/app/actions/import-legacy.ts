@@ -362,12 +362,24 @@ export async function importInitialMovements(data: Record<string, any>[]): Promi
     // However, the request specifically asks to respect the date.
     for (const row of data) {
         try {
-            const fechaRaw = row.fecha || row.date || row.created_at
-            const importeRaw = row.importe || row.amount
-            const tipoRaw = row.tipo || row.type || row['tipo entrada o salida']
+            // Normalizar acceso a columnas (insensible a mayúsculas)
+            const getVal = (keys: string[]) => {
+                for (const k of keys) {
+                    if (row[k] !== undefined && row[k] !== null) return row[k]
+                    // Buscar coincidencia insensible
+                    const foundKey = Object.keys(row).find(rk => rk.toLowerCase() === k.toLowerCase())
+                    if (foundKey) return row[foundKey]
+                }
+                return undefined
+            }
 
-            if (!fechaRaw || !importeRaw || !tipoRaw) {
-                errors.push(`Fila incompleta: ${JSON.stringify(row)}`)
+            const fechaRaw = getVal(['fecha', 'date', 'created_at'])
+            const importeRaw = getVal(['importe', 'amount', 'total'])
+            const tipoRaw = getVal(['tipo', 'type', 'tipo entrada o salida', 'tipo_movimiento'])
+            const notasRaw = getVal(['notas', 'notes', 'concepto', 'description'])
+
+            if (fechaRaw === undefined || importeRaw === undefined || tipoRaw === undefined) {
+                errors.push(`Fila incompleta (faltan columnas críticas): ${JSON.stringify(row)}`)
                 continue
             }
 
@@ -383,13 +395,14 @@ export async function importInitialMovements(data: Record<string, any>[]): Promi
                 continue
             }
 
-            const type = String(tipoRaw).toLowerCase().includes('entrada') || String(tipoRaw).toLowerCase() === 'in' ? 'IN' : 'OUT'
+            const typeNormalized = String(tipoRaw).toLowerCase()
+            const type = typeNormalized.includes('entrada') || typeNormalized === 'in' || typeNormalized.includes('ingreso') ? 'IN' : 'OUT'
 
             const { error } = await supabase.from('treasury_log').insert({
                 box_id: opBox.id,
                 type,
                 amount: Math.abs(amount),
-                notes: row.notas || row.notes || 'Importación inicial',
+                notes: notasRaw || 'Importación inicial',
                 created_at: fecha.toISOString(),
                 user_id: user.id
             })
