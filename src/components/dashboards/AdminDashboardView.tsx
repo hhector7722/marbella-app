@@ -150,7 +150,7 @@ const AdminDashboardView = () => {
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
-    const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, joining_date: format(new Date(), 'yyyy-MM-dd'), prefer_stock_hours: false });
+    const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, prefer_stock_hours: false });
 
     // [MODAL HISTORIAL] State for worker history modal
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
@@ -177,13 +177,13 @@ const AdminDashboardView = () => {
                 p_role: newWorkerData.role,
                 p_contracted_hours_weekly: newWorkerData.contracted_hours_weekly,
                 p_overtime_cost_per_hour: newWorkerData.overtime_cost_per_hour,
-                p_joining_date: newWorkerData.joining_date,
+                p_joining_date: format(new Date(), 'yyyy-MM-dd'), // [AUTO] Se usará la fecha del primer fichaje real
                 p_prefer_stock_hours: newWorkerData.prefer_stock_hours,
             });
             if (error) throw error;
             toast.success(`${newWorkerData.first_name} añadido correctamente`);
             setIsNewWorkerModalOpen(false);
-            setNewWorkerData({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, joining_date: format(new Date(), 'yyyy-MM-dd'), prefer_stock_hours: false });
+            setNewWorkerData({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, prefer_stock_hours: false });
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -804,15 +804,7 @@ const AdminDashboardView = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Fecha de Incorporación</label>
-                                <input
-                                    type="date"
-                                    value={newWorkerData.joining_date}
-                                    onChange={e => setNewWorkerData({ ...newWorkerData, joining_date: e.target.value })}
-                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
-                                />
-                            </div>
+
                             <div className="p-4 border-t border-zinc-100 flex gap-3">
                                 <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
                                 <button

@@ -57,6 +57,25 @@ export async function recalculateAllBalances() {
         userBalanceMap.set(p.id, 0);
     });
 
+    // [AUTO-DISCOVERY] En lugar de confiar en 'joining_date' manual, 
+    // buscamos el primer fichaje REAL de cada empleado para determinar su fecha de inicio.
+    const userStartDates = new Map<string, string>();
+
+    await Promise.all(profiles.map(async (p) => {
+        const { data: firstLog } = await supabase
+            .from('time_logs')
+            .select('clock_in')
+            .eq('user_id', p.id)
+            .order('clock_in', { ascending: true }) // El más antiguo
+            .limit(1)
+            .maybeSingle();
+
+        if (firstLog?.clock_in) {
+            // Guardamos la fecha en formato YYYY-MM-DD
+            userStartDates.set(p.id, format(new Date(firstLog.clock_in), 'yyyy-MM-dd'));
+        }
+    }));
+
     console.log(`Iniciando recalculo desde ${format(currentMonday, 'yyyy-MM-dd')}`);
 
     // 3. Iterar semana a semana
@@ -96,16 +115,18 @@ export async function recalculateAllBalances() {
         for (const profile of profiles) {
             const userId = profile.id;
 
-            // [JOINING DATE CHECK]
-            // Si el perfil tiene fecha de incorporación, y el fin de esta semana es ANTERIOR a esa fecha,
-            // SALTAMOS el cálculo para este usuario (no generamos snapshot 0 ni nada).
-            // Esto evita llenar el histórico de semanas vacías.
-            if (profile.joining_date) {
-                const joiningDate = parseISO(profile.joining_date);
-                // Si la semana termina ANTES de que el usuario se incorpore, saltar.
-                // Ejemplo: Semana termina el 7 Enero, Usuario entra el 10 Enero -> Salta.
-                // Ejemplo: Semana termina el 14 Enero, Usuario entra el 10 Enero -> Procesa (semana parcial o completa).
-                if (isBefore(weekEndDate, joiningDate)) {
+            // [AUTO-JOINING DATE CHECK]
+            // Usamos la fecha del primer fichaje encontrada automáticamente.
+            const autoJoiningDate = userStartDates.get(userId);
+
+            if (autoJoiningDate) {
+                // [FIX for Safari/Local] parseISO can be tricky. Format and compare strings or use UTC.
+                // Assuming WeekEndDate is a Date object (local or UTC depending on server).
+                // Let's force everything to simple YYYY-MM-DD string comparison to be safe.
+                const weekEndString = format(weekEndDate, 'yyyy-MM-dd');
+
+                // Compare strings: if weekEndString < autoJoiningDate, skip.
+                if (weekEndString < autoJoiningDate) {
                     // [CLEANUP] Borramos TODOS los snapshots de ese usuario para esa semana errónea.
                     // Usamos delete() con match para asegurar limpieza total.
                     const { error: delError } = await supabase.from('weekly_snapshots')
@@ -115,10 +136,17 @@ export async function recalculateAllBalances() {
                     if (delError) {
                         console.error(`Error deleting invalid snapshot: ${delError.message}`);
                     } else {
-                        console.log(`Deleted invalid snapshot for user ${profile.first_name} on week ${weekStartStr}`);
+                        // console.log(`Deleted invalid snapshot for user ${profile.first_name} on week ${weekStartStr}`);
                     }
                     continue;
                 }
+            } else {
+                // Si el usuario NO tiene fichajes (no existe en userStartDates),
+                // entonces NO debería tener snapshots tampoco. Borrar por seguridad.
+                const { error: delError } = await supabase.from('weekly_snapshots')
+                    .delete()
+                    .match({ user_id: userId, week_start: weekStartStr });
+                continue;
             }
 
             const hoursWorked = userHoursThisWeek.get(userId) || 0;
