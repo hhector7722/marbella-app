@@ -16,7 +16,7 @@ interface OnboardingOverlayProps {
 
 export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlayProps) {
     const [isVisible, setIsVisible] = useState(false);
-    const [step, setStep] = useState(1); // 1: Guide, 2: Credentials, 3: Password, 4: PWA
+    const [step, setStep] = useState(1); // 1: Credentials, 2: Password, 3: Integration
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const supabase = createClient();
 
@@ -71,7 +71,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
             if (error) throw error;
 
             toast.success('Contraseña actualizada');
-            setStep(4); // Move to PWA step
+            setStep(3); // Move to Integration step
         } catch (error: any) {
             console.error('Error updating password:', error);
             toast.error(error.message || 'Error al actualizar la contraseña');
@@ -114,69 +114,47 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                 <div className="bg-[#36606F] text-white p-8 text-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
                     <h1 className="text-2xl font-black uppercase tracking-widest mb-2 relative z-10">
-                        {step === 1 ? 'Bienvenido' : step === 2 ? 'Acceso' : step === 3 ? 'Seguridad' : 'Instalación'}
+                        {step === 1 ? 'Acceso' : step === 2 ? 'Seguridad' : 'Instalación'}
                     </h1>
                     <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">
-                        Paso {step} de 4
+                        Paso {step} de 3
                     </p>
                 </div>
 
                 <div className="p-8">
                     {step === 1 && (
-                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                            <div className="relative aspect-[9/16] w-full max-h-[300px] rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-sm flex items-center justify-center">
-                                <Image
-                                    src="/examples/guia-inicial.png"
-                                    alt="Guía de inicio"
-                                    fill
-                                    className="object-contain"
-                                    priority
-                                />
-                            </div>
-
-                            <p className="text-center text-gray-500 font-medium text-sm">
-                                Revisa esta guía rápida para saber cómo utilizar la aplicación correctamente desde tu primer fichaje.
-                            </p>
-
-                            <button
-                                onClick={() => setStep(2)}
-                                className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
-                            >
-                                Siguiente <ChevronRight size={20} strokeWidth={3} />
-                            </button>
-                        </div>
-                    )}
-
-                    {step === 2 && (
                         <div className="space-y-8 animate-in slide-in-from-right duration-300 text-center">
                             <div className="space-y-4">
-                                <p className="text-gray-500 font-medium text-sm">
+                                <p className="text-gray-500 font-medium text-sm leading-relaxed">
                                     Utiliza estos datos para tus próximos inicios de sesión:
                                 </p>
 
-                                <div className="bg-zinc-50 p-6 rounded-2xl border-2 border-zinc-100 space-y-4">
+                                <div className="bg-zinc-50 p-7 rounded-[2rem] border-2 border-zinc-100 space-y-5 shadow-sm">
                                     <div className="space-y-1">
-                                        <span className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest">Tu Email</span>
-                                        <span className="text-lg font-bold text-zinc-900 break-all">{userEmail || 'Cargando...'}</span>
+                                        <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Tu Email</span>
+                                        <span className="text-xl font-bold text-zinc-900 break-all">{userEmail || 'Cargando...'}</span>
                                     </div>
-                                    <div className="h-px bg-zinc-200"></div>
+                                    <div className="h-px bg-zinc-200 mx-4"></div>
                                     <div className="space-y-1">
-                                        <span className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest">Contraseña Temporal</span>
-                                        <div className="flex items-center justify-center gap-2">
-                                            <span className="text-2xl font-black text-[#5B8FB9] tracking-wider">Marbella2026</span>
+                                        <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Contraseña Temporal</span>
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="text-3xl font-black text-[#5B8FB9] tracking-[0.1em]">Marbella2026</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
-                                    <p className="text-[10px] text-orange-700 font-bold uppercase leading-relaxed">
-                                        ⚠️ En el siguiente paso deberás cambiarla por una personal.
+                                <div className="p-5 bg-orange-50 rounded-2xl border border-orange-100 flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
+                                        <Lock size={16} className="text-orange-600" />
+                                    </div>
+                                    <p className="text-[10px] text-orange-700 font-bold uppercase leading-relaxed text-left">
+                                        Esta es tu clave inicial. En el siguiente paso deberás cambiarla por una personal para proteger tu cuenta.
                                     </p>
                                 </div>
                             </div>
 
                             <button
-                                onClick={() => setStep(3)}
+                                onClick={() => setStep(2)}
                                 className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
                                 Entendido <ChevronRight size={20} strokeWidth={3} />
@@ -184,7 +162,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                         </div>
                     )}
 
-                    {step === 3 && (
+                    {step === 2 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
                             <p className="text-center text-gray-500 font-medium text-sm">
                                 Para garantizar la seguridad de tu cuenta, por favor establece una nueva contraseña personal.
@@ -256,68 +234,63 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                         </div>
                     )}
 
-                    {step === 4 && (
-                        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+                    {step === 3 && (
+                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
                             <div className="text-center space-y-2">
-                                <div className="w-20 h-20 bg-[#36606F]/10 text-[#36606F] rounded-3xl flex items-center justify-center mx-auto mb-4">
-                                    <Smartphone size={40} strokeWidth={1.5} />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-800">Instálalo como App</h3>
-                                <p className="text-gray-500 text-sm leading-relaxed max-w-[280px] mx-auto">
-                                    Añade la aplicación a tu pantalla de inicio para una experiencia completa a pantalla completa.
+                                <h3 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Instala la App y Guía Rápida</h3>
+                                <p className="text-gray-500 text-[11px] font-medium leading-relaxed">
+                                    Sigue estas instrucciones para añadir la aplicación a tu pantalla de inicio y utilizarla como una App nativa.
                                 </p>
                             </div>
 
-                            {isInstallable && (
-                                <button
-                                    onClick={handleInstallClick}
-                                    className="w-full h-16 bg-[#F3F4F6] text-[#36606F] font-black uppercase tracking-widest text-[11px] rounded-2xl border-2 border-[#36606F]/10 hover:bg-[#36606F] hover:text-white transition-all active:scale-95 flex items-center justify-center gap-3 animate-in fade-in zoom-in duration-500"
-                                >
-                                    <PlusSquare size={20} strokeWidth={3} />
-                                    INSTALAR AHORA
-                                </button>
-                            )}
+                            <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-lg">
+                                <Image
+                                    src="/examples/guia-inicial.png"
+                                    alt="Guía de inicio"
+                                    fill
+                                    className="object-cover"
+                                    priority
+                                />
+                            </div>
 
-                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                            <div className="bg-[#36606F]/5 rounded-2xl p-5 border border-[#36606F]/10 space-y-4">
                                 {os === 'ios' && (
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 text-[#007AFF]">
-                                                <Share size={16} />
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0 text-[#007AFF]">
+                                                <Share size={14} />
                                             </div>
-                                            <span>1. Pulsa el botón <strong>Compartir</strong> en la barra inferior.</span>
+                                            <span>1. Pulsa el botón "Compartir"</span>
                                         </div>
-                                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                <PlusSquare size={16} />
+                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                                <PlusSquare size={14} />
                                             </div>
-                                            <span>2. Busca y selecciona <strong>"Añadir a inicio"</strong>.</span>
+                                            <span>2. Selecciona "Añadir a inicio"</span>
                                         </div>
                                     </div>
                                 )}
 
                                 {os === 'android' && (
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                <Menu size={16} />
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                                <Menu size={14} />
                                             </div>
-                                            <span>1. Pulsa el menú del navegador (3 puntos).</span>
+                                            <span>1. Pulsa el menú (3 puntos)</span>
                                         </div>
-                                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                <Smartphone size={16} />
+                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                                <Smartphone size={14} />
                                             </div>
-                                            <span>2. Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.</span>
+                                            <span>2. Selecciona "Instalar App"</span>
                                         </div>
                                     </div>
                                 )}
 
-                                {os === 'desktop' && (
-                                    <div className="text-center text-gray-500 italic text-sm">
-                                        Esta opción está optimizada para dispositivos móviles (iOS y Android). En PC, puedes instalarla desde la barra de direcciones si tu navegador lo soporta.
-                                    </div>
-                                )}
+                                <p className="text-[10px] text-[#36606F]/60 italic text-center font-bold">
+                                    * Con la App instalada tendrás una experiencia a pantalla completa y acceso más rápido.
+                                </p>
                             </div>
 
                             <button
