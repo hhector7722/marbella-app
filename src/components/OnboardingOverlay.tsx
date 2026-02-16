@@ -16,7 +16,7 @@ interface OnboardingOverlayProps {
 
 export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlayProps) {
     const [isVisible, setIsVisible] = useState(false);
-    const [step, setStep] = useState(1); // 1: Password, 2: PWA
+    const [step, setStep] = useState(1); // 1: Guide, 2: Password, 3: PWA
     const supabase = createClient();
 
     // Password State
@@ -64,7 +64,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
             if (error) throw error;
 
             toast.success('Contraseña actualizada');
-            setStep(2); // Move to PWA step
+            setStep(3); // Move to PWA step
         } catch (error: any) {
             console.error('Error updating password:', error);
             toast.error(error.message || 'Error al actualizar la contraseña');
@@ -107,15 +107,40 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                 <div className="bg-[#36606F] text-white p-8 text-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
                     <h1 className="text-2xl font-black uppercase tracking-widest mb-2 relative z-10">
-                        {step === 1 ? 'Seguridad' : 'Instalación'}
+                        {step === 1 ? 'Bienvenido' : step === 2 ? 'Seguridad' : 'Instalación'}
                     </h1>
                     <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">
-                        Paso {step} de 2
+                        Paso {step} de 3
                     </p>
                 </div>
 
                 <div className="p-8">
                     {step === 1 && (
+                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
+                            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-sm">
+                                <Image
+                                    src="/examples/guia-inicial.png"
+                                    alt="Guía de inicio"
+                                    fill
+                                    className="object-contain"
+                                    priority
+                                />
+                            </div>
+
+                            <p className="text-center text-gray-500 font-medium text-sm">
+                                Revisa esta guía rápida para saber cómo utilizar la aplicación correctamente desde tu primer fichaje.
+                            </p>
+
+                            <button
+                                onClick={() => setStep(2)}
+                                className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
+                            >
+                                Siguiente <ChevronRight size={20} strokeWidth={3} />
+                            </button>
+                        </div>
+                    )}
+
+                    {step === 2 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
                             <p className="text-center text-gray-500 font-medium text-sm">
                                 Para garantizar la seguridad de tu cuenta, por favor establece una nueva contraseña personal.
@@ -187,7 +212,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                         </div>
                     )}
 
-                    {step === 2 && (
+                    {step === 3 && (
                         <div className="space-y-8 animate-in slide-in-from-right duration-300">
                             <div className="text-center space-y-2">
                                 <div className="w-20 h-20 bg-[#36606F]/10 text-[#36606F] rounded-3xl flex items-center justify-center mx-auto mb-4">

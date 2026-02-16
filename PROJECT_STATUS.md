@@ -92,6 +92,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Employee Joining Date**: Implementado campo `joining_date` en perfiles, lógica de backend para ignorar semanas previas y UI en alta/edición de empleados.
 - [x] **Preferencia 'Bolsa de Horas'**: Toggle implementado en el alta de trabajadores y lógica de cálculo respetada en el histórico.
 - [x] **Rediseño PDF Pedidos V4.0**: Implementación final del diseño 'Wave' preciso con doble onda, línea de contorno y cabecera de tabla redondeada conforme a la referencia visual.
+- [x] **Onboarding Guide Step**: Añadido paso inicial de guía con imagen `guia-inicial.png` en el proceso de bienvenida para nuevos usuarios.
 
 - [x] **Corrección PDF y 404**: Resolución de error `bezierCurveTo` en la generación de pedidos PDF y corrección de ruta inexistente `/orders` en la navegación a `/orders/new`.
 - [x] **Mejora Modal Pedidos**: Incorporación de vista previa real del PDF, botón de envío de archivo (Share API) y botón de contacto directo por WhatsApp al proveedor.
