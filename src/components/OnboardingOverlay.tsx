@@ -213,19 +213,12 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
 
                     {step === 2 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                            <div className="text-center space-y-2">
-                                <h3 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Instala la App y Guía Rápida</h3>
-                                <p className="text-gray-500 text-[11px] font-medium leading-relaxed">
-                                    Sigue estas instrucciones para añadir la aplicación a tu pantalla de inicio y utilizarla como una App nativa.
-                                </p>
-                            </div>
-
-                            <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-lg">
+                            <div className="relative aspect-[9/16] w-full max-h-[400px] rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-lg flex items-center justify-center">
                                 <Image
-                                    src="/examples/guia-inicial.png"
+                                    src="/examples/pantalla-inicio.png"
                                     alt="Guía de inicio"
                                     fill
-                                    className="object-cover"
+                                    className="object-contain"
                                     priority
                                 />
                             </div>
