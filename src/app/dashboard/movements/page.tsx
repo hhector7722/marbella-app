@@ -43,12 +43,14 @@ export default function MovementsPage() {
     // Estados de Filtro
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-    const [rangeStart, setRangeStart] = useState<string | null>(() => startOfMonth(new Date()).toISOString().split('T')[0]);
-    const [rangeEnd, setRangeEnd] = useState<string | null>(() => endOfMonth(new Date()).toISOString().split('T')[0]);
+    const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
 
     // Estados de UI
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [loading, setLoading] = useState(true);
 
@@ -305,40 +307,54 @@ export default function MovementsPage() {
                         {/* SELECTOR DE MESES Y FECHAS */}
                         <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-zinc-100 space-y-6">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                {/* Tira de meses */}
-                                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                                    {monthsList.map((m, idx) => {
-                                        const isSelected = filterMode === 'range' && rangeStart === format(m.start, 'yyyy-MM-dd') && rangeEnd === format(m.end, 'yyyy-MM-dd');
-                                        return (
-                                            <button
-                                                key={idx}
-                                                onClick={() => handleMonthSelect(m)}
-                                                className={cn(
-                                                    "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2",
-                                                    isSelected
-                                                        ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
-                                                        : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200"
-                                                )}
-                                            >
-                                                {m.label}
-                                            </button>
-                                        );
-                                    })}
+                                {/* Botón Seleccionar Mes */}
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setShowMonthPicker(true)}
+                                        className={cn(
+                                            "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                                            filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                                ? "bg-zinc-900 border-zinc-900 text-white shadow-lg"
+                                                : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200"
+                                        )}
+                                    >
+                                        <Calendar size={14} />
+                                        {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                            : 'Seleccionar Mes'}
+                                    </button>
+
+                                    {/* Botón Hoy/Mes Actual rápido */}
+                                    <button
+                                        onClick={() => {
+                                            const d = new Date();
+                                            setRangeStart(format(startOfMonth(d), 'yyyy-MM-dd'));
+                                            setRangeEnd(format(endOfMonth(d), 'yyyy-MM-dd'));
+                                            setFilterMode('range');
+                                        }}
+                                        className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-zinc-50 text-zinc-400 hover:bg-zinc-100"
+                                    >
+                                        Mes Actual
+                                    </button>
                                 </div>
 
                                 {/* Selectores específicos */}
                                 <div className="flex items-center gap-2 shrink-0">
                                     <button
-                                        onClick={() => setShowCalendar('range')}
+                                        onClick={() => {
+                                            setRangeStart(null);
+                                            setRangeEnd(null);
+                                            setShowCalendar('range');
+                                        }}
                                         className={cn(
                                             "h-10 px-4 rounded-xl text-[9px] font-black border-2 transition-all flex items-center gap-2 uppercase tracking-widest",
-                                            filterMode === 'range' && !monthsList.some(m => rangeStart === format(m.start, 'yyyy-MM-dd'))
+                                            filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                                 ? "bg-zinc-900 border-zinc-900 text-white shadow-lg"
                                                 : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
                                         )}
                                     >
                                         <Calendar size={12} />
-                                        {filterMode === 'range'
+                                        {filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                             ? `${format(new Date(rangeStart!), 'dd MMM', { locale: es })} - ${format(new Date(rangeEnd!), 'dd MMM', { locale: es })}`
                                             : 'Rango'}
                                     </button>
@@ -380,10 +396,16 @@ export default function MovementsPage() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-50">
-                                                {movements.map((mov) => {
+                                                {movements.map((mov, idx) => {
                                                     const isIncome = mov.type === 'income';
                                                     return (
-                                                        <tr key={mov.id} className="hover:bg-zinc-50/30 transition-colors group">
+                                                        <tr
+                                                            key={mov.id}
+                                                            className={cn(
+                                                                "transition-colors group",
+                                                                idx % 2 === 0 ? "bg-white" : "bg-zinc-50"
+                                                            )}
+                                                        >
                                                             <td className="px-8 py-5">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[11px] font-black text-zinc-900 capitalize">{format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}</span>
@@ -462,6 +484,61 @@ export default function MovementsPage() {
                                                 )}
                                             >
                                                 {day}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL SELECTOR DE MES / AÑO */}
+                {showMonthPicker && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
+                        <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
+                                <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
+                                <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
+                            </div>
+
+                            <div className="p-6">
+                                {/* Selector de Año */}
+                                <div className="flex items-center justify-between mb-8 px-2">
+                                    <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
+                                        <ChevronLeft size={20} className="text-zinc-400" />
+                                    </button>
+                                    <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
+                                    <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
+                                        <ChevronRight size={20} className="text-zinc-400" />
+                                    </button>
+                                </div>
+
+                                {/* Rejilla de Meses */}
+                                <div className="grid grid-cols-3 gap-2">
+                                    {Array.from({ length: 12 }).map((_, i) => {
+                                        const date = new Date(pickerYear, i, 1);
+                                        const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
+
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => {
+                                                    const s = startOfMonth(date);
+                                                    const e = endOfMonth(date);
+                                                    setRangeStart(format(s, 'yyyy-MM-dd'));
+                                                    setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                                    setFilterMode('range');
+                                                    setShowMonthPicker(false);
+                                                }}
+                                                className={cn(
+                                                    "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                                                    isSelected
+                                                        ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
+                                                        : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
+                                                )}
+                                            >
+                                                {format(date, 'MMM', { locale: es })}
                                             </button>
                                         );
                                     })}
