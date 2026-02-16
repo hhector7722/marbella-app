@@ -233,7 +233,8 @@ export default function StaffDashboardView() {
                 displayHours = totalWeekHours;
             }
 
-            const currentTotalBalance = historicalBalance + weekDifference;
+            const effectivePivot = (!userPreferStock && historicalBalance > 0) ? 0 : historicalBalance;
+            const currentTotalBalance = effectivePivot + weekDifference;
             let payout = 0;
             if (currentTotalBalance > 0 && !userPreferStock) {
                 payout = currentTotalBalance * overtimeRate;
@@ -245,7 +246,7 @@ export default function StaffDashboardView() {
                 currentBalance: currentTotalBalance,
                 estimatedPayout: payout,
                 status: 'pending',
-                startBalance: historicalBalance
+                startBalance: effectivePivot
             });
 
             // Cargar caja de cambio para acceso directo "Cambiar"

@@ -282,7 +282,8 @@ export default function HistoryPage() {
                     } else {
                         summaryWeeklyBalance = weekTotalHours - contractHours;
                     }
-                    summaryStartBalance = historicalBalance;
+                    const effectivePivot = (!userPreferStock && historicalBalance > 0) ? 0 : historicalBalance;
+                    summaryStartBalance = effectivePivot;
                     summaryFinalBalance = summaryStartBalance + summaryWeeklyBalance;
                 } else if (snapshot) {
                     summaryStartBalance = snapshot.pending_balance;

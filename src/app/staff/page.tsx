@@ -197,13 +197,13 @@ export default function StaffDashboard() {
 
             const isAugust = monday.getMonth() === 7;
             const weekDifference = isAugust ? totalWeekHours : (totalWeekHours - contractHours);
-            const projectedBalance = historicalBalance + weekDifference;
+            const effectivePivot = (!preferStock && historicalBalance > 0) ? 0 : historicalBalance;
+            const balanceForDisplay = effectivePivot + weekDifference;
             let payout = 0;
-            let balanceForDisplay = projectedBalance;
-            if (projectedBalance > 0 && !preferStock) payout = projectedBalance * overtimeRate;
+            if (balanceForDisplay > 0 && !preferStock) payout = balanceForDisplay * overtimeRate;
 
             setWeeklySummary({
-                totalHours: totalWeekHours, totalExtraHours: Math.max(0, weekDifference), pendingHours: balanceForDisplay, estimatedPayout: payout, status: 'pending', startBalance: historicalBalance
+                totalHours: totalWeekHours, totalExtraHours: Math.max(0, weekDifference), pendingHours: balanceForDisplay, estimatedPayout: payout, status: 'pending', startBalance: effectivePivot
             });
 
             const { data: realShifts } = await supabase
