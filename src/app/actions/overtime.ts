@@ -245,30 +245,54 @@ export async function togglePaidStatus(userId: string, weekStart: string, newSta
 export async function updateWeeklyContractHours(userId: string, weekStart: string, newHours: number) {
     const supabase = await createClient();
 
-    // 1. Upsert snapshot with new contracted hours
-    // We don't need to fill all fields, the DB trigger/RPC will fix them
-    const { error } = await supabase
-        .from('weekly_snapshots')
-        .upsert({
-            user_id: userId,
-            week_start: weekStart,
-            contracted_hours_snapshot: newHours,
-        }, { onConflict: 'user_id, week_start' });
+    try {
+        // Calcular fin de semana para el insert (si no existe)
+        const startDate = new Date(weekStart);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        const weekEnd = endDate.toISOString().split('T')[0];
 
-    if (error) throw error;
+        // 1. Upsert snapshot with new contracted hours
+        // Incluimos week_end para evitar fallos si el registro es nuevo
+        const { error } = await supabase
+            .from('weekly_snapshots')
+            .upsert({
+                user_id: userId,
+                week_start: weekStart,
+                week_end: weekEnd,
+                contracted_hours_snapshot: newHours,
+                // Ponemos valores por defecto mínimos si es un INSERT
+                total_hours: 0,
+                balance_hours: 0,
+                pending_balance: 0,
+                final_balance: 0,
+                is_paid: false
+            }, { onConflict: 'user_id, week_start' });
 
-    // 2. Trigger propagation starting from that week
-    const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-        p_user_id: userId,
-        p_start_date: weekStart
-    });
+        if (error) {
+            console.error('Error in upsert:', error);
+            return { success: false, error: error.message };
+        }
 
-    if (rpcError) throw rpcError;
+        // 2. Trigger propagation starting from that week
+        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+            p_user_id: userId,
+            p_start_date: weekStart
+        });
 
-    // 3. Revalidate paths
-    revalidatePath('/staff/history');
-    revalidatePath('/dashboard/overtime');
-    revalidatePath('/dashboard');
+        if (rpcError) {
+            console.error('Error in RPC propagation:', rpcError);
+            return { success: false, error: rpcError.message };
+        }
 
-    return { success: true };
+        // 3. Revalidate paths
+        revalidatePath('/staff/history');
+        revalidatePath('/dashboard/overtime');
+        revalidatePath('/dashboard');
+
+        return { success: true };
+    } catch (e: any) {
+        console.error('Exception in updateWeeklyContractHours:', e);
+        return { success: false, error: e.message };
+    }
 }

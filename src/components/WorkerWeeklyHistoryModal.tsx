@@ -236,6 +236,10 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
     async function handleSaveContract() {
         if (!workerId || !weekStart) return;
+        if (isNaN(tempContractHours) || tempContractHours < 0) {
+            toast.error("Las horas deben ser un número válido");
+            return;
+        }
         setIsSavingContract(true);
         try {
             const res = await updateWeeklyContractHours(workerId, weekStart, tempContractHours);
@@ -243,10 +247,12 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 toast.success("Contrato semanal actualizado");
                 setIsEditingContract(false);
                 fetchWeekData();
+            } else {
+                toast.error(res.error || "Error al actualizar contrato");
             }
         } catch (error) {
             console.error(error);
-            toast.error("Error al actualizar contrato");
+            toast.error("Error crítico al actualizar contrato");
         } finally {
             setIsSavingContract(false);
         }
