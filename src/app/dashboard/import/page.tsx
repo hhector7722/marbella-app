@@ -7,10 +7,10 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 // import { Button } from '@/components/ui/button' // Removed
 // import { Card, ... } from '@/components/ui/card' // Removed
 // import { Alert, ... } from '@/components/ui/alert' // Removed
-import { importSuppliers, importProducts, importLogs, ImportResult } from '@/app/actions/import-legacy'
+import { importSuppliers, importProducts, importLogs, importInitialMovements, ImportResult } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
-type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs'
+type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
 
 export default function ImportPage() {
     const [currentStep, setCurrentStep] = useState<ImportStep>('suppliers')
@@ -24,6 +24,7 @@ export default function ImportPage() {
         { id: 'products', label: '2. Productos', description: 'Ingredientes y materias primas' },
         { id: 'recipes', label: '3. Recetas', description: 'Escandallo de platos' },
         { id: 'logs', label: '4. Histórico', description: 'Registros antiguos' },
+        { id: 'treasury', label: '5. Tesorería', description: 'Movimientos de caja' },
     ]
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +65,8 @@ export default function ImportPage() {
                 result = await importProducts(fileData)
             } else if (currentStep === 'logs') {
                 result = await importLogs(fileData)
+            } else if (currentStep === 'treasury') {
+                result = await importInitialMovements(fileData)
             } else {
                 result = { success: false, message: "Este paso aún no está implementado." }
             }
@@ -168,6 +171,14 @@ export default function ImportPage() {
                                     <li>entrada (req: YYYY-MM-DD HH:MM)</li>
                                     <li>salida (YYYY-MM-DD HH:MM)</li>
                                     <li>horas_contrato (def: 40)</li>
+                                </ul>
+                            )}
+                            {currentStep === 'treasury' && (
+                                <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded">
+                                    <li>fecha (req: YYYY-MM-DD)</li>
+                                    <li>importe (req: número)</li>
+                                    <li>tipo (entrada/salida)</li>
+                                    <li>notas (opcional)</li>
                                 </ul>
                             )}
                         </div>

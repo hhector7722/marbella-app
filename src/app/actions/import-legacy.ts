@@ -325,10 +325,89 @@ export async function importLogs(data: Record<string, any>[]): Promise<ImportRes
 
     revalidatePath('/dashboard/labor')
     revalidatePath('/staff/history')
+    revalidatePath('/dashboard')
 
     return {
         success: true,
         message: `Importados ${successCount} registros de fichaje`,
+        count: successCount,
+        errors
+    }
+}
+
+export async function importInitialMovements(data: Record<string, any>[]): Promise<ImportResult> {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { success: false, message: 'Usuario no autenticado' }
+    }
+
+    const { data: opBox } = await supabase
+        .from('cash_boxes')
+        .select('id')
+        .eq('type', 'operational')
+        .maybeSingle()
+
+    if (!opBox) {
+        return { success: false, message: 'No se encontró la caja operativa' }
+    }
+
+    const errors: string[] = []
+    let successCount = 0
+
+    // Deduplicate or process sequentially to ensure triggers update balance correctly
+    // However, the request specifically asks to respect the date.
+    for (const row of data) {
+        try {
+            const fechaRaw = row.fecha || row.date || row.created_at
+            const importeRaw = row.importe || row.amount
+            const tipoRaw = row.tipo || row.type || row['tipo entrada o salida']
+
+            if (!fechaRaw || !importeRaw || !tipoRaw) {
+                errors.push(`Fila incompleta: ${JSON.stringify(row)}`)
+                continue
+            }
+
+            const fecha = typeof fechaRaw === 'number' ? excelDateToJSDate(fechaRaw) : new Date(fechaRaw)
+            if (isNaN(fecha.getTime())) {
+                errors.push(`Fecha inválida: ${fechaRaw}`)
+                continue
+            }
+
+            const amount = typeof importeRaw === 'number' ? importeRaw : parseFloat(String(importeRaw).replace(',', '.'))
+            if (isNaN(amount)) {
+                errors.push(`Importe inválido: ${importeRaw}`)
+                continue
+            }
+
+            const type = String(tipoRaw).toLowerCase().includes('entrada') || String(tipoRaw).toLowerCase() === 'in' ? 'IN' : 'OUT'
+
+            const { error } = await supabase.from('treasury_log').insert({
+                box_id: opBox.id,
+                type,
+                amount: Math.abs(amount),
+                notes: row.notas || row.notes || 'Importación inicial',
+                created_at: fecha.toISOString(),
+                user_id: user.id
+            })
+
+            if (error) throw error
+            successCount++
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            errors.push(`Error en fila: ${message}`)
+        }
+    }
+
+    revalidatePath('/dashboard/movements')
+    revalidatePath('/dashboard')
+
+    return {
+        success: true,
+        message: `Importados ${successCount} movimientos de caja`,
         count: successCount,
         errors
     }
