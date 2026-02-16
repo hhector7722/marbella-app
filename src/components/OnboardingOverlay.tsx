@@ -16,7 +16,7 @@ interface OnboardingOverlayProps {
 
 export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlayProps) {
     const [isVisible, setIsVisible] = useState(false);
-    const [step, setStep] = useState(1); // 1: Credentials, 2: Password, 3: Integration
+    const [step, setStep] = useState(1); // 1: Security + Email, 2: Integration
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const supabase = createClient();
 
@@ -71,7 +71,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
             if (error) throw error;
 
             toast.success('Contraseña actualizada');
-            setStep(3); // Move to Integration step
+            setStep(2); // Move to Integration step
         } catch (error: any) {
             console.error('Error updating password:', error);
             toast.error(error.message || 'Error al actualizar la contraseña');
@@ -114,61 +114,36 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                 <div className="bg-[#36606F] text-white p-8 text-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
                     <h1 className="text-2xl font-black uppercase tracking-widest mb-2 relative z-10">
-                        {step === 1 ? 'Acceso' : step === 2 ? 'Seguridad' : 'Instalación'}
+                        {step === 1 ? 'Seguridad' : 'Instalación'}
                     </h1>
                     <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">
-                        Paso {step} de 3
+                        Paso {step} de 2
                     </p>
                 </div>
 
                 <div className="p-8">
                     {step === 1 && (
-                        <div className="space-y-8 animate-in slide-in-from-right duration-300 text-center">
-                            <div className="space-y-4">
-                                <p className="text-gray-500 font-medium text-sm leading-relaxed">
-                                    Utiliza estos datos para tus próximos inicios de sesión:
-                                </p>
-
-                                <div className="bg-zinc-50 p-7 rounded-[2rem] border-2 border-zinc-100 space-y-5 shadow-sm">
-                                    <div className="space-y-1">
-                                        <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Tu Email</span>
-                                        <span className="text-xl font-bold text-zinc-900 break-all">{userEmail || 'Cargando...'}</span>
-                                    </div>
-                                    <div className="h-px bg-zinc-200 mx-4"></div>
-                                    <div className="space-y-1">
-                                        <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Contraseña Temporal</span>
-                                        <div className="flex flex-col items-center gap-2">
-                                            <span className="text-3xl font-black text-[#5B8FB9] tracking-[0.1em]">Marbella2026</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-5 bg-orange-50 rounded-2xl border border-orange-100 flex items-start gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                                        <Lock size={16} className="text-orange-600" />
-                                    </div>
-                                    <p className="text-[10px] text-orange-700 font-bold uppercase leading-relaxed text-left">
-                                        Esta es tu clave inicial. En el siguiente paso deberás cambiarla por una personal para proteger tu cuenta.
-                                    </p>
-                                </div>
+                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
+                            <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100 flex items-center justify-between gap-3 overflow-hidden">
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest shrink-0">Tu Email:</span>
+                                <span className="text-xs font-bold text-zinc-900 truncate">{userEmail || 'Cargando...'}</span>
                             </div>
 
-                            <button
-                                onClick={() => setStep(2)}
-                                className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
-                            >
-                                Entendido <ChevronRight size={20} strokeWidth={3} />
-                            </button>
-                        </div>
-                    )}
-
-                    {step === 2 && (
-                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                            <p className="text-center text-gray-500 font-medium text-sm">
+                            <p className="text-center text-gray-500 font-medium text-[13px] leading-relaxed">
                                 Para garantizar la seguridad de tu cuenta, por favor establece una nueva contraseña personal.
                             </p>
 
                             <form onSubmit={handlePasswordSubmit} className="space-y-5">
+                                {/* Hidden Username Field for Password Managers */}
+                                <input
+                                    type="text"
+                                    name="username"
+                                    autoComplete="username"
+                                    value={userEmail || ''}
+                                    readOnly
+                                    className="hidden"
+                                />
+
                                 <div className="space-y-4">
                                     {/* Nueva Contraseña */}
                                     <div className="relative group">
@@ -179,6 +154,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                             </div>
                                             <input
                                                 type={showPassword ? "text" : "password"}
+                                                autoComplete="new-password"
                                                 value={newPassword}
                                                 onChange={e => setNewPassword(e.target.value)}
                                                 placeholder="••••••••"
@@ -204,6 +180,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                             </div>
                                             <input
                                                 type={showPassword ? "text" : "password"}
+                                                autoComplete="new-password"
                                                 value={confirmPassword}
                                                 onChange={e => setConfirmPassword(e.target.value)}
                                                 placeholder="••••••••"
@@ -234,7 +211,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                         </div>
                     )}
 
-                    {step === 3 && (
+                    {step === 2 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
                             <div className="text-center space-y-2">
                                 <h3 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Instala la App y Guía Rápida</h3>
