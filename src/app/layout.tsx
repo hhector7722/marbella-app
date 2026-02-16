@@ -29,6 +29,7 @@ export const metadata: Metadata = {
     title: "La Marbella",
   },
   icons: {
+    icon: "/icons/logo-white.png",
     apple: "/icons/logo-white.png",
   },
 };
