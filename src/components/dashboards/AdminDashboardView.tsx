@@ -318,7 +318,7 @@ const AdminDashboardView = () => {
             const d = new Date(); d.setDate(d.getDate() - 60);
             const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
             const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary, hours_balance, prefer_stock_hours');
-            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance').gte('week_start', format(d, 'yyyy-MM-dd'));
+            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance, contracted_hours_snapshot').gte('week_start', format(d, 'yyyy-MM-dd'));
             if (profiles) setAllEmployees(profiles);
             if (logs && profiles) {
                 const profileMap = new Map(profiles.map(p => [p.id, p]));
@@ -345,7 +345,8 @@ const AdminDashboardView = () => {
                     userMap.forEach((totalHours, userId) => {
                         const userProfile = profileMap.get(userId);
                         if (userProfile) {
-                            const contractedHours = userProfile.contracted_hours_weekly ?? 40;
+                            const currentSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId);
+                            const contractedHours = currentSnapshot?.contracted_hours_snapshot ?? (userProfile.contracted_hours_weekly ?? 40);
                             const isManager = userProfile.role === 'manager';
                             const isFixedSalary = userProfile.is_fixed_salary || false;
                             const preferStock = userProfile.prefer_stock_hours || false;

@@ -28,7 +28,7 @@ export interface WeeklyStats {
     staff: StaffWeeklyStats[];
 }
 
-export async function getOvertimeData(startDate: string, endDate: string) {
+export async function getOvertimeData(startDate: string, endDate: string, userId?: string) {
     const supabase = await createClient();
 
     const startISO = new Date(startDate).toISOString();
@@ -37,26 +37,44 @@ export async function getOvertimeData(startDate: string, endDate: string) {
     const endISO = endObj.toISOString();
 
     // 1. Obtener Fichajes
-    const { data: logs } = await supabase
+    let query = supabase
         .from('time_logs')
         .select('user_id, total_hours, clock_in')
         .not('total_hours', 'is', null)
         .gte('clock_in', startISO)
         .lte('clock_in', endISO);
 
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+
+    const { data: logs } = await query;
+
     // 2. Obtener Perfiles
-    const { data: profiles } = await supabase
+    let profileQuery = supabase
         .from('profiles')
         .select('id, first_name, last_name, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly, prefer_stock_hours, hours_balance, is_fixed_salary');
+
+    if (userId) {
+        profileQuery = profileQuery.eq('id', userId);
+    }
+
+    const { data: profiles } = await profileQuery;
 
     // 3. Obtener Estado Pagos y Balances de Snapshots
     const extendedStart = new Date(startISO);
     extendedStart.setDate(extendedStart.getDate() - 14);
-    const { data: snapshots } = await supabase
+    let snapshotQuery = supabase
         .from('weekly_snapshots')
-        .select('user_id, week_start, is_paid, final_balance')
+        .select('user_id, week_start, is_paid, final_balance, contracted_hours_snapshot')
         .gte('week_start', format(extendedStart, 'yyyy-MM-dd'))
         .lte('week_start', format(endObj, 'yyyy-MM-dd'));
+
+    if (userId) {
+        snapshotQuery = snapshotQuery.eq('user_id', userId);
+    }
+
+    const { data: snapshots } = await snapshotQuery;
 
     if (!logs || !profiles) return { weeksResult: [], summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 } };
 
@@ -113,7 +131,10 @@ export async function getOvertimeData(startDate: string, endDate: string) {
             const profile = profileMap.get(userId);
 
             if (profile) {
-                const limit = profile.contracted_hours_weekly ?? 40;
+                const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekISO);
+                const currentSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === weekStartISO);
+
+                const limit = currentSnapshot?.contracted_hours_snapshot ?? (profile.contracted_hours_weekly ?? 40);
                 const overPrice = profile.overtime_cost_per_hour || 0;
                 const preferStock = profile.prefer_stock_hours || false;
                 const isManager = profile.role === 'manager';
@@ -123,8 +144,6 @@ export async function getOvertimeData(startDate: string, endDate: string) {
                 const weeklyBalance = (isAugust || isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
 
                 let pendingBalance = 0;
-                const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekISO);
-
                 if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
                     if (!preferStock && prevSnapshot.final_balance > 0) pendingBalance = 0;
                     else pendingBalance = prevSnapshot.final_balance;

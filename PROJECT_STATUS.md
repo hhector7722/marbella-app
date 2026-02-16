@@ -91,9 +91,11 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Fix Registros**: Habilitado guardado de tipos no regulares (Festivo, Baja, etc) añadiendo columna `event_type` a `time_logs`.
 - [x] **Employee Joining Date**: Implementado campo `joining_date` en perfiles, lógica de backend para ignorar semanas previas y UI en alta/edición de empleados.
 - [x] **Preferencia 'Bolsa de Horas'**: Toggle implementado en el alta de trabajadores y lógica de cálculo respetada en el histórico.
-- [x] **Rediseño PDF Pedidos V3**: Implementación de diseño 'Wave' corporativo, optimización de fuentes y tabla de alta densidad.
+- [x] **Rediseño PDF Pedidos V4.0**: Implementación final del diseño 'Wave' preciso con doble onda, línea de contorno y cabecera de tabla redondeada conforme a la referencia visual.
 
 - [x] **Corrección PDF y 404**: Resolución de error `bezierCurveTo` en la generación de pedidos PDF y corrección de ruta inexistente `/orders` en la navegación a `/orders/new`.
+- [x] **Mejora Modal Pedidos**: Incorporación de vista previa real del PDF, botón de envío de archivo (Share API) y botón de contacto directo por WhatsApp al proveedor.
+- [x] **Refactor Histórico de Extras**: Transformación a vista detalle semanal con coste total, marcador de pago global, modal de desglose por trabajador y filtros avanzados (Mes, Trabajador, Rango).
 - [x] **Refinamiento Resúmenes Semanales**: Eliminación visual de la columna "Balance" (diferencial semanal) en el dashboard e historial de personal, simplificando la vista y manteniendo el foco en el saldo acumulado ("Pendiente").
 
 

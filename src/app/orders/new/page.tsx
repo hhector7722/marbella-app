@@ -41,7 +41,7 @@ export default function NewOrderPage() {
     const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
     const [showSupplierPopup, setShowSupplierPopup] = useState(false);
     const [suppliers, setSuppliers] = useState<string[]>([]);
-    const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string }[]>([]);
+    const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null }[]>([]);
 
     // UI Modals
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -69,7 +69,7 @@ export default function NewOrderPage() {
             setIngredients(ingData || []);
 
             // Fetch registered suppliers for ID lookup
-            const { data: supData } = await supabase.from('suppliers').select('id, name');
+            const { data: supData } = await supabase.from('suppliers').select('id, name, phone');
             setDbSuppliers(supData || []);
 
             // Unique suppliers from ingredients for the filter dropdown
@@ -130,6 +130,7 @@ export default function NewOrderPage() {
         try {
             // 1. Generate PDF (Precios eliminados en pdf-generator)
             const orderNum = `ORD-${Date.now().toString().slice(-6)}`;
+            console.log("NEW_ORDER_PAGE: Calling generateOrderPDF for", selectedSupplier);
             const blob = await generateOrderPDF({
                 supplierName: selectedSupplier,
                 items: selectedItems.map(i => ({
@@ -321,6 +322,8 @@ export default function NewOrderPage() {
             <OrderSuccessModal
                 isOpen={isSuccessOpen}
                 pdfUrl={pdfUrl}
+                generatedBlob={generatedBlob}
+                supplierPhone={dbSuppliers.find(s => s.name.toLowerCase() === selectedSupplier?.toLowerCase())?.phone || null}
                 isUploading={isUploading}
                 onDownload={handleDownload}
                 onClose={() => {
