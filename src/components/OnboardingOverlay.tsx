@@ -121,7 +121,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                     </p>
                 </div>
 
-                <div className="p-8">
+                <div className="p-6 md:p-8">
                     {step === 1 && (
                         <div className="space-y-6 animate-in slide-in-from-right duration-300">
                             <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100 flex items-center justify-between gap-3 overflow-hidden">
@@ -212,29 +212,29 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                     )}
 
                     {step === 2 && (
-                        <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                            <div className="relative aspect-[9/16] w-full max-h-[400px] rounded-2xl overflow-hidden bg-zinc-100 border-2 border-zinc-100 shadow-lg flex items-center justify-center">
+                        <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                            <div className="relative aspect-[9/16] w-full max-h-[320px] rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 shadow-inner flex items-center justify-center">
                                 <Image
                                     src="/examples/pantalla-inicio.png"
                                     alt="Guía de inicio"
                                     fill
-                                    className="object-contain"
+                                    className="object-contain p-2"
                                     priority
                                 />
                             </div>
 
-                            <div className="bg-[#36606F]/5 rounded-2xl p-5 border border-[#36606F]/10 space-y-4">
+                            <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10 space-y-3">
                                 {os === 'ios' && (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
-                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0 text-[#007AFF]">
-                                                <Share size={14} />
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-3 text-[10px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-6 h-6 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0 text-[#007AFF]">
+                                                <Share size={12} />
                                             </div>
                                             <span>1. Pulsa el botón "Compartir"</span>
                                         </div>
-                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
-                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
-                                                <PlusSquare size={14} />
+                                        <div className="flex items-center gap-3 text-[10px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-6 h-6 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                                <PlusSquare size={12} />
                                             </div>
                                             <span>2. Selecciona "Añadir a inicio"</span>
                                         </div>
@@ -242,23 +242,23 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                 )}
 
                                 {os === 'android' && (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
-                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
-                                                <Menu size={14} />
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-3 text-[10px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-6 h-6 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                                <Menu size={12} />
                                             </div>
                                             <span>1. Pulsa el menú (3 puntos)</span>
                                         </div>
-                                        <div className="flex items-center gap-4 text-[11px] text-[#36606F] font-bold uppercase">
-                                            <div className="w-7 h-7 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
-                                                <Smartphone size={14} />
+                                        <div className="flex items-center gap-3 text-[10px] text-[#36606F] font-bold uppercase">
+                                            <div className="w-6 h-6 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                                <Smartphone size={12} />
                                             </div>
                                             <span>2. Selecciona "Instalar App"</span>
                                         </div>
                                     </div>
                                 )}
 
-                                <p className="text-[10px] text-[#36606F]/60 italic text-center font-bold">
+                                <p className="text-[9px] text-[#36606F]/70 italic text-center font-bold leading-tight">
                                     * Con la App instalada tendrás una experiencia a pantalla completa y acceso más rápido.
                                 </p>
                             </div>
@@ -266,12 +266,12 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                             <button
                                 onClick={handleFinishOnboarding}
                                 disabled={loading}
-                                className="w-full h-16 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                className="w-full h-14 bg-[#36606F] text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-[#36606F]/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3 mt-2"
                             >
                                 {loading ? (
                                     <LoadingSpinner size="sm" className="text-white" />
                                 ) : (
-                                    <>¡Entendido, vamos! <CheckCircle2 size={20} strokeWidth={3} /></>
+                                    <>Siguiente (Ir a la App) <ChevronRight size={18} strokeWidth={3} /></>
                                 )}
                             </button>
                         </div>
