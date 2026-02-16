@@ -46,13 +46,11 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const margin = 15;
 
     // --------------------------------------------------------------------------
-    // 0. PRE-LOAD IMAGES (Logo + Products)
+    // 0. PRE-LOAD IMAGES
     // --------------------------------------------------------------------------
     const logoUrl = '/icons/logo-white.png';
     const logoPromise = loadImage(logoUrl).catch(() => null);
 
-    // Process product images
-    // We'll store loaded images in a map or array matching items
     const productImages = await Promise.all(
         data.items.map(async (item) => {
             if (!item.image) return null;
@@ -67,41 +65,21 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const logoImage = await logoPromise;
 
     // --------------------------------------------------------------------------
-    // 1. HEADER (Curved Blue Background)
+    // 1. HEADER (Wave Design)
     // --------------------------------------------------------------------------
-    // Draw a shape with a bezier curve at bottom
-    // Approximate Height: 60mm
-
+    const headerHeight = 65;
     doc.setFillColor(...COLORS.primary);
 
-    // Method: moveTo -> lineTo -> bezierCurveTo -> lineTo -> close
-    doc.lines(
-        [
-            [pageWidth, 0],           // Top edge
-            [0, 50],                  // Right edge down to 50
-            // Bezier curve from right(w, 50) to left(0, 50)
-            // We want a curve that dips slightly or waves. The reference shows a gentle wave.
-            // Let's do a simple convex curve for style.
-            [-pageWidth, 0, -pageWidth / 2, 15, -pageWidth, 0], // This syntax for lines is relative [dx, dy, x1, y1, x2, y2]
-            [0, -50]                  // Back to top left
-        ],
-        0,
-        0,
-        [1.0, 1.0],
-        'F',
-        true
-    );
+    // Draw the main blue block
+    doc.rect(0, 0, pageWidth, 50, 'F');
 
-    // Let's use simpler explicit construction for the curve to be safe
-    doc.setFillColor(...COLORS.primary);
-    doc.rect(0, 0, pageWidth, 40, 'F'); // Base rect
-
-    // Draw the curve bottom
-    doc.moveTo(0, 40);
+    // Draw the WAVE bottom
+    doc.moveTo(0, 50);
+    // Smooth wave: down then up
     doc.curveTo(
-        pageWidth / 2, 55, // Control point 1
-        pageWidth / 2, 55, // Control point 2
-        pageWidth, 40      // End point
+        pageWidth * 0.33, 65, // CP1
+        pageWidth * 0.66, 35, // CP2
+        pageWidth, 50        // End
     );
     doc.lineTo(pageWidth, 0);
     doc.lineTo(0, 0);
@@ -112,138 +90,135 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     // --------------------------------------------------------------------------
     // Logo Circle (White) at top left
     doc.setFillColor(255, 255, 255);
-    doc.circle(30, 28, 20, 'F');
+    doc.circle(28, 25, 18, 'F');
 
     if (logoImage) {
-        doc.addImage(logoImage, 'PNG', 14, 12, 32, 32);
-    } else {
-        doc.setTextColor(...COLORS.primary);
-        doc.setFontSize(8);
-        doc.text('NO LOGO', 30, 28, { align: 'center' });
+        doc.addImage(logoImage, 'PNG', 15, 12, 26, 26);
     }
 
     // Title: "Pedido" (Top Right)
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(28);
+    doc.setFontSize(36);
     doc.text('Pedido', pageWidth - margin, 25, { align: 'right' });
 
     // Date (Below Title)
     const today = format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
     const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
 
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(220, 220, 220); // Light gray text
-    doc.text(formattedDate, pageWidth - margin, 32, { align: 'right' });
+    doc.setTextColor(200, 200, 200);
+    doc.text(formattedDate, pageWidth - margin, 34, { align: 'right' });
 
     // --------------------------------------------------------------------------
-    // 3. COMPANY INFO (Left, Below Header)
+    // 3. COMPANY INFO
     // --------------------------------------------------------------------------
-    let currentY = 75; // Start below the curve
+    let currentY = 85;
     const infoX = margin;
 
     doc.setTextColor(...COLORS.primary);
-    doc.setFontSize(14);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text(COMPANY_INFO.name, infoX, currentY);
 
-    currentY += 6;
-    doc.setFontSize(9);
-    doc.setTextColor(80, 80, 80);
+    currentY += 8;
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.text(COMPANY_INFO.nif, infoX, currentY);
 
-    currentY += 5;
+    currentY += 6;
     doc.text(COMPANY_INFO.address, infoX, currentY);
 
-    currentY += 5;
+    currentY += 6;
     doc.text(COMPANY_INFO.phone, infoX, currentY);
 
-    currentY += 5;
+    currentY += 6;
     doc.text(COMPANY_INFO.email, infoX, currentY);
 
     // --------------------------------------------------------------------------
-    // 4. SUPPLIER (Right, Aligned with Company Info)
+    // 4. TABLE (Redesigned)
     // --------------------------------------------------------------------------
-    // We can put supplier info on the right side if needed, or keep it simple
-    // The reference image doesn't explicitly show supplier info block, but it's an order *to* a supplier.
-    // Let's add it for clarity on the right side.
-
-    // doc.text(data.supplierName, pageWidth - margin, 75, { align: 'right' });
-
-    // --------------------------------------------------------------------------
-    // 5. TABLE WITH IMAGES
-    // --------------------------------------------------------------------------
-    const startTableY = 110;
+    const startTableY = 130;
 
     autoTable(doc, {
         startY: startTableY,
-        head: [['', 'ARTÍCULO', 'CANTIDAD', 'UNIDAD']],
-        body: data.items.map(item => ['', item.name, item.quantity, item.unit]),
+        head: [['ARTÍCULO', 'CANTIDAD', 'UNIDAD']],
+        body: data.items.map(item => [item.name, item.quantity, item.unit]),
         theme: 'plain',
 
-        // STYLES
         styles: {
             font: 'helvetica',
-            fontSize: 10,
-            textColor: COLORS.text,
-            cellPadding: 4,
+            fontSize: 12,
+            textColor: [60, 60, 60],
+            cellPadding: { top: 8, bottom: 8, left: 10, right: 10 },
             valign: 'middle',
-            minCellHeight: 18 // Ensure height for images
+            minCellHeight: 25
         },
 
-        // HEADER STYLES
         headStyles: {
             fillColor: COLORS.tableHeader,
             textColor: 255,
-            fontSize: 9,
+            fontSize: 12,
             fontStyle: 'bold',
             halign: 'center',
-            cellPadding: 8
+            cellPadding: 10
         },
 
-        // COLUMN STYLES
         columnStyles: {
-            0: { cellWidth: 15 }, // Image column
-            1: { halign: 'left' }, // Article
-            2: { halign: 'center', cellWidth: 30 }, // Quantity
-            3: { halign: 'center', cellWidth: 30 }  // Unit
+            0: { halign: 'left', cellWidth: 'auto' },
+            1: { halign: 'center', cellWidth: 40 },
+            2: { halign: 'center', cellWidth: 40 }
         },
 
-        // ALTERNATE ROW
-        alternateRowStyles: {
-            fillColor: COLORS.tableRowEven
+        // White background for everything
+        bodyStyles: {
+            fillColor: [255, 255, 255]
         },
 
-        // DRAW IMAGES HOOK
+        // Manual drawing hook for images and rounded corners
         didDrawCell: function (data) {
+            // Draw Product Image
             if (data.section === 'body' && data.column.index === 0) {
                 const rowIndex = data.row.index;
                 const image = productImages[rowIndex];
-
                 if (image) {
-                    // Fit image in cell
                     const cell = data.cell;
-                    const padding = 2;
-                    const dim = Math.min(cell.width, cell.height) - (padding * 2);
-                    const x = cell.x + (cell.width - dim) / 2;
-                    const y = cell.y + (cell.height - dim) / 2;
+                    const imgSize = 18;
+                    const x = cell.x + 5;
+                    const y = cell.y + (cell.height - imgSize) / 2;
+                    doc.addImage(image, 'PNG', x, y, imgSize, imgSize);
 
-                    doc.addImage(image, 'PNG', x, y, dim, dim);
+                    // We need to move the text to the right
+                    // Since autoTable already drew the text, we'll draw a white rect over it and redraw it
+                    // Actually, a better trick is to prepend spaces to the article name or use a custom draw.
+                    // Let's use didParseCell to add padding to the text if needed, or just redraw here.
                 }
+            }
+
+            // Draw shadow/border for the 3 columns container
+            if (data.section === 'body') {
+                doc.setDrawColor(240, 240, 240);
+                doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
             }
         },
 
-        // ROUNDED CORNERS (Simulated by drawing a border rect around the table if possible, or just standard)
-        // AutoTable doesn't support border-radius easily on the main table container.
-        // We'll trust standard look.
+        didParseCell: function (data) {
+            if (data.section === 'body' && data.column.index === 0) {
+                // Add padding for the image (approx 25mm)
+                data.cell.styles.cellPadding = { left: 28, top: 8, bottom: 8, right: 10 };
+            }
+        },
 
         margin: { left: margin, right: margin }
     });
 
-    // White line separator for header columns?
-    // Not strictly needed with 'plain' theme but 'striped' or custom is better.
+    // Final touch: Border around the table content like a card
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+    // We can't easily draw a rounded border around the whole autoTable after it's drawn 
+    // without knowing exact dimensions. AutoTable handles it well enough.
 
     return doc.output('blob');
 }

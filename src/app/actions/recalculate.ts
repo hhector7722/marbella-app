@@ -99,7 +99,8 @@ export async function recalculateAllBalances() {
         weekLogs.forEach(log => {
             if (log.total_hours) {
                 const current = userHoursThisWeek.get(log.user_id) || 0;
-                userHoursThisWeek.set(log.user_id, current + log.total_hours);
+                // [FIX] Redondear cada ficha individualmente ANTES de sumar al total semanal
+                userHoursThisWeek.set(log.user_id, current + calculateRoundedHours(log.total_hours));
             }
         });
 

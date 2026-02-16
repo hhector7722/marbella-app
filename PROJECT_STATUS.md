@@ -28,7 +28,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [✅] Fase 28: Refinamiento Estético Registros (Calendario Blanco, Month Picker).
 - [✅] Fase 29: Mejoras ingredientes (Filtro Proveedores, Borrado Individual).
 - [x] Refinement of Weekly Summaries: Removed redundant "Balance" column to simplify staff views.
-- [x] Bugfix: Enforced "Zero Positive Carry-over" rule for staff dashboards (positive balances only carry over if "Bolsa de Horas" is enabled).
+- [x] Bugfix: Enforced "Zero Positive Carry-over" rule for staff dashboards.
+- [x] Bugfix: Enforced "Daily Rounding" rule across actions to eliminate weekly 0.5h discrepancies (16 vs 15.5).
 - [x] Fix: Corrected syntax error in `AdminDashboardView.tsx` preventing production builds.
 - [✅] Fase 30: Refinamiento Recetas (Fondo Blanco Imagen, Simplificación UX).
 - [✅] Fase 31: Refactorización Layout Dashboard Staff (Ampliación Resumen/Fichaje v 2/3, Horarios v 1/3 e Iconos compactos).

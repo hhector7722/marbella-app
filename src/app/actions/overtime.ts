@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { startOfWeek, format, parseISO } from "date-fns";
 import { revalidatePath } from "next/cache";
+import { calculateRoundedHours } from "@/lib/utils";
 
 export interface StaffWeeklyStats {
     id: string;
@@ -75,7 +76,8 @@ export async function getOvertimeData(startDate: string, endDate: string) {
             tempWeekMeta[weekId] = monday;
         }
         if (!tempWeekUserHours[weekId][log.user_id]) tempWeekUserHours[weekId][log.user_id] = 0;
-        tempWeekUserHours[weekId][log.user_id] += (log.total_hours || 0);
+        // [FIX] Redondear cada ficha individualmente ANTES de sumar al total semanal
+        tempWeekUserHours[weekId][log.user_id] += calculateRoundedHours(log.total_hours || 0);
     });
 
     const currentMondayISO = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
