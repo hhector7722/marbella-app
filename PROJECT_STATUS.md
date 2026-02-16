@@ -97,6 +97,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Mejora Modal Pedidos**: Incorporación de vista previa real del PDF, botón de envío de archivo (Share API) y botón de contacto directo por WhatsApp al proveedor.
 - [x] **Refactor Histórico de Extras**: Transformación a vista detalle semanal con coste total, marcador de pago global, modal de desglose por trabajador y filtros avanzados (Mes, Trabajador, Rango).
 - [x] **Importador de Movimientos**: Implementación del paso de Tesorería en el asistente de migración para la carga masiva de movimientos históricos de caja con sincronización automática de saldo.
+- [x] **Rediseño Extracto de Caja**: Nueva interfaz tipo banca con saldo progresivo, panel de resumen superior izquierdo, selector rápido por meses y estética "Marbella Premium" (Bento Grid).
+- [x] **Importación de Tesorería**: Nuevo asistente para carga masiva de movimientos históricos desde Excel/CSV con mapeo inteligente de cabeceras.
 - [x] **Refinamiento Resúmenes Semanales**: Eliminación visual de la columna "Balance" (diferencial semanal) en el dashboard e historial de personal, simplificando la vista y manteniendo el foco en el saldo acumulado ("Pendiente").
 
 

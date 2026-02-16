@@ -155,6 +155,22 @@ export default function MovementsPage() {
         } catch (error) { console.error(error); } finally { setLoading(false); }
     }
 
+    const monthsList = Array.from({ length: 6 }).map((_, i) => {
+        const d = subMonths(new Date(), i);
+        return {
+            label: format(d, 'MMMM', { locale: es }),
+            start: startOfMonth(d),
+            end: endOfMonth(d),
+            isCurrent: i === 0
+        };
+    });
+
+    const handleMonthSelect = (m: { start: Date, end: Date }) => {
+        setRangeStart(format(m.start, 'yyyy-MM-dd'));
+        setRangeEnd(format(m.end, 'yyyy-MM-dd'));
+        setFilterMode('range');
+    };
+
     const generateCalendarDays = () => {
         const year = calendarBaseDate.getFullYear();
         const month = calendarBaseDate.getMonth();
@@ -191,189 +207,221 @@ export default function MovementsPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 p-4 md:p-8 pb-24">
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
 
-                {/* CABECERA TIPO BANCO */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-8 rounded-[2.5rem] shadow-sm border border-zinc-100">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => router.back()} className="w-12 h-12 flex items-center justify-center bg-zinc-50 rounded-2xl hover:bg-zinc-100 transition-all text-zinc-400">
-                            <ArrowLeft size={20} />
+                {/* CABECERA */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-all text-zinc-400">
+                            <ArrowLeft size={18} />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-black text-zinc-900 uppercase tracking-tight">Extracto de Caja</h1>
-                            <p className="text-zinc-400 font-bold text-[10px] uppercase tracking-widest mt-0.5">Bar La Marbella • Cuenta Operativa</p>
+                            <h1 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Extracto de Caja</h1>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="text-right px-6 border-r border-zinc-100">
-                            <span className="block text-[9px] font-black text-zinc-300 uppercase tracking-widest leading-none mb-1">Saldo Actual</span>
-                            <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{summary.currentBalance.toFixed(2)}€</span>
+                    <div className="flex items-center gap-6">
+                        <div className="text-right">
+                            <span className="block text-[8px] font-black text-zinc-300 uppercase tracking-widest mb-0.5">Saldo Real Actual</span>
+                            <span className="text-2xl font-black text-[#5B8FB9] tabular-nums">{summary.currentBalance.toFixed(2)}€</span>
                         </div>
-                        <button className="flex items-center gap-2 bg-[#36606F] text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#2A4C58] transition-all active:scale-95 shadow-lg shadow-blue-900/10">
+                        <button className="flex items-center gap-2 bg-[#36606F] text-white px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-[#2A4C58] transition-all active:scale-95 shadow-lg shadow-blue-900/5">
                             <Download size={14} />
-                            Exportar
+                            PDF
                         </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {/* FILTROS LATERALES */}
-                    <div className="md:col-span-1 space-y-6">
-                        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-zinc-100 space-y-6">
-                            <div>
-                                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Periodo</h3>
-                                <div className="space-y-2">
-                                    <button
-                                        onClick={() => setShowCalendar('range')}
-                                        className={cn(
-                                            "w-full p-4 rounded-2xl text-[10px] font-black uppercase text-left border-2 transition-all flex items-center justify-between",
-                                            filterMode === 'range' ? "bg-zinc-900 border-zinc-900 text-white shadow-xl" : "bg-zinc-50 border-transparent text-zinc-500 hover:border-zinc-200"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Calendar size={14} />
-                                            <span>Rango Personalizado</span>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => setShowCalendar('single')}
-                                        className={cn(
-                                            "w-full p-4 rounded-2xl text-[10px] font-black uppercase text-left border-2 transition-all flex items-center justify-between",
-                                            filterMode === 'single' ? "bg-zinc-900 border-zinc-900 text-white shadow-xl" : "bg-zinc-50 border-transparent text-zinc-500 hover:border-zinc-200"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Calendar size={14} />
-                                            <span>Un solo día</span>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 
-                            <div className="pt-6 border-t border-zinc-50">
-                                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Tipo de Movimiento</h3>
-                                <div className="flex flex-col gap-1.5 font-black text-[10px] uppercase tracking-widest">
-                                    <button
-                                        onClick={() => setTypeFilter('all')}
-                                        className={cn("p-4 rounded-2xl text-left transition-all", typeFilter === 'all' ? "bg-[#5B8FB9] text-white" : "hover:bg-zinc-50 text-zinc-400")}
-                                    >
-                                        Todos
-                                    </button>
-                                    <button
-                                        onClick={() => setTypeFilter('income')}
-                                        className={cn("p-4 rounded-2xl text-left transition-all", typeFilter === 'income' ? "bg-emerald-500 text-white" : "hover:bg-zinc-50 text-emerald-500/60")}
-                                    >
-                                        Entradas
-                                    </button>
-                                    <button
-                                        onClick={() => setTypeFilter('expense')}
-                                        className={cn("p-4 rounded-2xl text-left transition-all", typeFilter === 'expense' ? "bg-rose-500 text-white" : "hover:bg-zinc-50 text-rose-500/60")}
-                                    >
-                                        Salidas
-                                    </button>
+                    {/* COLUMNA IZQUIERDA: RESUMEN Y FILTROS TIPO */}
+                    <div className="md:col-span-3 space-y-6">
+                        {/* RESUMEN DEL RANGO (NEGRO) */}
+                        <div className="bg-zinc-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <Wallet size={80} />
+                            </div>
+                            <span className="block text-[9px] font-black text-white/30 uppercase tracking-widest mb-6 relative z-10">Resumen Periodo</span>
+                            <div className="space-y-6 relative z-10">
+                                <div className="flex justify-between items-end">
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">Ingresos</span>
+                                    <span className="text-xl font-black text-emerald-400">+{summary.income.toFixed(0)}€</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">Gastos</span>
+                                    <span className="text-xl font-black text-rose-400">-{summary.expense.toFixed(0)}€</span>
+                                </div>
+                                <div className="pt-6 border-t border-white/10 flex justify-between items-end">
+                                    <div>
+                                        <span className="block text-[10px] font-black uppercase text-white/60">Balance Neto</span>
+                                        <span className={cn("text-2xl font-black tabular-nums", summary.balance >= 0 ? "text-emerald-400" : "text-orange-400")}>
+                                            {summary.balance.toFixed(0)}€
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* RESUMEN DEL RANGO */}
-                        <div className="bg-zinc-900 p-8 rounded-[2.5rem] text-white shadow-2xl">
-                            <span className="block text-[9px] font-black text-white/30 uppercase tracking-widest mb-4">Resumen del Periodo</span>
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-end">
-                                    <span className="text-[10px] font-bold text-white/50 uppercase">Entradas</span>
-                                    <span className="text-xl font-black text-emerald-400">+{summary.income.toFixed(0)}€</span>
-                                </div>
-                                <div className="flex justify-between items-end">
-                                    <span className="text-[10px] font-bold text-white/50 uppercase">Salidas</span>
-                                    <span className="text-xl font-black text-rose-400">-{summary.expense.toFixed(0)}€</span>
-                                </div>
-                                <div className="pt-6 border-t border-white/10 flex justify-between items-end">
-                                    <span className="text-[10px] font-black uppercase text-white/80">Neto</span>
-                                    <span className={cn("text-2xl font-black", summary.balance >= 0 ? "text-emerald-400" : "text-orange-400")}>
-                                        {summary.balance.toFixed(0)}€
-                                    </span>
-                                </div>
+                        {/* FILTROS TIPO (TAMBIÉN NEGROS) */}
+                        <div className="bg-zinc-900 p-2 rounded-[2rem] shadow-xl border border-white/5">
+                            <div className="flex flex-col gap-1">
+                                <button
+                                    onClick={() => setTypeFilter('all')}
+                                    className={cn(
+                                        "p-4 rounded-2xl text-left transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-between",
+                                        typeFilter === 'all' ? "bg-white text-zinc-900 shadow-lg" : "text-white/40 hover:text-white hover:bg-white/5"
+                                    )}
+                                >
+                                    <span>Todos</span>
+                                    {typeFilter === 'all' && <div className="w-1.5 h-1.5 rounded-full bg-[#5B8FB9]" />}
+                                </button>
+                                <button
+                                    onClick={() => setTypeFilter('income')}
+                                    className={cn(
+                                        "p-4 rounded-2xl text-left transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-between",
+                                        typeFilter === 'income' ? "bg-emerald-500 text-white shadow-lg" : "text-white/40 hover:text-emerald-400 hover:bg-white/5"
+                                    )}
+                                >
+                                    <span>Entradas</span>
+                                    {typeFilter === 'income' && <ArrowDown size={14} />}
+                                </button>
+                                <button
+                                    onClick={() => setTypeFilter('expense')}
+                                    className={cn(
+                                        "p-4 rounded-2xl text-left transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-between",
+                                        typeFilter === 'expense' ? "bg-rose-500 text-white shadow-lg" : "text-white/40 hover:text-rose-400 hover:bg-white/5"
+                                    )}
+                                >
+                                    <span>Salidas</span>
+                                    {typeFilter === 'expense' && <ArrowUp size={14} />}
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* LISTADO DE EXTRACTO */}
-                    <div className="md:col-span-3 bg-white rounded-[2.5rem] shadow-sm border border-zinc-100 overflow-hidden flex flex-col min-h-[600px]">
-                        <div className="p-8 border-b border-zinc-50 flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Actividad Reciente</span>
-                                <h2 className="text-lg font-black text-zinc-900 uppercase">
-                                    {filterMode === 'single'
-                                        ? format(new Date(selectedDate), 'd MMMM yyyy', { locale: es })
-                                        : `${format(new Date(rangeStart!), 'd MMM', { locale: es })} - ${format(new Date(rangeEnd!), 'd MMM yyyy', { locale: es })}`}
-                                </h2>
+                    {/* COLUMNA DERECHA: FILTROS TIEMPO Y TABLA */}
+                    <div className="md:col-span-9 space-y-6">
+
+                        {/* SELECTOR DE MESES Y FECHAS */}
+                        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-zinc-100 space-y-6">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                {/* Tira de meses */}
+                                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                                    {monthsList.map((m, idx) => {
+                                        const isSelected = filterMode === 'range' && rangeStart === format(m.start, 'yyyy-MM-dd') && rangeEnd === format(m.end, 'yyyy-MM-dd');
+                                        return (
+                                            <button
+                                                key={idx}
+                                                onClick={() => handleMonthSelect(m)}
+                                                className={cn(
+                                                    "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2",
+                                                    isSelected
+                                                        ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
+                                                        : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200"
+                                                )}
+                                            >
+                                                {m.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Selectores específicos */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        onClick={() => setShowCalendar('range')}
+                                        className={cn(
+                                            "h-10 px-4 rounded-xl text-[9px] font-black border-2 transition-all flex items-center gap-2 uppercase tracking-widest",
+                                            filterMode === 'range' && !monthsList.some(m => rangeStart === format(m.start, 'yyyy-MM-dd'))
+                                                ? "bg-zinc-900 border-zinc-900 text-white shadow-lg"
+                                                : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
+                                        )}
+                                    >
+                                        <Calendar size={12} />
+                                        {filterMode === 'range'
+                                            ? `${format(new Date(rangeStart!), 'dd MMM', { locale: es })} - ${format(new Date(rangeEnd!), 'dd MMM', { locale: es })}`
+                                            : 'Rango'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowCalendar('single')}
+                                        className={cn(
+                                            "h-10 px-4 rounded-xl text-[9px] font-black border-2 transition-all flex items-center gap-2 uppercase tracking-widest",
+                                            filterMode === 'single' ? "bg-zinc-900 border-zinc-900 text-white shadow-lg" : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
+                                        )}
+                                    >
+                                        <Calendar size={12} />
+                                        {filterMode === 'single' ? format(new Date(selectedDate), 'dd MMMM', { locale: es }) : 'Día Único'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
-                            {loading ? (
-                                <div className="flex items-center justify-center h-full py-20">
-                                    <LoadingSpinner size="lg" />
-                                </div>
-                            ) : movements.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full py-32 opacity-20">
-                                    <PiggyBank size={64} className="mb-4" />
-                                    <p className="text-sm font-black uppercase tracking-widest">Sin actividad en este periodo</p>
-                                </div>
-                            ) : (
-                                <div className="min-w-[600px]">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="bg-zinc-50/50 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-                                                <th className="px-8 py-5">Fecha / Hora</th>
-                                                <th className="px-4 py-5">Concepto</th>
-                                                <th className="px-4 py-5 text-right">Cantidad</th>
-                                                <th className="px-8 py-5 text-right">Saldo</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-zinc-50">
-                                            {movements.map((mov) => {
-                                                const isIncome = mov.type === 'income';
-                                                return (
-                                                    <tr key={mov.id} className="hover:bg-zinc-50/50 transition-colors group">
-                                                        <td className="px-8 py-6">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-[11px] font-black text-zinc-900 capitalize">{format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}</span>
-                                                                <span className="text-[10px] font-bold text-zinc-400 font-mono">{format(new Date(mov.created_at), 'HH:mm')}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-6">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className={cn(
-                                                                    "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
-                                                                    isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
-                                                                )}>
-                                                                    {isIncome ? <ArrowDown size={18} strokeWidth={3} /> : <ArrowUp size={18} strokeWidth={3} />}
+                        {/* LISTADO DE EXTRACTO */}
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-zinc-100 overflow-hidden flex flex-col min-h-[500px]">
+                            <div className="flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
+                                {loading ? (
+                                    <div className="flex items-center justify-center h-full py-24">
+                                        <LoadingSpinner size="lg" />
+                                    </div>
+                                ) : movements.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full py-32 opacity-20">
+                                        <PiggyBank size={64} className="mb-4" />
+                                        <p className="text-sm font-black uppercase tracking-widest">Sin actividad</p>
+                                    </div>
+                                ) : (
+                                    <div className="min-w-[700px]">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-zinc-50/50 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] border-b border-zinc-100">
+                                                    <th className="px-8 py-5">Fecha / Hora</th>
+                                                    <th className="px-4 py-5">Concepto</th>
+                                                    <th className="px-4 py-5 text-right">Monto</th>
+                                                    <th className="px-8 py-5 text-right">Saldo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-50">
+                                                {movements.map((mov) => {
+                                                    const isIncome = mov.type === 'income';
+                                                    return (
+                                                        <tr key={mov.id} className="hover:bg-zinc-50/30 transition-colors group">
+                                                            <td className="px-8 py-5">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[11px] font-black text-zinc-900 capitalize">{format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}</span>
+                                                                    <span className="text-[10px] font-bold text-zinc-400 font-mono">{format(new Date(mov.created_at), 'HH:mm')}</span>
                                                                 </div>
-                                                                <span className="text-[11px] font-bold text-zinc-600 uppercase max-w-[250px] truncate">{mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-6 text-right">
-                                                            <span className={cn(
-                                                                "text-sm font-black tabular-nums",
-                                                                isIncome ? "text-emerald-600" : "text-rose-600"
-                                                            )}>
-                                                                {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-8 py-6 text-right">
-                                                            <span className="text-sm font-black text-zinc-900 tabular-nums">
-                                                                {mov.running_balance.toFixed(2)}€
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                                            </td>
+                                                            <td className="px-4 py-5">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={cn(
+                                                                        "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                                                        isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
+                                                                    )}>
+                                                                        {isIncome ? <ArrowDown size={16} strokeWidth={3} /> : <ArrowUp size={16} strokeWidth={3} />}
+                                                                    </div>
+                                                                    <span className="text-[11px] font-bold text-zinc-600 uppercase max-w-[300px] truncate">{mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-5 text-right">
+                                                                <span className={cn(
+                                                                    "text-sm font-black tabular-nums",
+                                                                    isIncome ? "text-emerald-600" : "text-rose-600"
+                                                                )}>
+                                                                    {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-8 py-5 text-right">
+                                                                <span className="text-sm font-black text-zinc-900 tabular-nums">
+                                                                    {mov.running_balance.toFixed(2)}€
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
