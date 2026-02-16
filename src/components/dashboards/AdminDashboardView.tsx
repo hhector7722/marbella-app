@@ -800,82 +800,84 @@ const AdminDashboardView = () => {
                                             value={newWorkerData.overtime_cost_per_hour}
                                             onChange={e => setNewWorkerData({ ...newWorkerData, overtime_cost_per_hour: Number(e.target.value) })}
                                             className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
-                                </div>
-
-                                    <button
-                                        onClick={() => setNewWorkerData({ ...newWorkerData, prefer_stock_hours: !newWorkerData.prefer_stock_hours })}
-                                        className={cn(
-                                            "w-full p-4 rounded-2xl flex items-center justify-between border-2 transition-all active:scale-[0.98]",
-                                            newWorkerData.prefer_stock_hours
-                                                ? "bg-purple-50 border-purple-200 text-purple-700"
-                                                : "bg-white border-zinc-100 text-zinc-400"
-                                        )}
-                                    >
-                                        <div className="flex flex-col items-start gap-0.5 text-left">
-                                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Preferencia de Pago</span>
-                                            <span className={cn("text-sm font-black transition-colors", newWorkerData.prefer_stock_hours ? "text-purple-700" : "text-zinc-700")}>
-                                                {newWorkerData.prefer_stock_hours ? 'Bolsa de Horas' : 'Pago Mensual'}
-                                            </span>
-                                        </div>
-                                        <div className={cn(
-                                            "w-10 h-6 rounded-full relative transition-all duration-300",
-                                            newWorkerData.prefer_stock_hours ? "bg-purple-500" : "bg-zinc-200"
-                                        )}>
-                                            <div className={cn(
-                                                "absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300",
-                                                newWorkerData.prefer_stock_hours ? "left-5" : "left-1"
-                                            )} />
-                                        </div>
-                                    </button>
-                                </div>
-
-                                <div className="p-4 border-t border-zinc-100 flex gap-3">
-                                    <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
-                                    <button
-                                        onClick={handleCreateWorker}
-                                        disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
-                                        className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
-                                    >
-                                        {newWorkerSaving ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        )
-            }
-                        {
-                            isProductModalOpen && (
-                                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
-                                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-                                        <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
-                                        <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
-                                            {[
-                                                { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },
-                                                { title: 'Ingredientes', img: '/icons/ingrediente.png', link: '/ingredients', hover: 'hover:bg-orange-50/30' },
-                                                { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new', hover: 'hover:bg-emerald-50/30' },
-                                                { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
-                                                { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
-                                                { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
-                                            ].map((item, i) => (
-                                                <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
-                                            ))}
-                                        </div>
+                                        />
                                     </div>
                                 </div>
-                            )
-                        }
-                        <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} />
 
-                        {/* MODAL HISTORIAL TRABAJADOR */}
-                        <WorkerWeeklyHistoryModal
-                            isOpen={!!selectedHistory}
-                            onClose={() => setSelectedHistory(null)}
-                            workerId={selectedHistory?.workerId || ''}
-                            weekStart={selectedHistory?.weekId || ''}
-                        />
-                    </div >
-                );
+                                <button
+                                    onClick={() => setNewWorkerData({ ...newWorkerData, prefer_stock_hours: !newWorkerData.prefer_stock_hours })}
+                                    className={cn(
+                                        "w-full p-4 rounded-2xl flex items-center justify-between border-2 transition-all active:scale-[0.98]",
+                                        newWorkerData.prefer_stock_hours
+                                            ? "bg-purple-50 border-purple-200 text-purple-700"
+                                            : "bg-white border-zinc-100 text-zinc-400"
+                                    )}
+                                >
+                                    <div className="flex flex-col items-start gap-0.5 text-left">
+                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Preferencia de Pago</span>
+                                        <span className={cn("text-sm font-black transition-colors", newWorkerData.prefer_stock_hours ? "text-purple-700" : "text-zinc-700")}>
+                                            {newWorkerData.prefer_stock_hours ? 'Bolsa de Horas' : 'Pago Mensual'}
+                                        </span>
+                                    </div>
+                                    <div className={cn(
+                                        "w-10 h-6 rounded-full relative transition-all duration-300",
+                                        newWorkerData.prefer_stock_hours ? "bg-purple-500" : "bg-zinc-200"
+                                    )}>
+                                        <div className={cn(
+                                            "absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300",
+                                            newWorkerData.prefer_stock_hours ? "left-5" : "left-1"
+                                        )} />
+                                    </div>
+                                </button>
+                            </div>
+
+                            <div className="p-4 border-t border-zinc-100 flex gap-3">
+                                <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
+                                <button
+                                    onClick={handleCreateWorker}
+                                    disabled={newWorkerSaving || !newWorkerData.first_name.trim()}
+                                    className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
+                                >
+                                    {newWorkerSaving ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {
+                isProductModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsProductModalOpen(false)}>
+                        <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">Producto</h3><p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Artículos</p></div><button onClick={() => setIsProductModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
+                            <div className="p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+                                {[
+                                    { title: 'Recetas', img: '/icons/recipes.png', link: '/recipes', hover: 'hover:bg-red-50/30' },
+                                    { title: 'Ingredientes', img: '/icons/ingrediente.png', link: '/ingredients', hover: 'hover:bg-orange-50/30' },
+                                    { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new', hover: 'hover:bg-emerald-50/30' },
+                                    { title: 'Inventario', img: '/icons/inventory.png', hover: 'hover:bg-purple-50/30' },
+                                    { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
+                                    { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
+                                ].map((item, i) => (
+                                    <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} />
+
+            {/* MODAL HISTORIAL TRABAJADOR */}
+            <WorkerWeeklyHistoryModal
+                isOpen={!!selectedHistory}
+                onClose={() => setSelectedHistory(null)}
+                workerId={selectedHistory?.workerId || ''}
+                weekStart={selectedHistory?.weekId || ''}
+            />
+        </div >
+    );
 }
 
-            export default AdminDashboardView;
+export default AdminDashboardView;
 
