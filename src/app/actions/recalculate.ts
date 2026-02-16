@@ -22,6 +22,10 @@ export async function recalculateAllBalances() {
         throw new Error(`Error al obtener perfiles: ${profilesError?.message}`);
     }
 
+    // [EMERGENCY FIX REVERTED] El cliente necesita que algunos sí acumulen.
+    // La corrección debe ser manual desde la UI (Perfil del empleado).
+    // await supabase.from('profiles').update({ prefer_stock_hours: false }).eq('prefer_stock_hours', true);
+
     // 2. Obtener el primer fichaje para saber desde cuándo empezar
     const { data: firstLog, error: firstLogError } = await supabase
         .from('time_logs')
@@ -102,10 +106,15 @@ export async function recalculateAllBalances() {
                 // Ejemplo: Semana termina el 7 Enero, Usuario entra el 10 Enero -> Salta.
                 // Ejemplo: Semana termina el 14 Enero, Usuario entra el 10 Enero -> Procesa (semana parcial o completa).
                 if (isBefore(weekEndDate, joiningDate)) {
-                    // [CLEANUP] Si existe un snapshot antiguo para una semana donde no debería estar, lo borramos.
-                    const existingSnapshotToDelete = existingSnapshots?.find(s => s.user_id === userId);
-                    if (existingSnapshotToDelete) {
-                        await supabase.from('weekly_snapshots').delete().match({ user_id: userId, week_start: weekStartStr });
+                    // [CLEANUP] Borramos TODOS los snapshots de ese usuario para esa semana errónea.
+                    // Usamos delete() con match para asegurar limpieza total.
+                    const { error: delError } = await supabase.from('weekly_snapshots')
+                        .delete()
+                        .match({ user_id: userId, week_start: weekStartStr });
+
+                    if (delError) {
+                        console.error(`Error deleting invalid snapshot: ${delError.message}`);
+                    } else {
                         console.log(`Deleted invalid snapshot for user ${profile.first_name} on week ${weekStartStr}`);
                     }
                     continue;
@@ -166,13 +175,36 @@ export async function recalculateAllBalances() {
                 pendingFromPrev = 0;
             }
 
-            const finalBalance = pendingFromPrev + weeklyBalance;
-
-            // Actualizar mapa para la siguiente semana
-            userBalanceMap.set(userId, finalBalance);
-
             // Preservar is_paid si ya existía
             const wasPaid = existingSnapshot?.is_paid || false;
+
+            // [PAID CHECK] Si la semana pasada se pagó (is_paid = true), 
+            // el balance generado esa semana (weeklyBalance) se considera liquidado.
+            // Por tanto, NO debe sumarse al acumulado del usuario.
+            // Si el balance era positivo, lo matamos. Si era negativo (deuda), se mantiene?
+            // Generalmente, 'is_paid' implica que se liquidaron las horas extras positivas.
+            if (wasPaid && weeklyBalance > 0) {
+                // Si se pagó, no arrastramos este saldo positivo al futuro
+                // PERO el snapshot actual debe reflejar lo que pasó.
+                // El truco está en qué guardamos en 'userBalanceMap' para la SIGUIENTE semana.
+            }
+
+            // Calculamos el finalBalance para este snapshot (visual)
+            const finalBalance = pendingFromPrev + weeklyBalance;
+
+            // PREPARAMOS EL SALDO PARA LA SIGUIENTE SEMANA
+            // Si se pagó, el saldo que arrastramos es EL DE ANTES (pendingFromPrev) 
+            // menoscabado por la deuda si la hubiera, pero SIN el surplus que se acaba de pagar.
+            // O simplificando: Si se pagó, el 'finalBalance' efectivo para el futuro es 'pendingFromPrev'.
+            // (Asumiendo que se pagó SOLO el excedente de esta semana).
+
+            let carryOverBalance = finalBalance;
+            if (wasPaid && weeklyBalance > 0) {
+                carryOverBalance = pendingFromPrev;
+            }
+
+            // Actualizar mapa para la siguiente semana con el saldo REAL (despues de pagar)
+            userBalanceMap.set(userId, carryOverBalance);
 
             // Preparar snapshot
             snapshotsToUpsert.push({

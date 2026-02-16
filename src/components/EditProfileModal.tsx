@@ -19,6 +19,7 @@ interface EditProfileModalProps {
         phone: string | null;
         email: string;
         joining_date?: string | null;
+        prefer_stock_hours?: boolean;
     };
 }
 
@@ -27,6 +28,7 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
     const [iban, setIban] = useState(profile.bank_account || '');
     const [phone, setPhone] = useState(profile.phone || '');
     const [joiningDate, setJoiningDate] = useState(profile.joining_date || '');
+    const [preferStockHours, setPreferStockHours] = useState(profile.prefer_stock_hours || false);
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -38,7 +40,8 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
             dni: dni.trim() || undefined,
             bank_account: iban.trim() || undefined,
             phone: phone.trim() || undefined,
-            joining_date: joiningDate || undefined
+            joining_date: joiningDate || undefined,
+            prefer_stock_hours: preferStockHours
         });
         setLoading(false);
 
@@ -111,6 +114,19 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
                                 onChange={e => setJoiningDate(e.target.value)}
                                 className="w-full h-14 px-5 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-300"
                             />
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-gray-50/50 p-4 rounded-2xl border-2 border-gray-100">
+                            <input
+                                type="checkbox"
+                                id="preferStock"
+                                checked={preferStockHours}
+                                onChange={e => setPreferStockHours(e.target.checked)}
+                                className="w-5 h-5 rounded-md border-2 border-gray-300 text-[#36606F] focus:ring-[#36606F]"
+                            />
+                            <label htmlFor="preferStock" className="text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer select-none">
+                                Acumular Horas (Bolsa de Horas)
+                            </label>
                         </div>
                     </div>
 

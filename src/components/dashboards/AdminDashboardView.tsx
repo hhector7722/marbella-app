@@ -150,7 +150,7 @@ const AdminDashboardView = () => {
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
-    const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, joining_date: format(new Date(), 'yyyy-MM-dd') });
+    const [newWorkerData, setNewWorkerData] = useState({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, joining_date: format(new Date(), 'yyyy-MM-dd'), prefer_stock_hours: false });
 
     // [MODAL HISTORIAL] State for worker history modal
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
@@ -178,11 +178,12 @@ const AdminDashboardView = () => {
                 p_contracted_hours_weekly: newWorkerData.contracted_hours_weekly,
                 p_overtime_cost_per_hour: newWorkerData.overtime_cost_per_hour,
                 p_joining_date: newWorkerData.joining_date,
+                p_prefer_stock_hours: newWorkerData.prefer_stock_hours,
             });
             if (error) throw error;
             toast.success(`${newWorkerData.first_name} añadido correctamente`);
             setIsNewWorkerModalOpen(false);
-            setNewWorkerData({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, joining_date: format(new Date(), 'yyyy-MM-dd') });
+            setNewWorkerData({ first_name: '', last_name: '', email: '', role: 'staff', contracted_hours_weekly: 40, overtime_cost_per_hour: 0, joining_date: format(new Date(), 'yyyy-MM-dd'), prefer_stock_hours: false });
             fetchData();
         } catch (error: any) {
             console.error(error);
