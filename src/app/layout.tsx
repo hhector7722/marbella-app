@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import SileoProvider from "@/components/SileoProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -57,6 +58,7 @@ export default async function RootLayout({
   return (
     <html lang="es" className="light">
       <body className={`${inter.className} bg-[#5B8FB9]`}>
+        <SileoProvider />
         <ServiceWorkerRegistration />
         <Navbar />
         <MainWrapper>

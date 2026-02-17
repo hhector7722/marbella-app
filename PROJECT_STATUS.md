@@ -93,15 +93,18 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Preferencia 'Bolsa de Horas'**: Toggle implementado en el alta de trabajadores y lógica de cálculo respetada en el histórico.
 - [x] **Rediseño PDF Pedidos V4.0**: Implementación final del diseño 'Wave' preciso con doble onda, línea de contorno y cabecera de tabla redondeada conforme a la referencia visual.
 - [x] **Onboarding Guide Step**: Añadido paso inicial de guía con imagen `guia-inicial.png` en el proceso de bienvenida para nuevos usuarios.
-
 - [x] **Corrección PDF y 404**: Resolución de error `bezierCurveTo` en la generación de pedidos PDF y corrección de ruta inexistente `/orders` en la navegación a `/orders/new`.
 - [x] **Mejora Modal Pedidos**: Incorporación de vista previa real del PDF, botón de envío de archivo (Share API) y botón de contacto directo por WhatsApp al proveedor.
 - [x] **Refactor Histórico de Extras**: Transformación a vista detalle semanal con coste total, marcador de pago global, modal de desglose por trabajador y filtros avanzados (Mes, Trabajador, Rango).
 - [x] **Importador de Movimientos**: Implementación del paso de Tesorería en el asistente de migración para la carga masiva de movimientos históricos de caja con sincronización automática de saldo.
 - [x] **Rediseño Extracto de Caja**: Nueva interfaz tipo banca con saldo progresivo, panel de resumen superior izquierdo, selector rápido por meses y estética "Marbella Premium" (Bento Grid).
 - [x] **Importación de Tesorería**: Nuevo asistente para carga masiva de movimientos históricos desde Excel/CSV con mapeo inteligente de cabeceras.
+- [x] Rediseño del flujo de Onboarding (2 pasos: Seguridad e Instalación/Guía PWA).
+- [x] Filtro de meses en Tesorería optimizado (Ene/Feb).
+- [x] Importación masiva de movimientos de caja corregida.
 - [x] **Refinamiento Resúmenes Semanales**: Eliminación visual de la columna "Balance" (diferencial semanal) en el dashboard e historial de personal, simplificando la vista y manteniendo el foco en el saldo acumulado ("Pendiente").
 - [x] **Rediseño Filtro Mensual**: Sustitución de tira horizontal por botón con modal de selección de Mes/Año y reinicio de rango personalizado para mayor limpieza visual.
+- [x] **Integración Sileo Notifications**: Implementación de la librería `sileo` como sistema premium de notificaciones (basado en física) y creación de página de pruebas en `/test-sileo`.
 
 
 ## 📅 PENDIENTE
