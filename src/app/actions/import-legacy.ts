@@ -359,44 +359,50 @@ export async function importInitialMovements(data: Record<string, any>[]): Promi
     let successCount = 0
 
     // Deduplicate or process sequentially to ensure triggers update balance correctly
-    // However, the request specifically asks to respect the date.
     for (const row of data) {
         try {
-            // Normalizar acceso a columnas (insensible a mayúsculas)
-            const getVal = (keys: string[]) => {
-                for (const k of keys) {
-                    if (row[k] !== undefined && row[k] !== null) return row[k]
-                    // Buscar coincidencia insensible
-                    const foundKey = Object.keys(row).find(rk => rk.toLowerCase() === k.toLowerCase())
-                    if (foundKey) return row[foundKey]
+            // Normalizar acceso a columnas (Insensible a mayúsculas, espacios y acentos)
+            const rowKeys = Object.keys(row);
+            const getVal = (possibleKeys: string[]) => {
+                // 1. Exact match (case insensitive)
+                for (const pk of possibleKeys) {
+                    const foundKey = rowKeys.find(rk =>
+                        rk.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") ===
+                        pk.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    );
+                    if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) return row[foundKey];
                 }
-                return undefined
+                return undefined;
             }
 
-            const fechaRaw = getVal(['fecha', 'date', 'created_at'])
-            const importeRaw = getVal(['importe', 'amount', 'total'])
-            const tipoRaw = getVal(['tipo', 'type', 'tipo entrada o salida', 'tipo_movimiento'])
-            const notasRaw = getVal(['notas', 'notes', 'concepto', 'description'])
+            const fechaRaw = getVal(['fecha', 'date', 'created_at', 'dia', 'moment']);
+            const importeRaw = getVal(['importe', 'amount', 'total', 'precio', 'valor', 'monto']);
+            const tipoRaw = getVal(['tipo', 'type', 'tipo entrada o salida', 'tipo_movimiento', 'operacion']);
+            const notasRaw = getVal(['notas', 'notes', 'concepto', 'description', 'detalle', 'comentario']);
 
             if (fechaRaw === undefined || importeRaw === undefined || tipoRaw === undefined) {
-                errors.push(`Fila incompleta (faltan columnas críticas): ${JSON.stringify(row)}`)
-                continue
+                const missing = [];
+                if (fechaRaw === undefined) missing.push('fecha');
+                if (importeRaw === undefined) missing.push('importe');
+                if (tipoRaw === undefined) missing.push('tipo');
+                errors.push(`Fila ${successCount + errors.length + 1}: Faltan columnas críticas (${missing.join(', ')}). Datos: ${JSON.stringify(row)}`);
+                continue;
             }
 
-            const fecha = typeof fechaRaw === 'number' ? excelDateToJSDate(fechaRaw) : new Date(fechaRaw)
+            const fecha = typeof fechaRaw === 'number' ? excelDateToJSDate(fechaRaw) : new Date(fechaRaw);
             if (isNaN(fecha.getTime())) {
-                errors.push(`Fecha inválida: ${fechaRaw}`)
-                continue
+                errors.push(`Fila ${successCount + errors.length + 1}: Fecha inválida (${fechaRaw})`);
+                continue;
             }
 
-            const amount = typeof importeRaw === 'number' ? importeRaw : parseFloat(String(importeRaw).replace(',', '.'))
+            const amount = typeof importeRaw === 'number' ? importeRaw : parseFloat(String(importeRaw).replace(',', '.'));
             if (isNaN(amount)) {
-                errors.push(`Importe inválido: ${importeRaw}`)
-                continue
+                errors.push(`Fila ${successCount + errors.length + 1}: Importe inválido (${importeRaw})`);
+                continue;
             }
 
-            const typeNormalized = String(tipoRaw).toLowerCase()
-            const type = typeNormalized.includes('entrada') || typeNormalized === 'in' || typeNormalized.includes('ingreso') ? 'IN' : 'OUT'
+            const typeNormalized = String(tipoRaw).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const type = (typeNormalized.includes('entrada') || typeNormalized === 'in' || typeNormalized.includes('ingreso') || typeNormalized.includes('positivo')) ? 'IN' : 'OUT';
 
             const { error } = await supabase.from('treasury_log').insert({
                 box_id: opBox.id,
@@ -405,13 +411,13 @@ export async function importInitialMovements(data: Record<string, any>[]): Promi
                 notes: notasRaw || 'Importación inicial',
                 created_at: fecha.toISOString(),
                 user_id: user.id
-            })
+            });
 
-            if (error) throw error
-            successCount++
+            if (error) throw error;
+            successCount++;
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : String(e)
-            errors.push(`Error en fila: ${message}`)
+            const message = e instanceof Error ? e.message : String(e);
+            errors.push(`Error en fila ${successCount + errors.length + 1}: ${message}`);
         }
     }
 

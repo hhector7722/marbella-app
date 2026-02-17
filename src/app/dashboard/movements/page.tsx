@@ -320,9 +320,27 @@ export default function MovementsPage() {
                                 <LoadingSpinner size="lg" />
                             </div>
                         ) : movements.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full py-32 opacity-20">
-                                <PiggyBank size={64} className="mb-4 text-[#5B8FB9]" />
-                                <p className="text-sm font-black uppercase tracking-widest">Sin actividad en este rango</p>
+                            <div className="flex flex-col items-center justify-center h-full py-32 space-y-4">
+                                <div className="p-6 bg-zinc-50 rounded-[2rem] opacity-40">
+                                    <PiggyBank size={48} className="text-[#5B8FB9]" />
+                                </div>
+                                <div className="text-center space-y-1">
+                                    <p className="text-sm font-black uppercase tracking-widest text-zinc-400">Sin actividad en este rango</p>
+                                    <p className="text-[10px] font-bold text-zinc-300 uppercase italic">Prueba a cambiar las fechas o restablecer filtros</p>
+                                </div>
+                                {(typeFilter !== 'all' || filterMode !== 'range') && (
+                                    <button
+                                        onClick={() => {
+                                            setTypeFilter('all');
+                                            setFilterMode('range');
+                                            setRangeStart(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+                                            setRangeEnd(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+                                        }}
+                                        className="px-6 py-3 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-zinc-200"
+                                    >
+                                        Restablecer Filtros
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="min-w-[700px]">
