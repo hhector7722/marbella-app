@@ -18,7 +18,8 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Search,
-    ChevronRight as ChevronRightIcon
+    ChevronRight as ChevronRightIcon,
+    Banknote
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -29,13 +30,14 @@ import { toast } from 'sonner';
 import { FIXED_CASH_FUND, BILLS, COINS } from '@/components/CashClosingModal';
 
 // --- TYPES & CONSTANTS ---
-type MetricType = 'net_sales' | 'gross_sales' | 'avg_ticket' | 'tickets_count';
+type MetricType = 'net_sales' | 'gross_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
 
 const METRICS: { label: string; value: MetricType; icon: any }[] = [
     { label: 'Venta Neta', value: 'net_sales', icon: TrendingUp },
     { label: 'Ticket Medio', value: 'avg_ticket', icon: Receipt },
     { label: 'Facturación', value: 'gross_sales', icon: TrendingUp },
     { label: 'Tickets', value: 'tickets_count', icon: Calendar },
+    { label: 'Efectivo', value: 'cash_counted', icon: Banknote },
 ];
 
 // --- MINI COMPONENTS (SVG) ---
@@ -123,6 +125,7 @@ export default function HistoryPage() {
 
     // Data
     const [closings, setClosings] = useState<any[]>([]);
+    const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
 
     useEffect(() => {
         checkUserRole();
@@ -140,14 +143,41 @@ export default function HistoryPage() {
     async function fetchHistory() {
         setLoading(true);
         try {
-            const { data } = await supabase
+            // 1. Fetch Closings
+            const { data: closingsData } = await supabase
                 .from('cash_closings')
                 .select('*')
                 .gte('closed_at', new Date(rangeStart).toISOString())
                 .lte('closed_at', new Date(rangeEnd + 'T23:59:59').toISOString())
                 .order('closed_at', { ascending: false });
 
-            setClosings(data || []);
+            setClosings(closingsData || []);
+
+            // 2. Fetch Hourly Sales for Sparklines
+            const { data: ticketsData } = await supabase
+                .from('tickets_marbella')
+                .select('fecha, hora_cierre, total_documento')
+                .gte('fecha', rangeStart)
+                .lte('fecha', rangeEnd);
+
+            if (ticketsData) {
+                const hourlyMap: Record<string, number[]> = {};
+
+                // Group by date
+                ticketsData.forEach(ticket => {
+                    const date = ticket.fecha;
+                    if (!hourlyMap[date]) {
+                        hourlyMap[date] = new Array(24).fill(0);
+                    }
+                    // Extract hour from "HH:MM:SS" or similar
+                    const hour = parseInt(ticket.hora_cierre.split(':')[0]) || 0;
+                    if (hour >= 0 && hour < 24) {
+                        hourlyMap[date][hour] += Number(ticket.total_documento) || 0;
+                    }
+                });
+
+                setHourlySales(hourlyMap);
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -249,6 +279,16 @@ export default function HistoryPage() {
         }
     };
 
+    const handleNavigateClosing = (direction: 'next' | 'prev') => {
+        if (!selectedClosing) return;
+        const currentIndex = closings.findIndex(c => c.id === selectedClosing.id);
+        const nextIndex = direction === 'next' ? currentIndex - 1 : currentIndex + 1;
+        if (nextIndex >= 0 && nextIndex < closings.length) {
+            setSelectedClosing(closings[nextIndex]);
+            setIsEditing(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#5B8FB9] pb-32">
             {/* --- HEADER & FILTERS --- */}
@@ -300,24 +340,31 @@ export default function HistoryPage() {
                 </div>
             </div>
 
-            {/* --- SUMMARY BANNER --- */}
+            {/* --- SUMMARY BANNER (UNIFIED) --- */}
             <div className="max-w-7xl mx-auto p-4 md:p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    {[
-                        { label: 'Venta Neta', val: summary.totalNet, color: 'text-emerald-500', icon: TrendingUp },
-                        { label: 'Facturación', val: summary.totalGross, color: 'text-blue-500', icon: TrendingUp },
-                        { label: 'Ticket Medio', val: summary.avgTicket, color: 'text-amber-500', icon: Receipt },
-                        { label: 'Días', val: summary.count, color: 'text-white/60', icon: Calendar },
-                    ].map((s, i) => (
-                        <div key={i} className="bg-white/10 backdrop-blur-md rounded-[2rem] p-6 border border-white/5 flex flex-col gap-1 items-start">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</span>
-                            <div className="flex items-center gap-2">
-                                <span className={cn("text-2xl font-black", s.color)}>
-                                    {i === 3 ? s.val : formatValue(s.val, 'net_sales')}
-                                </span>
-                            </div>
+                <div className="bg-white/10 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/5 shadow-2xl mb-12">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-2 block">Resumen Periodo</span>
+                            <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
+                                {formatValue(summary.totalNet, 'net_sales')} <span className="text-white/40 text-2xl">Neta</span>
+                            </h2>
                         </div>
-                    ))}
+                        <div className="flex flex-wrap items-center gap-12">
+                            {[
+                                { label: 'Facturación', val: summary.totalGross, color: 'text-blue-200', icon: TrendingUp },
+                                { label: 'Ticket Medio', val: summary.avgTicket, color: 'text-amber-200', icon: Receipt },
+                                { label: 'Días', val: summary.count, color: 'text-white/40', icon: Calendar },
+                            ].map((s, i) => (
+                                <div key={i} className="flex flex-col gap-1">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/30">{s.label}</span>
+                                    <span className={cn("text-xl font-black", s.color)}>
+                                        {i === 2 ? s.val : formatValue(s.val, 'net_sales')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* --- CLOSING GRID --- */}
@@ -334,70 +381,83 @@ export default function HistoryPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
                         {closings.map((c) => {
                             const mainVal = c[selectedMetric] || 0;
                             const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
+                            const dayHourlySales = hourlySales[format(new Date(c.closed_at), 'yyyy-MM-dd')] || [];
 
                             return (
                                 <div
                                     key={c.id}
                                     onClick={() => setSelectedClosing(c)}
-                                    className="group relative bg-[#F8FAFC] rounded-[2.5rem] p-8 shadow-2xl hover:scale-[1.02] transition-all cursor-pointer overflow-hidden border border-white/20"
+                                    className="group relative bg-white/95 backdrop-blur-sm rounded-[3rem] p-8 shadow-2xl hover:scale-[1.02] transition-all cursor-pointer border border-white/20 flex flex-col gap-6"
                                 >
-                                    {/* Card Header */}
-                                    <div className="flex justify-between items-start mb-6">
+                                    {/* Card Header: Date and Comparison */}
+                                    <div className="flex justify-between items-start">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                                                {METRICS.find(m => m.value === selectedMetric)?.label}
+                                            <span className="text-[10px] font-black text-[#36606F]/40 uppercase tracking-[0.2em] mb-1">
+                                                {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
                                             </span>
-                                            <span className="text-3xl font-black text-[#1E293B] tracking-tighter">
-                                                {formatValue(mainVal, selectedMetric)}
-                                            </span>
+                                            <div className={cn(
+                                                "flex items-center gap-1 text-[11px] font-black uppercase tracking-tighter",
+                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                            )}>
+                                                {parseFloat(diffPerc) >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                                {Math.abs(parseFloat(diffPerc))}% vs Media
+                                            </div>
                                         </div>
-                                        <div className="bg-white p-2.5 rounded-2xl shadow-sm text-gray-400 group-hover:text-[#5B8FB9] transition-colors">
+                                        <div className="bg-[#36606F]/5 p-3 rounded-2xl group-hover:bg-[#36606F] group-hover:text-white transition-all text-[#36606F]">
                                             <Calendar size={18} />
                                         </div>
                                     </div>
 
-                                    {/* Charts Section */}
-                                    <div className="flex items-end justify-between gap-4 mt-auto">
-                                        <div className="flex-1 flex flex-col gap-2">
-                                            <div className="h-[40px] flex items-end">
-                                                <Sparkline
-                                                    data={[mainVal * 0.8, mainVal * 0.9, mainVal * 0.85, mainVal * 1.05, mainVal, mainVal * 0.95]}
-                                                    color={mainVal > 0 ? "#10b981" : "#e11d48"}
-                                                />
-                                            </div>
-                                            <div className={cn(
-                                                "flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter",
-                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                            )}>
-                                                {parseFloat(diffPerc) >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                                                {Math.abs(parseFloat(diffPerc))}% vs Avg
-                                            </div>
-                                        </div>
+                                    {/* Main Metric Focus */}
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                            {METRICS.find(m => m.value === selectedMetric)?.label}
+                                        </span>
+                                        <span className="text-5xl font-black text-[#1E293B] tracking-[ -0.05em]">
+                                            {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                        </span>
+                                    </div>
 
-                                        <div className="relative">
-                                            <DonutChart percentage={Math.min(100, Math.max(0, (mainVal / ((summary.totalNet / (summary.count || 1)) * 1.5 || 1)) * 100))} color="#10b981" />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-[9px] font-black text-gray-400">
-                                                    {format(new Date(c.closed_at), 'dd', { locale: es })}
-                                                </span>
-                                            </div>
+                                    {/* Secondary Metrics Grid */}
+                                    <div className="grid grid-cols-3 gap-2 py-4 border-y border-gray-100/10 bg-gray-50/50 -mx-4 px-4 rounded-3xl">
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] font-black text-gray-400 uppercase">Facturación</span>
+                                            <span className="text-[13px] font-black text-gray-800">{formatValue(c.tpv_sales, 'gross_sales')}</span>
+                                        </div>
+                                        <div className="flex flex-col border-l border-gray-200/50 pl-3">
+                                            <span className="text-[8px] font-black text-gray-400 uppercase">T. Medio</span>
+                                            <span className="text-[13px] font-black text-gray-800">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                        </div>
+                                        <div className="flex flex-col border-l border-gray-200/50 pl-3">
+                                            <span className="text-[8px] font-black text-gray-400 uppercase">Efectivo</span>
+                                            <span className="text-[13px] font-black text-emerald-600 font-bold">{formatValue(c.cash_counted, 'cash_counted')}</span>
                                         </div>
                                     </div>
 
-                                    {/* Footer */}
-                                    <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-4">
-                                        <span className="text-[11px] font-black text-gray-800 uppercase">
-                                            {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
-                                        </span>
-                                        {c.difference !== 0 && (
-                                            <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-2 py-1 rounded-lg">
-                                                {c.difference.toFixed(2)}€
-                                            </span>
-                                        )}
+                                    {/* Hourly Sales Chart */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Ritmo de Ventas (H)</span>
+                                            <TrendingUp size={12} className="text-emerald-500/50" />
+                                        </div>
+                                        <div className="h-[60px] flex items-end">
+                                            {dayHourlySales.length > 0 ? (
+                                                <Sparkline
+                                                    data={dayHourlySales}
+                                                    color="#36606F"
+                                                    height={60}
+                                                    width={280}
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                                    <span className="text-[8px] font-bold text-gray-300 uppercase">Sin datos horarios</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -412,21 +472,42 @@ export default function HistoryPage() {
                     <div className="absolute inset-0 bg-[#1e293b]/80 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-8 text-white relative shrink-0">
+                            {/* Navigation Controls */}
+                            <div className="absolute top-8 left-8 flex gap-2">
+                                <button
+                                    onClick={() => handleNavigateClosing('prev')}
+                                    className="p-3 hover:bg-white/10 rounded-2xl transition-all disabled:opacity-20"
+                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                >
+                                    <ChevronLeft size={24} />
+                                </button>
+                                <button
+                                    onClick={() => handleNavigateClosing('next')}
+                                    className="p-3 hover:bg-white/10 rounded-2xl transition-all disabled:opacity-20"
+                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                >
+                                    <ChevronRight size={24} />
+                                </button>
+                            </div>
+
                             <button onClick={() => { setIsEditing(false); setSelectedClosing(null); }} className="absolute top-8 right-8 p-3 hover:bg-white/10 rounded-2xl transition-all">
                                 <X size={24} />
                             </button>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Detalle de Cierre</span>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter">
-                                {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
-                            </h2>
-                            <div className="flex items-center gap-4 mt-6">
-                                <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                    <CloudSun size={14} className="text-amber-400" />
-                                    <span className="text-[11px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
-                                </div>
-                                <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                    <Receipt size={14} className="text-blue-400" />
-                                    <span className="text-[11px] font-black uppercase">{selectedClosing.tickets_count || 0} Tickets</span>
+
+                            <div className="mt-12">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block text-center">Detalle de Cierre</span>
+                                <h2 className="text-3xl font-black uppercase tracking-tighter text-center">
+                                    {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
+                                </h2>
+                                <div className="flex items-center justify-center gap-4 mt-6">
+                                    <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+                                        <CloudSun size={14} className="text-amber-400" />
+                                        <span className="text-[11px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
+                                    </div>
+                                    <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+                                        <Receipt size={14} className="text-blue-400" />
+                                        <span className="text-[11px] font-black uppercase">{selectedClosing.tickets_count || 0} Tickets</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -461,15 +542,26 @@ export default function HistoryPage() {
                                 <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Desglose Operativo</h3>
                                 <div className="grid grid-cols-1 gap-2">
                                     {[
+                                        { label: 'Efectivo en Caja', key: 'cash_counted', highlight: true, icon: Banknote },
                                         { label: 'Cobro Tarjeta', key: 'sales_card' },
                                         { label: 'Pendiente Pago', key: 'sales_pending' },
                                         { label: 'Diferencia Caja', key: 'difference', highlight: true },
                                     ].map((row) => {
                                         const val = isEditing ? editData[row.key] : selectedClosing[row.key];
+                                        const isDiff = row.key === 'difference';
+                                        const isCash = row.key === 'cash_counted';
+
                                         return (
-                                            <div key={row.key} className={cn("flex items-center justify-between p-4 rounded-2xl", row.highlight ? (val === 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600") : "bg-gray-50/50")}>
-                                                <span className="text-[10px] font-black uppercase tracking-widest">{row.label}</span>
-                                                {isEditing && row.key !== 'difference' ? (
+                                            <div key={row.key} className={cn(
+                                                "flex items-center justify-between p-4 rounded-2xl",
+                                                isDiff ? (val === 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600") :
+                                                    isCash ? "bg-[#36606F]/5 text-[#36606F]" : "bg-gray-50/50"
+                                            )}>
+                                                <div className="flex items-center gap-2">
+                                                    {row.icon && <row.icon size={14} className="opacity-40" />}
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">{row.label}</span>
+                                                </div>
+                                                {isEditing && !['difference', 'cash_counted'].includes(row.key) ? (
                                                     <input type="number" className="bg-transparent text-right font-black outline-none border-b border-black/10" value={val || 0} onChange={e => handleFieldUpdate(row.key, parseFloat(e.target.value) || 0)} />
                                                 ) : (
                                                     <span className="font-black">{val.toFixed(2)}€</span>
