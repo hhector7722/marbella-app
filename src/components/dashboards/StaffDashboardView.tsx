@@ -297,10 +297,10 @@ export default function StaffDashboardView() {
                 lat = pos.coords.latitude;
                 lng = pos.coords.longitude;
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
-            } catch (geoError) {
+            } catch (geoError: any) {
                 console.error("Geo error:", geoError);
                 if (userRole !== 'manager') {
-                    toast.error("Ubicación necesaria para fichar");
+                    toast.error(geoError.message || "Ubicación necesaria para fichar");
                     setActionLoading(false);
                     return;
                 }

@@ -26,6 +26,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Operaciones de Caja en Movimientos**: Integración de botones y formularios para Entrada, Salida y Arqueo directamente desde /dashboard/movements.
 - [x] **Arquitectura de Componentes de Tesorería**: Extracción de formularios a componentes compartidos reutilizables.
 - [x] **Simplificación Historial**: Eliminación de "Ritmo de Ventas" y mejora de legibilidad de fechas en tarjetas.
+- [x] **Robustez Geofencing**: Mejora de fiabilidad de ubicación con caché de 60s y feedback de errores detallado para evitar bloqueos en el fichaje.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

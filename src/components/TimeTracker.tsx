@@ -65,9 +65,9 @@ export default function TimeTracker() {
                 lat = pos.coords.latitude;
                 lng = pos.coords.longitude;
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
-            } catch (geoError) {
+            } catch (geoError: any) {
                 if (!isAdmin) {
-                    toast.error("Ubicación necesaria para fichar");
+                    toast.error(geoError.message || "Ubicación necesaria para fichar");
                     setLoading(false);
                     return;
                 }
