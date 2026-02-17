@@ -20,12 +20,18 @@ import {
     ArrowRightLeft,
     ArrowUp,
     ArrowDown,
-    Download
+    Download,
+    RefreshCw,
+    AlertTriangle
 } from 'lucide-react';
+import { applyInitialBalanceAdjustment } from '@/app/actions/treasury-fix';
+import { toast } from 'sonner';
 import { format, addDays, startOfMonth, endOfMonth, isSameMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { BoxInventoryView } from '@/components/BoxInventoryView';
 
 interface Movement {
     id: string;
@@ -53,9 +59,14 @@ export default function MovementsPage() {
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [loading, setLoading] = useState(true);
+    const [isFixing, setIsFixing] = useState(false);
 
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
+    const [boxData, setBoxData] = useState<any>(null);
+    const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory'>('none');
+    const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
+    const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [summary, setSummary] = useState({
         income: 0,
         expense: 0,
@@ -71,8 +82,9 @@ export default function MovementsPage() {
     async function fetchMovements() {
         setLoading(true);
         try {
-            const { data: box } = await supabase.from('cash_boxes').select('id, current_balance').eq('type', 'operational').maybeSingle();
+            const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, name').eq('type', 'operational').maybeSingle();
             if (!box) return;
+            setBoxData(box);
 
             let startISO: string;
             let endISO: string;
@@ -157,6 +169,46 @@ export default function MovementsPage() {
         } catch (error) { console.error(error); } finally { setLoading(false); }
     }
 
+    const handleCashTransaction = async (total: number, breakdown: any, notes: string) => {
+        try {
+            if (!boxData) return;
+
+            await supabase.from('treasury_log').insert({
+                box_id: boxData.id,
+                type: cashModalMode === 'audit' ? 'ADJUSTMENT' : (cashModalMode === 'in' ? 'IN' : 'OUT'),
+                amount: total,
+                breakdown: breakdown,
+                notes: cashModalMode === 'audit' ? 'Arqueo de caja' : notes
+            });
+
+            setCashModalMode('none');
+            fetchMovements();
+            toast.success('Operación realizada correctamente');
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al registrar operación");
+        }
+    };
+
+    const openAudit = async () => {
+        if (!boxData) return;
+        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
+        const initial: any = {};
+        data?.forEach((d: any) => initial[d.denomination] = d.quantity);
+        setBoxInventoryMap(initial);
+        setBoxInventory(data || []);
+        setCashModalMode('audit');
+    };
+
+    const openOut = async () => {
+        if (!boxData) return;
+        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
+        const initial: any = {};
+        data?.forEach((d: any) => initial[d.denomination] = d.quantity);
+        setBoxInventoryMap(initial);
+        setCashModalMode('out');
+    };
+
     const monthsList = Array.from({ length: 6 }).map((_, i) => {
         const d = subMonths(new Date(), i);
         return {
@@ -221,6 +273,27 @@ export default function MovementsPage() {
                     </div>
 
                     <div className="flex items-center gap-6">
+                        {summary.currentBalance > 1000 && (
+                            <button
+                                onClick={async () => {
+                                    if (!confirm("¿Seguro que quieres aplicar el ajuste de saldo inicial?")) return;
+                                    setIsFixing(true);
+                                    const res = await applyInitialBalanceAdjustment();
+                                    if (res.success) {
+                                        toast.success(res.message);
+                                        fetchMovements();
+                                    } else {
+                                        toast.error(res.message);
+                                    }
+                                    setIsFixing(false);
+                                }}
+                                disabled={isFixing}
+                                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl shadow-lg hover:bg-amber-600 transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                            >
+                                {isFixing ? <LoadingSpinner size="sm" /> : <AlertTriangle size={14} />}
+                                Arreglar Saldo
+                            </button>
+                        )}
                         <button className="flex items-center justify-center w-10 h-10 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 active:scale-95 transition-all outline-none">
                             <Download size={18} strokeWidth={3} />
                         </button>
@@ -275,6 +348,31 @@ export default function MovementsPage() {
                             {filterMode === 'single' ? format(new Date(selectedDate), 'dd MMMM', { locale: es }) : 'Día Único'}
                         </button>
                     </div>
+                </div>
+
+                {/* BOTONES DE OPERACIÓN */}
+                <div className="grid grid-cols-3 gap-3">
+                    <button
+                        onClick={() => setCashModalMode('in')}
+                        className="bg-emerald-500 text-white p-4 rounded-[2rem] shadow-xl flex flex-col items-center justify-center gap-1.5 hover:bg-emerald-600 transition-all active:scale-95 border border-white/20"
+                    >
+                        <ArrowDownLeft size={24} strokeWidth={3} />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Entrada</span>
+                    </button>
+                    <button
+                        onClick={openOut}
+                        className="bg-rose-500 text-white p-4 rounded-[2rem] shadow-xl flex flex-col items-center justify-center gap-1.5 hover:bg-rose-600 transition-all active:scale-95 border border-white/20"
+                    >
+                        <ArrowUpRight size={24} strokeWidth={3} />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Salida</span>
+                    </button>
+                    <button
+                        onClick={openAudit}
+                        className="bg-orange-400 text-white p-4 rounded-[2rem] shadow-xl flex flex-col items-center justify-center gap-1.5 hover:bg-orange-500 transition-all active:scale-95 border border-white/20"
+                    >
+                        <RefreshCw size={24} strokeWidth={3} />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Arqueo</span>
+                    </button>
                 </div>
 
                 {/* RESUMEN SEGÚN FILTRO (BENTO GRID - UNA SOLA FILA) */}
@@ -501,6 +599,30 @@ export default function MovementsPage() {
                                 })}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE OPERACIONES */}
+            {cashModalMode !== 'none' && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300" onClick={() => setCashModalMode('none')}>
+                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+                        {cashModalMode === 'inventory' ? (
+                            <BoxInventoryView
+                                boxName={boxData?.name || 'Caja'}
+                                inventory={boxInventory}
+                                onBack={() => setCashModalMode('none')}
+                            />
+                        ) : (
+                            <CashDenominationForm
+                                type={cashModalMode === 'audit' ? 'audit' : (cashModalMode === 'in' ? 'in' : 'out')}
+                                boxName={boxData?.name || 'Caja'}
+                                onSubmit={handleCashTransaction}
+                                onCancel={() => setCashModalMode('none')}
+                                initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
+                                availableStock={boxInventoryMap}
+                            />
+                        )}
                     </div>
                 </div>
             )}

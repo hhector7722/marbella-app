@@ -23,8 +23,12 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Integración Sileo Notifications**: Sistema premium de notificaciones (basado en física).
 - [x] **Rediseño Filtro Mensual**: Sustitución de tira horizontal por botón con modal de selección de Mes/Año.
 - [x] **Refinamiento Resúmenes Semanales**: Simplificación de vistas eliminando columnas redundantes.
+- [x] **Operaciones de Caja en Movimientos**: Integración de botones y formularios para Entrada, Salida y Arqueo directamente desde /dashboard/movements.
+- [x] **Arquitectura de Componentes de Tesorería**: Extracción de formularios a componentes compartidos reutilizables.
+- [x] **Simplificación Historial**: Eliminación de "Ritmo de Ventas" y mejora de legibilidad de fechas en tarjetas.
 
 ## 📅 PENDIENTE
+- [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
