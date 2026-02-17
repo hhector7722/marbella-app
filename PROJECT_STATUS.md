@@ -105,6 +105,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Resúmenes Semanales**: Eliminación visual de la columna "Balance" (diferencial semanal) en el dashboard e historial de personal, simplificando la vista y manteniendo el foco en el saldo acumulado ("Pendiente").
 - [x] **Rediseño Filtro Mensual**: Sustitución de tira horizontal por botón con modal de selección de Mes/Año y reinicio de rango personalizado para mayor limpieza visual.
 - [x] **Integración Sileo Notifications**: Implementación de la librería `sileo` como sistema premium de notificaciones (basado en física) y creación de página de pruebas en `/test-sileo`.
+- [x] **Rediseño Historial Marbella Premium**: Implementación de layout con fondo azul corporativo, tarjetas "Bento Grid" con gráficos SVG (sparklines y donuts), selector de métricas dinámico y cumplimiento de la regla "Zero-Display".
 
 
 ## 📅 PENDIENTE
