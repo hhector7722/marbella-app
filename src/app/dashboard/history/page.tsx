@@ -27,7 +27,7 @@ import { format, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { FIXED_CASH_FUND, BILLS, COINS } from '@/components/CashClosingModal';
+import { BILLS, COINS } from '@/components/CashClosingModal';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'gross_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -212,11 +212,11 @@ export default function HistoryPage() {
         const newData = { ...editData, [field]: value };
         if (field === 'tpv_sales') newData.net_sales = value / 1.10;
         const cashSalesToday = newData.tpv_sales - newData.sales_card - newData.sales_pending;
-        const expectedCash = FIXED_CASH_FUND + cashSalesToday + newData.debt_recovered;
+        const expectedCash = cashSalesToday + newData.debt_recovered;
         newData.cash_expected = expectedCash;
         const diff = newData.cash_counted - expectedCash;
-        const withDrawn = newData.cash_counted > FIXED_CASH_FUND ? newData.cash_counted - FIXED_CASH_FUND : 0;
-        const cLeft = newData.cash_counted > FIXED_CASH_FUND ? FIXED_CASH_FUND : newData.cash_counted;
+        const withDrawn = newData.cash_counted;
+        const cLeft = 0;
         newData.difference = diff;
         newData.cash_withdrawn = withDrawn;
         newData.cash_left = cLeft;
@@ -228,8 +228,8 @@ export default function HistoryPage() {
         const newBreakdown = { ...editData.breakdown, [denomination]: qty };
         const totalCounted = Object.entries(newBreakdown).reduce((sum, [den, q]) => sum + (parseFloat(den) * (q as number)), 0);
         const diff = totalCounted - editData.cash_expected;
-        const withDrawn = totalCounted > FIXED_CASH_FUND ? totalCounted - FIXED_CASH_FUND : 0;
-        const cLeft = totalCounted > FIXED_CASH_FUND ? FIXED_CASH_FUND : totalCounted;
+        const withDrawn = totalCounted;
+        const cLeft = 0;
         setEditData({ ...editData, breakdown: newBreakdown, cash_counted: totalCounted, difference: diff, cash_withdrawn: withDrawn, cash_left: cLeft });
     };
 

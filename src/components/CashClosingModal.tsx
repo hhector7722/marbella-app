@@ -16,8 +16,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { sendClosingNotification } from '@/app/actions/notifications';
 
-// --- CONSTANTS ---
-export const FIXED_CASH_FUND = 100;
+// export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
 export const BILLS = [100, 50, 20, 10, 5];
 export const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
@@ -64,11 +63,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
     const [counts, setCounts] = useState<Record<string, number>>({});
 
     // 3. STATE: OPENING CASH
-    const [openingCash, setOpeningCash] = useState(FIXED_CASH_FUND);
+    const [openingCash, setOpeningCash] = useState(0);
 
     useEffect(() => {
         if (isOpen) {
-            fetchOpening();
+            // fetchOpening(); // Se elimina el fondo de caja fijo
             fetchTodayVentas();
         } else {
             // Reset state on close
@@ -80,19 +79,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             setCounts({});
         }
     }, [isOpen]);
-
-    async function fetchOpening() {
-        const { data } = await supabase
-            .from('cash_closings')
-            .select('cash_left')
-            .order('closed_at', { ascending: false })
-            .limit(1)
-            .single();
-
-        if (data?.cash_left) {
-            setOpeningCash(data.cash_left);
-        }
-    }
 
     async function fetchTodayVentas() {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -114,11 +100,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
     // --- CALCULATIONS ---
     const totalSalesGross = tpvData.totalSales;
     const cashSalesToday = totalSalesGross - tpvData.cardSales - tpvData.pendingSales;
-    const expectedCash = openingCash + cashSalesToday + tpvData.debtRecovered;
+    const expectedCash = cashSalesToday + tpvData.debtRecovered;
     const totalCounted = Object.entries(counts).reduce((sum, [val, qty]) => sum + (parseFloat(val) * qty), 0);
     const difference = totalCounted - expectedCash;
-    const cashToWithdraw = totalCounted > FIXED_CASH_FUND ? totalCounted - FIXED_CASH_FUND : 0;
-    const cashLeft = totalCounted > FIXED_CASH_FUND ? FIXED_CASH_FUND : totalCounted;
+    const cashToWithdraw = totalCounted; // Se retira TODO el efectivo contado
+    const cashLeft = 0; // No queda nada en caja por defecto
 
     // --- HANDLERS ---
     const updateCount = (value: number, qty: string) => {
@@ -354,13 +340,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                             </div>
 
                             <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-50">
-                                <div className="flex flex-col items-center justify-center text-center">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Retirar</span>
-                                    <span className="text-3xl font-black text-[#5B8FB9]">{cashToWithdraw.toFixed(2)}€</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center text-center border-l border-gray-50">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Fondo de caja</span>
-                                    <span className="text-3xl font-black text-emerald-500">{cashLeft.toFixed(2)}€</span>
+                                <div className="flex flex-col items-center justify-center text-center col-span-2">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Efectivo Contado (Total Retirado)</span>
+                                    <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted.toFixed(2)}€</span>
                                 </div>
                             </div>
 
