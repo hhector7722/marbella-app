@@ -396,7 +396,7 @@ export default function HistoryPage() {
                                     {/* Card Header: Date and Comparison */}
                                     <div className="flex justify-between items-start">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-[#36606F]/40 uppercase tracking-[0.2em] mb-1">
+                                            <span className="text-sm font-black text-[#36606F] uppercase mb-1">
                                                 {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
                                             </span>
                                             <div className={cn(
@@ -438,27 +438,7 @@ export default function HistoryPage() {
                                         </div>
                                     </div>
 
-                                    {/* Hourly Sales Chart */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Ritmo de Ventas (H)</span>
-                                            <TrendingUp size={12} className="text-emerald-500/50" />
-                                        </div>
-                                        <div className="h-[60px] flex items-end">
-                                            {dayHourlySales.length > 0 ? (
-                                                <Sparkline
-                                                    data={dayHourlySales}
-                                                    color="#36606F"
-                                                    height={60}
-                                                    width={280}
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                    <span className="text-[8px] font-bold text-gray-300 uppercase">Sin datos horarios</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+
                                 </div>
                             );
                         })}
