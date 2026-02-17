@@ -217,15 +217,11 @@ export default function MovementsPage() {
                         <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-xl hover:bg-white/30 transition-all text-white">
                             <ArrowLeft size={20} strokeWidth={3} />
                         </button>
-                        <h1 className="text-xl font-black text-white uppercase tracking-tight italic">Extracto de Caja</h1>
+                        <h1 className="text-xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <div className="text-right">
-                            <span className="block text-[8px] font-black text-white/60 uppercase tracking-widest mb-0.5">Saldo Real Actual</span>
-                            <span className="text-2xl font-black text-white tabular-nums">{summary.currentBalance.toFixed(2)}€</span>
-                        </div>
-                        <button className="flex items-center justify-center w-10 h-10 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 active:scale-95 transition-all">
+                        <button className="flex items-center justify-center w-10 h-10 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 active:scale-95 transition-all outline-none">
                             <Download size={18} strokeWidth={3} />
                         </button>
                     </div>
@@ -237,9 +233,9 @@ export default function MovementsPage() {
                         <button
                             onClick={() => setShowMonthPicker(true)}
                             className={cn(
-                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 outline-none",
                                 filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? "bg-zinc-900 border-zinc-900 text-white shadow-lg"
+                                    ? "bg-[#36606F] border-[#36606F] text-white shadow-lg"
                                     : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200"
                             )}
                         >
@@ -256,9 +252,9 @@ export default function MovementsPage() {
                                 setShowCalendar('range');
                             }}
                             className={cn(
-                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest",
+                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
                                 filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? "bg-zinc-900 border-zinc-900 text-white shadow-lg"
+                                    ? "bg-[#36606F] border-[#36606F] text-white shadow-lg"
                                     : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
                             )}
                         >
@@ -271,8 +267,8 @@ export default function MovementsPage() {
                         <button
                             onClick={() => setShowCalendar('single')}
                             className={cn(
-                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest",
-                                filterMode === 'single' ? "bg-zinc-900 border-zinc-900 text-white shadow-lg" : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
+                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                filterMode === 'single' ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
                             )}
                         >
                             <Calendar size={14} />
@@ -281,40 +277,32 @@ export default function MovementsPage() {
                     </div>
                 </div>
 
-                {/* RESUMEN SEGÚN FILTRO (TARJETAS HORIZONTALES) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-6 rounded-[2rem] shadow-xl flex items-center justify-between border border-white/10">
-                        <div>
-                            <span className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Ingresos</span>
-                            <span className="text-2xl font-black text-emerald-500">+{summary.income.toFixed(0)}€</span>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
-                            <ArrowDown size={18} strokeWidth={3} />
+                {/* RESUMEN SEGÚN FILTRO (BENTO GRID - UNA SOLA FILA) */}
+                <div className="bg-white rounded-[2rem] shadow-xl border border-white/10 overflow-hidden divide-x divide-zinc-50 grid grid-cols-3">
+                    <div className="p-4 md:p-6 flex flex-col items-center justify-center text-center">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Ingresos</span>
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                            <span className="text-lg md:text-2xl font-black text-emerald-500">+{summary.income.toFixed(0)}€</span>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-[2rem] shadow-xl flex items-center justify-between border border-white/10">
-                        <div>
-                            <span className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Gastos</span>
-                            <span className="text-2xl font-black text-rose-500">-{summary.expense.toFixed(0)}€</span>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
-                            <ArrowUp size={18} strokeWidth={3} />
+                    <div className="p-4 md:p-6 flex flex-col items-center justify-center text-center">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Gastos</span>
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                            <span className="text-lg md:text-2xl font-black text-rose-500">-{summary.expense.toFixed(0)}€</span>
                         </div>
                     </div>
 
-                    <div className="bg-zinc-900 p-6 rounded-[2rem] shadow-xl flex items-center justify-between">
-                        <div>
-                            <span className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Balance Neto</span>
-                            <span className={cn("text-2xl font-black tabular-nums", summary.balance >= 0 ? "text-emerald-400" : "text-orange-400")}>
-                                {summary.balance.toFixed(0)}€
+                    <div className="p-4 md:p-6 flex flex-col items-center justify-center text-center bg-zinc-50/50">
+                        <span className="text-[9px] md:text-[10px] font-black text-[#36606F] uppercase tracking-widest mb-1">Saldo</span>
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                            <span className="text-lg md:text-2xl font-black text-[#36606F] tabular-nums">
+                                {summary.currentBalance.toFixed(2)}€
                             </span>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60">
-                            <Wallet size={18} strokeWidth={3} />
                         </div>
                     </div>
                 </div>
+
 
                 {/* TARJETA DE MOVIMIENTOS */}
                 <div className="bg-white rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col min-h-[500px]">
