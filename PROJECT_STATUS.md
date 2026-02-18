@@ -19,7 +19,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Importación de Tesorería Robusta**: Corrección del asistente para carga masiva con mapeo inteligente de cabeceras (insensible a acentos/espacios) y validación de filas mejorada.
 - [x] **Mejora UX Tesorería**: Estado vacío proactivo con botón de reseteo de filtros y feedback visual instructivo.
 - [x] **Diseño Marbella Premium**: Aplicación global de estética de tarjetas blancas sobre fondo azul (#5B8FB9) en movimientos y filtros.
-- [x] **Rediseño Radical Historial Premium**: Implementación total del nuevo layout con cabecera de filtros segmentados, cápsula de resumen de periodo, selector de métricas dinámico y tarjetas Bento interactivas. Incluye desglose de efectivo anidado en modal.
+- [x] **Rediseño Radical Historial Premium (Refinado)**: Implementación total del nuevo layout con estructura de "Doble Contenedor" (Card-in-Card) igual a movimientos. Cabecera integrada, cápsula de resumen y grid de tarjetas dentro de contenedor con sombra interna.
 - [x] **Integración Sileo Notifications**: Sistema premium de notificaciones (basado en física).
 - [x] **Rediseño Filtro Mensual**: Sustitución de tira horizontal por botón con modal de selección de Mes/Año.
 - [x] **Refinamiento Resúmenes Semanales**: Simplificación de vistas eliminando columnas redundantes.
@@ -30,6 +30,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Diseño Marbella Premium Movimientos**: Rediseño radical de `/dashboard/movements` siguiendo el diseño corporativo (Cabecera con acciones, Bento Filters, Resumen Periodo y Listado Estilizado).
 - [x] **Performance Audit & Optimization (Complete)**: Optimización radical de Historiales (Ventas, Mano de Obra, Staff) y Dashboard Admin mediante normalización con Hash Maps ($O(1)$), Renderizado Incremental con `IntersectionObserver` y Memoización estratégica.
 - [x] **Acciones Directas en Dashboard**: Sustitución de menú de caja por botones de acción directa (Entrada, Salida, Arqueo) y navegación mejorada a movimientos.
+- [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

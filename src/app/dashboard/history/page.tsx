@@ -6,6 +6,7 @@ import {
     Calendar,
     CloudSun,
     Receipt,
+    ArrowLeft,
     ChevronLeft,
     ChevronRight,
     X,
@@ -19,7 +20,8 @@ import {
     ArrowDownRight,
     Search,
     ChevronRight as ChevronRightIcon,
-    Banknote
+    Banknote,
+    Plus
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -322,155 +324,162 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] pb-32">
-            {/* --- NEW HEADER --- */}
-            <div className="bg-[#36606F] pt-6 pb-20 px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all">
-                                <ChevronLeft size={24} strokeWidth={3} />
-                            </button>
-                            <h1 className="text-3xl font-black text-white uppercase tracking-tighter">Cierres</h1>
-                        </div>
-                        <button
-                            onClick={() => router.push('/dashboard')}
-                            className="bg-[#1e293b]/30 hover:bg-[#1e293b]/50 h-12 px-6 rounded-2xl flex items-center gap-2 text-white text-xs font-black uppercase tracking-widest transition-all border border-white/5"
-                        >
-                            <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-lg font-bold">+</span>
-                            </div>
-                            Cierre
-                        </button>
-                    </div>
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-32">
+            <div className="max-w-5xl mx-auto">
+                {/* --- GLOBAL INTEGRATED CARD --- */}
+                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
-                    <div className="flex justify-end gap-2">
-                        <div className="bg-[#1e293b]/20 p-1 rounded-2xl border border-white/5 flex gap-1">
-                            {[
-                                { label: 'Mes', action: () => setShowMonthPicker(true) },
-                                { label: 'Periodo', action: () => setShowCalendar(true) },
-                                { label: 'Fecha', action: () => setShowCalendar(true) }
-                            ].map((f) => (
-                                <button
-                                    key={f.label}
-                                    onClick={f.action}
-                                    className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 transition-all"
-                                >
-                                    {f.label}
+                    {/* --- INTEGRATED DARK HEADER --- */}
+                    <div className="bg-[#36606F] p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
+                                    <ArrowLeft size={20} strokeWidth={3} />
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* --- SUMMARY CAPSULE --- */}
-            <div className="max-w-5xl mx-auto px-6 -mt-12 relative z-10">
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 border border-white/20">
-                    <div className="flex-1 text-center md:text-left">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#36606F]/40 mb-1 block">Ventas</span>
-                        <div className="text-3xl font-black text-[#5B8FB9]">{formatValue(summary.totalGross, 'gross_sales')}</div>
-                    </div>
-                    <div className="w-px h-12 bg-gray-100 hidden md:block" />
-                    <div className="flex-1 text-center">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#36606F]/40 mb-1 block">Venta Neta</span>
-                        <div className="text-3xl font-black text-[#5B8FB9]">{formatValue(summary.totalNet, 'net_sales')}</div>
-                    </div>
-                    <div className="w-px h-12 bg-gray-100 hidden md:block" />
-                    <div className="flex-1 text-center md:text-right">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#36606F]/40 mb-1 block">Ticket Medio</span>
-                        <div className="text-3xl font-black text-[#5B8FB9]">{summary.avgTicket.toFixed(1)}€</div>
-                    </div>
-                </div>
-
-                {/* --- METRIC SELECTOR TABS --- */}
-                <div className="mt-8 flex justify-center">
-                    <div className="bg-[#36606F] p-2 rounded-[2rem] border border-white/10 flex gap-2 overflow-x-auto no-scrollbar max-w-full">
-                        {METRICS.map(m => (
+                                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight italic">Cierres</h1>
+                            </div>
                             <button
-                                key={m.value}
-                                onClick={() => setSelectedMetric(m.value)}
-                                className={cn(
-                                    "flex-shrink-0 h-12 px-8 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3",
-                                    selectedMetric === m.value
-                                        ? "bg-white text-[#36606F] shadow-lg scale-105"
-                                        : "text-white/60 hover:text-white hover:bg-white/5"
-                                )}
+                                onClick={() => router.push('/dashboard')}
+                                className="bg-emerald-600/90 hover:bg-emerald-500 text-white h-12 px-6 rounded-2xl flex items-center gap-3 transition-all border border-emerald-400/30 active:scale-95 text-xs font-black uppercase tracking-widest shadow-lg"
                             >
-                                <m.icon size={16} className={cn(selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
-                                {m.label}
+                                <div className="bg-white/20 p-1.5 rounded-lg">
+                                    <Plus size={14} strokeWidth={4} />
+                                </div>
+                                Cierre
                             </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* --- CLOSING GRID --- */}
-                <div className="mt-12">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <LoadingSpinner size="lg" className="text-white" />
                         </div>
-                    ) : closings.length === 0 ? (
-                        <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-white/5">
-                            <p className="text-white/40 font-black uppercase tracking-widest text-sm">No hay registros</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {closings.map((c) => {
-                                const mainVal = c[selectedMetric] || 0;
-                                const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
 
-                                return (
-                                    <div
-                                        key={c.id}
-                                        onClick={() => setSelectedClosing(c)}
-                                        className="group relative bg-[#F8FAFC] rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all cursor-pointer border border-white flex flex-col gap-6"
+                        {/* FILTERS INTEGRATED IN HEADER */}
+                        <div className="flex justify-end gap-2">
+                            <div className="bg-black/20 p-1 rounded-2xl border border-white/5 flex gap-1">
+                                {[
+                                    { label: 'Mes', action: () => setShowMonthPicker(true) },
+                                    { label: 'Periodo', action: () => setShowCalendar(true) },
+                                    { label: 'Fecha', action: () => setShowCalendar(true) }
+                                ].map((f) => (
+                                    <button
+                                        key={f.label}
+                                        onClick={f.action}
+                                        className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 transition-all outline-none"
                                     >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex flex-col">
-                                                <span className="text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-1">
-                                                    {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
-                                                </span>
-                                                <div className={cn(
-                                                    "text-[10px] font-black uppercase tracking-tighter",
-                                                    parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                                )}>
-                                                    {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
-                                                </div>
-                                            </div>
-                                            <div className="bg-white p-2.5 rounded-2xl shadow-sm text-[#36606F]/30 group-hover:text-[#5B8FB9] transition-colors">
-                                                <Calendar size={18} />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                                                {METRICS.find(m => m.value === selectedMetric)?.label}
-                                            </span>
-                                            <span className="text-5xl font-black text-[#1E293B] tracking-tighter">
-                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                            </span>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-1 pt-6 border-t border-gray-100">
-                                            <div className="flex flex-col">
-                                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Facturación</span>
-                                                <span className="text-[11px] font-black text-gray-700">{Math.round(c.tpv_sales)} €</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">T. Medio</span>
-                                                <span className="text-[11px] font-black text-gray-700">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Efectivo</span>
-                                                <span className="text-[11px] font-black text-emerald-500">{(c.cash_counted || 0).toFixed(0)} €</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        {f.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    )}
+                    </div>
+
+                    {/* --- WHITE BODY --- */}
+                    <div className="bg-white">
+                        {/* COMPACT SUMMARY (Integrated) */}
+                        <div className="py-6 px-4 grid grid-cols-1 md:grid-cols-3 border-b border-zinc-50">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalGross, 'gross_sales')}</span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">VENTAS</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 hidden md:flex">
+                                <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalNet, 'net_sales')}</span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">VENTA NETA</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
+                                <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{summary.avgTicket.toFixed(1)}€</span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">TICKET MEDIO</span>
+                            </div>
+                        </div>
+
+                        {/* METRIC SELECTOR (Integrated) */}
+                        <div className="p-6 flex justify-center bg-zinc-50/50">
+                            <div className="bg-[#36606F] p-1.5 rounded-[2rem] border border-white/10 flex gap-1.5 overflow-x-auto no-scrollbar max-w-full shadow-inner">
+                                {METRICS.map(m => (
+                                    <button
+                                        key={m.value}
+                                        onClick={() => setSelectedMetric(m.value)}
+                                        className={cn(
+                                            "flex-shrink-0 h-10 px-6 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                                            selectedMetric === m.value
+                                                ? "bg-white text-[#36606F] shadow-lg scale-105"
+                                                : "text-white/60 hover:text-white hover:bg-white/5"
+                                        )}
+                                    >
+                                        <m.icon size={14} className={cn(selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
+                                        {m.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* CLOSINGS LIST CONTAINER (Integrated with Double Container style) */}
+                        <div className="p-3 md:p-4 bg-white">
+                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl bg-zinc-50/10 p-4 md:p-6">
+                                {loading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                        <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                    </div>
+                                ) : closings.length === 0 ? (
+                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                        <Calendar size={32} />
+                                        <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                        {closings.map((c) => {
+                                            const mainVal = c[selectedMetric] || 0;
+                                            const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
+
+                                            return (
+                                                <div
+                                                    key={c.id}
+                                                    onClick={() => setSelectedClosing(c)}
+                                                    className="group relative bg-white rounded-[2rem] p-6 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col gap-4"
+                                                >
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                                {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
+                                                            </span>
+                                                            <div className={cn(
+                                                                "text-[10px] font-black uppercase tracking-tighter",
+                                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                                            )}>
+                                                                {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
+                                                            </div>
+                                                        </div>
+                                                        <div className="bg-zinc-50 p-2 rounded-xl text-zinc-300 group-hover:text-[#5B8FB9] transition-colors">
+                                                            <Calendar size={16} />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                        </span>
+                                                        <span className="text-4xl font-black text-zinc-900 tracking-tighter tabular-nums">
+                                                            {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-3 gap-1 pt-4 border-t border-zinc-50">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Facturación</span>
+                                                            <span className="text-[11px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)} €</span>
+                                                        </div>
+                                                        <div className="flex flex-col border-l border-zinc-50 pl-2">
+                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">T. Medio</span>
+                                                            <span className="text-[11px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                        </div>
+                                                        <div className="flex flex-col border-l border-zinc-50 pl-2">
+                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Efectivo</span>
+                                                            <span className="text-[11px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)} €</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
