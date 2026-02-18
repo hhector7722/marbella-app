@@ -72,6 +72,7 @@ export default function MovementsPage() {
     const [summary, setSummary] = useState({
         income: 0,
         expense: 0,
+        difference: 0,
         balance: 0,
         currentBalance: 0,
         initialBalanceInRange: 0
@@ -104,7 +105,7 @@ export default function MovementsPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setMovements([]);
-                    setSummary({ income: 0, expense: 0, balance: 0, currentBalance: box.current_balance, initialBalanceInRange: 0 });
+                    setSummary({ income: 0, expense: 0, difference: 0, balance: 0, currentBalance: box.current_balance, initialBalanceInRange: 0 });
                     setLoading(false);
                     return;
                 }
@@ -136,8 +137,6 @@ export default function MovementsPage() {
             const { data: rangeMoves } = await supabase
                 .from('treasury_log')
                 .select('*')
-                .eq('box_id', box.id)
-                .neq('type', 'ADJUSTMENT')
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .order('created_at', { ascending: false });
@@ -162,11 +161,13 @@ export default function MovementsPage() {
 
                 const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
                 const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
+                const diff = rangeMoves.filter(m => m.type === 'ADJUSTMENT').reduce((sum, m) => sum + m.amount, 0);
 
                 setMovements(filtered);
                 setSummary({
                     income: inc,
                     expense: exp,
+                    difference: diff,
                     balance: inc - exp,
                     currentBalance: box.current_balance,
                     initialBalanceInRange: currentRunning
@@ -363,18 +364,28 @@ export default function MovementsPage() {
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
                         {/* RESUMEN ULTRA-COMPACTO */}
-                        <div className="py-4 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="py-4 px-4 grid grid-cols-4 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-xl md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">INGRESOS</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-x border-zinc-100 px-2">
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
                                 <span className="text-xl md:text-2xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">GASTOS</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center">
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
+                                <span className={cn(
+                                    "text-xl md:text-2xl font-black line-clamp-1",
+                                    summary.difference > 0 ? "text-blue-500" : summary.difference < 0 ? "text-orange-500" : "text-zinc-400"
+                                )}>
+                                    {summary.difference === 0 ? " " : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(2)}€`}
+                                </span>
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">DIFERENCIA</span>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
                                 <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
                                     {summary.currentBalance.toFixed(2)}€
                                 </span>
@@ -433,21 +444,27 @@ export default function MovementsPage() {
                                                                     <div className="flex items-center gap-3">
                                                                         <div className={cn(
                                                                             "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
-                                                                            isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
+                                                                            mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
+                                                                                mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
+                                                                                    "bg-orange-50 text-orange-500"
                                                                         )}>
-                                                                            {isIncome ? <ArrowDown size={16} strokeWidth={3} /> : <ArrowUp size={16} strokeWidth={3} />}
+                                                                            {mov.type === 'income' ? <ArrowDown size={16} strokeWidth={3} /> :
+                                                                                mov.type === 'expense' ? <ArrowUp size={16} strokeWidth={3} /> :
+                                                                                    <RefreshCw size={14} strokeWidth={3} />}
                                                                         </div>
                                                                         <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[200px]">
-                                                                            {mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}
+                                                                            {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                         </span>
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-3 text-center">
                                                                     <span className={cn(
                                                                         "text-[15px] font-black tabular-nums",
-                                                                        isIncome ? "text-emerald-500" : "text-rose-500"
+                                                                        mov.type === 'income' ? "text-emerald-500" :
+                                                                            mov.type === 'expense' ? "text-rose-500" :
+                                                                                mov.amount > 0 ? "text-blue-500" : "text-orange-500"
                                                                     )}>
-                                                                        {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
+                                                                        {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
                                                                     </span>
                                                                 </td>
                                                                 <td className="px-8 py-3 text-right">
