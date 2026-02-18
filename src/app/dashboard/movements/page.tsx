@@ -163,8 +163,8 @@ export default function MovementsPage() {
                 });
 
                 const filtered = typeFilter === 'all'
-                    ? processed
-                    : processed.filter(m => m.type === typeFilter);
+                    ? processed.filter(m => m.original_type !== 'ADJUSTMENT') // Hide audits from list
+                    : processed.filter(m => m.type === typeFilter && m.original_type !== 'ADJUSTMENT');
 
                 const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
                 const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
