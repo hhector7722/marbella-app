@@ -26,7 +26,7 @@ import {
     RefreshCw,
     AlertTriangle
 } from 'lucide-react';
-import { applyInitialBalanceAdjustment } from '@/app/actions/treasury-fix';
+
 import { toast } from 'sonner';
 import { format, addDays, startOfMonth, endOfMonth, isSameMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -280,44 +280,44 @@ export default function MovementsPage() {
 
                     {/* CABECERA OSCURA INTEGRADA (TÍTULO + ACCIONES + FILTROS) */}
                     <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
                                 <button
                                     onClick={() => router.back()}
-                                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95"
+                                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95 shrink-0"
                                 >
                                     <ArrowLeft size={20} strokeWidth={3} />
                                 </button>
                                 <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
                                 <button
                                     onClick={() => setCashModalMode('in')}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group"
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
                                 >
                                     <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <Plus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900">ENTRADA</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ENTRADA</span>
                                 </button>
                                 <button
                                     onClick={openOut}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group"
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
                                 >
                                     <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <Minus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900">SALIDA</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">SALIDA</span>
                                 </button>
                                 <button
                                     onClick={openAudit}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group"
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
                                 >
                                     <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <RefreshCw size={14} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900">ARQUEO</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ARQUEO</span>
                                 </button>
                             </div>
                         </div>
@@ -327,7 +327,7 @@ export default function MovementsPage() {
                             <button
                                 onClick={() => setShowMonthPicker(true)}
                                 className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border outline-none",
+                                    "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border outline-none truncate",
                                     filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? "bg-white border-white text-zinc-800 shadow-sm"
                                         : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
@@ -368,8 +368,8 @@ export default function MovementsPage() {
 
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
-                        {/* RESUMEN ULTRA-COMPACTO */}
-                        <div className="py-4 px-4 grid grid-cols-4 border-b border-zinc-50">
+                        {/* RESUMEN ULTRA-COMPACTO: Grid 2x2 en móvil, 4x1 en escritorio */}
+                        <div className="py-4 px-4 grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-y-0 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-xl md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">INGRESOS</span>
@@ -380,7 +380,7 @@ export default function MovementsPage() {
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">GASTOS</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
+                            <div className="flex flex-col items-center justify-center text-center md:border-l border-zinc-100 px-2">
                                 <span className={cn(
                                     "text-xl md:text-2xl font-black line-clamp-1",
                                     summary.difference > 0 ? "text-blue-500" : summary.difference < 0 ? "text-orange-500" : "text-zinc-400"

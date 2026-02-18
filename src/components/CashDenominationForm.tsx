@@ -13,6 +13,8 @@ interface CashDenominationFormProps {
     onCancel: () => void;
     initialCounts?: any;
     availableStock?: Record<number, number>;
+    initialNotes?: string;
+    submitLabel?: string;
 }
 
 export const CashDenominationForm = ({
@@ -21,10 +23,12 @@ export const CashDenominationForm = ({
     onSubmit,
     onCancel,
     initialCounts = {},
-    availableStock = {}
+    availableStock = {},
+    initialNotes = '',
+    submitLabel
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
-    const [notes, setNotes] = useState('');
+    const [notes, setNotes] = useState(initialNotes);
 
     const calculateTotal = () => DENOMINATIONS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
     const handleCountChange = (val: number, qty: string) => setCounts(prev => ({ ...prev, [val]: parseInt(qty) || 0 }));
@@ -111,7 +115,7 @@ export const CashDenominationForm = ({
                     )}
                 >
                     <Save size={18} strokeWidth={3} />
-                    {isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación'}
+                    {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
                 </button>
             </div>
         </div>

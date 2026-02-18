@@ -1,11 +1,15 @@
 'use client';
 
-import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
+import { createClient } from "@/utils/supabase/client";
+import { toast } from 'sonner';
+import { CashDenominationForm } from './CashDenominationForm';
 
 interface MovementDetailModalProps {
     movement: any;
@@ -13,6 +17,10 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ movement, onClose }: MovementDetailModalProps) {
+    const supabase = createClient();
+    const [isEditing, setIsEditing] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     if (!movement) return null;
 
     const isIncome = movement.type === 'income' || movement.type === 'IN' || movement.type === 'CLOSE_ENTRY';
@@ -22,6 +30,60 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
     // Normalize breakdown
     const breakdown = movement.breakdown || {};
     const hasBreakdown = Object.keys(breakdown).length > 0;
+
+    const handleDelete = async () => {
+        try {
+            const { error } = await supabase.from('treasury_log').delete().eq('id', movement.id);
+            if (error) throw error;
+            toast.success('Movimiento eliminado correctamente');
+            // Recargar página para actualizar datos (simple y efectivo dado el trigger)
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al eliminar mvoimiento');
+        }
+    };
+
+    const handleUpdate = async (total: number, newBreakdown: any, newNotes: string) => {
+        try {
+            // Validar que el total coincida si es necesario, o confiar en el desglose
+            const { error } = await supabase.from('treasury_log').update({
+                amount: total,
+                breakdown: newBreakdown,
+                notes: newNotes
+            }).eq('id', movement.id);
+
+            if (error) throw error;
+            toast.success('Movimiento actualizado');
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al actualizar movimiento');
+        }
+    };
+
+    if (isEditing) {
+        return (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div
+                    className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <CashDenominationForm
+                        type={isAdjustment ? 'audit' : (isIncome ? 'in' : 'out')}
+                        boxName="Editando Movimiento"
+                        initialCounts={breakdown}
+                        initialNotes={movement.notes}
+                        submitLabel="Guardar Cambios"
+                        onSubmit={handleUpdate}
+                        onCancel={() => setIsEditing(false)}
+                        // En edición no validamos stock estricto porque estamos modificando historia
+                        availableStock={{}}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     const renderDenomGrid = (counts: Record<string, number>, title?: string, colorClass?: string) => {
         // Only show denoms with count > 0
@@ -169,14 +231,51 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                     )}
                 </div>
 
-                {/* FOOTER */}
-                <div className="p-6 pt-0 shrink-0">
-                    <button
-                        onClick={onClose}
-                        className="w-full h-12 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all active:scale-95"
-                    >
-                        Cerrar detalle
-                    </button>
+                {/* FOOTER ACTIONS */}
+                <div className="p-6 pt-0 shrink-0 grid grid-cols-2 gap-3">
+                    {isDeleting ? (
+                        <div className="col-span-2 bg-rose-50 p-4 rounded-2xl border border-rose-100 flex items-center justify-between animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center gap-3">
+                                <AlertTriangle className="text-rose-500" size={20} />
+                                <div>
+                                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider">¿Eliminar movimiento?</p>
+                                    <p className="text-[9px] text-rose-400 font-bold">Esta acción es irreversible</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setIsDeleting(false)}
+                                    className="px-3 py-2 bg-white text-zinc-500 text-[9px] font-black uppercase rounded-lg hover:bg-zinc-50 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-3 py-2 bg-rose-500 text-white text-[9px] font-black uppercase rounded-lg hover:bg-rose-600 transition-colors shadow-lg shadow-rose-200"
+                                >
+                                    Confirmar
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => setIsDeleting(true)}
+                                className="h-12 border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Trash2 size={16} strokeWidth={2.5} />
+                                Eliminar
+                            </button>
+
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="h-12 bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl"
+                            >
+                                <Edit2 size={16} strokeWidth={2.5} />
+                                Editar
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
