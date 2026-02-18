@@ -500,7 +500,7 @@ const AdminDashboardView = () => {
                                     <div className="flex flex-row gap-2 mb-4">
                                         <button
                                             onClick={() => router.push('/dashboard/movements')}
-                                            className="grow-[1.5] basis-0 px-6 py-4 rounded-2xl bg-[#5B8FB9] shadow-lg hover:bg-[#4A7DA6] transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
+                                            className="grow-[1.5] basis-0 px-6 py-4 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
                                         >
                                             <div className="flex flex-col items-start leading-none gap-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
@@ -512,30 +512,24 @@ const AdminDashboardView = () => {
                                         <div className="flex-[2] basis-0 grid grid-cols-3 gap-2">
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'in')}
-                                                className="bg-emerald-600 hover:bg-emerald-500 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group border border-emerald-400/30"
+                                                className="bg-transparent hover:bg-emerald-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                             >
-                                                <div className="bg-white/20 p-1 rounded-lg">
-                                                    <Plus size={14} strokeWidth={4} className="text-white" />
-                                                </div>
-                                                <span className="text-[8px] font-black text-white uppercase tracking-widest leading-none">Entrada</span>
+                                                <Plus size={18} strokeWidth={4} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black text-emerald-700 uppercase tracking-widest leading-none">Entrada</span>
                                             </button>
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'out')}
-                                                className="bg-rose-600 hover:bg-rose-500 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group border border-rose-400/30"
+                                                className="bg-transparent hover:bg-rose-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                             >
-                                                <div className="bg-white/20 p-1 rounded-lg">
-                                                    <Minus size={14} strokeWidth={4} className="text-white" />
-                                                </div>
-                                                <span className="text-[8px] font-black text-white uppercase tracking-widest leading-none">Salida</span>
+                                                <Minus size={18} strokeWidth={4} className="text-rose-600 group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black text-rose-700 uppercase tracking-widest leading-none">Salida</span>
                                             </button>
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'audit')}
-                                                className="bg-orange-500 hover:bg-orange-400 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group border border-orange-300/30"
+                                                className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                             >
-                                                <div className="bg-white/20 p-1 rounded-lg">
-                                                    <RefreshCw size={14} strokeWidth={4} className="text-white" />
-                                                </div>
-                                                <span className="text-[8px] font-black text-white uppercase tracking-widest leading-none">Arqueo</span>
+                                                <RefreshCw size={18} strokeWidth={4} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                                                <span className="text-[8px] font-black text-orange-600 uppercase tracking-widest leading-none">Arqueo</span>
                                             </button>
                                         </div>
                                     </div>
@@ -605,7 +599,7 @@ const AdminDashboardView = () => {
                                 <div className="flex flex-row gap-2 mb-3">
                                     <button
                                         onClick={() => router.push('/dashboard/movements')}
-                                        className="flex-[1.2] basis-0 px-4 py-3 rounded-2xl bg-[#5B8FB9] shadow-lg hover:bg-[#4A7DA6] transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
+                                        className="flex-[1.2] basis-0 px-4 py-3 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
                                     >
                                         <div className="flex flex-col items-start leading-none gap-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
@@ -617,30 +611,24 @@ const AdminDashboardView = () => {
                                     <div className="flex-[2] basis-0 grid grid-cols-3 gap-1.5">
                                         <button
                                             onClick={() => openTreasuryModal(box, 'in')}
-                                            className="bg-emerald-600/90 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group border border-emerald-400/30 min-h-[48px]"
+                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                         >
-                                            <div className="bg-white/20 p-1 rounded-lg">
-                                                <Plus size={12} strokeWidth={4} className="text-white" />
-                                            </div>
-                                            <span className="text-[7px] font-black text-white uppercase tracking-widest leading-none">Entrada</span>
+                                            <Plus size={16} strokeWidth={4} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[7px] font-black text-emerald-700 uppercase tracking-widest leading-none">Entrada</span>
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'out')}
-                                            className="bg-rose-600/90 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group border border-rose-400/30 min-h-[48px]"
+                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                         >
-                                            <div className="bg-white/20 p-1 rounded-lg">
-                                                <Minus size={12} strokeWidth={4} className="text-white" />
-                                            </div>
-                                            <span className="text-[7px] font-black text-white uppercase tracking-widest leading-none">Salida</span>
+                                            <Minus size={16} strokeWidth={4} className="text-rose-600 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[7px] font-black text-rose-700 uppercase tracking-widest leading-none">Salida</span>
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'audit')}
-                                            className="bg-orange-500/90 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group border border-orange-300/30 min-h-[48px]"
+                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                         >
-                                            <div className="bg-white/20 p-1 rounded-lg">
-                                                <RefreshCw size={12} strokeWidth={4} className="text-white" />
-                                            </div>
-                                            <span className="text-[7px] font-black text-white uppercase tracking-widest leading-none">Arqueo</span>
+                                            <RefreshCw size={14} strokeWidth={4} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[7px] font-black text-orange-600 uppercase tracking-widest leading-none">Arqueo</span>
                                         </button>
                                     </div>
                                 </div>

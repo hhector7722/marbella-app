@@ -31,6 +31,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Performance Audit & Optimization (Complete)**: Optimización radical de Historiales (Ventas, Mano de Obra, Staff) y Dashboard Admin mediante normalización con Hash Maps ($O(1)$), Renderizado Incremental con `IntersectionObserver` y Memoización estratégica.
 - [x] **Acciones Directas en Dashboard**: Sustitución de menú de caja por botones de acción directa (Entrada, Salida, Arqueo) y navegación mejorada a movimientos.
 - [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
+- [x] **Rediseño Fila Caja Inicial**: Unificación de Caja Inicial y botones de acción (Entrada, Salida, Arqueo) en una sola fila en el dashboard con estética Premium.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

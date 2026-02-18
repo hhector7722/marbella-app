@@ -332,20 +332,21 @@ export default function HistoryPage() {
                     {/* --- INTEGRATED DARK HEADER --- */}
                     <div className="bg-[#36606F] p-6 md:p-8 space-y-6">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
-                                    <ArrowLeft size={20} strokeWidth={3} />
+                            <div className="flex items-center gap-2 md:gap-4">
+                                <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
+                                    <ArrowLeft className="w-4 md:w-5 h-4 md:h-5" strokeWidth={3} />
                                 </button>
-                                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight italic">Cierres</h1>
+                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tight italic">Cierres</h1>
                             </div>
                             <button
                                 onClick={() => router.push('/dashboard')}
-                                className="bg-emerald-600/90 hover:bg-emerald-500 text-white h-12 px-6 rounded-2xl flex items-center gap-3 transition-all border border-emerald-400/30 active:scale-95 text-xs font-black uppercase tracking-widest shadow-lg"
+                                className="bg-emerald-600/90 hover:bg-emerald-500 text-white h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 transition-all border border-emerald-400/30 active:scale-95 text-[10px] md:text-xs font-black uppercase tracking-widest shadow-lg"
                             >
-                                <div className="bg-white/20 p-1.5 rounded-lg">
-                                    <Plus size={14} strokeWidth={4} />
+                                <div className="bg-white/20 p-1 md:p-1.5 rounded-lg text-white">
+                                    <Plus className="w-3 md:w-4 h-3 md:h-4" strokeWidth={4} />
                                 </div>
-                                Cierre
+                                <span className="hidden xs:inline">Cierre</span>
+                                <span className="xs:hidden">Cier.</span>
                             </button>
                         </div>
 
@@ -372,18 +373,18 @@ export default function HistoryPage() {
                     {/* --- WHITE BODY --- */}
                     <div className="bg-white">
                         {/* COMPACT SUMMARY (Integrated) */}
-                        <div className="py-6 px-4 grid grid-cols-1 md:grid-cols-3 border-b border-zinc-50">
+                        <div className="py-4 md:py-6 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalGross, 'gross_sales')}</span>
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">VENTAS</span>
+                                <span className="text-xl md:text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalGross, 'gross_sales')}</span>
+                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTAS</span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 hidden md:flex">
-                                <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalNet, 'net_sales')}</span>
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">VENTA NETA</span>
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
+                                <span className="text-xl md:text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalNet, 'net_sales')}</span>
+                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTA NETA</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                                <span className="text-3xl font-black text-[#5B8FB9] tabular-nums">{summary.avgTicket.toFixed(1)}€</span>
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">TICKET MEDIO</span>
+                                <span className="text-xl md:text-3xl font-black text-[#5B8FB9] tabular-nums">{summary.avgTicket.toFixed(1)}€</span>
+                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">T. MEDIO</span>
                             </div>
                         </div>
 
@@ -421,7 +422,7 @@ export default function HistoryPage() {
                                         <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
                                         {closings.map((c) => {
                                             const mainVal = c[selectedMetric] || 0;
                                             const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
@@ -430,12 +431,15 @@ export default function HistoryPage() {
                                                 <div
                                                     key={c.id}
                                                     onClick={() => setSelectedClosing(c)}
-                                                    className="group relative bg-white rounded-[2rem] p-6 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col gap-4"
+                                                    className="group relative bg-white rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col gap-3 md:gap-4"
                                                 >
                                                     <div className="flex justify-between items-start">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                            <span className="hidden md:block text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
                                                                 {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
+                                                            </span>
+                                                            <span className="md:hidden text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                                {format(new Date(c.closed_at), 'd MMM', { locale: es })}
                                                             </span>
                                                             <div className={cn(
                                                                 "text-[10px] font-black uppercase tracking-tighter",
