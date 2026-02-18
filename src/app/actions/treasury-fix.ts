@@ -3,8 +3,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function fixInitialBalanceAction() {
-    const supabase = createClient();
+export async function applyInitialBalanceAdjustment() {
+    const supabase = await createClient();
 
     try {
         // 1. Get the last movement of Feb 13th to check current balance

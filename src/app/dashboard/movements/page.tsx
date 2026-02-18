@@ -35,6 +35,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
+import { applyInitialBalanceAdjustment } from '@/app/actions/treasury-fix';
+import CashClosingModal from '@/components/CashClosingModal';
 
 interface Movement {
     id: string;
@@ -69,7 +71,7 @@ export default function MovementsPage() {
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
     const [boxData, setBoxData] = useState<any>(null);
-    const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory'>('none');
+    const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory' | 'close'>('none');
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [summary, setSummary] = useState({
@@ -293,31 +295,37 @@ export default function MovementsPage() {
 
                             <div className="flex items-center justify-between gap-2 w-full md:w-auto">
                                 <button
-                                    onClick={() => setCashModalMode('in')}
+                                    onClick={() => setCashModalMode('close')}
                                     className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Plus size={16} strokeWidth={4} className="text-white" />
+                                    <div className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Wallet size={16} strokeWidth={4} className="text-[#36606F]" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ENTRADA</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white px-2 py-0.5 rounded-full">CIERRE</span>
                                 </button>
+
+                                {/* BOTÓN DE REPARACIÓN (SOLO SI EL SALDO ESTÁ MAL EN FEB 13) */}
                                 <button
-                                    onClick={openOut}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
+                                    onClick={async () => {
+                                        if (confirm('¿Seguro que quieres corregir el saldo inicial del 13 de Febrero a 336.21€?')) {
+                                            setIsFixing(true);
+                                            const res = await applyInitialBalanceAdjustment();
+                                            setIsFixing(false);
+                                            if (res.success) {
+                                                toast.success(res.message);
+                                                fetchMovements();
+                                            } else {
+                                                toast.error(res.error);
+                                            }
+                                        }
+                                    }}
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none opacity-50 hover:opacity-100"
+                                    title="Corregir Saldo Inicial (Feb 13)"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Minus size={16} strokeWidth={4} className="text-white" />
+                                    <div className="w-8 h-8 flex items-center justify-center bg-amber-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        {isFixing ? <LoadingSpinner size="sm" className="text-white" /> : <AlertTriangle size={16} strokeWidth={4} className="text-white" />}
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">SALIDA</span>
-                                </button>
-                                <button
-                                    onClick={openAudit}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
-                                >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <RefreshCw size={14} strokeWidth={4} className="text-white" />
-                                    </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ARQUEO</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white px-2 py-0.5 rounded-full">FIX SALDO</span>
                                 </button>
                             </div>
                         </div>
@@ -642,6 +650,16 @@ export default function MovementsPage() {
                     onClose={() => setSelectedMovement(null)}
                 />
             )}
+
+            {/* CASH CLOSING MODAL - SEPARADO DEL MODAL DE OPERACIONES */}
+            <CashClosingModal
+                isOpen={cashModalMode === 'close'}
+                onClose={() => setCashModalMode('none')}
+                onSuccess={() => {
+                    fetchMovements();
+                    setCashModalMode('none');
+                }}
+            />
         </div>
     );
 }
