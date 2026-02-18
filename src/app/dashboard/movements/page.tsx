@@ -288,16 +288,20 @@ export default function MovementsPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setCashModalMode('in')}
-                                    className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
                                 >
-                                    <Plus size={14} strokeWidth={4} />
+                                    <div className="bg-white/20 p-1 rounded-lg">
+                                        <Plus size={12} strokeWidth={4} />
+                                    </div>
                                     ENTRADA
                                 </button>
                                 <button
                                     onClick={openOut}
-                                    className="bg-rose-600/90 hover:bg-rose-500 text-white px-3 py-2 rounded-xl flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-rose-600/90 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
                                 >
-                                    <Minus size={14} strokeWidth={4} />
+                                    <div className="bg-white/20 p-1 rounded-lg">
+                                        <Minus size={12} strokeWidth={4} />
+                                    </div>
                                     SALIDA
                                 </button>
                                 <button
@@ -314,9 +318,9 @@ export default function MovementsPage() {
                             <button
                                 onClick={() => setShowMonthPicker(true)}
                                 className={cn(
-                                    "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border outline-none",
+                                    "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border outline-none",
                                     filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? "bg-white border-white text-zinc-800"
+                                        ? "bg-white border-white text-zinc-800 shadow-sm"
                                         : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
                                 )}
                             >
@@ -332,9 +336,9 @@ export default function MovementsPage() {
                                     setShowCalendar('range');
                                 }}
                                 className={cn(
-                                    "py-2.5 rounded-xl text-[10px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
                                     filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? "bg-white border-white text-zinc-800"
+                                        ? "bg-white border-white text-zinc-800 shadow-sm"
                                         : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
                                 )}
                             >
@@ -344,8 +348,8 @@ export default function MovementsPage() {
                             <button
                                 onClick={() => setShowCalendar('single')}
                                 className={cn(
-                                    "py-2.5 rounded-xl text-[10px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                    filterMode === 'single' ? "bg-white border-white text-zinc-800" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                    filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
                                 )}
                             >
                                 FECHA
@@ -356,22 +360,22 @@ export default function MovementsPage() {
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
                         {/* RESUMEN ULTRA-COMPACTO */}
-                        <div className="py-6 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="py-4 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-2xl md:text-3xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
-                                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">INGRESOS</span>
+                                <span className="text-xl md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">INGRESOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-x border-zinc-100 px-2">
-                                <span className="text-2xl md:text-3xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
-                                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">GASTOS</span>
+                                <span className="text-xl md:text-2xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">GASTOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-2xl md:text-3xl font-black text-[#36606F] line-clamp-1 tabular-nums">
+                                <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
                                     {summary.currentBalance.toFixed(2)}€
                                 </span>
-                                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">SALDO</span>
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">SALDO</span>
                             </div>
                         </div>
 
