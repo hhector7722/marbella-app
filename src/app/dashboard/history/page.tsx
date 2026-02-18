@@ -336,7 +336,7 @@ export default function HistoryPage() {
                                 <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
                                     <ArrowLeft className="w-4 md:w-5 h-4 md:h-5" strokeWidth={3} />
                                 </button>
-                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tight italic">Cierres</h1>
+                                <h1 className="text-xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
                             </div>
                             <button
                                 onClick={() => router.push('/dashboard')}
@@ -375,16 +375,16 @@ export default function HistoryPage() {
                         {/* COMPACT SUMMARY (Integrated) */}
                         <div className="py-4 md:py-6 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-xl md:text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalGross, 'gross_sales')}</span>
-                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTAS</span>
+                                <span className="text-lg md:text-3xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
+                                <span className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTAS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
-                                <span className="text-xl md:text-3xl font-black text-[#5B8FB9] tabular-nums">{formatValue(summary.totalNet, 'net_sales')}</span>
-                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTA NETA</span>
+                                <span className="text-lg md:text-3xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
+                                <span className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">V. NETA</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                                <span className="text-xl md:text-3xl font-black text-[#5B8FB9] tabular-nums">{summary.avgTicket.toFixed(1)}€</span>
-                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">T. MEDIO</span>
+                                <span className="text-lg md:text-3xl font-black text-[#5B8FB9] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
+                                <span className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">T. MEDIO</span>
                             </div>
                         </div>
 
