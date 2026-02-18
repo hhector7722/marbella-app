@@ -267,213 +267,211 @@ export default function MovementsPage() {
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900">
             <div className="max-w-4xl mx-auto space-y-6">
 
-                {/* CABECERA Y FILTROS (FUERA DE LA TARJETA BLANCA) */}
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => router.back()}
-                                className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all text-white border border-white/20 active:scale-95"
-                            >
-                                <ArrowLeft size={20} strokeWidth={3} />
-                            </button>
-                            <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight italic drop-shadow-sm">Caja Inicial</h1>
+                {/* TARJETA GLOBAL INTEGRADA (TODO EN UN BLOQUE) */}
+                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/10">
+
+                    {/* CABECERA OSCURA INTEGRADA (TÍTULO + ACCIONES + FILTROS) */}
+                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => router.back()}
+                                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95"
+                                >
+                                    <ArrowLeft size={20} strokeWidth={3} />
+                                </button>
+                                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCashModalMode('in')}
+                                    className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                >
+                                    <Plus size={14} strokeWidth={4} />
+                                    ENTRADA
+                                </button>
+                                <button
+                                    onClick={openOut}
+                                    className="bg-rose-600/90 hover:bg-rose-500 text-white px-3 py-2 rounded-xl flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                >
+                                    <Minus size={14} strokeWidth={4} />
+                                    SALIDA
+                                </button>
+                                <button
+                                    onClick={openAudit}
+                                    className="bg-orange-500/90 hover:bg-orange-400 text-white p-2 rounded-xl flex items-center justify-center border border-orange-300/30 transition-all active:scale-95 shadow-lg"
+                                >
+                                    <RefreshCw size={14} strokeWidth={4} />
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* FILTROS INTEGRADOS EN CABECERA */}
+                        <div className="grid grid-cols-3 gap-2 pb-2">
                             <button
-                                onClick={() => setCashModalMode('in')}
-                                className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+                                onClick={() => setShowMonthPicker(true)}
+                                className={cn(
+                                    "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border outline-none",
+                                    filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? "bg-white border-white text-zinc-800"
+                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                )}
                             >
-                                <div className="bg-white/20 p-1 rounded-md">
-                                    <ArrowDownLeft size={14} strokeWidth={4} />
-                                </div>
-                                ENTRADA
+                                {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                    ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                    : 'FEBRERO 2026'}
                             </button>
+
                             <button
-                                onClick={openOut}
-                                className="bg-rose-600/90 hover:bg-rose-500 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+                                onClick={() => {
+                                    setRangeStart(null);
+                                    setRangeEnd(null);
+                                    setShowCalendar('range');
+                                }}
+                                className={cn(
+                                    "py-2.5 rounded-xl text-[10px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                    filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? "bg-white border-white text-zinc-800"
+                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                )}
                             >
-                                <div className="bg-white/20 p-1 rounded-md">
-                                    <ArrowUpRight size={14} strokeWidth={4} />
-                                </div>
-                                SALIDA
+                                PERIODO
                             </button>
+
                             <button
-                                onClick={openAudit}
-                                className="bg-zinc-800/90 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 border border-zinc-600/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+                                onClick={() => setShowCalendar('single')}
+                                className={cn(
+                                    "py-2.5 rounded-xl text-[10px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                    filterMode === 'single' ? "bg-white border-white text-zinc-800" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                )}
                             >
-                                <div className="bg-white/20 p-1 rounded-md">
-                                    <RefreshCw size={14} strokeWidth={3} />
-                                </div>
-                                ARQUEO
+                                FECHA
                             </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
-                        <button
-                            onClick={() => setShowMonthPicker(true)}
-                            className={cn(
-                                "py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 outline-none",
-                                filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? "bg-white border-white text-zinc-800 shadow-xl"
-                                    : "bg-transparent border-white/30 text-white/60 hover:border-white/50"
-                            )}
-                        >
-                            {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                : 'FEBRERO 2026'}
-                        </button>
+                    {/* CUERPO BLANCO (RESUMEN + TABLA) */}
+                    <div className="bg-white">
+                        {/* RESUMEN ULTRA-COMPACTO */}
+                        <div className="py-6 px-4 grid grid-cols-3 border-b border-zinc-50">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-2xl md:text-3xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
+                                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">INGRESOS</span>
+                            </div>
 
-                        <button
-                            onClick={() => {
-                                setRangeStart(null);
-                                setRangeEnd(null);
-                                setShowCalendar('range');
-                            }}
-                            className={cn(
-                                "py-3.5 rounded-2xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? "bg-white border-white text-zinc-800 shadow-xl"
-                                    : "bg-transparent border-white/30 text-white/60 hover:border-white/50"
-                            )}
-                        >
-                            PERIODO
-                        </button>
+                            <div className="flex flex-col items-center justify-center text-center border-x border-zinc-100 px-2">
+                                <span className="text-2xl md:text-3xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
+                                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">GASTOS</span>
+                            </div>
 
-                        <button
-                            onClick={() => setShowCalendar('single')}
-                            className={cn(
-                                "py-3.5 rounded-2xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-xl" : "bg-transparent border-white/30 text-white/60 hover:border-white/50"
-                            )}
-                        >
-                            FECHA
-                        </button>
-                    </div>
-                </div>
-
-                {/* TARJETA GLOBAL INTEGRADA (RESUMEN + MOVIMIENTOS) */}
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden mt-8">
-                    {/* RESUMEN COMPACTO DENTRO DE LA TARJETA */}
-                    <div className="py-8 grid grid-cols-3 border-b-2 border-zinc-50">
-                        <div className="flex flex-col items-center justify-center text-center">
-                            <span className="text-3xl font-black text-emerald-500 mb-1">+{summary.income.toFixed(0)}€</span>
-                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">INGRESOS</span>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <span className="text-2xl md:text-3xl font-black text-[#36606F] line-clamp-1 tabular-nums">
+                                    {summary.currentBalance.toFixed(2)}€
+                                </span>
+                                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">SALDO</span>
+                            </div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center">
-                            <span className="text-3xl font-black text-rose-500 mb-1">-{summary.expense.toFixed(0)}€</span>
-                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">GASTOS</span>
-                        </div>
-
-                        <div className="flex flex-col items-center justify-center text-center">
-                            <span className="text-3xl font-black text-[#36606F] mb-1 tabular-nums">
-                                {summary.currentBalance.toFixed(2)}€
-                            </span>
-                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">SALDO</span>
-                        </div>
-                    </div>
-
-                    {/* CONTENEDOR INTERIOR DE MOVIMIENTOS */}
-                    <div className="p-1 md:p-2 bg-zinc-50/30">
-                        <div className="overflow-x-auto no-scrollbar rounded-[2rem] border border-zinc-100 bg-white">
-                            <div className="min-w-[800px]">
-                                <table className="w-full text-left">
-                                    <thead className="bg-[#36606F] text-white">
-                                        <tr className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                            <th className="px-10 py-6 rounded-tl-[2rem]">FECHA</th>
-                                            <th className="px-6 py-6">CONCEPTO</th>
-                                            <th className="px-6 py-6 text-center">IMPORTE</th>
-                                            <th className="px-10 py-6 text-right rounded-tr-[2rem]">SALDO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-zinc-50">
-                                        {loading ? (
-                                            <tr>
-                                                <td colSpan={4} className="py-24">
-                                                    <div className="flex items-center justify-center">
-                                                        <LoadingSpinner size="lg" />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ) : movements.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={4} className="py-24">
-                                                    <div className="flex flex-col items-center justify-center space-y-3">
-                                                        <div className="p-5 bg-zinc-50 rounded-[1.5rem] opacity-40">
-                                                            <PiggyBank size={36} className="text-[#36606F]" />
-                                                        </div>
-                                                        <p className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Sin actividad en este rango</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            visibleMovements.map((mov, idx) => {
-                                                const isIncome = mov.type === 'income';
-                                                return (
-                                                    <tr key={mov.id} className="group hover:bg-zinc-50/50 transition-colors">
-                                                        <td className="px-10 py-6">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-[14px] font-black text-zinc-800 capitalize italic">
-                                                                    {format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}
-                                                                </span>
-                                                                <span className="text-[11px] font-bold text-zinc-400 font-mono">
-                                                                    {format(new Date(mov.created_at), 'HH:mm')}
-                                                                </span>
+                        {/* LISTADO DE MOVIMIENTOS INTEGRADO */}
+                        <div className="p-3 bg-white">
+                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100">
+                                <div className="overflow-x-auto no-scrollbar">
+                                    <div className="min-w-[700px]">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-[#36606F] text-white">
+                                                <tr className="text-[10px] font-black uppercase tracking-[0.15em]">
+                                                    <th className="px-6 py-4">FECHA</th>
+                                                    <th className="px-6 py-4">CONCEPTO</th>
+                                                    <th className="px-6 py-4 text-center">IMPORTE</th>
+                                                    <th className="px-8 py-4 text-right">SALDO</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-50/50">
+                                                {loading ? (
+                                                    <tr>
+                                                        <td colSpan={4} className="py-20">
+                                                            <div className="flex items-center justify-center">
+                                                                <LoadingSpinner size="lg" />
                                                             </div>
-                                                        </td>
-                                                        <td className="px-6 py-6">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className={cn(
-                                                                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
-                                                                    isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
-                                                                )}>
-                                                                    {isIncome ? <ArrowDown size={20} strokeWidth={3} /> : <ArrowUp size={20} strokeWidth={3} />}
-                                                                </div>
-                                                                <span className="text-[13px] font-bold text-zinc-600 uppercase tracking-tight truncate max-w-[280px]">
-                                                                    {mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-6 text-center">
-                                                            <span className={cn(
-                                                                "text-lg font-black tabular-nums",
-                                                                isIncome ? "text-emerald-500" : "text-rose-500"
-                                                            )}>
-                                                                {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-10 py-6 text-right">
-                                                            <span className="text-lg font-black text-zinc-900 tabular-nums">
-                                                                {mov.running_balance.toFixed(2)}€
-                                                            </span>
                                                         </td>
                                                     </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
+                                                ) : movements.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={4} className="py-20">
+                                                            <div className="flex flex-col items-center justify-center space-y-2 opacity-30">
+                                                                <PiggyBank size={32} />
+                                                                <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    visibleMovements.map((mov) => {
+                                                        const isIncome = mov.type === 'income';
+                                                        return (
+                                                            <tr key={mov.id} className="group hover:bg-zinc-50/80 transition-colors">
+                                                                <td className="px-6 py-3">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-[13px] font-black text-zinc-900 italic">
+                                                                            {format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}
+                                                                        </span>
+                                                                        <span className="text-[10px] font-bold text-zinc-400 font-mono">
+                                                                            {format(new Date(mov.created_at), 'HH:mm')}
+                                                                        </span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={cn(
+                                                                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                                                                            isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
+                                                                        )}>
+                                                                            {isIncome ? <ArrowDown size={16} strokeWidth={3} /> : <ArrowUp size={16} strokeWidth={3} />}
+                                                                        </div>
+                                                                        <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[200px]">
+                                                                            {mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}
+                                                                        </span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-3 text-center">
+                                                                    <span className={cn(
+                                                                        "text-[15px] font-black tabular-nums",
+                                                                        isIncome ? "text-emerald-500" : "text-rose-500"
+                                                                    )}>
+                                                                        {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-8 py-3 text-right">
+                                                                    <span className="text-[15px] font-black text-zinc-900 tabular-nums">
+                                                                        {mov.running_balance.toFixed(2)}€
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                            </tbody>
+                                        </table>
 
-                                {/* ARCHITECT_ULTRAFLUIDITY: Trigger more loading when scrolling */}
-                                {movements.length > displayLimit && (
-                                    <div
-                                        className="py-10 flex justify-center"
-                                        ref={(el) => {
-                                            if (!el) return;
-                                            const observer = new IntersectionObserver((entries) => {
-                                                if (entries[0].isIntersecting) {
-                                                    setDisplayLimit(prev => prev + 40);
-                                                }
-                                            });
-                                            observer.observe(el);
-                                        }}
-                                    >
-                                        <LoadingSpinner size="sm" />
+                                        {/* SCROLL SENSOR */}
+                                        {movements.length > displayLimit && (
+                                            <div
+                                                className="py-6 flex justify-center"
+                                                ref={(el) => {
+                                                    if (!el) return;
+                                                    const observer = new IntersectionObserver((entries) => {
+                                                        if (entries[0].isIntersecting) {
+                                                            setDisplayLimit(prev => prev + 40);
+                                                        }
+                                                    });
+                                                    observer.observe(el);
+                                                }}
+                                            >
+                                                <LoadingSpinner size="sm" />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                     </div>
