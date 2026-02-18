@@ -25,6 +25,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { recalculateAllBalances } from '@/app/actions/recalculate';
 import { RotateCcw } from 'lucide-react';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
+import { getDashboardData } from '@/app/actions/get-dashboard-data';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
@@ -143,20 +144,21 @@ StaffGridItem.displayName = 'StaffGridItem';
 
 type CashModalMode = 'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory';
 
-const AdminDashboardView = () => {
+const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const supabase = createClient();
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
-    const [dailyStats, setDailyStats] = useState<any>(null);
-    const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
+    // Initialize with initialData if available
+    const [loading, setLoading] = useState(!initialData);
+    const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
+    const [liveTickets, setLiveTickets] = useState(initialData?.liveTickets || { total: 0, count: 0 });
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
-    const [boxes, setBoxes] = useState<any[]>([]);
-    const [boxMovements, setBoxMovements] = useState<any[]>([]);
-    const [overtimeData, setOvertimeData] = useState<any[]>([]);
-    const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
+    const [boxes, setBoxes] = useState<any[]>(initialData?.boxes || []);
+    const [boxMovements, setBoxMovements] = useState<any[]>(initialData?.boxMovements || []);
+    const [overtimeData, setOvertimeData] = useState<any[]>(initialData?.overtimeData || []);
+    const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-    const [allEmployees, setAllEmployees] = useState<any[]>([]);
+    const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
     const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
     const [isRecalculating, setIsRecalculating] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
@@ -209,7 +211,10 @@ const AdminDashboardView = () => {
     };
 
     useEffect(() => {
-        fetchData();
+        // If no initial data, fetch on mount
+        if (!initialData) {
+            fetchData();
+        }
 
         // Subscription for real-time tickets
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -222,7 +227,7 @@ const AdminDashboardView = () => {
                 filter: `fecha=eq.${todayStr}`
             }, (payload: any) => {
                 const newTotal = Number(payload.new.total_documento) || 0;
-                setLiveTickets(prev => ({
+                setLiveTickets((prev: { total: number; count: number }) => ({
                     total: prev.total + newTotal,
                     count: prev.count + (newTotal > 0 ? 1 : (newTotal < 0 ? -1 : 0))
                 }));
@@ -257,139 +262,26 @@ const AdminDashboardView = () => {
         return week.staff.every((s: any) => paidStatus[`${week.weekId}-${s.id}`]);
     };
 
+    // Updated fetchData to use Server Action
     async function fetchData() {
         try {
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-            // Fetch initial tickets for today
-            const { data: ticketsToday } = await supabase
-                .from('tickets_marbella')
-                .select('total_documento')
-                .eq('fecha', todayStr);
-
-            const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-            const countVentas = ticketsToday?.reduce((count, t) => {
-                const val = Number(t.total_documento) || 0;
-                if (val > 0) return count + 1;
-                if (val < 0) return count - 1;
-                return count;
-            }, 0) || 0;
-            setLiveTickets({ total: totalVentas, count: Math.max(0, countVentas) });
-
-            const { data: lastClose } = await supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single();
-            if (lastClose) {
-                const closeDate = new Date(lastClose.closed_at);
-                const closeDateStart = new Date(closeDate); closeDateStart.setHours(0, 0, 0, 0);
-                const closeDateEnd = new Date(closeDate); closeDateEnd.setHours(23, 59, 59, 999);
-                const { data: dayLogs } = await supabase.from('time_logs').select('user_id, total_hours').gte('clock_in', closeDateStart.toISOString()).lte('clock_in', closeDateEnd.toISOString()).not('clock_out', 'is', null);
-                const { data: allProfiles } = await supabase.from('profiles').select('id, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly');
-                let laborCost = 0;
-                const profileMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
-                const countedManagers = new Set<string>();
-                const userDayHours = new Map<string, number>();
-                dayLogs?.forEach(log => {
-                    const current = userDayHours.get(log.user_id) || 0;
-                    userDayHours.set(log.user_id, current + (log.total_hours || 0));
-                });
-                userDayHours.forEach((hours, userId) => {
-                    const profile = profileMap.get(userId);
-                    if (profile) {
-                        const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
-                        const regPrice = profile.regular_cost_per_hour || 0;
-                        const overPrice = profile.overtime_cost_per_hour || regPrice;
-                        if (profile.role === 'manager') { laborCost += dailyContracted * regPrice; laborCost += hours * overPrice; countedManagers.add(userId); }
-                        else { if (hours > dailyContracted) { laborCost += dailyContracted * regPrice; laborCost += (hours - dailyContracted) * overPrice; } else { laborCost += hours * regPrice; } }
-                    }
-                });
-                allProfiles?.forEach(profile => {
-                    if (profile.role === 'manager' && !countedManagers.has(profile.id)) {
-                        const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
-                        const regPrice = profile.regular_cost_per_hour || 0;
-                        laborCost += dailyContracted * regPrice;
-                    }
-                });
-                const laborPercent = lastClose.net_sales > 0 ? (laborCost / lastClose.net_sales) * 100 : 0;
-                setDailyStats({
-                    date: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-                    fullDate: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
-                    weather: lastClose.weather || 'General',
-                    costeManoObra: laborCost,
-                    porcentajeManoObra: laborPercent,
-                    laborCostBg: laborPercent > 35 ? 'bg-rose-500' : (laborPercent > 30 ? 'bg-orange-400' : 'bg-emerald-500'),
-                    laborCostColor: laborPercent > 35 ? 'text-rose-600' : (laborPercent > 30 ? 'text-orange-500' : 'text-emerald-600')
-                });
+            setLoading(true);
+            const data = await getDashboardData();
+            if (data) {
+                setDailyStats(data.dailyStats);
+                setLiveTickets(data.liveTickets);
+                setBoxes(data.boxes);
+                setBoxMovements(data.boxMovements);
+                setOvertimeData(data.overtimeData);
+                setPaidStatus(data.paidStatus);
+                setAllEmployees(data.allEmployees);
             }
-            const { data: allBoxes } = await supabase.from('cash_boxes').select('*').order('name');
-            if (allBoxes) {
-                const sorted = allBoxes.sort((a, b) => a.type === 'operational' ? -1 : 1);
-                setBoxes(sorted);
-                const opBox = sorted.find(b => b.type === 'operational');
-                if (opBox) {
-                    const { data: moves } = await supabase.from('treasury_log').select('*').eq('box_id', opBox.id).neq('type', 'ADJUSTMENT').order('created_at', { ascending: false }).limit(3);
-                    setBoxMovements(moves || []);
-                }
-            }
-            const d = new Date(); d.setDate(d.getDate() - 60);
-            const { data: logs } = await supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', d.toISOString());
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, role, overtime_cost_per_hour, contracted_hours_weekly, is_fixed_salary, hours_balance, prefer_stock_hours');
-            const { data: snapshots } = await supabase.from('weekly_snapshots').select('user_id, week_start, is_paid, final_balance, balance_hours, pending_balance, contracted_hours_snapshot').gte('week_start', format(d, 'yyyy-MM-dd'));
-            if (profiles) setAllEmployees(profiles);
-            if (logs && profiles) {
-                const profileMap = new Map(profiles.map(p => [p.id, p]));
-                const weekUserHoursMap = new Map<string, Map<string, number>>();
-                logs.forEach(log => {
-                    const date = new Date(log.clock_in);
-                    const monday = startOfWeek(date, { weekStartsOn: 1 }); monday.setHours(0, 0, 0, 0);
-                    const weekLabelId = format(monday, 'yyyy-MM-dd');
-                    if (!weekUserHoursMap.has(weekLabelId)) weekUserHoursMap.set(weekLabelId, new Map());
-                    const userMap = weekUserHoursMap.get(weekLabelId)!;
-                    userMap.set(log.user_id, (userMap.get(log.user_id) || 0) + (log.total_hours || 0));
-                });
-                const sortedWeekIds = Array.from(weekUserHoursMap.keys()).sort().filter(id => id < format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'));
-                const userFinalBalances = new Map<string, Map<string, number>>();
-                const weeksMap = new Map<string, any>();
-                const initialPaidStatus: Record<string, boolean> = {};
-                sortedWeekIds.forEach(weekLabelId => {
-                    const userMap = weekUserHoursMap.get(weekLabelId)!;
-                    const monday = parseISO(weekLabelId);
-                    const prevWeekId = format(addDays(monday, -7), 'yyyy-MM-dd');
-                    if (!weeksMap.has(weekLabelId)) weeksMap.set(weekLabelId, { weekId: weekLabelId, total: 0, expanded: false, staff: [] });
-                    const weekEntry = weeksMap.get(weekLabelId);
-                    if (!userFinalBalances.has(weekLabelId)) userFinalBalances.set(weekLabelId, new Map());
-                    userMap.forEach((totalHours, userId) => {
-                        const userProfile = profileMap.get(userId);
-                        if (userProfile) {
-                            const currentSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId);
-                            const contractedHours = currentSnapshot?.contracted_hours_snapshot ?? (userProfile.contracted_hours_weekly ?? 40);
-                            const isManager = userProfile.role === 'manager';
-                            const isFixedSalary = userProfile.is_fixed_salary || false;
-                            const preferStock = userProfile.prefer_stock_hours || false;
-                            const isAugust = monday.getMonth() === 7;
-                            let weeklyBalance = (isAugust || isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
-                            weeklyBalance = calculateRoundedHours(weeklyBalance);
-                            let pendingBalance = 0;
-                            const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekId);
-                            if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) pendingBalance = (!preferStock && prevSnapshot.final_balance > 0) ? 0 : prevSnapshot.final_balance;
-                            else {
-                                const prevBalance = userFinalBalances.get(prevWeekId)?.get(userId) ?? (userProfile.hours_balance || 0);
-                                pendingBalance = (!preferStock && prevBalance > 0) ? 0 : prevBalance;
-                            }
-                            const finalBalance = pendingBalance + weeklyBalance;
-                            userFinalBalances.get(weekLabelId)!.set(userId, finalBalance);
-                            const cost = (finalBalance > 0 && !preferStock) ? finalBalance * (userProfile.overtime_cost_per_hour || 0) : 0;
-                            const isPaid = snapshots?.find(s => s.user_id === userId && s.week_start === weekLabelId)?.is_paid || false;
-                            initialPaidStatus[`${weekLabelId}-${userId}`] = isPaid;
-                            if (cost > 0) {
-                                weekEntry.staff.push({ id: userId, name: userProfile.first_name, amount: cost, hours: finalBalance });
-                                weekEntry.total += cost;
-                            }
-                        }
-                    });
-                });
-                setPaidStatus(initialPaidStatus);
-                setOvertimeData(Array.from(weeksMap.values()).filter((w: any) => w.staff.length > 0).sort((a: any, b: any) => b.weekId.localeCompare(a.weekId)));
-            }
-        } catch (error) { console.error(error); } finally { setLoading(false); }
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al actualizar datos');
+        } finally {
+            setLoading(false);
+        }
     }
 
     const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any) => {

@@ -33,7 +33,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
 - [x] **Refinamiento Estético Caja Inicial**: Unificación de Caja Inicial (ahora en verde `emerald-600`) y botones de acción (Entrada, Salida, Arqueo) con nuevo diseño: texto negro en negrita e iconos blancos dentro de círculos de color, replicado en todo el dashboard y página de movimientos.
 - [x] **Detalle de Movimientos**: Implementación de modal dinámico que muestra el desglose de billetes/monedas y notas al pulsar sobre cualquier fila de movimientos.
-- [x] **Refinamiento Estético Historial (Escritorio + Móvil)**: Diseño de "Doble Contenedor" (Card-in-Card) con cabecera de métricas integrada (estilo movimientos). Optimización de densidad con grid de 4 columnas en escritorio y tarjetas simplificadas en móvil.
+
+- [x] **Refinamiento UI Historial**: Implementación de botón de cierre flotante ("Cierre") en cabecera de historial, con apertura directa del modal CashClosingModal.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

@@ -9,9 +9,10 @@ import StaffDashboardView from './StaffDashboardView';
 interface DashboardSwitcherProps {
     userRole: string;
     initialView?: 'staff' | 'admin';
+    initialData?: any;
 }
 
-export default function DashboardSwitcher({ userRole, initialView = 'staff' }: DashboardSwitcherProps) {
+export default function DashboardSwitcher({ userRole, initialView = 'staff', initialData }: DashboardSwitcherProps) {
     const router = useRouter();
     const [view, setView] = useState<'staff' | 'admin'>(initialView);
     const [offsetX, setOffsetX] = useState(0);
@@ -131,7 +132,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff' }: D
                 </div>
                 {isManager && (
                     <div className="w-1/2 h-full flex-shrink-0">
-                        {(view === 'admin' || isDragging) && <AdminDashboardView />}
+                        {(view === 'admin' || isDragging) && <AdminDashboardView initialData={initialData} />}
                     </div>
                 )}
             </div>

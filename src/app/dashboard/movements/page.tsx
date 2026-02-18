@@ -15,6 +15,7 @@ import {
     Calendar,
     ChevronLeft,
     ChevronRight,
+    Check,
     TrendingUp,
     Wallet,
     TrendingDown,
@@ -35,7 +36,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
-import { applyInitialBalanceAdjustment } from '@/app/actions/treasury-fix';
 import CashClosingModal from '@/components/CashClosingModal';
 
 interface Movement {
@@ -66,12 +66,12 @@ export default function MovementsPage() {
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [loading, setLoading] = useState(true);
-    const [isFixing, setIsFixing] = useState(false);
+    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
     const [boxData, setBoxData] = useState<any>(null);
-    const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory' | 'close'>('none');
+    const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory'>('none');
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [summary, setSummary] = useState({
@@ -290,42 +290,45 @@ export default function MovementsPage() {
                                 >
                                     <ArrowLeft size={20} strokeWidth={3} />
                                 </button>
-                                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
+                                <h1 className="text-xl md:text-4xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
                             </div>
 
                             <div className="flex items-center justify-between gap-2 w-full md:w-auto">
                                 <button
-                                    onClick={() => setCashModalMode('close')}
+                                    onClick={() => setCashModalMode('in')}
                                     className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Wallet size={16} strokeWidth={4} className="text-[#36606F]" />
+                                    <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Plus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white px-2 py-0.5 rounded-full">CIERRE</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ENTRADA</span>
                                 </button>
-
-                                {/* BOTÓN DE REPARACIÓN (SOLO SI EL SALDO ESTÁ MAL EN FEB 13) */}
                                 <button
-                                    onClick={async () => {
-                                        if (confirm('¿Seguro que quieres corregir el saldo inicial del 13 de Febrero a 336.21€?')) {
-                                            setIsFixing(true);
-                                            const res = await applyInitialBalanceAdjustment();
-                                            setIsFixing(false);
-                                            if (res.success) {
-                                                toast.success(res.message);
-                                                fetchMovements();
-                                            } else {
-                                                toast.error(res.error);
-                                            }
-                                        }
-                                    }}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none opacity-50 hover:opacity-100"
-                                    title="Corregir Saldo Inicial (Feb 13)"
+                                    onClick={() => setIsClosingModalOpen(true)}
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-amber-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        {isFixing ? <LoadingSpinner size="sm" className="text-white" /> : <AlertTriangle size={16} strokeWidth={4} className="text-white" />}
+                                    <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Check size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white px-2 py-0.5 rounded-full">FIX SALDO</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">CIERRE</span>
+                                </button>
+                                <button
+                                    onClick={openOut}
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
+                                >
+                                    <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Minus size={16} strokeWidth={4} className="text-white" />
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">SALIDA</span>
+                                </button>
+                                <button
+                                    onClick={openAudit}
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
+                                >
+                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <RefreshCw size={14} strokeWidth={4} className="text-white" />
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ARQUEO</span>
                                 </button>
                             </div>
                         </div>
@@ -465,11 +468,11 @@ export default function MovementsPage() {
                                                                             mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
                                                                                 "bg-orange-50 text-orange-500"
                                                                     )}>
-                                                                        {mov.type === 'income' ? <ArrowDown size={14} className="md:size-[16px]" strokeWidth={3} /> :
+                                                                        {mov.type === 'income' ? <Plus size={14} className="md:size-[16px]" strokeWidth={3} /> :
                                                                             mov.type === 'expense' ? <ArrowUp size={14} className="md:size-[16px]" strokeWidth={3} /> :
                                                                                 <RefreshCw size={12} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[10px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[110px] md:max-w-[200px]">
+                                                                    <span className="text-[10px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[100px] md:max-w-[200px]">
                                                                         {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                     </span>
                                                                 </div>
@@ -651,15 +654,17 @@ export default function MovementsPage() {
                 />
             )}
 
-            {/* CASH CLOSING MODAL - SEPARADO DEL MODAL DE OPERACIONES */}
-            <CashClosingModal
-                isOpen={cashModalMode === 'close'}
-                onClose={() => setCashModalMode('none')}
-                onSuccess={() => {
-                    fetchMovements();
-                    setCashModalMode('none');
-                }}
-            />
+            {isClosingModalOpen && (
+                <CashClosingModal
+                    isOpen={isClosingModalOpen}
+                    onClose={() => setIsClosingModalOpen(false)}
+                    onSuccess={() => {
+                        setIsClosingModalOpen(false);
+                        fetchMovements();
+                        toast.success("Cierre realizado correctamente");
+                    }}
+                />
+            )}
         </div>
     );
 }

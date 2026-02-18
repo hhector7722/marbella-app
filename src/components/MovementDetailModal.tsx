@@ -269,7 +269,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
 
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="h-12 bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl"
+                                className="h-12 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
                                 <Edit2 size={16} strokeWidth={2.5} />
                                 Editar
