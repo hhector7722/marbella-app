@@ -293,7 +293,7 @@ export default function MovementsPage() {
                                 <h1 className="text-xl md:text-4xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
+                            <div className="flex items-center justify-between gap-4 w-full md:w-auto">
                                 <button
                                     onClick={() => setCashModalMode('in')}
                                     className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
@@ -301,16 +301,7 @@ export default function MovementsPage() {
                                     <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <Plus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ENTRADA</span>
-                                </button>
-                                <button
-                                    onClick={() => setIsClosingModalOpen(true)}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
-                                >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Check size={16} strokeWidth={4} className="text-white" />
-                                    </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">CIERRE</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/90">ENTRADA</span>
                                 </button>
                                 <button
                                     onClick={openOut}
@@ -319,7 +310,7 @@ export default function MovementsPage() {
                                     <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <Minus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">SALIDA</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/90">SALIDA</span>
                                 </button>
                                 <button
                                     onClick={openAudit}
@@ -328,7 +319,7 @@ export default function MovementsPage() {
                                     <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <RefreshCw size={14} strokeWidth={4} className="text-white" />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900 bg-white/90 px-2 py-0.5 rounded-full">ARQUEO</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/90">ARQUEO</span>
                                 </button>
                             </div>
                         </div>

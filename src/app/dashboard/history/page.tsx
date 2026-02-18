@@ -331,7 +331,7 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
                     {/* --- INTEGRATED DARK HEADER --- */}
-                    <div className="bg-[#36606F] p-4 md:p-6 space-y-4 relative">
+                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6 relative">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 md:gap-4">
                                 <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
@@ -340,36 +340,53 @@ export default function HistoryPage() {
                                 <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
                             </div>
 
+                            {/* Ghost Action Button for Closing */}
+                            <button
+                                onClick={() => setShowClosingModal(true)}
+                                className="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
+                            >
+                                <div className="bg-emerald-500 text-white p-1 md:p-1.5 rounded-full shadow-lg group-hover:scale-110 transition-transform">
+                                    <Plus size={12} className="md:w-3.5 md:h-3.5" strokeWidth={4} />
+                                </div>
+                                <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-widest">Cierre</span>
+                            </button>
                         </div>
 
-                        {/* Floating Action Button for Closing */}
-                        <button
-                            onClick={() => setShowClosingModal(true)}
-                            className="absolute top-4 right-4 md:top-6 md:right-6 bg-emerald-600 hover:bg-emerald-500 text-white h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 transition-all active:scale-95 text-[10px] md:text-xs font-black uppercase tracking-widest shadow-xl z-10"
-                        >
-                            <div className="bg-white/20 p-1 md:p-1.5 rounded-lg text-white">
-                                <Plus className="w-3 md:w-4 h-3 md:h-4" strokeWidth={4} />
-                            </div>
-                            <span>Cierre</span>
-                        </button>
-
-                        {/* FILTERS INTEGRATED IN HEADER */}
-                        <div className="flex justify-end gap-2">
-                            <div className="bg-black/20 p-1 rounded-2xl border border-white/5 flex gap-1">
-                                {[
-                                    { label: 'Mes', action: () => setShowMonthPicker(true) },
-                                    { label: 'Periodo', action: () => setShowCalendar(true) },
-                                    { label: 'Fecha', action: () => setShowCalendar(true) }
-                                ].map((f) => (
-                                    <button
-                                        key={f.label}
-                                        onClick={f.action}
-                                        className="h-8 md:h-10 px-4 md:px-8 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 transition-all outline-none"
-                                    >
-                                        {f.label}
-                                    </button>
-                                ))}
-                            </div>
+                        {/* ROW 2: Segmented Filters (Full Width) */}
+                        <div className="bg-black/20 p-1 md:p-1.5 rounded-2xl border border-white/5 flex gap-1 w-full">
+                            {[
+                                {
+                                    label: (() => {
+                                        const start = new Date(rangeStart);
+                                        const end = new Date(rangeEnd);
+                                        if (isSameDay(start, startOfMonth(start)) && isSameDay(end, endOfMonth(start))) {
+                                            return format(start, 'MMMM yyyy', { locale: es });
+                                        }
+                                        return 'Mes';
+                                    })(),
+                                    action: () => setShowMonthPicker(true),
+                                    isActive: (() => {
+                                        const start = new Date(rangeStart);
+                                        const end = new Date(rangeEnd);
+                                        return isSameDay(start, startOfMonth(start)) && isSameDay(end, endOfMonth(start));
+                                    })()
+                                },
+                                { label: 'Periodo', action: () => setShowCalendar(true), isActive: false },
+                                { label: 'Fecha', action: () => setShowCalendar(true), isActive: false }
+                            ].map((f) => (
+                                <button
+                                    key={f.label}
+                                    onClick={f.action}
+                                    className={cn(
+                                        "flex-1 h-8 md:h-10 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all outline-none truncate px-1",
+                                        f.isActive
+                                            ? "bg-white text-[#36606F] shadow-md scale-[1.02]"
+                                            : "text-white/40 hover:text-white hover:bg-white/5"
+                                    )}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
