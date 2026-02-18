@@ -330,13 +330,13 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
                     {/* --- INTEGRATED DARK HEADER --- */}
-                    <div className="bg-[#36606F] p-6 md:p-8 space-y-6">
+                    <div className="bg-[#36606F] p-4 md:p-6 space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 md:gap-4">
                                 <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
                                     <ArrowLeft className="w-4 md:w-5 h-4 md:h-5" strokeWidth={3} />
                                 </button>
-                                <h1 className="text-xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
+                                <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
                             </div>
                             <button
                                 onClick={() => router.push('/dashboard')}
@@ -373,45 +373,46 @@ export default function HistoryPage() {
                     {/* --- WHITE BODY --- */}
                     <div className="bg-white">
                         {/* COMPACT SUMMARY (Integrated) */}
-                        <div className="py-4 md:py-6 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="py-2 md:py-4 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-lg md:text-3xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
-                                <span className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTAS</span>
+                                <span className="text-lg md:text-2xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
+                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTAS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
-                                <span className="text-lg md:text-3xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
-                                <span className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">V. NETA</span>
+                                <span className="text-lg md:text-2xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
+                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">V. NETA</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                                <span className="text-lg md:text-3xl font-black text-[#5B8FB9] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
-                                <span className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">T. MEDIO</span>
+                                <span className="text-lg md:text-2xl font-black text-[#5B8FB9] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
+                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">T. MEDIO</span>
                             </div>
                         </div>
 
-                        {/* METRIC SELECTOR (Integrated) */}
-                        <div className="p-6 flex justify-center bg-zinc-50/50">
-                            <div className="bg-[#36606F] p-1.5 rounded-[2rem] border border-white/10 flex gap-1.5 overflow-x-auto no-scrollbar max-w-full shadow-inner">
-                                {METRICS.map(m => (
-                                    <button
-                                        key={m.value}
-                                        onClick={() => setSelectedMetric(m.value)}
-                                        className={cn(
-                                            "flex-shrink-0 h-10 px-6 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                                            selectedMetric === m.value
-                                                ? "bg-white text-[#36606F] shadow-lg scale-105"
-                                                : "text-white/60 hover:text-white hover:bg-white/5"
-                                        )}
-                                    >
-                                        <m.icon size={14} className={cn(selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
-                                        {m.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        {/* SECOND CONTAINER (METRICS + LIST) */}
+                        <div className="p-3 md:p-6">
+                            <div className="bg-zinc-50/10 rounded-[2rem] border border-zinc-100 shadow-xl overflow-hidden p-3 md:p-6">
+                                {/* METRIC SELECTOR (Integrated) */}
+                                <div className="mb-6 flex justify-center">
+                                    <div className="bg-[#36606F] p-1.5 rounded-[2rem] border border-white/10 flex gap-1.5 overflow-x-auto no-scrollbar max-w-full shadow-inner">
+                                        {METRICS.map(m => (
+                                            <button
+                                                key={m.value}
+                                                onClick={() => setSelectedMetric(m.value)}
+                                                className={cn(
+                                                    "flex-shrink-0 h-8 md:h-10 px-4 md:px-6 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                                                    selectedMetric === m.value
+                                                        ? "bg-white text-[#36606F] shadow-lg scale-105"
+                                                        : "text-white/60 hover:text-white hover:bg-white/5"
+                                                )}
+                                            >
+                                                <m.icon size={14} className={cn(selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
+                                                {m.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
 
-                        {/* CLOSINGS LIST CONTAINER (Integrated with Double Container style) */}
-                        <div className="p-3 md:p-4 bg-white">
-                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl bg-zinc-50/10 p-4 md:p-6">
+                                {/* CLOSINGS LIST */}
                                 {loading ? (
                                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                                         <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -422,7 +423,7 @@ export default function HistoryPage() {
                                         <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
                                         {closings.map((c) => {
                                             const mainVal = c[selectedMetric] || 0;
                                             const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
@@ -431,49 +432,49 @@ export default function HistoryPage() {
                                                 <div
                                                     key={c.id}
                                                     onClick={() => setSelectedClosing(c)}
-                                                    className="group relative bg-white rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col gap-3 md:gap-4"
+                                                    className="group relative bg-white rounded-2xl md:rounded-[1.5rem] p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-50 flex flex-col gap-3"
                                                 >
                                                     <div className="flex justify-between items-start">
                                                         <div className="flex flex-col">
-                                                            <span className="hidden md:block text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                            <span className="hidden md:block text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
                                                                 {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
                                                             </span>
-                                                            <span className="md:hidden text-[11px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                            <span className="md:hidden text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
                                                                 {format(new Date(c.closed_at), 'd MMM', { locale: es })}
                                                             </span>
                                                             <div className={cn(
-                                                                "text-[10px] font-black uppercase tracking-tighter",
+                                                                "text-[8px] font-black uppercase tracking-tighter",
                                                                 parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
                                                             )}>
                                                                 {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
                                                             </div>
                                                         </div>
-                                                        <div className="bg-zinc-50 p-2 rounded-xl text-zinc-300 group-hover:text-[#5B8FB9] transition-colors">
-                                                            <Calendar size={16} />
+                                                        <div className="bg-zinc-50 p-1.5 rounded-lg text-zinc-300 group-hover:text-[#5B8FB9] transition-colors">
+                                                            <Calendar size={12} />
                                                         </div>
                                                     </div>
 
                                                     <div className="flex flex-col">
-                                                        <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                                                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
-                                                        <span className="text-2xl md:text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                        <span className="text-xl md:text-2xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                             {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                         </span>
                                                     </div>
 
-                                                    <div className="grid grid-cols-3 gap-1 pt-4 border-t border-zinc-50">
+                                                    <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-50">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Facturación</span>
-                                                            <span className="text-[11px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)} €</span>
+                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Facturación</span>
+                                                            <span className="text-[9px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)}€</span>
                                                         </div>
-                                                        <div className="flex flex-col border-l border-zinc-50 pl-2">
-                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">T. Medio</span>
-                                                            <span className="text-[11px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                        <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">T. Medio</span>
+                                                            <span className="text-[9px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
                                                         </div>
-                                                        <div className="flex flex-col border-l border-zinc-50 pl-2">
-                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Efectivo</span>
-                                                            <span className="text-[11px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)} €</span>
+                                                        <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Efectivo</span>
+                                                            <span className="text-[9px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
                                                         </div>
                                                     </div>
                                                 </div>

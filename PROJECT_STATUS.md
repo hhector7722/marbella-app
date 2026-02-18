@@ -31,7 +31,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Performance Audit & Optimization (Complete)**: Optimización radical de Historiales (Ventas, Mano de Obra, Staff) y Dashboard Admin mediante normalización con Hash Maps ($O(1)$), Renderizado Incremental con `IntersectionObserver` y Memoización estratégica.
 - [x] **Acciones Directas en Dashboard**: Sustitución de menú de caja por botones de acción directa (Entrada, Salida, Arqueo) y navegación mejorada a movimientos.
 - [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
-- [x] **Refinamiento Estético Caja Inicial**: Unificación de Caja Inicial (ahora en verde `emerald-600`) y botones de acción flotantes (sin fondo) para una interfaz más limpia y moderna en el dashboard.
+- [x] **Refinamiento Estético Caja Inicial**: Unificación de Caja Inicial (ahora en verde `emerald-600`) y botones de acción (Entrada, Salida, Arqueo) con nuevo diseño: texto negro en negrita e iconos blancos dentro de círculos de color, replicado en todo el dashboard y página de movimientos.
 - [x] **Detalle de Movimientos**: Implementación de modal dinámico que muestra el desglose de billetes/monedas y notas al pulsar sobre cualquier fila de movimientos.
 
 ## 📅 PENDIENTE
