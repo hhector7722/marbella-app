@@ -405,10 +405,10 @@ export default function MovementsPage() {
                                     <table className="w-full text-left">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                                <th className="px-2 md:px-6 py-4">FECHA</th>
-                                                <th className="px-2 md:px-6 py-4">CONCEPTO</th>
-                                                <th className="px-2 md:px-6 py-4 text-center">IMPORTE</th>
-                                                <th className="px-3 md:px-8 py-4 text-right">SALDO</th>
+                                                <th className="px-1.5 md:px-6 py-4 w-[70px] md:w-auto">FECHA</th>
+                                                <th className="px-1.5 md:px-6 py-4">CONCEPTO</th>
+                                                <th className="px-1.5 md:px-6 py-4 text-center w-[80px] md:w-auto">IMPORTE</th>
+                                                <th className="px-2 md:px-8 py-4 text-right w-[80px] md:w-auto">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
@@ -431,25 +431,25 @@ export default function MovementsPage() {
                                                 </tr>
                                             ) : (
                                                 visibleMovements.map((mov) => {
-                                                    const isIncome = mov.type === 'income';
+                                                    const date = new Date(mov.created_at);
                                                     return (
                                                         <tr
                                                             key={mov.id}
                                                             className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100"
                                                             onClick={() => setSelectedMovement(mov)}
                                                         >
-                                                            <td className="px-2 md:px-6 py-3">
+                                                            <td className="px-1.5 md:px-6 py-3">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[11px] md:text-[13px] font-black text-zinc-900 italic">
-                                                                        <span className="md:inline hidden">{format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}</span>
-                                                                        <span className="md:hidden inline">{format(new Date(mov.created_at), 'd MMM', { locale: es })}</span>
+                                                                        <span className="md:inline hidden">{format(date, 'eeee d MMM', { locale: es })}</span>
+                                                                        <span className="md:hidden inline">{format(date, 'd MMM', { locale: es })}</span>
                                                                     </span>
                                                                     <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 font-mono">
-                                                                        {format(new Date(mov.created_at), 'HH:mm')}
+                                                                        {format(date, 'HH:mm')}
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-2 md:px-6 py-3">
+                                                            <td className="px-1.5 md:px-6 py-3">
                                                                 <div className="flex items-center gap-1.5 md:gap-3">
                                                                     <div className={cn(
                                                                         "w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
@@ -461,12 +461,12 @@ export default function MovementsPage() {
                                                                             mov.type === 'expense' ? <ArrowUp size={14} className="md:size-[16px]" strokeWidth={3} /> :
                                                                                 <RefreshCw size={12} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[10px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[80px] md:max-w-[200px]">
+                                                                    <span className="text-[10px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[110px] md:max-w-[200px]">
                                                                         {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-2 md:px-6 py-3 text-center">
+                                                            <td className="px-1.5 md:px-6 py-3 text-center">
                                                                 <span className={cn(
                                                                     "text-[12px] md:text-[15px] font-black tabular-nums",
                                                                     mov.type === 'income' ? "text-emerald-500" :
@@ -476,7 +476,7 @@ export default function MovementsPage() {
                                                                     {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
                                                                 </span>
                                                             </td>
-                                                            <td className="px-3 md:px-8 py-3 text-right">
+                                                            <td className="px-2 md:px-8 py-3 text-right">
                                                                 <span className="text-[12px] md:text-[15px] font-black text-zinc-900 tabular-nums">
                                                                     {mov.running_balance.toFixed(2)}€
                                                                 </span>
