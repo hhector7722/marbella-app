@@ -41,7 +41,9 @@ export const CashDenominationForm = ({
     };
 
     // If strict editing is required, we manage state. 
-    const [selectedDate, setSelectedDate] = useState(initialDate ? formatForInput(initialDate) : '');
+    // Default to NOW if no initialDate provided
+    const nowStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    const [selectedDate, setSelectedDate] = useState(initialDate ? formatForInput(initialDate) : nowStr);
 
     const calculateTotal = () => DENOMINATIONS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
     const handleCountChange = (val: number, qty: string) => setCounts(prev => ({ ...prev, [val]: parseInt(qty) || 0 }));
@@ -71,13 +73,13 @@ export const CashDenominationForm = ({
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {/* DATE & NOTES ROW */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
-                    <div className="flex flex-col">
-                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Fecha y Hora</label>
+                    <div className="flex flex-col justify-end">
+                        {/* Stealth Date Input: Looks like distinct text, editable on click. No explicit label to minimize noise */}
                         <input
                             type="datetime-local"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#5B8FB9]/20 bg-white shadow-sm outline-none transition-all font-bold text-gray-700 text-xs"
+                            className="w-full bg-transparent border-none p-0 text-zinc-400 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer hover:text-zinc-600 transition-colors"
                         />
                     </div>
                     {!isAudit && (
