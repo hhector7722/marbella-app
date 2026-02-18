@@ -267,258 +267,213 @@ export default function MovementsPage() {
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900">
             <div className="max-w-4xl mx-auto space-y-6">
 
-                {/* CABECERA COMPACTA */}
-                <div className="flex items-center justify-between bg-white/20 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-white/20 shadow-xl">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-xl hover:bg-white/30 transition-all text-white">
-                            <ArrowLeft size={20} strokeWidth={3} />
-                        </button>
-                        <h1 className="text-xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
-                    </div>
-
+                {/* CABECERA AL ESTILO DE LA IMAGEN */}
+                <div className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-6">
-                        {summary.currentBalance > 1000 && (
-                            <button
-                                onClick={async () => {
-                                    if (!confirm("¿Seguro que quieres aplicar el ajuste de saldo inicial?")) return;
-                                    setIsFixing(true);
-                                    const res = await applyInitialBalanceAdjustment();
-                                    if (res.success) {
-                                        toast.success(res.message);
-                                        fetchMovements();
-                                    } else {
-                                        toast.error(res.message);
-                                    }
-                                    setIsFixing(false);
-                                }}
-                                disabled={isFixing}
-                                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl shadow-lg hover:bg-amber-600 transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
-                            >
-                                {isFixing ? <LoadingSpinner size="sm" /> : <AlertTriangle size={14} />}
-                                Arreglar Saldo
-                            </button>
+                        <button
+                            onClick={() => router.back()}
+                            className="w-12 h-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/20 active:scale-90"
+                        >
+                            <ArrowLeft size={24} strokeWidth={3} />
+                        </button>
+                        <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter italic drop-shadow-sm">Caja Inicial</h1>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setCashModalMode('in')}
+                            className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-[0.75rem] shadow-lg flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-xs font-black uppercase tracking-widest"
+                        >
+                            <div className="bg-white/20 p-1 rounded-md">
+                                <ArrowDownLeft size={16} strokeWidth={4} />
+                            </div>
+                            ENTRADA
+                        </button>
+                        <button
+                            onClick={openOut}
+                            className="bg-rose-600/90 hover:bg-rose-500 text-white px-5 py-2.5 rounded-[0.75rem] shadow-lg flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-xs font-black uppercase tracking-widest"
+                        >
+                            <div className="bg-white/20 p-1 rounded-md">
+                                <ArrowUpRight size={16} strokeWidth={4} />
+                            </div>
+                            SALIDA
+                        </button>
+                        <button
+                            onClick={openAudit}
+                            className="bg-zinc-800/90 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-[0.75rem] shadow-lg flex items-center gap-2 border border-zinc-600/30 transition-all active:scale-95 text-xs font-black uppercase tracking-widest"
+                        >
+                            <div className="bg-white/20 p-1 rounded-md">
+                                <RefreshCw size={16} strokeWidth={3} />
+                            </div>
+                            ARQUEO
+                        </button>
+                    </div>
+                </div>
+
+                {/* FILTROS AL ESTILO DE LA IMAGEN */}
+                <div className="grid grid-cols-3 gap-4">
+                    <button
+                        onClick={() => setShowMonthPicker(true)}
+                        className={cn(
+                            "py-4 rounded-[1.2rem] text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 outline-none shadow-md shadow-black/10",
+                            filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                ? "bg-white border-white text-zinc-800"
+                                : "bg-transparent border-white/30 text-white/60 hover:border-white/50"
                         )}
-                        <button className="flex items-center justify-center w-10 h-10 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 active:scale-95 transition-all outline-none">
-                            <Download size={18} strokeWidth={3} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* FILTROS EN UNA SOLA FILA */}
-                <div className="bg-white p-4 rounded-[2rem] shadow-xl border border-white/10 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                        <button
-                            onClick={() => setShowMonthPicker(true)}
-                            className={cn(
-                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 outline-none",
-                                filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? "bg-[#36606F] border-[#36606F] text-white shadow-lg"
-                                    : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200"
-                            )}
-                        >
-                            <Calendar size={14} />
-                            {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                : 'Seleccionar Mes'}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setRangeStart(null);
-                                setRangeEnd(null);
-                                setShowCalendar('range');
-                            }}
-                            className={cn(
-                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? "bg-[#36606F] border-[#36606F] text-white shadow-lg"
-                                    : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
-                            )}
-                        >
-                            <Calendar size={14} />
-                            {filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                ? `${format(new Date(rangeStart!), 'dd MMM', { locale: es })} - ${format(new Date(rangeEnd!), 'dd MMM', { locale: es })}`
-                                : 'Rango'}
-                        </button>
-
-                        <button
-                            onClick={() => setShowCalendar('single')}
-                            className={cn(
-                                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                filterMode === 'single' ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200"
-                            )}
-                        >
-                            <Calendar size={14} />
-                            {filterMode === 'single' ? format(new Date(selectedDate), 'dd MMMM', { locale: es }) : 'Día Único'}
-                        </button>
-                    </div>
-                </div>
-
-                {/* BOTONES DE OPERACIÓN */}
-                <div className="grid grid-cols-3 gap-3">
-                    <button
-                        onClick={() => setCashModalMode('in')}
-                        className="bg-emerald-500 text-white p-4 rounded-[2rem] shadow-xl flex flex-col items-center justify-center gap-1.5 hover:bg-emerald-600 transition-all active:scale-95 border border-white/20"
                     >
-                        <ArrowDownLeft size={24} strokeWidth={3} />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Entrada</span>
+                        {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                            ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                            : 'Seleccionar Mes'}
                     </button>
+
                     <button
-                        onClick={openOut}
-                        className="bg-rose-500 text-white p-4 rounded-[2rem] shadow-xl flex flex-col items-center justify-center gap-1.5 hover:bg-rose-600 transition-all active:scale-95 border border-white/20"
+                        onClick={() => {
+                            setRangeStart(null);
+                            setRangeEnd(null);
+                            setShowCalendar('range');
+                        }}
+                        className={cn(
+                            "py-4 rounded-[1.2rem] text-xs font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none shadow-md shadow-black/10",
+                            filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                ? "bg-white border-white text-zinc-800"
+                                : "bg-transparent border-white/30 text-white/60 hover:border-white/50"
+                        )}
                     >
-                        <ArrowUpRight size={24} strokeWidth={3} />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Salida</span>
+                        {filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                            ? "PERIODO"
+                            : 'PERIODO'}
                     </button>
+
                     <button
-                        onClick={openAudit}
-                        className="bg-orange-400 text-white p-4 rounded-[2rem] shadow-xl flex flex-col items-center justify-center gap-1.5 hover:bg-orange-500 transition-all active:scale-95 border border-white/20"
+                        onClick={() => setShowCalendar('single')}
+                        className={cn(
+                            "py-4 rounded-[1.2rem] text-xs font-black border-2 transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none shadow-md shadow-black/10",
+                            filterMode === 'single' ? "bg-white border-white text-zinc-800" : "bg-transparent border-white/30 text-white/60 hover:border-white/50"
+                        )}
                     >
-                        <RefreshCw size={24} strokeWidth={3} />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Arqueo</span>
+                        FECHA
                     </button>
                 </div>
 
-                {/* RESUMEN SEGÚN FILTRO (BENTO GRID - UNA SOLA FILA) */}
-                <div className="bg-white rounded-[2rem] shadow-xl border border-white/10 overflow-hidden divide-x divide-zinc-50 grid grid-cols-3">
-                    <div className="p-4 md:p-6 flex flex-col items-center justify-center text-center">
-                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Ingresos</span>
-                        <div className="flex items-center gap-1.5 md:gap-2">
-                            <span className="text-lg md:text-2xl font-black text-emerald-500">+{summary.income.toFixed(0)}€</span>
-                        </div>
+                {/* RESUMEN SEGÚN FILTRO (TRES COLUMNAS) */}
+                <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden py-10 grid grid-cols-3 border-b-8 border-zinc-100/50">
+                    <div className="flex flex-col items-center justify-center text-center">
+                        <span className="text-3xl md:text-5xl font-black text-emerald-500 mb-2">+{summary.income.toFixed(0)}€</span>
+                        <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">INGRESOS</span>
                     </div>
 
-                    <div className="p-4 md:p-6 flex flex-col items-center justify-center text-center">
-                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Gastos</span>
-                        <div className="flex items-center gap-1.5 md:gap-2">
-                            <span className="text-lg md:text-2xl font-black text-rose-500">-{summary.expense.toFixed(0)}€</span>
-                        </div>
+                    <div className="flex flex-col items-center justify-center text-center">
+                        <span className="text-3xl md:text-5xl font-black text-rose-500 mb-2">-{summary.expense.toFixed(0)}€</span>
+                        <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">GASTOS</span>
                     </div>
 
-                    <div className="p-4 md:p-6 flex flex-col items-center justify-center text-center bg-zinc-50/50">
-                        <span className="text-[9px] md:text-[10px] font-black text-[#36606F] uppercase tracking-widest mb-1">Saldo</span>
-                        <div className="flex items-center gap-1.5 md:gap-2">
-                            <span className="text-lg md:text-2xl font-black text-[#36606F] tabular-nums">
-                                {summary.currentBalance.toFixed(2)}€
-                            </span>
-                        </div>
+                    <div className="flex flex-col items-center justify-center text-center">
+                        <span className="text-3xl md:text-5xl font-black text-[#36606F] mb-2 tabular-nums">
+                            {summary.currentBalance.toFixed(2)}€
+                        </span>
+                        <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">SALDO</span>
                     </div>
                 </div>
 
 
-                {/* TARJETA DE MOVIMIENTOS */}
+                {/* TARJETA DE MOVIMIENTOS - REDISEÑADA */}
                 <div className="bg-white rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col min-h-[500px]">
-                    <div className="px-8 py-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-                        <h3 className="text-xs font-black text-zinc-900 uppercase tracking-widest flex items-center gap-2">
-                            <ArrowRightLeft size={16} className="text-[#5B8FB9]" />
-                            Listado de Operaciones
-                        </h3>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase">{movements.length} movimientos</span>
-                    </div>
-
-                    <div className="flex-1 overflow-x-auto no-scrollbar">
-                        {loading ? (
-                            <div className="flex items-center justify-center h-full py-24">
-                                <LoadingSpinner size="lg" />
-                            </div>
-                        ) : movements.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full py-32 space-y-4">
-                                <div className="p-6 bg-zinc-50 rounded-[2rem] opacity-40">
-                                    <PiggyBank size={48} className="text-[#5B8FB9]" />
-                                </div>
-                                <div className="text-center space-y-1">
-                                    <p className="text-sm font-black uppercase tracking-widest text-zinc-400">Sin actividad en este rango</p>
-                                    <p className="text-[10px] font-bold text-zinc-300 uppercase italic">Prueba a cambiar las fechas o restablecer filtros</p>
-                                </div>
-                                {(typeFilter !== 'all' || filterMode !== 'range') && (
-                                    <button
-                                        onClick={() => {
-                                            setTypeFilter('all');
-                                            setFilterMode('range');
-                                            setRangeStart(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-                                            setRangeEnd(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
-                                        }}
-                                        className="px-6 py-3 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-zinc-200"
-                                    >
-                                        Restablecer Filtros
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="min-w-[700px]">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="bg-zinc-50/30 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] border-b border-zinc-100">
-                                            <th className="px-8 py-5">Fecha / Hora</th>
-                                            <th className="px-4 py-5">Concepto</th>
-                                            <th className="px-4 py-5 text-right">Monto</th>
-                                            <th className="px-8 py-5 text-right">Saldo</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-zinc-50">
-                                        {visibleMovements.map((mov, idx) => {
-                                            const isIncome = mov.type === 'income';
-                                            return (
-                                                <tr
-                                                    key={mov.id}
-                                                    className={cn(
-                                                        "transition-colors group",
-                                                        idx % 2 === 0 ? "bg-white" : "bg-zinc-50/30"
-                                                    )}
-                                                >
-                                                    <td className="px-8 py-5">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[11px] font-black text-zinc-900 capitalize italic">{format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}</span>
-                                                            <span className="text-[10px] font-bold text-zinc-400 font-mono">{format(new Date(mov.created_at), 'HH:mm')}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-5">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className={cn(
-                                                                "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
-                                                                isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
-                                                            )}>
-                                                                {isIncome ? <ArrowDown size={16} strokeWidth={3} /> : <ArrowUp size={16} strokeWidth={3} />}
-                                                            </div>
-                                                            <span className="text-[11px] font-bold text-zinc-600 uppercase max-w-[300px] truncate">{mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-5 text-right">
-                                                        <span className={cn(
-                                                            "text-sm font-black tabular-nums",
-                                                            isIncome ? "text-emerald-600" : "text-rose-600"
+                    <div className="min-w-[800px]">
+                        <table className="w-full text-left">
+                            <thead className="bg-[#36606F] text-white overflow-hidden">
+                                <tr className="text-[12px] font-black uppercase tracking-[0.2em]">
+                                    <th className="px-12 py-8 rounded-tl-[2.5rem]">FECHA</th>
+                                    <th className="px-8 py-8">CONCEPTO</th>
+                                    <th className="px-8 py-8 text-center">IMPORTE</th>
+                                    <th className="px-12 py-8 text-right rounded-tr-[2.5rem]">SALDO</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-50">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-32">
+                                            <div className="flex items-center justify-center">
+                                                <LoadingSpinner size="lg" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : movements.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-32">
+                                            <div className="flex flex-col items-center justify-center space-y-4">
+                                                <div className="p-6 bg-zinc-50 rounded-[2rem] opacity-40">
+                                                    <PiggyBank size={48} className="text-[#36606F]" />
+                                                </div>
+                                                <div className="text-center space-y-1">
+                                                    <p className="text-sm font-black uppercase tracking-widest text-zinc-400">Sin actividad en este rango</p>
+                                                    <p className="text-[10px] font-bold text-zinc-300 uppercase italic">Prueba a cambiar las fechas</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    visibleMovements.map((mov, idx) => {
+                                        const isIncome = mov.type === 'income';
+                                        return (
+                                            <tr key={mov.id} className="group hover:bg-zinc-50/50 transition-colors">
+                                                <td className="px-12 py-10">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[16px] font-black text-zinc-800 capitalize italic">
+                                                            {format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}
+                                                        </span>
+                                                        <span className="text-[13px] font-bold text-zinc-400 font-mono">
+                                                            {format(new Date(mov.created_at), 'HH:mm')}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-10">
+                                                    <div className="flex items-center gap-6">
+                                                        <div className={cn(
+                                                            "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                                            isIncome ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
                                                         )}>
-                                                            {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
+                                                            {isIncome ? <ArrowDown size={28} strokeWidth={3} /> : <ArrowUp size={28} strokeWidth={3} />}
+                                                        </div>
+                                                        <span className="text-[14px] font-black text-zinc-600 uppercase tracking-tight truncate max-w-[280px]">
+                                                            {mov.notes || (isIncome ? 'Entrada manual' : 'Salida manual')}
                                                         </span>
-                                                    </td>
-                                                    <td className="px-8 py-5 text-right">
-                                                        <span className="text-sm font-black text-zinc-900 tabular-nums">
-                                                            {mov.running_balance.toFixed(2)}€
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-
-                                {/* ARCHITECT_ULTRAFLUIDITY: Trigger more loading when scrolling */}
-                                {movements.length > displayLimit && (
-                                    <div
-                                        className="py-10 flex justify-center"
-                                        ref={(el) => {
-                                            if (!el) return;
-                                            const observer = new IntersectionObserver((entries) => {
-                                                if (entries[0].isIntersecting) {
-                                                    setDisplayLimit(prev => prev + 40);
-                                                }
-                                            });
-                                            observer.observe(el);
-                                        }}
-                                    >
-                                        <LoadingSpinner size="sm" />
-                                    </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-10 text-center">
+                                                    <span className={cn(
+                                                        "text-xl font-black tabular-nums",
+                                                        isIncome ? "text-emerald-500" : "text-rose-500"
+                                                    )}>
+                                                        {isIncome ? '+' : '-'}{mov.amount.toFixed(2)}€
+                                                    </span>
+                                                </td>
+                                                <td className="px-12 py-10 text-right">
+                                                    <span className="text-xl font-black text-zinc-900 tabular-nums">
+                                                        {mov.running_balance.toFixed(2)}€
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
+                            </tbody>
+                        </table>
+
+                        {/* ARCHITECT_ULTRAFLUIDITY: Trigger more loading when scrolling */}
+                        {movements.length > displayLimit && (
+                            <div
+                                className="py-12 flex justify-center"
+                                ref={(el) => {
+                                    if (!el) return;
+                                    const observer = new IntersectionObserver((entries) => {
+                                        if (entries[0].isIntersecting) {
+                                            setDisplayLimit(prev => prev + 40);
+                                        }
+                                    });
+                                    observer.observe(el);
+                                }}
+                            >
+                                <LoadingSpinner size="sm" />
                             </div>
                         )}
                     </div>

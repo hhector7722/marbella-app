@@ -27,6 +27,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Arquitectura de Componentes de Tesorería**: Extracción de formularios a componentes compartidos reutilizables.
 - [x] **Simplificación Historial**: Eliminación de "Ritmo de Ventas" y mejora de legibilidad de fechas en tarjetas.
 - [x] **Robustez Geofencing**: Mejora de fiabilidad de ubicación con caché de 60s y feedback de errores detallado para evitar bloqueos en el fichaje.
+- [x] **Diseño Marbella Premium Movimientos**: Rediseño radical de `/dashboard/movements` siguiendo el diseño corporativo (Cabecera con acciones, Bento Filters, Resumen Periodo y Listado Estilizado).
 - [x] **Performance Audit & Optimization (Complete)**: Optimización radical de Historiales (Ventas, Mano de Obra, Staff) y Dashboard Admin mediante normalización con Hash Maps ($O(1)$), Renderizado Incremental con `IntersectionObserver` y Memoización estratégica.
 
 ## 📅 PENDIENTE
