@@ -270,7 +270,7 @@ export default function MovementsPage() {
             <div className="max-w-4xl mx-auto space-y-6">
 
                 {/* TARJETA GLOBAL INTEGRADA (TODO EN UN BLOQUE) */}
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/10">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
                     {/* CABECERA OSCURA INTEGRADA (TÍTULO + ACCIONES + FILTROS) */}
                     <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
@@ -288,27 +288,30 @@ export default function MovementsPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setCashModalMode('in')}
-                                    className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest shadow-lg"
                                 >
                                     <div className="bg-white/20 p-1 rounded-lg">
-                                        <Plus size={12} strokeWidth={4} />
+                                        <Plus size={10} strokeWidth={4} />
                                     </div>
                                     ENTRADA
                                 </button>
                                 <button
                                     onClick={openOut}
-                                    className="bg-rose-600/90 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-rose-600/90 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest shadow-lg"
                                 >
                                     <div className="bg-white/20 p-1 rounded-lg">
-                                        <Minus size={12} strokeWidth={4} />
+                                        <Minus size={10} strokeWidth={4} />
                                     </div>
                                     SALIDA
                                 </button>
                                 <button
                                     onClick={openAudit}
-                                    className="bg-orange-500/90 hover:bg-orange-400 text-white p-2 rounded-xl flex items-center justify-center border border-orange-300/30 transition-all active:scale-95 shadow-lg"
+                                    className="bg-orange-500/90 hover:bg-orange-400 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-orange-300/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest shadow-lg"
                                 >
-                                    <RefreshCw size={14} strokeWidth={4} />
+                                    <div className="bg-white/20 p-1 rounded-lg">
+                                        <RefreshCw size={10} strokeWidth={4} />
+                                    </div>
+                                    ARQUEO
                                 </button>
                             </div>
                         </div>
@@ -381,7 +384,7 @@ export default function MovementsPage() {
 
                         {/* LISTADO DE MOVIMIENTOS INTEGRADO */}
                         <div className="p-3 bg-white">
-                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100">
+                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="overflow-x-auto no-scrollbar">
                                     <div className="min-w-[700px]">
                                         <table className="w-full text-left">
