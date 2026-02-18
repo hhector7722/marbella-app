@@ -390,16 +390,16 @@ export default function HistoryPage() {
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
                         <div className="p-3 md:p-6">
-                            <div className="bg-zinc-50/10 rounded-[2rem] border border-zinc-100 shadow-xl overflow-hidden p-3 md:p-6">
-                                {/* METRIC SELECTOR (Integrated) */}
-                                <div className="mb-6 flex justify-center">
-                                    <div className="bg-[#36606F] p-1.5 rounded-[2rem] border border-white/10 flex gap-1.5 overflow-x-auto no-scrollbar max-w-full shadow-inner">
+                            <div className="bg-zinc-50/10 rounded-[2rem] border border-zinc-100 shadow-xl overflow-hidden">
+                                {/* METRIC SELECTOR AS HEADER */}
+                                <div className="bg-[#36606F] p-4 flex justify-center border-b border-white/5">
+                                    <div className="flex gap-1 md:gap-2 overflow-x-auto no-scrollbar max-w-full">
                                         {METRICS.map(m => (
                                             <button
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "flex-shrink-0 h-8 md:h-10 px-4 md:px-6 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                                                    "flex-shrink-0 h-9 md:h-10 px-4 md:px-8 rounded-xl md:rounded-[1.5rem] text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2",
                                                     selectedMetric === m.value
                                                         ? "bg-white text-[#36606F] shadow-lg scale-105"
                                                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -412,76 +412,78 @@ export default function HistoryPage() {
                                     </div>
                                 </div>
 
-                                {/* CLOSINGS LIST */}
-                                {loading ? (
-                                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                        <LoadingSpinner size="lg" className="text-[#36606F]" />
-                                    </div>
-                                ) : closings.length === 0 ? (
-                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                        <Calendar size={32} />
-                                        <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
-                                        {closings.map((c) => {
-                                            const mainVal = c[selectedMetric] || 0;
-                                            const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
+                                {/* CLOSINGS LIST (DENSE PADDING) */}
+                                <div className="p-4 md:p-6 bg-zinc-50/10">
+                                    {loading ? (
+                                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                            <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                        </div>
+                                    ) : closings.length === 0 ? (
+                                        <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                            <Calendar size={32} />
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
+                                            {closings.map((c) => {
+                                                const mainVal = c[selectedMetric] || 0;
+                                                const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
 
-                                            return (
-                                                <div
-                                                    key={c.id}
-                                                    onClick={() => setSelectedClosing(c)}
-                                                    className="group relative bg-white rounded-2xl md:rounded-[1.5rem] p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-50 flex flex-col gap-3"
-                                                >
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="flex flex-col">
-                                                            <span className="hidden md:block text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
-                                                                {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
-                                                            </span>
-                                                            <span className="md:hidden text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
-                                                                {format(new Date(c.closed_at), 'd MMM', { locale: es })}
-                                                            </span>
-                                                            <div className={cn(
-                                                                "text-[8px] font-black uppercase tracking-tighter",
-                                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                                            )}>
-                                                                {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
+                                                return (
+                                                    <div
+                                                        key={c.id}
+                                                        onClick={() => setSelectedClosing(c)}
+                                                        className="group relative bg-white rounded-2xl md:rounded-[1.5rem] p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-50 flex flex-col gap-3"
+                                                    >
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex flex-col">
+                                                                <span className="hidden md:block text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                                    {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
+                                                                </span>
+                                                                <span className="md:hidden text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                                    {format(new Date(c.closed_at), 'd MMM', { locale: es })}
+                                                                </span>
+                                                                <div className={cn(
+                                                                    "text-[8px] font-black uppercase tracking-tighter",
+                                                                    parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                                                )}>
+                                                                    {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
+                                                                </div>
+                                                            </div>
+                                                            <div className="bg-zinc-50 p-1.5 rounded-lg text-zinc-300 group-hover:text-[#5B8FB9] transition-colors">
+                                                                <Calendar size={12} />
                                                             </div>
                                                         </div>
-                                                        <div className="bg-zinc-50 p-1.5 rounded-lg text-zinc-300 group-hover:text-[#5B8FB9] transition-colors">
-                                                            <Calendar size={12} />
-                                                        </div>
-                                                    </div>
 
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
-                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                        </span>
-                                                        <span className="text-xl md:text-2xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                            {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-50">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Facturación</span>
-                                                            <span className="text-[9px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)}€</span>
+                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                                                                {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                            </span>
+                                                            <span className="text-xl md:text-2xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                            </span>
                                                         </div>
-                                                        <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">T. Medio</span>
-                                                            <span className="text-[9px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
-                                                        </div>
-                                                        <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Efectivo</span>
-                                                            <span className="text-[9px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+
+                                                        <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-50">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Facturación</span>
+                                                                <span className="text-[9px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)}€</span>
+                                                            </div>
+                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">T. Medio</span>
+                                                                <span className="text-[9px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                            </div>
+                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Efectivo</span>
+                                                                <span className="text-[9px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
