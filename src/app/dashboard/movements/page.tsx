@@ -7,6 +7,8 @@ import {
     ArrowLeft,
     ArrowDownLeft,
     ArrowUpRight,
+    Plus,
+    Minus,
     Search,
     Filter,
     X,
