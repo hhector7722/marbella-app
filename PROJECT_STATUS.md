@@ -35,7 +35,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Detalle de Movimientos**: Implementación de modal dinámico que muestra el desglose de billetes/monedas y notas al pulsar sobre cualquier fila de movimientos.
 
 - [x] **Refinamiento UI Historial**: Implementación de botón de cierre flotante ("Cierre") en cabecera de historial, con apertura directa del modal CashClosingModal.
-- [x] **Cabecera Historial Segmentada**: Reestructuración de la cabecera de `/dashboard/history` según diseño de referencia (Botón Ghost en línea con título, Filtros en segunda fila tipo Segmented Control ancho completo).
+- [x] **Cabecera Historial Segmentada**: Reestructuración de la cabecera de `/dashboard/history` unificando comportamiento con Movimientos (Picker de Rango con Calendario, Selector de Mes con Año, Filtro por Fecha única).
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -142,15 +142,19 @@ export default function HistoryPage() {
     const router = useRouter();
 
     // Filtros
-    const [rangeStart, setRangeStart] = useState<string>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [rangeEnd, setRangeEnd] = useState<string>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
+    const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+    const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
     const [selectedMetric, setSelectedMetric] = useState<MetricType>('net_sales');
 
     // UI State
     const [loading, setLoading] = useState(true);
-    const [showCalendar, setShowCalendar] = useState<boolean>(false);
+    const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
+    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
@@ -165,7 +169,7 @@ export default function HistoryPage() {
     useEffect(() => {
         checkUserRole();
         fetchHistory();
-    }, [rangeStart, rangeEnd]);
+    }, [rangeStart, rangeEnd, selectedDate, filterMode]);
 
     async function checkUserRole() {
         const { data: { user } } = await supabase.auth.getUser();
@@ -178,33 +182,49 @@ export default function HistoryPage() {
     async function fetchHistory() {
         setLoading(true);
         try {
-            // 1. Fetch Closings (Parallel) - Optimized for date-only filtering to avoid TZ issues
+            let startISO: string;
+            let endISO: string;
+
+            if (filterMode === 'single') {
+                // Use selectedDate for both start and end
+                startISO = selectedDate;
+                endISO = selectedDate;
+            } else {
+                if (!rangeStart || !rangeEnd) {
+                    setClosings([]);
+                    setLoading(false);
+                    return;
+                }
+                startISO = rangeStart;
+                endISO = rangeEnd;
+            }
+
+            // 1. Fetch Closings (Parallel)
             const closingsPromise = supabase
                 .from('cash_closings')
                 .select('*')
-                .gte('closing_date', rangeStart)
-                .lte('closing_date', rangeEnd)
+                .gte('closing_date', startISO)
+                .lte('closing_date', endISO)
                 .order('closing_date', { ascending: false });
 
-            // 2. Fetch Aggregated Hourly Sales (RPC - Architect_UltraFluidity Optimization)
-            // Separate block for RPC so it doesn't block closings if it fails
+            // 2. Fetch Aggregated Hourly Sales (RPC)
             const [closingsRes] = await Promise.all([closingsPromise]);
 
             if (closingsRes.error) throw closingsRes.error;
             setClosings(closingsRes.data || []);
 
-            // 3. Optional Hourly Data (No-blocking strategy)
+            // 3. Optional Hourly Data
             try {
                 const { data: hourlyData, error: hourlyError } = await supabase
                     .rpc('get_hourly_sales', {
-                        p_start_date: rangeStart,
-                        p_end_date: rangeEnd
+                        p_start_date: startISO,
+                        p_end_date: endISO
                     });
 
                 if (!hourlyError && hourlyData) {
                     const hourlyMap: Record<string, number[]> = {};
                     hourlyData.forEach((row: any) => {
-                        const date = row.fecha; // Already formatted as YYYY-MM-DD by Postgres
+                        const date = row.fecha;
                         if (!hourlyMap[date]) {
                             hourlyMap[date] = new Array(24).fill(0);
                         }
@@ -225,6 +245,40 @@ export default function HistoryPage() {
             setLoading(false);
         }
     }
+
+    const generateCalendarDays = () => {
+        const year = calendarBaseDate.getFullYear();
+        const month = calendarBaseDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const days: (number | null)[] = [];
+        const startDay = (firstDay.getDay() + 6) % 7;
+        for (let i = 0; i < startDay; i++) days.push(null);
+        for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
+        return days;
+    };
+
+    const handleDateSelect = (day: number) => {
+        const dateStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (showCalendar === 'single') {
+            setSelectedDate(dateStr);
+            setFilterMode('single');
+            setShowCalendar(null);
+        } else if (showCalendar === 'range') {
+            if (!rangeStart || (rangeStart && rangeEnd)) {
+                setRangeStart(dateStr);
+                setRangeEnd(null); // Clear end date to start new selection
+            } else {
+                if (new Date(dateStr) < new Date(rangeStart)) {
+                    setRangeStart(dateStr);
+                } else {
+                    setRangeEnd(dateStr);
+                    setFilterMode('range');
+                    setShowCalendar(null);
+                }
+            }
+        }
+    };
 
     const summary = useMemo(() => {
         if (!closings.length) return { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 };
@@ -352,41 +406,48 @@ export default function HistoryPage() {
                             </button>
                         </div>
 
-                        {/* ROW 2: Segmented Filters (Full Width) */}
-                        <div className="bg-black/20 p-1 md:p-1.5 rounded-2xl border border-white/5 flex gap-1 w-full">
-                            {[
-                                {
-                                    label: (() => {
-                                        const start = new Date(rangeStart);
-                                        const end = new Date(rangeEnd);
-                                        if (isSameDay(start, startOfMonth(start)) && isSameDay(end, endOfMonth(start))) {
-                                            return format(start, 'MMMM yyyy', { locale: es });
-                                        }
-                                        return 'Mes';
-                                    })(),
-                                    action: () => setShowMonthPicker(true),
-                                    isActive: (() => {
-                                        const start = new Date(rangeStart);
-                                        const end = new Date(rangeEnd);
-                                        return isSameDay(start, startOfMonth(start)) && isSameDay(end, endOfMonth(start));
-                                    })()
-                                },
-                                { label: 'Periodo', action: () => setShowCalendar(true), isActive: false },
-                                { label: 'Fecha', action: () => setShowCalendar(true), isActive: false }
-                            ].map((f) => (
-                                <button
-                                    key={f.label}
-                                    onClick={f.action}
-                                    className={cn(
-                                        "flex-1 h-8 md:h-10 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all outline-none truncate px-1",
-                                        f.isActive
-                                            ? "bg-white text-[#36606F] shadow-md scale-[1.02]"
-                                            : "text-white/40 hover:text-white hover:bg-white/5"
-                                    )}
-                                >
-                                    {f.label}
-                                </button>
-                            ))}
+
+                        {/* FILTROS INTEGRADOS EN CABECERA (New Style) */}
+                        <div className="grid grid-cols-3 gap-2 pb-2">
+                            <button
+                                onClick={() => setShowMonthPicker(true)}
+                                className={cn(
+                                    "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border outline-none truncate",
+                                    filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? "bg-white border-white text-zinc-800 shadow-sm"
+                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                )}
+                            >
+                                {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                    ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                    : 'MES'}
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setRangeStart(null);
+                                    setRangeEnd(null);
+                                    setShowCalendar('range');
+                                }}
+                                className={cn(
+                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                    filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? "bg-white border-white text-zinc-800 shadow-sm"
+                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                )}
+                            >
+                                PERIODO
+                            </button>
+
+                            <button
+                                onClick={() => setShowCalendar('single')}
+                                className={cn(
+                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
+                                    filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                )}
+                            >
+                                FECHA
+                            </button>
                         </div>
                     </div>
 
@@ -629,34 +690,102 @@ export default function HistoryPage() {
                 }}
             />
 
-            {/* MONTH PICKER */}
-            {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#1e293b]/60 backdrop-blur-md" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-8 text-white text-center"><h3 className="text-lg font-black uppercase tracking-widest">Seleccionar Mes</h3></div>
-                        <div className="p-8 grid grid-cols-2 gap-3">
-                            {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((month, i) => (
-                                <button key={month} onClick={() => {
-                                    const year = new Date().getFullYear();
-                                    setRangeStart(format(new Date(year, i, 1), 'yyyy-MM-dd'));
-                                    setRangeEnd(format(endOfMonth(new Date(year, i, 1)), 'yyyy-MM-dd'));
-                                    setShowMonthPicker(false);
-                                }} className="h-14 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-gray-50 hover:bg-[#5B8FB9] hover:text-white transition-all">{month}</button>
-                            ))}
+
+            {/* MODAL CALENDARIO (New Style) */}
+            {showCalendar && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
+                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
+                            <button onClick={() => setShowCalendar(null)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6 px-2">
+                                <button onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
+                                <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
+                                <button onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                    <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
+                                ))}
+                                {generateCalendarDays().map((day, i) => {
+                                    if (!day) return <div key={i} />;
+                                    const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                    const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
+                                    const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
+
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleDateSelect(day)}
+                                            className={cn(
+                                                "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all",
+                                                isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
+                                            )}
+                                        >
+                                            {day}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* RANGE SELECTOR */}
-            {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#1e293b]/60 backdrop-blur-md" onClick={() => setShowCalendar(false)}>
-                    <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-8 text-white text-center"><h3 className="text-lg font-black uppercase tracking-widest">Rango de Fechas</h3></div>
-                        <div className="p-8 space-y-6">
-                            <input type="date" className="w-full h-14 bg-gray-50 rounded-2xl px-6 font-black text-[#5B8FB9]" value={rangeStart} onChange={e => setRangeStart(e.target.value)} />
-                            <input type="date" className="w-full h-14 bg-gray-50 rounded-2xl px-6 font-black text-[#5B8FB9]" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} />
-                            <button onClick={() => setShowCalendar(false)} className="w-full h-16 bg-[#5B8FB9] text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl">Aplicar</button>
+            {/* MODAL SELECTOR DE MES / AÑO (New Style) */}
+            {showMonthPicker && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
+                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
+                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
+                        </div>
+
+                        <div className="p-6">
+                            {/* Selector de Año */}
+                            <div className="flex items-center justify-between mb-8 px-2">
+                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
+                                    <ChevronLeft size={20} className="text-zinc-400" />
+                                </button>
+                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
+                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
+                                    <ChevronRight size={20} className="text-zinc-400" />
+                                </button>
+                            </div>
+
+                            {/* Rejilla de Meses */}
+                            <div className="grid grid-cols-3 gap-2">
+                                {Array.from({ length: 12 }).map((_, i) => {
+                                    const date = new Date(pickerYear, i, 1);
+                                    const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
+
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                const s = startOfMonth(date);
+                                                const e = endOfMonth(date);
+                                                setRangeStart(format(s, 'yyyy-MM-dd'));
+                                                setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                                setFilterMode('range');
+                                                setShowMonthPicker(false);
+                                            }}
+                                            className={cn(
+                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                                                isSelected
+                                                    ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
+                                                    : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
+                                            )}
+                                        >
+                                            {format(date, 'MMM', { locale: es })}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
