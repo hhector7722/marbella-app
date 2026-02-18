@@ -471,22 +471,22 @@ export default function HistoryPage() {
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
                         <div className="p-3 md:p-6">
-                            <div className="bg-zinc-50/10 rounded-[2rem] border border-zinc-100 shadow-xl overflow-hidden p-3 md:p-6">
-                                {/* METRIC SELECTOR (Integrated) */}
-                                <div className="mb-6 flex justify-center">
-                                    <div className="bg-[#36606F] p-1.5 rounded-[2rem] border border-white/10 flex gap-1.5 overflow-x-auto no-scrollbar max-w-full shadow-inner">
+                            <div className="bg-zinc-50/10 rounded-[2rem] border border-zinc-100 shadow-xl overflow-hidden">
+                                {/* METRIC SELECTOR (Integrated Full Width) */}
+                                <div className="bg-[#36606F] p-2 md:p-3 flex justify-between items-center overflow-x-auto no-scrollbar">
+                                    <div className="flex gap-1 md:gap-2 w-full justify-between">
                                         {METRICS.map(m => (
                                             <button
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "flex-shrink-0 h-8 md:h-10 px-4 md:px-6 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                                                    "flex-1 h-8 md:h-12 rounded-xl md:rounded-2xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 px-2 whitespace-nowrap",
                                                     selectedMetric === m.value
-                                                        ? "bg-white text-[#36606F] shadow-lg scale-105"
+                                                        ? "bg-white text-[#36606F] shadow-lg"
                                                         : "text-white/60 hover:text-white hover:bg-white/5"
                                                 )}
                                             >
-                                                <m.icon size={14} className={cn(selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
+                                                <m.icon size={14} className={cn("hidden sm:block", selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
                                                 {m.label}
                                             </button>
                                         ))}
@@ -504,7 +504,7 @@ export default function HistoryPage() {
                                         <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4 p-4 md:p-6">
                                         {closings.map((c) => {
                                             const mainVal = c[selectedMetric] || 0;
                                             const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
@@ -513,9 +513,9 @@ export default function HistoryPage() {
                                                 <div
                                                     key={c.id}
                                                     onClick={() => setSelectedClosing(c)}
-                                                    className="group relative bg-white rounded-2xl md:rounded-[1.5rem] p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-50 flex flex-col gap-3"
+                                                    className="group relative bg-white rounded-2xl md:rounded-[1.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col gap-3"
                                                 >
-                                                    <div className="bg-rose-600 -mx-4 -mt-4 p-3 flex justify-between items-center mb-3 shadow-sm">
+                                                    <div className="bg-rose-600 rounded-t-2xl md:rounded-t-[1.5rem] p-3 flex justify-between items-center mb-1 shadow-sm">
                                                         <div className="flex flex-col">
                                                             <span className="hidden md:block text-[10px] font-black text-white uppercase tracking-wider">
                                                                 {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
@@ -529,7 +529,7 @@ export default function HistoryPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col gap-1 mb-2">
+                                                    <div className="px-4 pb-4 flex flex-col gap-1">
                                                         <div className={cn(
                                                             "text-[9px] font-black uppercase tracking-tighter mb-1",
                                                             parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
@@ -540,23 +540,24 @@ export default function HistoryPage() {
                                                         <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-1">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
-                                                        <span className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                        <span className="text-3xl md:text-3xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                             {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                         </span>
-                                                    </div>
 
-                                                    <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-50">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Facturación</span>
-                                                            <span className="text-[9px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)}€</span>
-                                                        </div>
-                                                        <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">T. Medio</span>
-                                                            <span className="text-[9px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
-                                                        </div>
-                                                        <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Efectivo</span>
-                                                            <span className="text-[9px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+                                                        {/* Mini Metrics Footer */}
+                                                        <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-50 mt-2">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Factur.</span>
+                                                                <span className="text-[9px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)}€</span>
+                                                            </div>
+                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Media</span>
+                                                                <span className="text-[9px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                            </div>
+                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Efec.</span>
+                                                                <span className="text-[9px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
