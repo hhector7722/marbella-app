@@ -29,6 +29,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Robustez Geofencing**: Mejora de fiabilidad de ubicación con caché de 60s y feedback de errores detallado para evitar bloqueos en el fichaje.
 - [x] **Diseño Marbella Premium Movimientos**: Rediseño radical de `/dashboard/movements` siguiendo el diseño corporativo (Cabecera con acciones, Bento Filters, Resumen Periodo y Listado Estilizado).
 - [x] **Performance Audit & Optimization (Complete)**: Optimización radical de Historiales (Ventas, Mano de Obra, Staff) y Dashboard Admin mediante normalización con Hash Maps ($O(1)$), Renderizado Incremental con `IntersectionObserver` y Memoización estratégica.
+- [x] **Acciones Directas en Dashboard**: Sustitución de menú de caja por botones de acción directa (Entrada, Salida, Arqueo) y navegación mejorada a movimientos.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

@@ -418,6 +418,18 @@ const AdminDashboardView = () => {
         }
     }
 
+    const openTreasuryModal = async (box: any, mode: CashModalMode) => {
+        setSelectedBox(box);
+        if (mode === 'out' || mode === 'audit' || mode === 'inventory') {
+            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const initial: any = {};
+            data?.forEach(d => initial[d.denomination] = d.quantity);
+            setBoxInventoryMap(initial);
+            setBoxInventory(data || []);
+        }
+        setCashModalMode(mode);
+    };
+
     if (loading) return (
         <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
             <LoadingSpinner size="xl" className="text-white" />
@@ -485,10 +497,48 @@ const AdminDashboardView = () => {
                         <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
-                                    <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-4 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-4 active:scale-95">
-                                        <span className="text-xs font-black uppercase tracking-[0.2em]">Caja Inicial</span>
-                                        <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
-                                    </button>
+                                    <div className="flex flex-col gap-3 mb-4">
+                                        <button
+                                            onClick={() => router.push('/dashboard/movements')}
+                                            className="w-full px-6 py-4 rounded-2xl bg-[#5B8FB9] shadow-lg hover:bg-[#4A7DA6] transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
+                                        >
+                                            <div className="flex flex-col items-start leading-none gap-1">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
+                                                <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                            </div>
+                                            <ArrowRight className="w-6 h-6 opacity-30 group-hover:opacity-100 transition-opacity" />
+                                        </button>
+
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <button
+                                                onClick={() => openTreasuryModal(box, 'in')}
+                                                className="bg-emerald-50 hover:bg-emerald-100/80 p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group border border-emerald-100/50"
+                                            >
+                                                <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                                                    <Image src="/icons/in.png" alt="Entrada" width={20} height={20} className="brightness-0 invert object-contain" />
+                                                </div>
+                                                <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest leading-none">Entrada</span>
+                                            </button>
+                                            <button
+                                                onClick={() => openTreasuryModal(box, 'out')}
+                                                className="bg-rose-50 hover:bg-rose-100/80 p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group border border-rose-100/50"
+                                            >
+                                                <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                                                    <Image src="/icons/out.png" alt="Salida" width={20} height={20} className="brightness-0 invert object-contain" />
+                                                </div>
+                                                <span className="text-[9px] font-black text-rose-700 uppercase tracking-widest leading-none">Salida</span>
+                                            </button>
+                                            <button
+                                                onClick={() => openTreasuryModal(box, 'audit')}
+                                                className="bg-[#36606F]/5 hover:bg-[#36606F]/10 p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group border border-[#36606F]/10"
+                                            >
+                                                <div className="w-8 h-8 flex items-center justify-center bg-[#36606F] rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                                                    <Image src="/icons/change.png" alt="Arqueo" width={22} height={22} className="brightness-0 invert object-contain" />
+                                                </div>
+                                                <span className="text-[9px] font-black text-[#2A4B57] uppercase tracking-widest leading-none">Arqueo</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                     <div className="flex flex-col flex-1 min-h-0">
                                         <div className="flex justify-between items-center px-2 mb-3">
                                             <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
@@ -552,10 +602,48 @@ const AdminDashboardView = () => {
                     <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
                         {boxes.filter(b => b.type === 'operational').map(box => (
                             <div key={box.id} className="flex flex-col h-full">
-                                <button onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="w-full px-6 py-3 rounded-2xl bg-emerald-500 shadow-lg hover:bg-emerald-600 transition-all cursor-pointer flex flex-row items-center justify-between text-white mb-3 active:scale-95">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Caja Inicial</span>
-                                    <span className="text-xl font-black">{box.current_balance.toFixed(2)}€</span>
-                                </button>
+                                <div className="flex flex-col gap-2 mb-3">
+                                    <button
+                                        onClick={() => router.push('/dashboard/movements')}
+                                        className="w-full px-5 py-3 rounded-2xl bg-[#5B8FB9] shadow-lg hover:bg-[#4A7DA6] transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
+                                    >
+                                        <div className="flex flex-col items-start leading-none gap-1">
+                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
+                                            <span className="text-xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                        </div>
+                                        <ArrowRight className="w-5 h-5 opacity-30" />
+                                    </button>
+
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button
+                                            onClick={() => openTreasuryModal(box, 'in')}
+                                            className="bg-emerald-50 p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group border border-emerald-100/50 min-h-[48px]"
+                                        >
+                                            <div className="w-7 h-7 flex items-center justify-center bg-emerald-500 rounded-lg shadow-sm">
+                                                <Image src="/icons/in.png" alt="Entrada" width={16} height={16} className="brightness-0 invert object-contain" />
+                                            </div>
+                                            <span className="text-[8px] font-black text-emerald-700 uppercase tracking-widest leading-none">Entrada</span>
+                                        </button>
+                                        <button
+                                            onClick={() => openTreasuryModal(box, 'out')}
+                                            className="bg-rose-50 p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group border border-rose-100/50 min-h-[48px]"
+                                        >
+                                            <div className="w-7 h-7 flex items-center justify-center bg-rose-500 rounded-lg shadow-sm">
+                                                <Image src="/icons/out.png" alt="Salida" width={16} height={16} className="brightness-0 invert object-contain" />
+                                            </div>
+                                            <span className="text-[8px] font-black text-rose-700 uppercase tracking-widest leading-none">Salida</span>
+                                        </button>
+                                        <button
+                                            onClick={() => openTreasuryModal(box, 'audit')}
+                                            className="bg-[#36606F]/5 p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group border border-[#36606F]/10 min-h-[48px]"
+                                        >
+                                            <div className="w-7 h-7 flex items-center justify-center bg-[#36606F] rounded-lg shadow-sm">
+                                                <Image src="/icons/change.png" alt="Arqueo" width={18} height={18} className="brightness-0 invert object-contain" />
+                                            </div>
+                                            <span className="text-[8px] font-black text-[#2A4B57] uppercase tracking-widest leading-none">Arqueo</span>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div className="flex flex-col flex-1 min-h-0">
                                     <div className="flex justify-between items-center px-1 mb-2">
                                         <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
