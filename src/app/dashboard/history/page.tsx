@@ -1,4 +1,4 @@
-'use client';
+'use client'; // Force update
 
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from "@/utils/supabase/client";
