@@ -361,7 +361,7 @@ export default function HistoryPage() {
                                     <button
                                         key={f.label}
                                         onClick={f.action}
-                                        className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 transition-all outline-none"
+                                        className="h-8 md:h-10 px-4 md:px-8 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 transition-all outline-none"
                                     >
                                         {f.label}
                                     </button>
@@ -454,10 +454,10 @@ export default function HistoryPage() {
                                                     </div>
 
                                                     <div className="flex flex-col">
-                                                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                                                        <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
-                                                        <span className="text-4xl font-black text-zinc-900 tracking-tighter tabular-nums">
+                                                        <span className="text-2xl md:text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                             {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                         </span>
                                                     </div>
