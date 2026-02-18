@@ -294,30 +294,30 @@ export default function MovementsPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setCashModalMode('in')}
-                                    className="bg-emerald-600/90 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-emerald-400/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group"
                                 >
-                                    <div className="bg-white/20 p-1 rounded-lg">
-                                        <Plus size={10} strokeWidth={4} />
+                                    <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Plus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    ENTRADA
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900">ENTRADA</span>
                                 </button>
                                 <button
                                     onClick={openOut}
-                                    className="bg-rose-600/90 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-rose-400/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group"
                                 >
-                                    <div className="bg-white/20 p-1 rounded-lg">
-                                        <Minus size={10} strokeWidth={4} />
+                                    <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Minus size={16} strokeWidth={4} className="text-white" />
                                     </div>
-                                    SALIDA
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900">SALIDA</span>
                                 </button>
                                 <button
                                     onClick={openAudit}
-                                    className="bg-orange-500/90 hover:bg-orange-400 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 border border-orange-300/30 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest shadow-lg"
+                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group"
                                 >
-                                    <div className="bg-white/20 p-1 rounded-lg">
-                                        <RefreshCw size={10} strokeWidth={4} />
+                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <RefreshCw size={14} strokeWidth={4} className="text-white" />
                                     </div>
-                                    ARQUEO
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-900">ARQUEO</span>
                                 </button>
                             </div>
                         </div>
@@ -637,9 +637,9 @@ export default function MovementsPage() {
             )}
             {/* MODAL DE DETALLE DE MOVIMIENTO */}
             {selectedMovement && (
-                <MovementDetailModal 
-                    movement={selectedMovement} 
-                    onClose={() => setSelectedMovement(null)} 
+                <MovementDetailModal
+                    movement={selectedMovement}
+                    onClose={() => setSelectedMovement(null)}
                 />
             )}
         </div>
