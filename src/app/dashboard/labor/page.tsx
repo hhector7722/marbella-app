@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar,
@@ -24,6 +24,47 @@ interface DailyLaborStats {
     staffCount: number;
 }
 
+// [ARCHITECT_ULTRAFLUIDITY] Memoized Row for High-Performance Scrolling
+const LaborDayRow = React.memo(({ day, idx }: { day: DailyLaborStats, idx: number }) => {
+    let color = 'bg-gray-100 text-gray-600';
+    if (day.percentage > 0) {
+        if (day.percentage < 25) color = 'bg-emerald-100 text-emerald-700';
+        else if (day.percentage < 35) color = 'bg-amber-100 text-amber-700';
+        else color = 'bg-rose-100 text-rose-700';
+    }
+    if (day.netSales === 0 && day.laborCost > 0) color = 'bg-rose-100 text-rose-700';
+
+    return (
+        <div
+            className="bg-gray-50/50 hover:bg-white p-4 rounded-2xl border border-gray-100 grid grid-cols-12 items-center transition-all hover:shadow-md group animate-in slide-in-from-bottom-2 duration-300"
+            style={{ animationDelay: `${idx * 40}ms` }}
+        >
+            <div className="col-span-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 group-hover:text-[#5B8FB9] transition-colors">
+                    <Calendar size={14} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                    <span className="text-xs font-black text-gray-800 uppercase">{day.date.split('/')[0]}/{day.date.split('/')[1]}</span>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase">{day.rawDate.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                </div>
+            </div>
+            <div className="col-span-2 text-right">
+                <span className="text-[10px] font-bold text-gray-600 block">{day.totalHours.toFixed(1)}h</span>
+            </div>
+            <div className="col-span-3 text-right">
+                <span className="text-[10px] font-black text-rose-500 block">{day.laborCost.toFixed(0)}€</span>
+                <span className="text-[8px] font-bold text-gray-400 block tracking-tighter uppercase">Coste</span>
+            </div>
+            <div className="col-span-3 flex justify-end">
+                <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black min-w-[65px] text-center shadow-sm ${color}`}>
+                    {day.netSales > 0 ? `${day.percentage.toFixed(1)}%` : '-'}
+                </div>
+            </div>
+        </div>
+    );
+});
+LaborDayRow.displayName = 'LaborDayRow';
+
 export default function LaborHistoryPage() {
     const supabase = createClient();
     const router = useRouter();
@@ -41,6 +82,7 @@ export default function LaborHistoryPage() {
 
     // Datos
     const [history, setHistory] = useState<DailyLaborStats[]>([]);
+    const [displayLimit, setDisplayLimit] = useState(10);
     const [summary, setSummary] = useState({
         avgPercentage: 0,
         totalCost: 0,
@@ -61,6 +103,7 @@ export default function LaborHistoryPage() {
 
     useEffect(() => {
         fetchData();
+        setDisplayLimit(10); // Reset scroll on filter change
     }, [selectedDate, rangeStart, rangeEnd, filterMode]);
 
     async function fetchData() {
@@ -317,41 +360,30 @@ export default function LaborHistoryPage() {
                                         <p className="text-gray-400 font-bold text-sm">No hay datos en este periodo</p>
                                     </div>
                                 ) : (
-                                    history.map((day, idx) => {
-                                        let color = 'bg-gray-100 text-gray-600';
-                                        if (day.percentage > 0) {
-                                            if (day.percentage < 25) color = 'bg-emerald-100 text-emerald-700';
-                                            else if (day.percentage < 35) color = 'bg-amber-100 text-amber-700';
-                                            else color = 'bg-rose-100 text-rose-700';
-                                        }
-                                        if (day.netSales === 0 && day.laborCost > 0) color = 'bg-rose-100 text-rose-700';
+                                    <>
+                                        {history.slice(0, displayLimit).map((day, idx) => (
+                                            <LaborDayRow key={day.date} day={day} idx={idx} />
+                                        ))}
 
-                                        return (
-                                            <div key={idx} className="bg-gray-50/50 hover:bg-white p-4 rounded-2xl border border-gray-100 grid grid-cols-12 items-center transition-all hover:shadow-md group">
-                                                <div className="col-span-4 flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 group-hover:text-[#5B8FB9] transition-colors">
-                                                        <Calendar size={14} />
-                                                    </div>
-                                                    <div className="flex flex-col leading-tight">
-                                                        <span className="text-xs font-black text-gray-800 uppercase">{day.date.split('/')[0]}/{day.date.split('/')[1]}</span>
-                                                        <span className="text-[9px] font-bold text-gray-400 uppercase">{day.rawDate.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-2 text-right">
-                                                    <span className="text-[10px] font-bold text-gray-600 block">{day.totalHours.toFixed(1)}h</span>
-                                                </div>
-                                                <div className="col-span-3 text-right">
-                                                    <span className="text-[10px] font-black text-rose-500 block">{day.laborCost.toFixed(0)}€</span>
-                                                    <span className="text-[8px] font-bold text-gray-400 block tracking-tighter uppercase">Coste</span>
-                                                </div>
-                                                <div className="col-span-3 flex justify-end">
-                                                    <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black min-w-[65px] text-center shadow-sm ${color}`}>
-                                                        {day.netSales > 0 ? `${day.percentage.toFixed(1)}%` : '-'}
-                                                    </div>
+                                        {history.length > displayLimit && (
+                                            <div
+                                                className="py-10 flex justify-center"
+                                                ref={(el) => {
+                                                    if (!el) return;
+                                                    const observer = new IntersectionObserver((entries) => {
+                                                        if (entries[0].isIntersecting) {
+                                                            setDisplayLimit(prev => prev + 10);
+                                                        }
+                                                    });
+                                                    observer.observe(el);
+                                                }}
+                                            >
+                                                <div className="text-[10px] font-black text-white/30 uppercase tracking-widest animate-pulse">
+                                                    Cargando más días...
                                                 </div>
                                             </div>
-                                        );
-                                    })
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>

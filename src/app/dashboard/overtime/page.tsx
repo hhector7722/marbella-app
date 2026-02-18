@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     ArrowLeft,
@@ -24,12 +23,138 @@ import {
     HandCoins,
     Calculator
 } from 'lucide-react';
+import React, { memo, useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getOvertimeData, togglePaidStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
+
+// [ARCHITECT_ULTRAFLUIDITY] Memoized Sub-components
+const StaffDetailRow = memo(({
+    staff,
+    onTogglePaid,
+    selectedWeekName
+}: {
+    staff: StaffWeeklyStats,
+    onTogglePaid: (staffId: string, currentPaidStatus: boolean, stats: any) => void,
+    selectedWeekName: string
+}) => {
+    const formatValue = (val: number, suffix: string = '') => {
+        if (val === 0) return " ";
+        return `${val.toFixed(0)}${suffix}`;
+    };
+
+    const formatHours = (val: number) => {
+        if (val === 0) return " ";
+        return `${val.toFixed(1)}h`;
+    };
+
+    return (
+        <div className="bg-gray-50 p-4 rounded-3xl flex items-center justify-between border border-transparent hover:border-blue-100 transition-all">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#5B8FB9] text-white flex items-center justify-center text-sm font-black shadow-lg">
+                    {staff.name.charAt(0)}
+                </div>
+                <div>
+                    <span className="text-sm font-black text-gray-800 block">{staff.name}</span>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-500 text-[8px] font-black rounded-lg uppercase">{formatHours(staff.totalHours)}</span>
+                        {staff.overtimeHours > 0 && (
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-500 text-[8px] font-black rounded-lg uppercase">
+                                {formatHours(staff.overtimeHours)} EXTRA
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+                <div className="text-right">
+                    <span className={cn(
+                        "text-lg font-black block leading-none",
+                        staff.isPaid ? "text-gray-300 line-through" : "text-gray-800"
+                    )}>
+                        {formatValue(staff.totalCost, '€')}
+                    </span>
+                    {staff.overtimeCost > 0 && !staff.isPaid && (
+                        <span className="text-[9px] font-bold text-rose-500">Extras: {formatValue(staff.overtimeCost, '€')}</span>
+                    )}
+                </div>
+                <button
+                    onClick={() => onTogglePaid(staff.id, staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
+                    className="transition-all active:scale-90"
+                >
+                    {staff.isPaid ? (
+                        <CheckCircle2 size={28} className="text-emerald-500 fill-emerald-50" />
+                    ) : (
+                        <Circle size={28} className="text-gray-200 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors" />
+                    )}
+                </button>
+            </div>
+        </div>
+    );
+});
+StaffDetailRow.displayName = 'StaffDetailRow';
+
+const WeekOvertimeCard = memo(({
+    week,
+    onClick
+}: {
+    week: WeeklyStats,
+    onClick: () => void
+}) => {
+    const allStaffPaid = week.staff.every(s => s.isPaid);
+    const paidCount = week.staff.filter(s => s.isPaid).length;
+    const totalCount = week.staff.length;
+
+    const formatValue = (val: number, suffix: string = '') => {
+        if (val === 0) return " ";
+        return `${val.toFixed(0)}${suffix}`;
+    };
+
+    const formatHours = (val: number) => {
+        if (val === 0) return " ";
+        return `${val.toFixed(1)}h`;
+    };
+
+    return (
+        <div
+            onClick={onClick}
+            className="bg-white rounded-3xl border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"
+        >
+            <div className="p-4 flex justify-between items-center select-none">
+                <div className="flex items-center gap-4">
+                    <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                        allStaffPaid ? "bg-emerald-50 text-emerald-500" : "bg-blue-50 text-blue-500"
+                    )}>
+                        {allStaffPaid ? <CheckCircle2 size={18} /> : <Calendar size={18} />}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-black text-gray-800 uppercase tracking-tight">{week.label}</h3>
+                            {allStaffPaid ? (
+                                <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">PAGADA</span>
+                            ) : (
+                                <span className="bg-orange-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">{paidCount}/{totalCount} PAGADOS</span>
+                            )}
+                        </div>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">{formatHours(week.totalHours)} totales</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right">
+                        <span className="text-lg font-black text-gray-800 leading-none">{formatValue(week.totalAmount, '€')}</span>
+                    </div>
+                    <ChevronDown size={16} className="text-gray-300" />
+                </div>
+            </div>
+        </div>
+    );
+});
+WeekOvertimeCard.displayName = 'WeekOvertimeCard';
 
 export default function OvertimePage() {
     const supabase = createClient();
@@ -55,6 +180,9 @@ export default function OvertimePage() {
     // UI States for filters
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [showManualDates, setShowManualDates] = useState(false);
+
+    // [ARCHITECT_ULTRAFLUIDITY] Incremental rendering
+    const [displayLimit, setDisplayLimit] = useState(15);
 
     const PRESETS = [
         { label: 'Últimos 30 días', getValue: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
@@ -117,7 +245,13 @@ export default function OvertimePage() {
         setEndDate(format(end, 'yyyy-MM-dd'));
     };
 
-    const filteredWeeksData = weeksData.filter(week => week.staff.length > 0);
+    const filteredWeeksData = useMemo(() => {
+        return weeksData.filter(week => week.staff.length > 0);
+    }, [weeksData]);
+
+    const visibleWeeks = useMemo(() => {
+        return filteredWeeksData.slice(0, displayLimit);
+    }, [filteredWeeksData, displayLimit]);
 
     const togglePaid = async (staffId: string, weekStartDate: Date, currentPaidStatus: boolean, stats: { totalHours: number, overtimeHours: number }) => {
         const mondayISO = format(weekStartDate, 'yyyy-MM-dd');
@@ -375,48 +509,34 @@ export default function OvertimePage() {
                                         <p className="text-gray-400 font-bold text-sm">Sin resultados</p>
                                     </div>
                                 ) : (
-                                    filteredWeeksData.map(week => {
-                                        const allStaffPaid = week.staff.every(s => s.isPaid);
-                                        const paidCount = week.staff.filter(s => s.isPaid).length;
-                                        const totalCount = week.staff.length;
-
-                                        return (
-                                            <div
+                                    <>
+                                        {visibleWeeks.map(week => (
+                                            <WeekOvertimeCard
                                                 key={week.weekId}
+                                                week={week}
                                                 onClick={() => setSelectedWeek(week)}
-                                                className="bg-white rounded-3xl border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"
+                                            />
+                                        ))}
+
+                                        {filteredWeeksData.length > displayLimit && (
+                                            <div
+                                                className="py-10 flex justify-center"
+                                                ref={(el) => {
+                                                    if (!el) return;
+                                                    const observer = new IntersectionObserver((entries) => {
+                                                        if (entries[0].isIntersecting) {
+                                                            setDisplayLimit(prev => prev + 15);
+                                                        }
+                                                    });
+                                                    observer.observe(el);
+                                                }}
                                             >
-                                                {/* Cabecera Semana */}
-                                                <div className="p-4 flex justify-between items-center select-none">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={cn(
-                                                            "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                                                            allStaffPaid ? "bg-emerald-50 text-emerald-500" : "bg-blue-50 text-blue-500"
-                                                        )}>
-                                                            {allStaffPaid ? <CheckCircle2 size={18} /> : <Calendar size={18} />}
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <h3 className="text-sm font-black text-gray-800 uppercase tracking-tight">{week.label}</h3>
-                                                                {allStaffPaid ? (
-                                                                    <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">PAGADA</span>
-                                                                ) : (
-                                                                    <span className="bg-orange-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">{paidCount}/{totalCount} PAGADOS</span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-[10px] text-gray-400 font-bold uppercase">{formatHours(week.totalHours)} totales</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right">
-                                                            <span className="text-lg font-black text-gray-800 leading-none">{formatValue(week.totalAmount, '€')}</span>
-                                                        </div>
-                                                        <ChevronDown size={16} className="text-gray-300" />
-                                                    </div>
+                                                <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest animate-pulse">
+                                                    Cargando más semanas...
                                                 </div>
                                             </div>
-                                        );
-                                    })
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -456,48 +576,14 @@ export default function OvertimePage() {
                         <div className="p-6 max-h-[60vh] overflow-y-auto no-scrollbar">
                             <div className="space-y-3">
                                 {selectedWeek.staff.map((staff, idx) => (
-                                    <div key={idx} className="bg-gray-50 p-4 rounded-3xl flex items-center justify-between border border-transparent hover:border-blue-100 transition-all">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-[#5B8FB9] text-white flex items-center justify-center text-sm font-black shadow-lg">
-                                                {staff.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <span className="text-sm font-black text-gray-800 block">{staff.name}</span>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-500 text-[8px] font-black rounded-lg uppercase">{formatHours(staff.totalHours)}</span>
-                                                    {staff.overtimeHours > 0 && (
-                                                        <span className="px-2 py-0.5 bg-orange-50 text-orange-500 text-[8px] font-black rounded-lg uppercase">
-                                                            {formatHours(staff.overtimeHours)} EXTRA
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right">
-                                                <span className={cn(
-                                                    "text-lg font-black block leading-none",
-                                                    staff.isPaid ? "text-gray-300 line-through" : "text-gray-800"
-                                                )}>
-                                                    {formatValue(staff.totalCost, '€')}
-                                                </span>
-                                                {staff.overtimeCost > 0 && !staff.isPaid && (
-                                                    <span className="text-[9px] font-bold text-rose-500">Extras: {formatValue(staff.overtimeCost, '€')}</span>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => togglePaid(staff.id, selectedWeek.startDate, staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
-                                                className="transition-all active:scale-90"
-                                            >
-                                                {staff.isPaid ? (
-                                                    <CheckCircle2 size={28} className="text-emerald-500 fill-emerald-50" />
-                                                ) : (
-                                                    <Circle size={28} className="text-gray-200 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors" />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <StaffDetailRow
+                                        key={idx}
+                                        staff={staff}
+                                        selectedWeekName={selectedWeek.label}
+                                        onTogglePaid={(staffId, currentPaidStatus, stats) =>
+                                            togglePaid(staffId, selectedWeek.startDate, currentPaidStatus, stats)
+                                        }
+                                    />
                                 ))}
                             </div>
                         </div>

@@ -167,6 +167,13 @@ export default function StaffDashboard() {
                 .lte('clock_in', sunday.toISOString())
                 .order('clock_in', { ascending: true });
 
+            // ARCHITECT_ULTRAFLUIDITY: O(1) Lookup optimization
+            const logsByDay = new Map();
+            weekLogs?.forEach(l => {
+                const day = new Date(l.clock_in).getDate();
+                logsByDay.set(day, l);
+            });
+
             const daysStructure: DailyLog[] = [];
             let totalWeekHours = 0;
             const DAILY_LIMIT = 8;
@@ -174,7 +181,7 @@ export default function StaffDashboard() {
             for (let i = 0; i < 7; i++) {
                 const currentDay = new Date(monday); currentDay.setDate(monday.getDate() + i);
                 const isToday = currentDay.getDate() === today.getDate() && currentDay.getMonth() === today.getMonth();
-                const dayLog = weekLogs?.find(l => new Date(l.clock_in).getDate() === currentDay.getDate());
+                const dayLog = logsByDay.get(currentDay.getDate());
 
                 let clockInStr = '', clockOutStr = '', hours = 0, dayExtras = 0;
                 if (dayLog) {
@@ -236,6 +243,13 @@ export default function StaffDashboard() {
         if (!userId) return;
         setShowModal(false);
         setActionLoading(true);
+
+        // ARCHITECT_ULTRAFLUIDITY: Optimistic state update
+        const prevStatus = status;
+        const prevLog = todayLog;
+        const optimisticStatus = status === 'idle' ? 'working' : 'finished';
+        setStatus(optimisticStatus);
+
         try {
             let lat: number | null = null;
             let lng: number | null = null;
@@ -249,6 +263,8 @@ export default function StaffDashboard() {
             } catch (geoError: any) {
                 console.error("Geo error:", geoError);
                 if (userRole !== 'manager') {
+                    // Rollback
+                    setStatus(prevStatus);
                     toast.error(geoError.message || "Ubicación necesaria para fichar");
                     setActionLoading(false);
                     return;
@@ -256,6 +272,8 @@ export default function StaffDashboard() {
             }
 
             if (userRole !== 'manager' && distance !== null && distance > MAX_DISTANCE_METERS) {
+                // Rollback
+                setStatus(prevStatus);
                 toast.error(`Estás demasiado lejos del local (${Math.round(distance)}m)`);
                 setActionLoading(false);
                 return;
@@ -265,7 +283,7 @@ export default function StaffDashboard() {
             const logCoords = { input_lat: lat, input_lng: lng };
 
             if (modalAction === 'in') {
-                const { data } = await supabase.from('time_logs')
+                const { data, error } = await supabase.from('time_logs')
                     .insert({
                         user_id: userId,
                         clock_in: now.toISOString(),
@@ -274,12 +292,16 @@ export default function StaffDashboard() {
                     })
                     .select()
                     .single();
-                setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
+
+                if (error) throw error;
+
+                setTodayLog(data);
+                toast.success("¡Jornada iniciada!");
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
 
-                const { data } = await supabase.from('time_logs')
+                const { data, error } = await supabase.from('time_logs')
                     .update({
                         clock_out: now.toISOString(),
                         total_hours: diffHours,
@@ -289,10 +311,22 @@ export default function StaffDashboard() {
                     .select()
                     .single();
 
-                setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
+                if (error) throw error;
+
+                setTodayLog(data);
+                toast.success("Jornada finalizada.");
             }
+            // Re-initialize to sync any other dependent state
             initialize();
-        } catch (error) { toast.error("Error al fichar"); } finally { setActionLoading(false); }
+        } catch (error) {
+            console.error("Clock action error:", error);
+            // Rollback on any failure
+            setStatus(prevStatus);
+            setTodayLog(prevLog);
+            toast.error("Error al fichar");
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };

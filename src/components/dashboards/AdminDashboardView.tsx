@@ -30,6 +30,115 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 
+import { memo } from 'react';
+
+// ARCHITECT_ULTRAFLUIDITY: Memoized Sub-components for granular re-renders
+const StaffOvertimeRow = memo(({
+    staff,
+    weekId,
+    isPaid,
+    onTogglePaid,
+    onClick
+}: {
+    staff: any,
+    weekId: string,
+    isPaid: boolean,
+    onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
+    onClick: () => void
+}) => (
+    <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
+                {staff.name.charAt(0)}
+            </div>
+            <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors">
+                {staff.name}
+            </span>
+        </div>
+        <div className="flex items-center gap-3">
+            <span className="text-xs font-black text-gray-800">{staff.amount.toFixed(0)}€</span>
+            <button
+                onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
+                className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
+                    isPaid ? "bg-emerald-500 text-white shadow-md" : "bg-white border-2 border-gray-200 text-transparent"
+                )}
+            >
+                <CheckCircle2 className="w-4 h-4" />
+            </button>
+        </div>
+    </div>
+));
+StaffOvertimeRow.displayName = 'StaffOvertimeRow';
+
+const WeekOvertimeCard = memo(({
+    week,
+    paidStatus,
+    onToggleWeek,
+    onTogglePaid,
+    onSelectHistory
+}: {
+    week: any,
+    paidStatus: Record<string, boolean>,
+    onToggleWeek: (weekId: string) => void,
+    onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
+    onSelectHistory: (workerId: string, weekId: string) => void
+}) => {
+    const isFullyPaid = week.staff?.every((s: any) => paidStatus[`${week.weekId}-${s.id}`]);
+
+    return (
+        <div className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
+            <button onClick={() => onToggleWeek(week.weekId)} className={cn("w-full p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
+                <div className="flex items-center gap-3">
+                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>
+                        {isFullyPaid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <h4 className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
+                        <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
+                        <p className={cn("text-[10px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>
+                            {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
+                        </p>
+                    </div>
+                </div>
+                <div className="text-right flex items-center gap-3">
+                    <span className={cn("text-lg font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span>
+                </div>
+            </button>
+            {week.expanded && (
+                <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                    {week.staff.map((s: any) => (
+                        <StaffOvertimeRow
+                            key={s.id}
+                            staff={s}
+                            weekId={week.weekId}
+                            isPaid={!!paidStatus[`${week.weekId}-${s.id}`]}
+                            onTogglePaid={onTogglePaid}
+                            onClick={() => onSelectHistory(s.id, week.weekId)}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+});
+WeekOvertimeCard.displayName = 'WeekOvertimeCard';
+
+const StaffGridItem = memo(({ emp, onClick }: { emp: any, onClick: () => void }) => (
+    <button
+        onClick={onClick}
+        className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
+    >
+        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
+            {emp.first_name.substring(0, 1)}
+        </div>
+        <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
+            {emp.first_name.split(' ')[0]}
+        </span>
+    </button>
+));
+StaffGridItem.displayName = 'StaffGridItem';
+
 // Local components moved to shared src/components/
 
 type CashModalMode = 'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory';
@@ -126,10 +235,9 @@ const AdminDashboardView = () => {
     }, []);
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
-    const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string) => {
+    const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
-        const newStatus = !paidStatus[key];
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
         try {
             const weekData = overtimeData.find(w => w.weekId === weekId);
@@ -358,34 +466,16 @@ const AdminDashboardView = () => {
                                 {overtimeData.length === 0 ? (
                                     <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
                                 ) : (
-                                    overtimeData.slice(0, 3).map((week) => {
-                                        const isFullyPaid = isWeekFullyPaid(week);
-                                        return (
-                                            <div key={week.weekId} className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
-                                                <button onClick={() => toggleWeek(week.weekId)} className={cn("w-full p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>{isFullyPaid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}</div>
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
-                                                            <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
-                                                            <p className={cn("text-[10px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>{format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right flex items-center gap-3"><span className={cn("text-lg font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span></div>
-                                                </button>
-                                                {week.expanded && (
-                                                    <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                                        {week.staff.map((s: any) => (
-                                                            <div key={s.id} onClick={() => setSelectedHistory({ workerId: s.id, weekId: week.weekId })} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
-                                                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">{s.name.charAt(0)}</div><span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors">{s.name}</span></div>
-                                                                <div className="flex items-center gap-3"><span className="text-xs font-black text-gray-800">{s.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border-2 border-gray-200 text-transparent")}><CheckCircle2 className="w-4 h-4" /></button></div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })
+                                    overtimeData.slice(0, 3).map((week) => (
+                                        <WeekOvertimeCard
+                                            key={week.weekId}
+                                            week={week}
+                                            paidStatus={paidStatus}
+                                            onToggleWeek={toggleWeek}
+                                            onTogglePaid={togglePaid}
+                                            onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
+                                        />
+                                    ))
                                 )}
                             </div>
                         </div>
@@ -497,34 +587,16 @@ const AdminDashboardView = () => {
                             {overtimeData.length === 0 ? (
                                 <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
                             ) : (
-                                overtimeData.slice(0, 3).map((week) => {
-                                    const isFullyPaid = isWeekFullyPaid(week);
-                                    return (
-                                        <div key={week.weekId} className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
-                                            <button onClick={() => toggleWeek(week.weekId)} className={cn("w-full p-2 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
-                                                <div className="flex items-center gap-2">
-                                                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>{isFullyPaid ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}</div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <h4 className={cn("text-xs font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
-                                                        <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
-                                                        <p className={cn("text-[8px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>{format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right flex items-center gap-2"><span className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span></div>
-                                            </button>
-                                            {week.expanded && (
-                                                <div className="px-2.5 pb-2.5 pt-1 space-y-1.5 animate-in slide-in-from-top-2 duration-300">
-                                                    {week.staff.map((s: any) => (
-                                                        <div key={s.id} className="flex items-center justify-between p-2 bg-white/60 rounded-xl border border-purple-100/30">
-                                                            <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-[10px] font-black capitalize">{s.name.charAt(0)}</div><span className="text-[10px] font-bold text-gray-700 capitalize">{s.name}</span></div>
-                                                            <div className="flex items-center gap-2"><span className="text-[10px] font-black text-gray-800">{s.amount.toFixed(0)}€</span><button onClick={(e) => togglePaid(e, week.weekId, s.id)} className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90", paidStatus[`${week.weekId}-${s.id}`] ? "bg-emerald-500 text-white shadow-md" : "bg-white border border-gray-200 text-transparent")}><CheckCircle2 className="w-3 h-3" /></button></div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })
+                                overtimeData.slice(0, 3).map((week) => (
+                                    <WeekOvertimeCard
+                                        key={week.weekId}
+                                        week={week}
+                                        paidStatus={paidStatus}
+                                        onToggleWeek={toggleWeek}
+                                        onTogglePaid={togglePaid}
+                                        onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
+                                    />
+                                ))
                             )}
                         </div>
                     </div>
@@ -614,18 +686,11 @@ const AdminDashboardView = () => {
                                 </button>
                                 <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto no-scrollbar pb-2">
                                     {allEmployees.map((emp) => (
-                                        <button
+                                        <StaffGridItem
                                             key={emp.id}
+                                            emp={emp}
                                             onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                            className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
-                                        >
-                                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
-                                                {emp.first_name.substring(0, 1)}
-                                            </div>
-                                            <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
-                                                {emp.first_name.split(' ')[0]}
-                                            </span>
-                                        </button>
+                                        />
                                     ))}
                                 </div>
                             </div>

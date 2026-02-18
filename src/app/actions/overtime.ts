@@ -105,6 +105,12 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
 
     const weeksResult: WeeklyStats[] = [];
 
+    // [ARCHITECT_ULTRAFLUIDITY] Normalize snapshots into a Hash Map for O(1) lookups
+    const snapshotMap = new Map<string, any>();
+    snapshots?.forEach(s => {
+        snapshotMap.set(`${s.week_start}-${s.user_id}`, s);
+    });
+
     const userFinalBalances = new Map<string, Map<string, number>>();
 
     sortedWeekIds.forEach(weekId => {
@@ -115,9 +121,6 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
 
         const prevMonday = new Date(mondayDate);
         prevMonday.setDate(prevMonday.getDate() - 7);
-        const prevWeekId = Object.keys(tempWeekMeta).find(k =>
-            tempWeekMeta[k].getTime() === prevMonday.getTime()
-        );
         const prevWeekISO = format(prevMonday, 'yyyy-MM-dd');
 
         let weekTotalCost = 0;
@@ -131,8 +134,11 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
             const profile = profileMap.get(userId);
 
             if (profile) {
-                const prevSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === prevWeekISO);
-                const currentSnapshot = snapshots?.find(s => s.user_id === userId && s.week_start === weekStartISO);
+                const snapshotKey = `${weekStartISO}-${userId}`;
+                const prevSnapshotKey = `${prevWeekISO}-${userId}`;
+
+                const currentSnapshot = snapshotMap.get(snapshotKey);
+                const prevSnapshot = snapshotMap.get(prevSnapshotKey);
 
                 const limit = currentSnapshot?.contracted_hours_snapshot ?? (profile.contracted_hours_weekly ?? 40);
                 const overPrice = profile.overtime_cost_per_hour || 0;
@@ -147,35 +153,31 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
                 if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
                     if (!preferStock && prevSnapshot.final_balance > 0) pendingBalance = 0;
                     else pendingBalance = prevSnapshot.final_balance;
-                } else if (prevWeekId) {
-                    const prevBalances = userFinalBalances.get(prevWeekId);
+                } else {
+                    const prevBalances = userFinalBalances.get(prevWeekISO);
                     const prevBalance = prevBalances?.get(userId) ?? (profile.hours_balance || 0);
                     if (!preferStock && prevBalance > 0) pendingBalance = 0;
                     else pendingBalance = prevBalance;
-                } else {
-                    pendingBalance = profile.hours_balance || 0;
                 }
 
                 const finalBalance = pendingBalance + weeklyBalance;
                 userFinalBalances.get(weekId)!.set(userId, finalBalance);
 
-                // Solo balances positivos (crédito) cuentan como Extras a pagar. Las deudas no.
                 const overtimeHours = finalBalance > 0 ? finalBalance : 0;
                 const overCost = preferStock ? 0 : (overtimeHours * overPrice);
 
-                // Filtrar solo balances positivos y que no sean stock
                 if (overtimeHours > 0 && !preferStock) {
                     staffList.push({
                         id: userId,
                         name: `${profile.first_name} ${profile.last_name || ''}`,
                         role: profile.role || 'Staff',
-                        totalHours: isManager ? (40 + hoursWorked) : hoursWorked, // Manager: 40 + extras
+                        totalHours: isManager ? (40 + hoursWorked) : hoursWorked,
                         regularHours: isManager ? 40 : (hoursWorked - overtimeHours),
                         overtimeHours: overtimeHours,
                         totalCost: overCost,
                         regularCost: 0,
                         overtimeCost: overCost,
-                        isPaid: snapshots?.find(s => s.user_id === userId && s.week_start === weekStartISO)?.is_paid || false,
+                        isPaid: !!currentSnapshot?.is_paid,
                         preferStock: preferStock
                     });
 

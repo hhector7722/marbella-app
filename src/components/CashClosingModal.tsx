@@ -82,18 +82,33 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
     async function fetchTodayVentas() {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
-        const { data: tickets } = await supabase
-            .from('tickets_marbella')
-            .select('total_documento')
-            .eq('fecha', todayStr);
 
-        const total = tickets?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-        const count = tickets?.filter(t => (Number(t.total_documento) || 0) !== 0).length || 0;
+        // ARCHITECT_ULTRAFLUIDITY: Aggregated fetch instead of downloading ALL tickets
+        // Using get_hourly_sales RPC for totals to avoid data bloat
+        const { data: aggregated, error } = await supabase
+            .rpc('get_hourly_sales', {
+                p_start_date: todayStr,
+                p_end_date: todayStr
+            });
+
+        if (error) {
+            console.error("Error fetching aggregated sales:", error);
+            return;
+        }
+
+        const total = aggregated?.reduce((sum: number, row: any) => sum + (Number(row.total) || 0), 0) || 0;
+
+        // Total count of documents for today
+        const { count } = await supabase
+            .from('tickets_marbella')
+            .select('*', { count: 'exact', head: true })
+            .eq('fecha', todayStr)
+            .neq('total_documento', 0);
 
         setTpvData(prev => ({
             ...prev,
-            totalSales: Math.round(total * 100) / 100, // Round to 2 decimals
-            ticketsCount: count
+            totalSales: Math.round(total * 100) / 100,
+            ticketsCount: count || 0
         }));
     }
 

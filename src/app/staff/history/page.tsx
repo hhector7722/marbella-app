@@ -11,6 +11,173 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+// [ARCHITECT_ULTRAFLUIDITY] Memoized Sub-components
+const WeeklyCard = React.memo(({
+    week,
+    idx,
+    isManager,
+    openEdit
+}: {
+    week: WeeklyData,
+    idx: number,
+    isManager: boolean,
+    openEdit: (idx: number) => void
+}) => {
+
+    const formatNumber = (val: number) => {
+        if (Math.abs(val) < 0.1) return ' ';
+        const rounded = Math.round(val * 2) / 2;
+        return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    };
+
+    const formatValue = (val: number) => formatNumber(val);
+    const formatBalance = (val: number) => formatNumber(val);
+
+    const formatMoney = (val: number) => {
+        if (Math.abs(val) < 0.1) return " ";
+        return `${val.toFixed(0)}€`;
+    };
+
+    const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+    return (
+        <div className={cn(
+            "bg-white rounded-2xl shadow-xl",
+            "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4"
+        )} style={{ animationDelay: `${idx * 50}ms` }}>
+
+            {/* Header Sólido Azul Marbella */}
+            <div className="bg-[#36606F] rounded-t-2xl px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                        {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
+                    </span>
+                    {week.isCurrentWeek && (
+                        <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse leading-none">
+                            En Curso
+                        </span>
+                    )}
+                </div>
+                {isManager && (
+                    <button
+                        onClick={() => openEdit(idx)}
+                        className="text-[10px] font-black text-white/70 hover:text-white transition-all active:scale-90 uppercase tracking-widest"
+                    >
+                        EDITAR
+                    </button>
+                )}
+            </div>
+
+            <div className="p-2 relative">
+                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                    <div className="grid grid-cols-7 border-b border-gray-100">
+                        {week.days.map((day, i) => {
+                            const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
+                            const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
+
+                            return (
+                                <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                    <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                        <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                    </div>
+                                    <div className="flex-1 p-1 flex flex-col items-center relative z-0">
+                                        <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                        <div className="flex-1 flex items-center justify-center w-full mt-4">
+                                            {isSpecial ? (
+                                                <div className={cn(
+                                                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg mb-2",
+                                                    eventConfig.color
+                                                )}>
+                                                    {eventConfig.initial}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col justify-center gap-0.5 w-full pb-1">
+                                                    <div className="h-3 flex items-center justify-center gap-1">
+                                                        {day.hasLog ? (
+                                                            <>
+                                                                <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                            </>
+                                                        ) : null}
+                                                    </div>
+                                                    <div className="h-3 flex items-center justify-center gap-1">
+                                                        {day.hasLog && day.clockOut ? (
+                                                            <>
+                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                            </>
+                                                        ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                            {day.hasLog && day.totalHours > 0 ? (
+                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                    <span className="ml-0.5">H</span>
+                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
+                                                </div>
+                                            ) : <div className="h-3" />}
+                                            {day.extraHours > 0.1 ? (
+                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                    <span className="ml-0.5">Ex</span>
+                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
+                                                </div>
+                                            ) : <div className="h-3" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                    <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                        <div className="h-4 flex items-center">
+                            <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
+                        </div>
+                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                    </div>
+
+                    <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                        <div className="h-4 flex items-center">
+                            <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                {formatBalance(week.summary.startBalance)}
+                            </span>
+                        </div>
+                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                    </div>
+
+                    <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                        <div className="h-4 flex items-center">
+                            <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.finalBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                {week.summary.finalBalance > 0 ? formatBalance(week.summary.finalBalance) : " "}
+                            </span>
+                        </div>
+                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap px-1">H Extras</span>
+                    </div>
+
+                    <div className="flex flex-col items-center flex-1 shrink-0">
+                        <div className="h-4 flex items-center">
+                            <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                {formatMoney(week.summary.estimatedValue)}
+                            </span>
+                        </div>
+                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                    </div>
+                </div>
+            </div>
+            {week.summary.isPaid && (
+                <div className="absolute -bottom-8 -right-6 w-24 h-24 rotate-[-12deg] opacity-90 pointer-events-none z-30 drop-shadow-xl">
+                    <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
+                </div>
+            )}
+        </div>
+    );
+});
+WeeklyCard.displayName = 'WeeklyCard';
+
 // --- TIPOS ---
 interface DailyLog {
     date: Date;
@@ -127,6 +294,9 @@ export default function HistoryPage() {
     const [editEntries, setEditEntries] = useState<TimeLogEntry[]>([]);
     const [savingEdit, setSavingEdit] = useState(false);
 
+    // [ARCHITECT_ULTRAFLUIDITY] Incremental rendering
+    const [displayLimit, setDisplayLimit] = useState(6);
+
     useEffect(() => { initUser(); }, []);
     useEffect(() => { if (currentUserId) fetchHistory(); }, [currentDate, selectedEmployeeId, currentUserId]);
 
@@ -205,6 +375,13 @@ export default function HistoryPage() {
                 .lte('clock_in', endView.toISOString())
                 .order('clock_in', { ascending: true });
 
+            // [ARCHITECT_ULTRAFLUIDITY] Normalize logs into a Hash Map for O(1) lookups
+            const logsMap = new Map<string, any>();
+            logs?.forEach(l => {
+                const dateKey = format(new Date(l.clock_in), 'yyyy-MM-dd');
+                logsMap.set(dateKey, l);
+            });
+
             // 2. FETCH SNAPSHOTS
             const searchSnapshotStart = new Date(startView);
             searchSnapshotStart.setDate(searchSnapshotStart.getDate() - 7);
@@ -215,6 +392,12 @@ export default function HistoryPage() {
                 .gte('week_start', searchSnapshotStart.toISOString().split('T')[0])
                 .lte('week_start', endView.toISOString().split('T')[0])
                 .order('week_start', { ascending: true });
+
+            // [ARCHITECT_ULTRAFLUIDITY] Normalize snapshots into a Hash Map for O(1) lookups
+            const snapshotsMap = new Map<string, any>();
+            snapshots?.forEach(s => {
+                snapshotsMap.set(s.week_start, s);
+            });
 
             // 3. GENERAR SEMANAS
             const weeks: WeeklyData[] = [];
@@ -232,11 +415,9 @@ export default function HistoryPage() {
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(currentWeekStart); d.setDate(currentWeekStart.getDate() + i);
                     const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                    const dateKey = format(d, 'yyyy-MM-dd');
 
-                    const log = logs?.find(l => {
-                        const ld = new Date(l.clock_in);
-                        return ld.getDate() === d.getDate() && ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear();
-                    });
+                    const log = logsMap.get(dateKey);
 
                     let h = 0, cin = '', cout = '', dayExtras = 0;
                     let eventType = undefined;
@@ -267,7 +448,7 @@ export default function HistoryPage() {
 
                 // --- LÓGICA DE RESUMEN ---
                 const weekStartISO = format(currentWeekStart, 'yyyy-MM-dd');
-                const snapshot = snapshots?.find(s => s.week_start === weekStartISO);
+                const snapshot = snapshotsMap.get(weekStartISO);
 
                 let summaryStartBalance = 0;
                 let summaryWeeklyBalance = 0;
@@ -302,7 +483,7 @@ export default function HistoryPage() {
                     const prevWeekDate = new Date(currentWeekStart);
                     prevWeekDate.setDate(prevWeekDate.getDate() - 7);
                     const prevWeekISO = format(prevWeekDate, 'yyyy-MM-dd');
-                    const prevSnapshot = snapshots?.find(s => s.week_start === prevWeekISO);
+                    const prevSnapshot = snapshotsMap.get(prevWeekISO);
 
                     if (prevSnapshot) {
                         if (!userPreferStock && prevSnapshot.final_balance > 0) {
@@ -630,373 +811,259 @@ export default function HistoryPage() {
                     <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto"><Calendar size={40} fill="currentColor" className="mx-auto mb-2 opacity-50" /><p>No hay registros este mes</p></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
-                        {weeksData.map((week, idx) => {
-                            return (
-                                <div key={idx} className={cn(
-                                    "bg-white rounded-2xl shadow-xl",
-                                    "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4"
-                                )} style={{ animationDelay: `${idx * 50}ms` }}>
+                        {weeksData.slice(0, displayLimit).map((week, idx) => (
+                            <WeeklyCard
+                                key={idx}
+                                week={week}
+                                idx={idx}
+                                isManager={isManager}
+                                openEdit={openEdit}
+                            />
+                        ))}
 
-                                    {/* Header Sólido Azul Marbella */}
-                                    <div className="bg-[#36606F] rounded-t-2xl px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">
-                                                {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
-                                            </span>
-                                            {week.isCurrentWeek && (
-                                                <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse leading-none">
-                                                    En Curso
-                                                </span>
-                                            )}
-                                        </div>
-                                        {isManager && (
+                        {weeksData.length > displayLimit && (
+                            <div
+                                className="col-span-full py-10 flex justify-center"
+                                ref={(el) => {
+                                    if (!el) return;
+                                    const observer = new IntersectionObserver((entries) => {
+                                        if (entries[0].isIntersecting) {
+                                            setDisplayLimit(prev => prev + 6);
+                                        }
+                                    });
+                                    observer.observe(el);
+                                }}
+                            >
+                                <div className="text-[10px] font-black text-white/30 uppercase tracking-widest animate-pulse">
+                                    Cargando historial...
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* MODAL: Filtro de Fecha */}
+                {/* MODAL: Filtro de Fecha (Rediseño Bento) */}
+                {showFilter && (
+                    <div
+                        className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
+                        onClick={() => setShowFilter(false)}
+                    >
+                        <div
+                            className="bg-zinc-50/90 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header Modal */}
+                            <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100">
+                                <div className="flex flex-col">
+                                    <h3 className="text-xl font-black text-zinc-900 leading-tight">Calendario</h3>
+                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona periodo</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowFilter(false)}
+                                    className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="p-8 space-y-8">
+                                {/* Selector de Año */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <div className="w-1 h-3 bg-blue-600 rounded-full" />
+                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Año</span>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {[2024, 2025, 2026, 2027].map(year => (
                                             <button
-                                                onClick={() => openEdit(idx)}
-                                                className="text-[10px] font-black text-white/70 hover:text-white transition-all active:scale-90 uppercase tracking-widest"
+                                                key={year}
+                                                onClick={() => setFilterYear(year)}
+                                                className={cn(
+                                                    "h-12 rounded-2xl text-[13px] font-black transition-all active:scale-95 border-2",
+                                                    filterYear === year
+                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
+                                                        : 'bg-white text-zinc-500 border-transparent hover:border-zinc-200'
+                                                )}
                                             >
-                                                EDITAR
+                                                {year}
                                             </button>
-                                        )}
+                                        ))}
                                     </div>
+                                </div>
 
-                                    <div className="p-2 relative">
-                                        <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-
-                                            <div className="grid grid-cols-7 border-b border-gray-100">
-                                                {week.days.map((day, i) => {
-                                                    const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
-                                                    const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
-
-                                                    return (
-                                                        <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                                            <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                                            </div>
-                                                            <div className="flex-1 p-1 flex flex-col items-center relative z-0">
-                                                                <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                                <div className="flex-1 flex items-center justify-center w-full mt-4">
-                                                                    {isSpecial ? (
-                                                                        // Render SPECIAL EMOJI/INITIAL
-                                                                        <div className={cn(
-                                                                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg mb-2",
-                                                                            eventConfig.color
-                                                                        )}>
-                                                                            {eventConfig.initial}
-                                                                        </div>
-                                                                    ) : (
-                                                                        // Render REGULAR DOTS/TIMES
-                                                                        <div className="flex flex-col justify-center gap-0.5 w-full pb-1">
-                                                                            <div className="h-3 flex items-center justify-center gap-1">
-                                                                                {day.hasLog ? (
-                                                                                    <>
-                                                                                        <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                                    </>
-                                                                                ) : null}
-                                                                            </div>
-                                                                            <div className="h-3 flex items-center justify-center gap-1">
-                                                                                {day.hasLog && day.clockOut ? (
-                                                                                    <>
-                                                                                        <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                                    </>
-                                                                                ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                                    {day.hasLog && day.totalHours > 0 ? (
-                                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                            <span className="ml-0.5">H</span>
-                                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
-                                                                        </div>
-                                                                    ) : <div className="h-3" />}
-                                                                    {day.extraHours > 0.1 ? (
-                                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                            <span className="ml-0.5">Ex</span>
-                                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
-                                                                        </div>
-                                                                    ) : <div className="h-3" />}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                            </div>
-
-
-
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                        {formatBalance(week.summary.startBalance)}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.finalBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                                                        {week.summary.finalBalance > 0 ? formatBalance(week.summary.finalBalance) : " "}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap px-1">H Extras</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center flex-1 shrink-0">
-                                                <div className="h-4 flex items-center">
-                                                    <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                                        {!preferStock ? formatMoney(week.summary.estimatedValue) : " "}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
-                                            </div>
-                                        </div>
+                                {/* Selector de Mes */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <div className="w-1 h-3 bg-blue-600 rounded-full" />
+                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Meses</span>
                                     </div>
-                                    {week.summary.isPaid && (
-                                        <div className="absolute -bottom-8 -right-6 w-24 h-24 rotate-[-12deg] opacity-90 pointer-events-none z-30 drop-shadow-xl">
-                                            <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                                        </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {Array.from({ length: 12 }).map((_, i) => {
+                                            const isSelected = filterMonth === i;
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setFilterMonth(i)}
+                                                    className={cn(
+                                                        "h-14 rounded-2xl text-[11px] font-bold transition-all active:scale-95 capitalize border-2",
+                                                        isSelected
+                                                            ? 'bg-blue-50 text-blue-700 border-blue-500 shadow-sm'
+                                                            : 'bg-white text-zinc-400 border-transparent hover:bg-white hover:border-zinc-100'
+                                                    )}
+                                                >
+                                                    {new Date(0, i).toLocaleDateString('es-ES', { month: 'long' })}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Botones de Acción */}
+                                <div className="pt-2 space-y-3">
+                                    <button
+                                        onClick={applyFilter}
+                                        className="w-full h-16 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+                                    >
+                                        <Check size={20} strokeWidth={3} /> Aplicar Filtro
+                                    </button>
+
+                                    {isFilterActive && (
+                                        <button
+                                            onClick={() => { clearFilter(); setShowFilter(false); }}
+                                            className="w-full h-14 bg-white text-zinc-400 font-bold rounded-2xl hover:bg-zinc-100 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                                        >
+                                            Limpiar Filtro
+                                        </button>
                                     )}
                                 </div>
-                            );
-                        })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL: Editar Registros de Semana (Manager) */}
+                {editingWeekIdx !== null && (
+                    <div
+                        className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
+                        onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
+                    >
+                        <div
+                            className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                                <div className="flex flex-col">
+                                    <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
+                                        Semana {weeksData[editingWeekIdx]?.weekNumber}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
+                                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
+                                >
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
+
+                            {/* Entries */}
+                            <div className="max-h-[50vh] overflow-y-auto p-4 space-y-3">
+                                {editEntries.filter(e => !e.toDelete).length === 0 && (
+                                    <div className="py-6 text-center text-zinc-400 text-sm font-medium italic">
+                                        No hay registros esta semana
+                                    </div>
+                                )}
+                                {editEntries.map((entry, idx) => {
+                                    if (entry.toDelete) return null;
+                                    const isRegular = entry.event_type === 'regular';
+                                    const eventConfig = EVENT_TYPES.find(t => t.value === entry.event_type);
+
+                                    return (
+                                        <div key={idx} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <select
+                                                    value={entry.event_type}
+                                                    onChange={(e) => updateEntry(idx, 'event_type', e.target.value)}
+                                                    className="bg-white text-[10px] font-black uppercase text-zinc-500 rounded-lg border border-zinc-200 h-8 px-2 outline-none focus:border-blue-400"
+                                                >
+                                                    {EVENT_TYPES.map(type => (
+                                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                                    ))}
+                                                </select>
+                                                <input
+                                                    type="date"
+                                                    value={entry.date}
+                                                    onChange={(e) => updateEntry(idx, 'date', e.target.value)}
+                                                    className="flex-1 h-8 px-2 rounded-lg border border-zinc-200 text-xs font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                                                />
+                                                <button
+                                                    onClick={() => removeEntry(idx)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-90 shrink-0"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+
+                                            {isRegular ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 flex items-center gap-1.5">
+                                                        <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                                                        <input
+                                                            type="time"
+                                                            value={entry.clock_in}
+                                                            onChange={(e) => updateEntry(idx, 'clock_in', e.target.value)}
+                                                            className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 flex items-center gap-1.5">
+                                                        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                                                        <input
+                                                            type="time"
+                                                            value={entry.clock_out}
+                                                            onChange={(e) => updateEntry(idx, 'clock_out', e.target.value)}
+                                                            className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center gap-2 bg-white border border-zinc-100 rounded-xl p-3 shadow-sm">
+                                                    <div className={cn("w-3 h-3 rounded-full", (eventConfig?.color || 'bg-gray-400').split(' ')[0])} />
+                                                    <span className="text-xs font-black text-zinc-500 uppercase">
+                                                        8 Horas - {eventConfig?.label || 'Evento'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-4 border-t border-zinc-100 flex gap-3">
+                                <button
+                                    onClick={addEntry}
+                                    className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 active:scale-95 transition-all text-sm"
+                                >
+                                    <Plus size={18} /> Añadir
+                                </button>
+                                <button
+                                    onClick={saveEdits}
+                                    disabled={savingEdit}
+                                    className="flex-1 h-12 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
+                                >
+                                    {savingEdit ? (
+                                        <LoadingSpinner size="sm" className="text-white" />
+                                    ) : (
+                                        <><Save size={18} /> Guardar</>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
-
-            {/* MODAL: Filtro de Fecha */}
-            {/* MODAL: Filtro de Fecha (Rediseño Bento) */}
-            {showFilter && (
-                <div
-                    className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
-                    onClick={() => setShowFilter(false)}
-                >
-                    <div
-                        className="bg-zinc-50/90 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Header Modal */}
-                        <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100">
-                            <div className="flex flex-col">
-                                <h3 className="text-xl font-black text-zinc-900 leading-tight">Calendario</h3>
-                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona periodo</p>
-                            </div>
-                            <button
-                                onClick={() => setShowFilter(false)}
-                                className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="p-8 space-y-8">
-                            {/* Selector de Año */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 px-1">
-                                    <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                                    <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Año</span>
-                                </div>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {[2024, 2025, 2026, 2027].map(year => (
-                                        <button
-                                            key={year}
-                                            onClick={() => setFilterYear(year)}
-                                            className={cn(
-                                                "h-12 rounded-2xl text-[13px] font-black transition-all active:scale-95 border-2",
-                                                filterYear === year
-                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
-                                                    : 'bg-white text-zinc-500 border-transparent hover:border-zinc-200'
-                                            )}
-                                        >
-                                            {year}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Selector de Mes */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 px-1">
-                                    <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                                    <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Meses</span>
-                                </div>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {Array.from({ length: 12 }).map((_, i) => {
-                                        const isSelected = filterMonth === i;
-                                        return (
-                                            <button
-                                                key={i}
-                                                onClick={() => setFilterMonth(i)}
-                                                className={cn(
-                                                    "h-14 rounded-2xl text-[11px] font-bold transition-all active:scale-95 capitalize border-2",
-                                                    isSelected
-                                                        ? 'bg-blue-50 text-blue-700 border-blue-500 shadow-sm'
-                                                        : 'bg-white text-zinc-400 border-transparent hover:bg-white hover:border-zinc-100'
-                                                )}
-                                            >
-                                                {new Date(0, i).toLocaleDateString('es-ES', { month: 'long' })}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* Botones de Acción */}
-                            <div className="pt-2 space-y-3">
-                                <button
-                                    onClick={applyFilter}
-                                    className="w-full h-16 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
-                                >
-                                    <Check size={20} strokeWidth={3} /> Aplicar Filtro
-                                </button>
-
-                                {isFilterActive && (
-                                    <button
-                                        onClick={() => { clearFilter(); setShowFilter(false); }}
-                                        className="w-full h-14 bg-white text-zinc-400 font-bold rounded-2xl hover:bg-zinc-100 active:scale-95 transition-all text-xs uppercase tracking-widest"
-                                    >
-                                        Limpiar Filtro
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL: Editar Registros de Semana (Manager) */}
-            {editingWeekIdx !== null && (
-                <div
-                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
-                    onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
-                >
-                    <div
-                        className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Header */}
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
-                            <div className="flex flex-col">
-                                <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                    Semana {weeksData[editingWeekIdx]?.weekNumber}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
-                                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
-                            >
-                                <X size={20} strokeWidth={3} />
-                            </button>
-                        </div>
-
-                        {/* Entries */}
-                        <div className="max-h-[50vh] overflow-y-auto p-4 space-y-3">
-                            {editEntries.filter(e => !e.toDelete).length === 0 && (
-                                <div className="py-6 text-center text-zinc-400 text-sm font-medium italic">
-                                    No hay registros esta semana
-                                </div>
-                            )}
-                            {editEntries.map((entry, idx) => {
-                                if (entry.toDelete) return null;
-                                const isRegular = entry.event_type === 'regular';
-                                const eventConfig = EVENT_TYPES.find(t => t.value === entry.event_type);
-
-                                return (
-                                    <div key={idx} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <select
-                                                value={entry.event_type}
-                                                onChange={(e) => updateEntry(idx, 'event_type', e.target.value)}
-                                                className="bg-white text-[10px] font-black uppercase text-zinc-500 rounded-lg border border-zinc-200 h-8 px-2 outline-none focus:border-blue-400"
-                                            >
-                                                {EVENT_TYPES.map(type => (
-                                                    <option key={type.value} value={type.value}>{type.label}</option>
-                                                ))}
-                                            </select>
-                                            <input
-                                                type="date"
-                                                value={entry.date}
-                                                onChange={(e) => updateEntry(idx, 'date', e.target.value)}
-                                                className="flex-1 h-8 px-2 rounded-lg border border-zinc-200 text-xs font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                                            />
-                                            <button
-                                                onClick={() => removeEntry(idx)}
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-90 shrink-0"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-
-                                        {isRegular ? (
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex-1 flex items-center gap-1.5">
-                                                    <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                                                    <input
-                                                        type="time"
-                                                        value={entry.clock_in}
-                                                        onChange={(e) => updateEntry(idx, 'clock_in', e.target.value)}
-                                                        className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 flex items-center gap-1.5">
-                                                    <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                                                    <input
-                                                        type="time"
-                                                        value={entry.clock_out}
-                                                        onChange={(e) => updateEntry(idx, 'clock_out', e.target.value)}
-                                                        className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-center gap-2 bg-white border border-zinc-100 rounded-xl p-3 shadow-sm">
-                                                <div className={cn("w-3 h-3 rounded-full", (eventConfig?.color || 'bg-gray-400').split(' ')[0])} />
-                                                <span className="text-xs font-black text-zinc-500 uppercase">
-                                                    8 Horas - {eventConfig?.label || 'Evento'}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="p-4 border-t border-zinc-100 flex gap-3">
-                            <button
-                                onClick={addEntry}
-                                className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 active:scale-95 transition-all text-sm"
-                            >
-                                <Plus size={18} /> Añadir
-                            </button>
-                            <button
-                                onClick={saveEdits}
-                                disabled={savingEdit}
-                                className="flex-1 h-12 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
-                            >
-                                {savingEdit ? (
-                                    <LoadingSpinner size="sm" className="text-white" />
-                                ) : (
-                                    <><Save size={18} /> Guardar</>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

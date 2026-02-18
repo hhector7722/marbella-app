@@ -121,25 +121,31 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 .eq('week_start', prevWeekISO)
                 .single();
 
-            // 6. Process Daily Logs
+            // 6. Process Daily Logs (Architect_UltraFluidity Optimization: O(1) Lookup)
+            const logsByDate = new Map();
+            logs?.forEach(log => {
+                const dateStr = format(parseISO(log.clock_in), 'yyyy-MM-dd');
+                logsByDate.set(dateStr, log);
+            });
+
             const weekDays: DailyLog[] = [];
             let weekTotalHours = 0;
             let currentAccumulated = 0;
-            const isAugust = monday.getMonth() === 7; // August check
+            const isAugust = monday.getMonth() === 7;
             const effContract = (isAugust || isManager || isFixedSalary) ? 0 : contractHours;
 
             for (let i = 0; i < 7; i++) {
                 const d = addDays(monday, i);
+                const dStr = format(d, 'yyyy-MM-dd');
                 const isToday = isSameDay(d, new Date());
 
-                const log = logs?.find(l => isSameDay(parseISO(l.clock_in), d));
+                const log = logsByDate.get(dStr);
 
                 let h = 0, cin = '', cout = '', dayExtras = 0;
                 if (log) {
                     const inD = parseISO(log.clock_in); cin = format(inD, 'HH:mm');
                     if (log.clock_out) { const outD = parseISO(log.clock_out); cout = format(outD, 'HH:mm'); }
 
-                    // USE SHARED ROUNDING LOGIC
                     h = log.total_hours ? calculateRoundedHours(log.total_hours) : 0;
                     weekTotalHours += h;
 
@@ -152,7 +158,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
                 weekDays.push({
                     date: d,
-                    dayName: format(d, 'EEE', { locale: es }).toUpperCase().slice(0, 3), // LUN, MAR...
+                    dayName: format(d, 'EEE', { locale: es }).toUpperCase().slice(0, 3),
                     dayNumber: d.getDate(),
                     hasLog: !!log,
                     clockIn: cin,
@@ -170,35 +176,27 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             let summaryFinalBalance = 0;
 
             if (snapshot) {
-                // Use frozen snapshot data if available
                 summaryStartBalance = snapshot.pending_balance;
                 summaryWeeklyBalance = snapshot.balance_hours;
                 summaryTotalHours = snapshot.total_hours;
                 summaryFinalBalance = snapshot.final_balance ?? (snapshot.pending_balance + snapshot.balance_hours);
             } else {
-                // Calculate live
                 summaryTotalHours = weekTotalHours;
                 if (isAugust || isManager || isFixedSalary) {
                     summaryWeeklyBalance = weekTotalHours;
-                    // For display purposes, fixed salary often shows contract hours as base, but balance is full hours
-                    // summaryTotalHours = 40 + weekTotalHours; // Keeping raw worked hours for clarity in modal
                 } else {
                     summaryWeeklyBalance = weekTotalHours - (snapshot?.contracted_hours_snapshot ?? contractHours);
                 }
 
-                // Round the weekly balance
                 summaryWeeklyBalance = calculateRoundedHours(summaryWeeklyBalance);
 
-                // Determine start balance from previous snapshot or profile history
                 if (prevSnapshot) {
-                    // Logic: If previous final balance > 0 and user doesn't prefer stock hours, it was likely paid out, so start is 0
                     if (!preferStock && prevSnapshot.final_balance > 0) {
                         summaryStartBalance = 0;
                     } else {
                         summaryStartBalance = prevSnapshot.final_balance;
                     }
                 } else {
-                    // Fallback to profile balance if no history (approximate)
                     summaryStartBalance = profile?.hours_balance || 0;
                 }
 
@@ -210,6 +208,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 estimatedValue = summaryFinalBalance * overtimeRate;
             }
 
+            // setWeekData call preserved outside the computation logic for clarity
             setWeekData({
                 weekNumber: parseInt(format(monday, 'w')),
                 startDate: monday,

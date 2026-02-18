@@ -75,6 +75,10 @@ export default function MovementsPage() {
         initialBalanceInRange: 0
     });
 
+    // ARCHITECT_ULTRAFLUIDITY: Incremental rendering to keep Main Thread free
+    const [displayLimit, setDisplayLimit] = useState(40);
+    const visibleMovements = movements.slice(0, displayLimit);
+
     useEffect(() => {
         fetchMovements();
     }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter]);
@@ -452,7 +456,7 @@ export default function MovementsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-zinc-50">
-                                        {movements.map((mov, idx) => {
+                                        {visibleMovements.map((mov, idx) => {
                                             const isIncome = mov.type === 'income';
                                             return (
                                                 <tr
@@ -497,6 +501,24 @@ export default function MovementsPage() {
                                         })}
                                     </tbody>
                                 </table>
+
+                                {/* ARCHITECT_ULTRAFLUIDITY: Trigger more loading when scrolling */}
+                                {movements.length > displayLimit && (
+                                    <div
+                                        className="py-10 flex justify-center"
+                                        ref={(el) => {
+                                            if (!el) return;
+                                            const observer = new IntersectionObserver((entries) => {
+                                                if (entries[0].isIntersecting) {
+                                                    setDisplayLimit(prev => prev + 40);
+                                                }
+                                            });
+                                            observer.observe(el);
+                                        }}
+                                    >
+                                        <LoadingSpinner size="sm" />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

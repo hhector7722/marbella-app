@@ -143,43 +143,46 @@ export default function HistoryPage() {
     async function fetchHistory() {
         setLoading(true);
         try {
-            // 1. Fetch Closings
-            const { data: closingsData } = await supabase
+            // 1. Fetch Closings (Parallel)
+            const closingsPromise = supabase
                 .from('cash_closings')
                 .select('*')
                 .gte('closed_at', new Date(rangeStart).toISOString())
                 .lte('closed_at', new Date(rangeEnd + 'T23:59:59').toISOString())
                 .order('closed_at', { ascending: false });
 
-            setClosings(closingsData || []);
+            // 2. Fetch Aggregated Hourly Sales (RPC - Architect_UltraFluidity Optimization)
+            const hourlyPromise = supabase
+                .rpc('get_hourly_sales', {
+                    p_start_date: rangeStart,
+                    p_end_date: rangeEnd
+                });
 
-            // 2. Fetch Hourly Sales for Sparklines
-            const { data: ticketsData } = await supabase
-                .from('tickets_marbella')
-                .select('fecha, hora_cierre, total_documento')
-                .gte('fecha', rangeStart)
-                .lte('fecha', rangeEnd);
+            const [closingsRes, hourlyRes] = await Promise.all([closingsPromise, hourlyPromise]);
 
-            if (ticketsData) {
-                const hourlyMap: Record<string, number[]> = {};
+            if (closingsRes.error) throw closingsRes.error;
+            if (hourlyRes.error) throw hourlyRes.error;
 
-                // Group by date
-                ticketsData.forEach(ticket => {
-                    const date = ticket.fecha;
+            setClosings(closingsRes.data || []);
+
+            // 3. Process Aggregated Data (Ultra-fast mapping)
+            const hourlyMap: Record<string, number[]> = {};
+            if (hourlyRes.data) {
+                hourlyRes.data.forEach((row: any) => {
+                    const date = row.fecha; // Already formatted as YYYY-MM-DD by Postgres
                     if (!hourlyMap[date]) {
                         hourlyMap[date] = new Array(24).fill(0);
                     }
-                    // Extract hour from "HH:MM:SS" or similar
-                    const hour = parseInt(ticket.hora_cierre.split(':')[0]) || 0;
-                    if (hour >= 0 && hour < 24) {
-                        hourlyMap[date][hour] += Number(ticket.total_documento) || 0;
+                    if (row.hora >= 0 && row.hora < 24) {
+                        hourlyMap[date][row.hora] = Number(row.total);
                     }
                 });
-
-                setHourlySales(hourlyMap);
             }
+            setHourlySales(hourlyMap);
+
         } catch (err) {
-            console.error(err);
+            console.error('Error fetching history:', err);
+            toast.error("Error al cargar datos históricos");
         } finally {
             setLoading(false);
         }
