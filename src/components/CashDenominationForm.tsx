@@ -9,11 +9,12 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 interface CashDenominationFormProps {
     type: 'in' | 'out' | 'audit';
     boxName: string;
-    onSubmit: (total: number, breakdown: any, notes: string) => void;
+    onSubmit: (total: number, breakdown: any, notes: string, date?: string) => void; // Updated signature
     onCancel: () => void;
     initialCounts?: any;
     availableStock?: Record<number, number>;
     initialNotes?: string;
+    initialDate?: string; // New prop
     submitLabel?: string;
 }
 
@@ -25,10 +26,22 @@ export const CashDenominationForm = ({
     initialCounts = {},
     availableStock = {},
     initialNotes = '',
+    initialDate,
     submitLabel
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
     const [notes, setNotes] = useState(initialNotes);
+    // Initialize date state. If initialDate is provided, use it, otherwise default to now (though usually for new movements we rely on DB default, but here we can be explicit if needed, or just leave undefined for new).
+    // For editing, initialDate will be present.
+    // datetime-local input expects YYYY-MM-DDThh:mm
+    const formatForInput = (dateStr?: string) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    };
+
+    // If strict editing is required, we manage state. 
+    const [selectedDate, setSelectedDate] = useState(initialDate ? formatForInput(initialDate) : '');
 
     const calculateTotal = () => DENOMINATIONS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
     const handleCountChange = (val: number, qty: string) => setCounts(prev => ({ ...prev, [val]: parseInt(qty) || 0 }));
@@ -56,18 +69,31 @@ export const CashDenominationForm = ({
                 </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-                {!isAudit && (
-                    <div className="px-2">
-                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Concepto / Motivo</label>
+                {/* DATE & NOTES ROW */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
+                    <div className="flex flex-col">
+                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Fecha y Hora</label>
                         <input
-                            type="text"
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Ej. Cambio banco, Pago proveedor..."
-                            className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#5B8FB9]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300 text-xs"
+                            type="datetime-local"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#5B8FB9]/20 bg-white shadow-sm outline-none transition-all font-bold text-gray-700 text-xs"
                         />
                     </div>
-                )}
+                    {!isAudit && (
+                        <div className="flex flex-col">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Concepto / Motivo</label>
+                            <input
+                                type="text"
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Ej. Cambio banco, Pago proveedor..."
+                                className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#5B8FB9]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300 text-xs"
+                            />
+                        </div>
+                    )}
+                </div>
+
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                     {DENOMINATIONS.map(denom => (
                         <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
@@ -105,7 +131,7 @@ export const CashDenominationForm = ({
                     Cancelar
                 </button>
                 <button
-                    onClick={() => onSubmit(total, counts, notes)}
+                    onClick={() => onSubmit(total, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined)}
                     disabled={type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
                     className={cn(
                         "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
