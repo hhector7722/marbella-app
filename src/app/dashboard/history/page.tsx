@@ -143,42 +143,45 @@ export default function HistoryPage() {
     async function fetchHistory() {
         setLoading(true);
         try {
-            // 1. Fetch Closings (Parallel)
+            // 1. Fetch Closings (Parallel) - Optimized for date-only filtering to avoid TZ issues
             const closingsPromise = supabase
                 .from('cash_closings')
                 .select('*')
-                .gte('closed_at', new Date(rangeStart).toISOString())
-                .lte('closed_at', new Date(rangeEnd + 'T23:59:59').toISOString())
-                .order('closed_at', { ascending: false });
+                .gte('closing_date', rangeStart)
+                .lte('closing_date', rangeEnd)
+                .order('closing_date', { ascending: false });
 
             // 2. Fetch Aggregated Hourly Sales (RPC - Architect_UltraFluidity Optimization)
-            const hourlyPromise = supabase
-                .rpc('get_hourly_sales', {
-                    p_start_date: rangeStart,
-                    p_end_date: rangeEnd
-                });
-
-            const [closingsRes, hourlyRes] = await Promise.all([closingsPromise, hourlyPromise]);
+            // Separate block for RPC so it doesn't block closings if it fails
+            const [closingsRes] = await Promise.all([closingsPromise]);
 
             if (closingsRes.error) throw closingsRes.error;
-            if (hourlyRes.error) throw hourlyRes.error;
-
             setClosings(closingsRes.data || []);
 
-            // 3. Process Aggregated Data (Ultra-fast mapping)
-            const hourlyMap: Record<string, number[]> = {};
-            if (hourlyRes.data) {
-                hourlyRes.data.forEach((row: any) => {
-                    const date = row.fecha; // Already formatted as YYYY-MM-DD by Postgres
-                    if (!hourlyMap[date]) {
-                        hourlyMap[date] = new Array(24).fill(0);
-                    }
-                    if (row.hora >= 0 && row.hora < 24) {
-                        hourlyMap[date][row.hora] = Number(row.total);
-                    }
-                });
+            // 3. Optional Hourly Data (No-blocking strategy)
+            try {
+                const { data: hourlyData, error: hourlyError } = await supabase
+                    .rpc('get_hourly_sales', {
+                        p_start_date: rangeStart,
+                        p_end_date: rangeEnd
+                    });
+
+                if (!hourlyError && hourlyData) {
+                    const hourlyMap: Record<string, number[]> = {};
+                    hourlyData.forEach((row: any) => {
+                        const date = row.fecha; // Already formatted as YYYY-MM-DD by Postgres
+                        if (!hourlyMap[date]) {
+                            hourlyMap[date] = new Array(24).fill(0);
+                        }
+                        if (row.hora >= 0 && row.hora < 24) {
+                            hourlyMap[date][row.hora] = Number(row.total);
+                        }
+                    });
+                    setHourlySales(hourlyMap);
+                }
+            } catch (rpcErr) {
+                console.warn('Hourly sales RPC failed, continuing without chart:', rpcErr);
             }
-            setHourlySales(hourlyMap);
 
         } catch (err) {
             console.error('Error fetching history:', err);
