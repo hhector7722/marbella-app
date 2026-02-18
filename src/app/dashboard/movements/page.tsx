@@ -396,107 +396,106 @@ export default function MovementsPage() {
                         {/* LISTADO DE MOVIMIENTOS INTEGRADO */}
                         <div className="p-3 bg-white">
                             <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
-                                <div className="overflow-x-auto no-scrollbar">
-                                    <div className="min-w-[700px]">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-[#36606F] text-white">
-                                                <tr className="text-[10px] font-black uppercase tracking-[0.15em]">
-                                                    <th className="px-6 py-4">FECHA</th>
-                                                    <th className="px-6 py-4">CONCEPTO</th>
-                                                    <th className="px-6 py-4 text-center">IMPORTE</th>
-                                                    <th className="px-8 py-4 text-right">SALDO</th>
+                                <div className="w-full">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-[#36606F] text-white">
+                                            <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
+                                                <th className="px-2 md:px-6 py-4">FECHA</th>
+                                                <th className="px-2 md:px-6 py-4">CONCEPTO</th>
+                                                <th className="px-2 md:px-6 py-4 text-center">IMPORTE</th>
+                                                <th className="px-3 md:px-8 py-4 text-right">SALDO</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-50/50">
+                                            {loading ? (
+                                                <tr>
+                                                    <td colSpan={4} className="py-20">
+                                                        <div className="flex items-center justify-center">
+                                                            <LoadingSpinner size="lg" />
+                                                        </div>
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-zinc-50/50">
-                                                {loading ? (
-                                                    <tr>
-                                                        <td colSpan={4} className="py-20">
-                                                            <div className="flex items-center justify-center">
-                                                                <LoadingSpinner size="lg" />
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ) : movements.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={4} className="py-20">
-                                                            <div className="flex flex-col items-center justify-center space-y-2 opacity-30">
-                                                                <PiggyBank size={32} />
-                                                                <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    visibleMovements.map((mov) => {
-                                                        const isIncome = mov.type === 'income';
-                                                        return (
-                                                            <tr key={mov.id} className="group hover:bg-zinc-50/80 transition-colors">
-                                                                <td className="px-6 py-3">
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-[13px] font-black text-zinc-900 italic">
-                                                                            {format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}
-                                                                        </span>
-                                                                        <span className="text-[10px] font-bold text-zinc-400 font-mono">
-                                                                            {format(new Date(mov.created_at), 'HH:mm')}
-                                                                        </span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-6 py-3">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className={cn(
-                                                                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
-                                                                            mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
-                                                                                mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
-                                                                                    "bg-orange-50 text-orange-500"
-                                                                        )}>
-                                                                            {mov.type === 'income' ? <ArrowDown size={16} strokeWidth={3} /> :
-                                                                                mov.type === 'expense' ? <ArrowUp size={16} strokeWidth={3} /> :
-                                                                                    <RefreshCw size={14} strokeWidth={3} />}
-                                                                        </div>
-                                                                        <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[200px]">
-                                                                            {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
-                                                                        </span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-6 py-3 text-center">
-                                                                    <span className={cn(
-                                                                        "text-[15px] font-black tabular-nums",
-                                                                        mov.type === 'income' ? "text-emerald-500" :
-                                                                            mov.type === 'expense' ? "text-rose-500" :
-                                                                                mov.amount > 0 ? "text-blue-500" : "text-orange-500"
+                                            ) : movements.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={4} className="py-20">
+                                                        <div className="flex flex-col items-center justify-center space-y-2 opacity-30">
+                                                            <PiggyBank size={32} />
+                                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                visibleMovements.map((mov) => {
+                                                    const isIncome = mov.type === 'income';
+                                                    return (
+                                                        <tr key={mov.id} className="group hover:bg-zinc-50/80 transition-colors">
+                                                            <td className="px-2 md:px-6 py-3">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[11px] md:text-[13px] font-black text-zinc-900 italic">
+                                                                        <span className="md:inline hidden">{format(new Date(mov.created_at), 'eeee d MMM', { locale: es })}</span>
+                                                                        <span className="md:hidden inline">{format(new Date(mov.created_at), 'd MMM', { locale: es })}</span>
+                                                                    </span>
+                                                                    <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 font-mono">
+                                                                        {format(new Date(mov.created_at), 'HH:mm')}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-2 md:px-6 py-3">
+                                                                <div className="flex items-center gap-1.5 md:gap-3">
+                                                                    <div className={cn(
+                                                                        "w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                                                                        mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
+                                                                            mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
+                                                                                "bg-orange-50 text-orange-500"
                                                                     )}>
-                                                                        {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
+                                                                        {mov.type === 'income' ? <ArrowDown size={14} className="md:size-[16px]" strokeWidth={3} /> :
+                                                                            mov.type === 'expense' ? <ArrowUp size={14} className="md:size-[16px]" strokeWidth={3} /> :
+                                                                                <RefreshCw size={12} className="md:size-[14px]" strokeWidth={3} />}
+                                                                    </div>
+                                                                    <span className="text-[10px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[80px] md:max-w-[200px]">
+                                                                        {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                     </span>
-                                                                </td>
-                                                                <td className="px-8 py-3 text-right">
-                                                                    <span className="text-[15px] font-black text-zinc-900 tabular-nums">
-                                                                        {mov.running_balance.toFixed(2)}€
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-2 md:px-6 py-3 text-center">
+                                                                <span className={cn(
+                                                                    "text-[12px] md:text-[15px] font-black tabular-nums",
+                                                                    mov.type === 'income' ? "text-emerald-500" :
+                                                                        mov.type === 'expense' ? "text-rose-500" :
+                                                                            mov.amount > 0 ? "text-blue-500" : "text-orange-500"
+                                                                )}>
+                                                                    {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-3 md:px-8 py-3 text-right">
+                                                                <span className="text-[12px] md:text-[15px] font-black text-zinc-900 tabular-nums">
+                                                                    {mov.running_balance.toFixed(2)}€
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
 
-                                        {/* SCROLL SENSOR */}
-                                        {movements.length > displayLimit && (
-                                            <div
-                                                className="py-6 flex justify-center"
-                                                ref={(el) => {
-                                                    if (!el) return;
-                                                    const observer = new IntersectionObserver((entries) => {
-                                                        if (entries[0].isIntersecting) {
-                                                            setDisplayLimit(prev => prev + 40);
-                                                        }
-                                                    });
-                                                    observer.observe(el);
-                                                }}
-                                            >
-                                                <LoadingSpinner size="sm" />
-                                            </div>
-                                        )}
-                                    </div>
+                                    {/* SCROLL SENSOR */}
+                                    {movements.length > displayLimit && (
+                                        <div
+                                            className="py-6 flex justify-center"
+                                            ref={(el) => {
+                                                if (!el) return;
+                                                const observer = new IntersectionObserver((entries) => {
+                                                    if (entries[0].isIntersecting) {
+                                                        setDisplayLimit(prev => prev + 40);
+                                                    }
+                                                });
+                                                observer.observe(el);
+                                            }}
+                                        >
+                                            <LoadingSpinner size="sm" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
