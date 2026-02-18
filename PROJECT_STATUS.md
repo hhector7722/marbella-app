@@ -36,6 +36,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 
 - [x] **Refinamiento UI Historial**: Implementación de botón de cierre flotante ("Cierre") en cabecera de historial, con apertura directa del modal CashClosingModal.
 - [x] **Cabecera Historial Segmentada**: Reestructuración de la cabecera de `/dashboard/history` unificando comportamiento con Movimientos (Picker de Rango con Calendario, Selector de Mes con Año, Filtro por Fecha única).
+- [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-600`) en la cabecera de fecha de las tarjetas de cierre para destacar el día.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

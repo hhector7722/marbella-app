@@ -515,31 +515,32 @@ export default function HistoryPage() {
                                                     onClick={() => setSelectedClosing(c)}
                                                     className="group relative bg-white rounded-2xl md:rounded-[1.5rem] p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-50 flex flex-col gap-3"
                                                 >
-                                                    <div className="flex justify-between items-start">
+                                                    <div className="bg-rose-600 -mx-4 -mt-4 p-3 flex justify-between items-center mb-3 shadow-sm">
                                                         <div className="flex flex-col">
-                                                            <span className="hidden md:block text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                            <span className="hidden md:block text-[10px] font-black text-white uppercase tracking-wider">
                                                                 {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
                                                             </span>
-                                                            <span className="md:hidden text-[9px] font-black text-[#36606F] uppercase tracking-wider mb-0.5">
+                                                            <span className="md:hidden text-[10px] font-black text-white uppercase tracking-wider">
                                                                 {format(new Date(c.closed_at), 'd MMM', { locale: es })}
                                                             </span>
-                                                            <div className={cn(
-                                                                "text-[8px] font-black uppercase tracking-tighter",
-                                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                                            )}>
-                                                                {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
-                                                            </div>
                                                         </div>
-                                                        <div className="bg-zinc-50 p-1.5 rounded-lg text-zinc-300 group-hover:text-[#5B8FB9] transition-colors">
+                                                        <div className="bg-white/20 p-1.5 rounded-lg text-white">
                                                             <Calendar size={12} />
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">
+                                                    <div className="flex flex-col gap-1 mb-2">
+                                                        <div className={cn(
+                                                            "text-[9px] font-black uppercase tracking-tighter mb-1",
+                                                            parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                                        )}>
+                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
+                                                        </div>
+
+                                                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-1">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
-                                                        <span className="text-xl md:text-2xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                        <span className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                             {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                         </span>
                                                     </div>
