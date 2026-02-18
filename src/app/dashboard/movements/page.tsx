@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
+import { MovementDetailModal } from '@/components/MovementDetailModal';
 
 interface Movement {
     id: string;
@@ -42,6 +43,8 @@ interface Movement {
     type: 'income' | 'expense';
     notes: string;
     running_balance: number;
+    breakdown?: any;
+    original_type?: string;
 }
 
 export default function MovementsPage() {
@@ -77,6 +80,7 @@ export default function MovementsPage() {
         currentBalance: 0,
         initialBalanceInRange: 0
     });
+    const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
     // ARCHITECT_ULTRAFLUIDITY: Incremental rendering to keep Main Thread free
     const [displayLimit, setDisplayLimit] = useState(40);
@@ -144,9 +148,10 @@ export default function MovementsPage() {
             if (rangeMoves) {
                 let currentRunning = balanceAtEnd;
                 const processed = rangeMoves.map((m: any) => {
-                    const movement = {
+                    const movement: Movement = {
                         ...m,
                         type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' : 'expense',
+                        original_type: m.type,
                         running_balance: currentRunning
                     };
                     // Preparar el saldo para la FILA ANTERIOR (más antigua)
@@ -428,7 +433,11 @@ export default function MovementsPage() {
                                                 visibleMovements.map((mov) => {
                                                     const isIncome = mov.type === 'income';
                                                     return (
-                                                        <tr key={mov.id} className="group hover:bg-zinc-50/80 transition-colors">
+                                                        <tr
+                                                            key={mov.id}
+                                                            className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100"
+                                                            onClick={() => setSelectedMovement(mov)}
+                                                        >
                                                             <td className="px-2 md:px-6 py-3">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[11px] md:text-[13px] font-black text-zinc-900 italic">
@@ -625,6 +634,13 @@ export default function MovementsPage() {
                         )}
                     </div>
                 </div>
+            )}
+            {/* MODAL DE DETALLE DE MOVIMIENTO */}
+            {selectedMovement && (
+                <MovementDetailModal 
+                    movement={selectedMovement} 
+                    onClose={() => setSelectedMovement(null)} 
+                />
             )}
         </div>
     );
