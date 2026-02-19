@@ -36,7 +36,7 @@ type MetricType = 'net_sales' | 'gross_sales' | 'avg_ticket' | 'tickets_count' |
 
 const METRICS: { label: string; value: MetricType; icon: any }[] = [
     { label: 'Venta Neta', value: 'net_sales', icon: TrendingUp },
-    { label: 'Facturación', value: 'gross_sales', icon: TrendingUp },
+    { label: 'Ventas', value: 'gross_sales', icon: TrendingUp },
     { label: 'Tickets', value: 'tickets_count', icon: Calendar },
     { label: 'Efectivo', value: 'cash_counted', icon: Banknote },
 ];
@@ -586,7 +586,7 @@ export default function HistoryPage() {
                                                     <div className="p-4 md:p-5 flex flex-col">
                                                         {/* Main Metric & Comparison Row */}
                                                         <div className="flex items-center justify-between gap-2 mb-1">
-                                                            <span className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                            <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                 {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                             </span>
                                                             <div className="flex flex-col items-end">
@@ -675,9 +675,9 @@ export default function HistoryPage() {
                                                             <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
                                                                 {/* Main Value & Percentage Row - Aggressive Scaling */}
                                                                 <div className="flex items-center justify-between gap-1 mb-0.5 px-0.5">
-                                                                    <div className="text-[10px] md:text-[14px] font-black text-zinc-900 tabular-nums leading-none truncate max-w-[65%]">
+                                                                    <div className="text-[12px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none truncate max-w-[70%]">
                                                                         {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                        {selectedMetric !== 'tickets_count' && <span className="text-[7px] md:text-[10px] ml-0.5 font-black">€</span>}
+                                                                        {selectedMetric !== 'tickets_count' && <span className="text-[8px] md:text-[12px] ml-0.5 font-black">€</span>}
                                                                     </div>
                                                                     <div className={cn(
                                                                         "text-[8px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto",
