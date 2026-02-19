@@ -43,8 +43,11 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Resumen Movimientos**: Refactorización de métricas superiores en `/movements`, eliminando "Caja Real", priorizando "Saldo" y "Diferencia" para mayor claridad operativa.
 - [x] **Modo Compra en Movimientos**: Nueva funcionalidad en el modal de Salidas que permite desglosar dinero entregado y cambio recibido, calculando el precio neto y actualizando el inventario de caja con exactitud.
 - [x] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
-- [x] **Rediseño de Histórico de Extras**: Implementación de la nueva vista `/dashboard/overtime` con diseño premium "Marbella Clean", filtros temporales, resumen KPI y tarjetas con cabecera roja. Incluye modal de desglose por trabajador y gestión de pagos con actualizaciones optimistas.
-- [x] **Optimización Dashboard Extras**: Limitación de la tarjeta de horas extras en el dashboard principal a las últimas dos semanas finalizadas para mayor foco y claridad operativa.
+- [x] **Corrección Radical de /overtime**: Reescritura completa de la página desde cero, unificando la lógica y componentes visuales con la tarjeta del dashboard. Implementación de filtros temporales (Mensual/Manual), KPIs de periodo y cumplimiento estricto de la regla "Zero-Display".
+- [x] **Robustez en Cálculo de Extras**: Mejora de la acción de servidor para incluir buffers de cálculo, garantizando la consistencia de los balances arrastrados en cualquier rango de fechas.
+- [x] **Limpieza de Etiquetas en Movimientos**: Eliminación del sufijo " (Editado)" en las notas de movimientos de tesorería al modificar cierres de caja.
+- [x] **Optimización de Modal de Cambio (Mobile)**: Rediseño radical del modal utilizando un layout basado en filas con controles laterales para facilitar el uso en smartphones. Se han optimizado los targets táctiles (44px+) y se ha integrado un resumen de balance en la cabecera siguiendo el estilo Marbella Premium.
+- [x] **Corrección de Métrica de Ventas en Historial**: Se ha corregido el mapeo de la métrica "Ventas" de `gross_sales` a `tpv_sales` en `/history`, solucionando el problema de visualización de "0€".
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.

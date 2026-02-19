@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
-import { startOfWeek, format, parseISO } from "date-fns";
+import { startOfWeek, format, parseISO, addDays } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { calculateRoundedHours } from "@/lib/utils";
 
@@ -31,111 +31,94 @@ export interface WeeklyStats {
 export async function getOvertimeData(startDate: string, endDate: string, userId?: string) {
     const supabase = await createClient();
 
-    const startISO = new Date(startDate).toISOString();
-    const endObj = new Date(endDate);
-    endObj.setHours(23, 59, 59, 999);
-    const endISO = endObj.toISOString();
+    // 1. Extend range for calculation safety (need previous weeks for balances)
+    const startObj = new Date(startDate);
+    const extendedStart = new Date(startObj);
+    extendedStart.setDate(extendedStart.getDate() - 60); // 60 days buffer just like dashboard
 
-    // 1. Obtener Fichajes
+    const queryStart = format(extendedStart, 'yyyy-MM-dd');
+    const queryEnd = endDate;
+
     let query = supabase
         .from('time_logs')
         .select('user_id, total_hours, clock_in')
         .not('total_hours', 'is', null)
-        .gte('clock_in', startISO)
-        .lte('clock_in', endISO);
+        .gte('clock_in', queryStart);
 
     if (userId) {
         query = query.eq('user_id', userId);
     }
 
-    const { data: logs } = await query;
+    const { data: logs, error: logsError } = await query;
+    if (logsError) console.error("Error fetching logs:", logsError);
 
     // 2. Obtener Perfiles
-    let profileQuery = supabase
-        .from('profiles')
-        .select('id, first_name, last_name, role, regular_cost_per_hour, overtime_cost_per_hour, contracted_hours_weekly, prefer_stock_hours, hours_balance, is_fixed_salary');
-
+    let profileQuery = supabase.from('profiles').select('*');
     if (userId) {
         profileQuery = profileQuery.eq('id', userId);
     }
+    const { data: profiles, error: profilesError } = await profileQuery;
+    if (profilesError) console.error("Error fetching profiles:", profilesError);
 
-    const { data: profiles } = await profileQuery;
-
-    // 3. Obtener Estado Pagos y Balances de Snapshots
-    const extendedStart = new Date(startISO);
-    extendedStart.setDate(extendedStart.getDate() - 14);
+    // 3. Obtener Snapshots
     let snapshotQuery = supabase
         .from('weekly_snapshots')
-        .select('user_id, week_start, is_paid, final_balance, contracted_hours_snapshot')
-        .gte('week_start', format(extendedStart, 'yyyy-MM-dd'))
-        .lte('week_start', format(endObj, 'yyyy-MM-dd'));
+        .select('*')
+        .gte('week_start', queryStart)
+        .lte('week_start', queryEnd);
 
     if (userId) {
         snapshotQuery = snapshotQuery.eq('user_id', userId);
     }
+    const { data: snapshots, error: snapshotsError } = await snapshotQuery;
+    if (snapshotsError) console.error("Error fetching snapshots:", snapshotsError);
 
-    const { data: snapshots } = await snapshotQuery;
-
-    if (!logs || !profiles) return { weeksResult: [], summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 } };
+    if (!logs || !profiles) {
+        return { weeksResult: [], summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 } };
+    }
 
     const profileMap = new Map(profiles.map(p => [p.id, p]));
-    const tempWeekUserHours: Record<string, Record<string, number>> = {};
-    const tempWeekMeta: Record<string, Date> = {};
+    const weekUserHoursMap = new Map<string, Map<string, number>>();
 
     logs.forEach(log => {
         const date = new Date(log.clock_in);
         const monday = startOfWeek(date, { weekStartsOn: 1 });
         monday.setHours(0, 0, 0, 0);
+        const weekId = format(monday, 'yyyy-MM-dd');
 
-        const weekId = format(monday, 'yyyy-MM-dd'); // Usar formato ISO local como ID
-
-        if (!tempWeekUserHours[weekId]) {
-            tempWeekUserHours[weekId] = {};
-            tempWeekMeta[weekId] = monday;
-        }
-        if (!tempWeekUserHours[weekId][log.user_id]) tempWeekUserHours[weekId][log.user_id] = 0;
-        // [FIX] Redondear cada ficha individualmente ANTES de sumar al total semanal
-        tempWeekUserHours[weekId][log.user_id] += calculateRoundedHours(log.total_hours || 0);
+        if (!weekUserHoursMap.has(weekId)) weekUserHoursMap.set(weekId, new Map());
+        const userMap = weekUserHoursMap.get(weekId)!;
+        userMap.set(log.user_id, (userMap.get(log.user_id) || 0) + (log.total_hours || 0));
     });
 
-    const currentMondayISO = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const sortedWeekIds = Object.keys(tempWeekUserHours)
-        .sort((a, b) => tempWeekMeta[a].getTime() - tempWeekMeta[b].getTime())
-        .filter(weekId => weekId < currentMondayISO);
+    const currentWeekStartId = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const sortedWeekIds = Array.from(weekUserHoursMap.keys()).sort().filter(id => id < currentWeekStartId);
 
-    const weeksResult: WeeklyStats[] = [];
-
-    // [ARCHITECT_ULTRAFLUIDITY] Normalize snapshots into a Hash Map for O(1) lookups
     const snapshotMap = new Map<string, any>();
     snapshots?.forEach(s => {
         snapshotMap.set(`${s.week_start}-${s.user_id}`, s);
     });
 
     const userFinalBalances = new Map<string, Map<string, number>>();
+    const weeksResult: WeeklyStats[] = [];
 
     sortedWeekIds.forEach(weekId => {
-        const usersInWeek = tempWeekUserHours[weekId];
+        const userMap = weekUserHoursMap.get(weekId)!;
         const mondayDate = parseISO(weekId);
-        const weekStartISO = weekId;
-        const fullLabel = `Semana del ${mondayDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`;
+        const prevMonday = addDays(mondayDate, -7);
+        const prevWeekId = format(prevMonday, 'yyyy-MM-dd');
 
-        const prevMonday = new Date(mondayDate);
-        prevMonday.setDate(prevMonday.getDate() - 7);
-        const prevWeekISO = format(prevMonday, 'yyyy-MM-dd');
+        if (!userFinalBalances.has(weekId)) userFinalBalances.set(weekId, new Map());
 
         let weekTotalCost = 0;
         let weekTotalHours = 0;
         const staffList: StaffWeeklyStats[] = [];
 
-        if (!userFinalBalances.has(weekId)) userFinalBalances.set(weekId, new Map());
-
-        Object.keys(usersInWeek).forEach(userId => {
-            const hoursWorked = usersInWeek[userId];
+        userMap.forEach((totalHours, userId) => {
             const profile = profileMap.get(userId);
-
             if (profile) {
-                const snapshotKey = `${weekStartISO}-${userId}`;
-                const prevSnapshotKey = `${prevWeekISO}-${userId}`;
+                const snapshotKey = `${weekId}-${userId}`;
+                const prevSnapshotKey = `${prevWeekId}-${userId}`;
 
                 const currentSnapshot = snapshotMap.get(snapshotKey);
                 const prevSnapshot = snapshotMap.get(prevSnapshotKey);
@@ -145,53 +128,54 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
                 const preferStock = profile.prefer_stock_hours || false;
                 const isManager = profile.role === 'manager';
                 const isFixedSalary = profile.is_fixed_salary || false;
-
                 const isAugust = mondayDate.getMonth() === 7;
-                const weeklyBalance = (isAugust || isManager || isFixedSalary) ? hoursWorked : (hoursWorked - limit);
+
+                let weeklyBalance = (isAugust || isManager || isFixedSalary) ? totalHours : (totalHours - limit);
+                weeklyBalance = calculateRoundedHours(weeklyBalance);
 
                 let pendingBalance = 0;
                 if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
-                    if (!preferStock && prevSnapshot.final_balance > 0) pendingBalance = 0;
-                    else pendingBalance = prevSnapshot.final_balance;
+                    pendingBalance = (!preferStock && prevSnapshot.final_balance > 0) ? 0 : prevSnapshot.final_balance;
                 } else {
-                    const prevBalances = userFinalBalances.get(prevWeekISO);
-                    const prevBalance = prevBalances?.get(userId) ?? (profile.hours_balance || 0);
-                    if (!preferStock && prevBalance > 0) pendingBalance = 0;
-                    else pendingBalance = prevBalance;
+                    const prevBalance = userFinalBalances.get(prevWeekId)?.get(userId) ?? (profile.hours_balance || 0);
+                    pendingBalance = (!preferStock && prevBalance > 0) ? 0 : prevBalance;
                 }
 
                 const finalBalance = pendingBalance + weeklyBalance;
                 userFinalBalances.get(weekId)!.set(userId, finalBalance);
 
                 const overtimeHours = finalBalance > 0 ? finalBalance : 0;
-                const overCost = preferStock ? 0 : (overtimeHours * overPrice);
+                const overCost = (overtimeHours > 0 && !preferStock) ? (overtimeHours * overPrice) : 0;
 
-                if (overtimeHours > 0 && !preferStock) {
-                    staffList.push({
-                        id: userId,
-                        name: `${profile.first_name} ${profile.last_name || ''}`,
-                        role: profile.role || 'Staff',
-                        totalHours: isManager ? (40 + hoursWorked) : hoursWorked,
-                        regularHours: isManager ? 40 : (hoursWorked - overtimeHours),
-                        overtimeHours: overtimeHours,
-                        totalCost: overCost,
-                        regularCost: 0,
-                        overtimeCost: overCost,
-                        isPaid: !!currentSnapshot?.is_paid,
-                        preferStock: preferStock
-                    });
+                // We only add to results if within the requested visual range
+                if (weekId >= startDate && weekId <= endDate) {
+                    if (overtimeHours > 0 && !preferStock) {
+                        staffList.push({
+                            id: userId,
+                            name: `${profile.first_name} ${profile.last_name || ''}`,
+                            role: profile.role || 'Staff',
+                            totalHours: calculateRoundedHours(isManager ? (limit + totalHours) : totalHours),
+                            regularHours: isManager ? limit : calculateRoundedHours(totalHours - overtimeHours),
+                            overtimeHours: overtimeHours,
+                            totalCost: overCost,
+                            regularCost: 0,
+                            overtimeCost: overCost,
+                            isPaid: !!currentSnapshot?.is_paid,
+                            preferStock: preferStock
+                        });
 
-                    weekTotalCost += overCost;
-                    weekTotalHours += isManager ? (40 + hoursWorked) : hoursWorked;
+                        weekTotalCost += overCost;
+                        weekTotalHours += isManager ? (limit + totalHours) : totalHours;
+                    }
                 }
             }
         });
 
-        staffList.sort((a, b) => b.totalCost - a.totalCost);
         if (staffList.length > 0) {
+            staffList.sort((a, b) => b.totalCost - a.totalCost);
             weeksResult.push({
                 weekId,
-                label: fullLabel,
+                label: `Semana del ${mondayDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`,
                 startDate: mondayDate,
                 totalAmount: weekTotalCost,
                 totalHours: weekTotalHours,
