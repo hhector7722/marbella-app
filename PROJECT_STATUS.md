@@ -33,10 +33,10 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
 - [x] **Refinamiento Estético Caja Inicial**: Unificación de Caja Inicial (ahora en verde `emerald-600`) y botones de acción (Entrada, Salida, Arqueo) con nuevo diseño: texto negro en negrita e iconos blancos dentro de círculos de color, replicado en todo el dashboard y página de movimientos.
 - [x] **Detalle de Movimientos**: Implementación de modal dinámico que muestra el desglose de billetes/monedas y notas al pulsar sobre cualquier fila de movimientos.
+- [x] **Corrección de Lógica de Arqueo**: Solucionado error donde los arqueos eran aditivos; ahora sustituyen correctamente el inventario y fijan el saldo exacto.
 
-- [x] **Refinamiento UI Historial**: Implementación de botón de cierre flotante ("Cierre") en cabecera de historial, con apertura directa del modal CashClosingModal.
-- [x] **Cabecera Historial Segmentada**: Reestructuración de la cabecera de `/dashboard/history` unificando comportamiento con Movimientos (Picker de Rango con Calendario, Selector de Mes con Año, Filtro por Fecha única).
-- [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-600`) en la cabecera de fecha de las tarjetas de cierre para destacar el día.
+- [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
+- [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).

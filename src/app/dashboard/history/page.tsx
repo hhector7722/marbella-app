@@ -471,7 +471,7 @@ export default function HistoryPage() {
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
                         <div className="p-3 md:p-6">
-                            <div className="bg-zinc-50/10 rounded-[2rem] border border-zinc-100 shadow-xl overflow-hidden">
+                            <div className="bg-[#FAFAFA] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
                                 <div className="bg-[#36606F] p-2 md:p-3 flex justify-between items-center overflow-x-auto no-scrollbar">
                                     <div className="flex gap-1 md:gap-2 w-full justify-between">
@@ -515,51 +515,51 @@ export default function HistoryPage() {
                                                     onClick={() => setSelectedClosing(c)}
                                                     className="group relative bg-white rounded-2xl md:rounded-[2.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
                                                 >
-                                                    {/* Header Rojo Compacto */}
-                                                    <div className="bg-rose-600 p-2 md:p-3 flex justify-between items-center shadow-sm">
+                                                    {/* Header Rojo Compacto (Refined) */}
+                                                    <div className="bg-rose-500 p-2.5 md:p-3 flex justify-center items-center shadow-sm">
                                                         <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider">
                                                             {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
                                                         </span>
-                                                        <div className="bg-white/20 p-1 rounded-lg text-white">
-                                                            <Calendar size={12} />
-                                                        </div>
                                                     </div>
 
                                                     <div className="p-4 md:p-5 flex flex-col">
                                                         {/* Main Metric & Comparison Row */}
-                                                        <div className="flex items-baseline justify-between gap-2 mb-1">
-                                                            <span className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                                            <span className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                 {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                             </span>
-                                                            <div className={cn(
-                                                                "text-[10px] md:text-[11px] font-black uppercase tracking-tighter whitespace-nowrap",
-                                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
-                                                            )}>
-                                                                {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% <span className="text-[8px] opacity-70">VS MEDIA</span>
+                                                            <div className="flex flex-col items-end">
+                                                                <div className={cn(
+                                                                    "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
+                                                                    parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                                )}>
+                                                                    {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}%
+                                                                </div>
+                                                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
                                                             </div>
                                                         </div>
 
-                                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">
+                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-4">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
 
-                                                        {/* 4-Column Metrics Footer */}
-                                                        <div className="grid grid-cols-4 gap-1 pt-3 border-t border-zinc-100 mt-auto">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-900 tabular-nums">{Math.round(c.tpv_sales)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Factur.</span>
+                                                        {/* Symmetrical 4-Column Metrics Footer */}
+                                                        <div className="grid grid-cols-4 gap-0 pt-3 border-t border-zinc-100 mt-auto">
+                                                            <div className="flex flex-col items-center">
+                                                                <span className="text-[10px] md:text-[11px] font-black text-zinc-900 tabular-nums">{Math.round(c.tpv_sales)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Ventas</span>
                                                             </div>
-                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-900 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Media</span>
+                                                            <div className="flex flex-col items-center border-l border-zinc-100 italic">
+                                                                <span className="text-[10px] md:text-[11px] font-black text-[#36606F] tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Media</span>
                                                             </div>
-                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-600 tabular-nums">{Math.round(c.sales_card || 0)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Tarjeta</span>
+                                                            <div className="flex flex-col items-center border-l border-zinc-100">
+                                                                <span className="text-[10px] md:text-[11px] font-black text-zinc-900 tabular-nums">{Math.round(c.sales_card || 0)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Tarjeta</span>
                                                             </div>
-                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                                <span className="text-[9px] md:text-[10px] font-black text-emerald-600 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Efec.</span>
+                                                            <div className="flex flex-col items-center border-l border-zinc-100">
+                                                                <span className="text-[10px] md:text-[11px] font-black text-emerald-600 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Cash</span>
                                                             </div>
                                                         </div>
                                                     </div>

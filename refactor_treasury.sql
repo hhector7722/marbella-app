@@ -55,9 +55,9 @@ DECLARE
     b_val INT;
     v_amount NUMERIC := 0;
 BEGIN
-    IF NEW.type IN ('IN', 'OUT', 'CLOSE_ENTRY', 'ADJUSTMENT') THEN
+    IF NEW.type IN ('IN', 'OUT', 'CLOSE_ENTRY') THEN
         FOR b_key, b_val IN SELECT * FROM jsonb_each_text(NEW.breakdown) LOOP
-            IF NEW.type IN ('IN', 'CLOSE_ENTRY', 'ADJUSTMENT') THEN
+            IF NEW.type IN ('IN', 'CLOSE_ENTRY') THEN
                 INSERT INTO public.cash_box_inventory (box_id, denomination, quantity)
                 VALUES (NEW.box_id, b_key::numeric, b_val)
                 ON CONFLICT (box_id, denomination) 
@@ -75,6 +75,23 @@ BEGIN
         
         v_amount := CASE WHEN NEW.type = 'OUT' THEN -NEW.amount ELSE NEW.amount END;
         UPDATE public.cash_boxes SET current_balance = current_balance + v_amount WHERE id = NEW.box_id;
+
+    -- Caso 2: ADJUSTMENT (Arqueo Manual)
+    -- SOBREESCRIBE el inventario y el balance global con lo contado
+    ELSIF NEW.type = 'ADJUSTMENT' THEN
+        -- 1. Limpiar inventario previo de esta caja
+        DELETE FROM public.cash_box_inventory WHERE box_id = NEW.box_id;
+        
+        -- 2. Insertar nuevo desglose
+        FOR b_key, b_val IN SELECT * FROM jsonb_each_text(NEW.breakdown) LOOP
+            IF b_val::int > 0 THEN
+                INSERT INTO public.cash_box_inventory (box_id, denomination, quantity)
+                VALUES (NEW.box_id, b_key::numeric, b_val::int);
+            END IF;
+        END LOOP;
+        
+        -- 3. Fijar balance global exactamente al monto del ajuste
+        UPDATE public.cash_boxes SET current_balance = NEW.amount WHERE id = NEW.box_id;
 
     ELSIF NEW.type = 'SWAP' THEN
         -- Procesar ENTRADA (in)
