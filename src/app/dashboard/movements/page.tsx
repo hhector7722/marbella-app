@@ -124,20 +124,31 @@ export default function MovementsPage() {
             }
 
             // 1. Obtener todos los movimientos desde el FIN del rango hasta AHORA
-            // para calcular el saldo que había al finalizar el rango.
+            // para calcular el saldo que había al finalizar el rango (REAL).
             const { data: futureMoves } = await supabase
                 .from('treasury_log')
                 .select('amount, type')
                 .eq('box_id', box.id)
-                .neq('type', 'ADJUSTMENT')
                 .gt('created_at', endISO);
 
             const futureSum = futureMoves?.reduce((sum, m) => {
-                const isInc = (m.type === 'IN' || m.type === 'CLOSE_ENTRY');
-                return sum + (isInc ? m.amount : -m.amount);
+                const delta = (m.type === 'OUT') ? -m.amount : ((m.type === 'IN' || m.type === 'CLOSE_ENTRY' || m.type === 'ADJUSTMENT') ? m.amount : 0);
+                return sum + delta;
             }, 0) || 0;
 
             const balanceAtEnd = box.current_balance - futureSum;
+
+            // 1.5. Obtener el descuadre acumulado TOTAL hasta el final del rango
+            // El descuadre es la suma de todos los ADJUSTMENT.amount (que ya son deltas)
+            const { data: globalAdjData } = await supabase
+                .from('treasury_log')
+                .select('amount')
+                .eq('box_id', box.id)
+                .eq('type', 'ADJUSTMENT')
+                .lte('created_at', endISO);
+
+            const globalDeltaAtEnd = globalAdjData?.reduce((sum, a) => sum + a.amount, 0) || 0;
+            const theoreticalEndValue = balanceAtEnd - globalDeltaAtEnd;
 
             // 2. Obtener movimientos dentro del rango
             const { data: rangeMoves } = await supabase
@@ -148,44 +159,40 @@ export default function MovementsPage() {
                 .order('created_at', { ascending: false });
 
             if (rangeMoves) {
-                let currentRunning = balanceAtEnd;
+                let currentTheoreticalRunning = theoreticalEndValue;
+
                 const processed = rangeMoves.map((m: any) => {
                     const movement: Movement = {
                         ...m,
                         type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
                             (m.type === 'OUT' ? 'expense' : 'adjustment'),
                         original_type: m.type,
-                        running_balance: currentRunning
+                        running_balance: currentTheoreticalRunning
                     };
-                    // Preparar el saldo para la FILA ANTERIOR (más antigua)
-                    // Si es IN, CLOSE_ENTRY o ADJUSTMENT (delta), sumamos al saldo real.
-                    // Para reversar (ir hacia atrás en el tiempo), restamos esa delta.
-                    const delta = (m.type === 'OUT') ? -m.amount : m.amount;
-                    currentRunning -= delta;
+
+                    // Solo actualizamos el saldo teórico para movimientos reales (IN/OUT)
+                    // Los arqueos (ADJUSTMENT) se ignoran en la línea de saldo teórico
+                    if (m.type === 'IN' || m.type === 'CLOSE_ENTRY' || m.type === 'OUT') {
+                        const isInc = (m.type === 'IN' || m.type === 'CLOSE_ENTRY');
+                        currentTheoreticalRunning -= (isInc ? m.amount : -m.amount);
+                    }
                     return movement;
                 });
 
-                const filtered = typeFilter === 'all'
-                    ? processed.filter(m => m.original_type !== 'SWAP') // Show ADJUSTMENT (audits) now
-                    : processed.filter(m => m.type === typeFilter && m.original_type !== 'SWAP');
+                // REGLA: No mostrar arqueos ni intercambios en la tabla
+                const filtered = processed.filter(m => m.original_type !== 'ADJUSTMENT' && m.original_type !== 'SWAP');
 
                 const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
                 const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
-                const diff = rangeMoves.filter(m => m.type === 'ADJUSTMENT').reduce((sum, m) => sum + m.amount, 0);
-
-                // REGLA DE NEGOCIO:
-                // Saldo Teórico = Saldo Inicial + Ingresos - Gastos
-                // Diferencia = Acumulado de descuadres (ADJUSTMENT.amount ahora es delta)
-                const theoreticalBalance = currentRunning + inc - exp;
 
                 setMovements(filtered);
                 setSummary({
                     income: inc,
                     expense: exp,
-                    difference: diff,
-                    balance: theoreticalBalance, // Este es el "Saldo que debería haber"
-                    currentBalance: box.current_balance, // Este es el "Saldo real en caja"
-                    initialBalanceInRange: currentRunning
+                    difference: globalDeltaAtEnd, // Diferencia entre Saldo (Teórico) y Caja (Real)
+                    balance: theoreticalEndValue, // Saldo que debería haber (Teórico)
+                    currentBalance: box.current_balance,
+                    initialBalanceInRange: currentTheoreticalRunning
                 });
             }
         } catch (error) { console.error(error); } finally { setLoading(false); }
@@ -395,7 +402,7 @@ export default function MovementsPage() {
                                     "text-xl md:text-2xl font-black line-clamp-1",
                                     summary.difference > 0 ? "text-blue-500" : summary.difference < 0 ? "text-orange-500" : "text-zinc-400"
                                 )}>
-                                    {summary.difference === 0 ? " " : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(2)}€`}
+                                    {Math.abs(summary.difference) < 0.01 ? " " : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(2)}€`}
                                 </span>
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">DIFERENCIA</span>
                             </div>
