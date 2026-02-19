@@ -92,15 +92,16 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
 export async function sendClosingNotification(data: { totalSales: number, netSales: number, avgTicket: number }) {
     const supabase = await createClient();
 
-    // 1. Get all managers
+    // 1. Get specific manager (requested: hhector7722@gmail.com)
     const { data: managers, error: managerError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('role', 'manager');
+        .eq('role', 'manager')
+        .eq('email', 'hhector7722@gmail.com');
 
     if (managerError || !managers || managers.length === 0) {
-        console.error('Error fetching managers or no managers found:', managerError);
-        return { success: false, error: 'No managers found' };
+        console.error('Specific manager not found or error:', managerError);
+        return { success: false, error: 'Target manager not found' };
     }
 
     const managerIds = managers.map(m => m.id);

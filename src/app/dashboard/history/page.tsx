@@ -638,49 +638,50 @@ export default function HistoryPage() {
                                                         <div
                                                             key={closing.id}
                                                             onClick={() => setSelectedClosing(closing)}
-                                                            className="group relative bg-white h-full min-h-[120px] rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
+                                                            className="group relative bg-white h-full min-h-[160px] rounded-[1.5rem] shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
                                                         >
                                                             {/* Header Rojo con Número Blanco */}
                                                             <div className="bg-[#D64D5D] px-2 py-1 flex justify-center items-center shadow-sm">
                                                                 <span className="text-[10px] font-black text-white">{format(day, 'd')}</span>
                                                             </div>
 
-                                                            <div className="p-1.5 md:p-2.5 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
-                                                                {/* Main Value & Percentage Row - Refined Font Size */}
-                                                                <div className="flex items-center justify-between gap-2 mb-0.5 px-0.5">
-                                                                    <div className="text-[10px] md:text-[14px] font-black text-zinc-900 tabular-nums leading-none truncate max-w-[65%]">
-                                                                        {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                            <div className="p-3 md:p-5 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
+                                                                {/* Main Value & Percentage Row */}
+                                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                                    <div className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">
+                                                                        {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
+                                                                        {selectedMetric !== 'tickets_count' && <span className="text-[10px] md:text-base ml-1 font-black">€</span>}
                                                                     </div>
                                                                     <div className={cn(
-                                                                        "text-[8px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto",
+                                                                        "text-[10px] md:text-sm font-black uppercase whitespace-nowrap flex items-center",
                                                                         parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
                                                                     )}>
                                                                         {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(Math.round(parseFloat(diffPerc)))}%
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Label */}
-                                                                <div className="text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-2 px-0.5 truncate">
+                                                                {/* Label - Full Concept */}
+                                                                <div className="text-[9px] md:text-[12px] font-black text-zinc-300 uppercase tracking-tight mb-4">
                                                                     {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                 </div>
 
-                                                                {/* 4-Column Footer (Symmetrical Redistribution) */}
-                                                                <div className="grid grid-cols-4 gap-0 pt-1.5 border-t border-zinc-100 mt-auto w-full">
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">V</span>
+                                                                {/* 2x2 Bento Grid Footer */}
+                                                                <div className="grid grid-cols-2 gap-y-3 gap-x-2 mt-auto">
+                                                                    <div className="flex flex-col items-center">
+                                                                        <span className="text-sm md:text-xl font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
+                                                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-300 uppercase leading-none mt-1">V</span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100 py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">M</span>
+                                                                    <div className="flex flex-col items-center">
+                                                                        <span className="text-sm md:text-xl font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
+                                                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-300 uppercase leading-none mt-1">M</span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100 py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">T</span>
+                                                                    <div className="flex flex-col items-center">
+                                                                        <span className="text-sm md:text-xl font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
+                                                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-300 uppercase leading-none mt-1">C</span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100 py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">C</span>
+                                                                    <div className="flex flex-col items-center">
+                                                                        <span className="text-sm md:text-xl font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
+                                                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-300 uppercase leading-none mt-1">T</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
