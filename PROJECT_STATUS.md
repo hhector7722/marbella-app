@@ -47,7 +47,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
 - [x] **Refinamiento UI Historial (Ajuste Vertical)**: Reducción de rellenos en cabecera de métricas y selector de modo para maximizar densidad de información.
 - [x] **Rediseño Modal Detalle Cierres**: Solución de solapamiento de botones con el nombre del día y mejor integración de flechas de navegación en cabecera superior.
-- [x] **Vista Calendario en Historial (Refinado)**: Nueva visualización en estilo calendario (7 columnas) con tarjetas optimizadas (cabecera roja, layout simétrico de métricas y fuentes legibles en 7-col).
+- [x] **Rediseño Vista Calendario Historial (Refinado)**: Nueva visualización en estilo calendario (7 columnas) con tarjetas optimizadas (cabecera roja, layout simétrico de métricas y fuentes legibles en 7-col).
+- [x] **Refinamiento UI Header Historial**: Ajuste de padding y dimensiones en el selector de métricas para evitar que el botón seleccionado toque los márgenes, mejorando la estética premium.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
