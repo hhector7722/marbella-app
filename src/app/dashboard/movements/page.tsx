@@ -152,31 +152,39 @@ export default function MovementsPage() {
                 const processed = rangeMoves.map((m: any) => {
                     const movement: Movement = {
                         ...m,
-                        type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' : 'expense',
+                        type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
+                            (m.type === 'OUT' ? 'expense' : 'adjustment'),
                         original_type: m.type,
                         running_balance: currentRunning
                     };
                     // Preparar el saldo para la FILA ANTERIOR (más antigua)
-                    const isInc = (m.type === 'IN' || m.type === 'CLOSE_ENTRY');
-                    currentRunning -= (isInc ? m.amount : -m.amount);
+                    // Si es IN, CLOSE_ENTRY o ADJUSTMENT (delta), sumamos al saldo real.
+                    // Para reversar (ir hacia atrás en el tiempo), restamos esa delta.
+                    const delta = (m.type === 'OUT') ? -m.amount : m.amount;
+                    currentRunning -= delta;
                     return movement;
                 });
 
                 const filtered = typeFilter === 'all'
-                    ? processed.filter(m => m.original_type !== 'ADJUSTMENT' && m.original_type !== 'SWAP') // Hide audits and swaps
-                    : processed.filter(m => m.type === typeFilter && m.original_type !== 'ADJUSTMENT' && m.original_type !== 'SWAP');
+                    ? processed.filter(m => m.original_type !== 'SWAP') // Show ADJUSTMENT (audits) now
+                    : processed.filter(m => m.type === typeFilter && m.original_type !== 'SWAP');
 
                 const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
                 const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
                 const diff = rangeMoves.filter(m => m.type === 'ADJUSTMENT').reduce((sum, m) => sum + m.amount, 0);
+
+                // REGLA DE NEGOCIO:
+                // Saldo Teórico = Saldo Inicial + Ingresos - Gastos
+                // Diferencia = Acumulado de descuadres (ADJUSTMENT.amount ahora es delta)
+                const theoreticalBalance = currentRunning + inc - exp;
 
                 setMovements(filtered);
                 setSummary({
                     income: inc,
                     expense: exp,
                     difference: diff,
-                    balance: inc - exp,
-                    currentBalance: box.current_balance,
+                    balance: theoreticalBalance, // Este es el "Saldo que debería haber"
+                    currentBalance: box.current_balance, // Este es el "Saldo real en caja"
                     initialBalanceInRange: currentRunning
                 });
             }
@@ -394,7 +402,7 @@ export default function MovementsPage() {
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
                                 <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {summary.currentBalance.toFixed(2)}€
+                                    {summary.balance.toFixed(2)}€
                                 </span>
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">SALDO</span>
                             </div>

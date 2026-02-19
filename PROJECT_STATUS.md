@@ -33,7 +33,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
 - [x] **Refinamiento Estético Caja Inicial**: Unificación de Caja Inicial (ahora en verde `emerald-600`) y botones de acción (Entrada, Salida, Arqueo) con nuevo diseño: texto negro en negrita e iconos blancos dentro de círculos de color, replicado en todo el dashboard y página de movimientos.
 - [x] **Detalle de Movimientos**: Implementación de modal dinámico que muestra el desglose de billetes/monedas y notas al pulsar sobre cualquier fila de movimientos.
-- [x] **Corrección de Lógica de Arqueo**: Solucionado error donde los arqueos eran aditivos; ahora sustituyen correctamente el inventario y fijan el saldo exacto.
+- [x] **Corrección de Lógica de Arqueo y Métricas**: Implementación de lógica de deltas (descuadres) en la base de datos para que los arqueos no rompan el historial. Actualización de `/dashboard/movements` para mostrar Saldo Teórico vs. Diferencia (descuadre) real según la solicitud del usuario.
+- [x] **Triggers de Tesorería Proactivos**: Nuevo trigger `BEFORE INSERT` que calcula automáticamente el descuadre al realizar un arqueo, manteniendo la integridad del balance global.
+- [x] **Visualización de Arqueos en Extracto**: Los arqueos ahora son visibles en la tabla de movimientos mostrando el descuadre y el saldo real resultante.
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
