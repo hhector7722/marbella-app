@@ -84,6 +84,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                         submitLabel="Guardar Cambios"
                         onSubmit={handleUpdate}
                         onCancel={() => setIsEditing(false)}
+                        isEditing={true}
                         // En edición no validamos stock estricto porque estamos modificando historia
                         availableStock={{}}
                     />

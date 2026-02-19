@@ -730,67 +730,69 @@ export default function HistoryPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-8 text-white relative shrink-0 text-center">
-                            {/* Navigation Arrows - Lateralized */}
-                            <div className="absolute inset-y-0 left-0 flex items-center px-4">
+                        <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
+                            {/* Top Action Bar */}
+                            <div className="flex items-center justify-between mb-2 relative z-10">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
-                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all disabled:opacity-0 active:scale-90 border border-white/5"
+                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group"
                                     disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                    title="Día Anterior"
                                 >
-                                    <ChevronLeft size={28} />
+                                    <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
                                 </button>
-                            </div>
-                            <div className="absolute inset-y-0 right-0 flex items-center px-4">
+
+                                <div className="flex items-center gap-2">
+                                    {!isEditing && isManager && (
+                                        <>
+                                            <button
+                                                onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95"
+                                                title="Editar Cierre"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                onClick={handleDeleteClosing}
+                                                className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95"
+                                                title="Eliminar Cierre"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </>
+                                    )}
+                                    <button
+                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                        className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 ml-2"
+                                    >
+                                        <X size={16} strokeWidth={3} />
+                                    </button>
+                                </div>
+
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
-                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all disabled:opacity-0 active:scale-90 border border-white/5"
+                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group"
                                     disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                    title="Día Siguiente"
                                 >
-                                    <ChevronRight size={28} />
+                                    <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
                                 </button>
                             </div>
 
-                            {/* Header Actions - Integrated in Header */}
-                            <div className="absolute top-8 right-8 flex gap-2">
-                                {!isEditing && isManager && (
-                                    <>
-                                        <button
-                                            onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
-                                            className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg"
-                                            title="Editar Cierre"
-                                        >
-                                            <Pencil size={18} />
-                                        </button>
-                                        <button
-                                            onClick={handleDeleteClosing}
-                                            className="p-2.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg"
-                                            title="Eliminar Cierre"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </>
-                                )}
-                                <button
-                                    onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                    className="p-2.5 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95"
-                                >
-                                    <X size={18} strokeWidth={3} />
-                                </button>
-                            </div>
-
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter max-w-[70%] mx-auto">
-                                {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
-                            </h2>
-                            <div className="flex items-center justify-center gap-4 mt-6">
-                                <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                    <CloudSun size={14} className="text-amber-400" />
-                                    <span className="text-[10px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
-                                </div>
-                                <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                    <Receipt size={14} className="text-blue-400" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{selectedClosing.tickets_count || 0} Tickets</span>
+                            <div className="mt-4">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
+                                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mx-auto max-w-[90%] break-words">
+                                    {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
+                                </h2>
+                                <div className="flex items-center justify-center gap-4 mt-6">
+                                    <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+                                        <CloudSun size={14} className="text-amber-400" />
+                                        <span className="text-[10px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
+                                    </div>
+                                    <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+                                        <Receipt size={14} className="text-blue-400" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{selectedClosing.tickets_count || 0} Tickets</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

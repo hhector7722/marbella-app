@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -16,6 +16,7 @@ interface CashDenominationFormProps {
     initialNotes?: string;
     initialDate?: string; // New prop
     submitLabel?: string;
+    isEditing?: boolean; // New prop
 }
 
 export const CashDenominationForm = ({
@@ -27,7 +28,8 @@ export const CashDenominationForm = ({
     availableStock = {},
     initialNotes = '',
     initialDate,
-    submitLabel
+    submitLabel,
+    isEditing = false
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
     const [notes, setNotes] = useState(initialNotes);
@@ -73,13 +75,16 @@ export const CashDenominationForm = ({
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {/* DATE & NOTES ROW */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
-                    <div className="flex flex-col justify-end">
-                        {/* Stealth Date Input: Looks like distinct text, editable on click. No explicit label to minimize noise */}
+                    <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
+                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
+                            <Calendar size={8} />
+                            Fecha y Hora
+                        </label>
                         <input
                             type="datetime-local"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full bg-transparent border-none p-0 text-zinc-400 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer hover:text-zinc-600 transition-colors"
+                            className="w-full bg-transparent border-none p-0 text-zinc-600 text-[11px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
                         />
                     </div>
                     {!isAudit && (
@@ -134,10 +139,10 @@ export const CashDenominationForm = ({
                 </button>
                 <button
                     onClick={() => onSubmit(total, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined)}
-                    disabled={type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
+                    disabled={!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
                     className={cn(
                         "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
-                        type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))
+                        (!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0)))
                             ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
                             : bgClass + " hover:brightness-110 shadow-emerald-200"
                     )}

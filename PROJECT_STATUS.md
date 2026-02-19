@@ -39,10 +39,12 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Sistema de Tesorería Atómico e Inmune a Duplicados**: Implementación de triggers avanzados que gestionan `UPDATE` y `DELETE` revirtiendo el impacto anterior, eliminando el error de duplicación de deudas.
 - [x] **Unificación de Lógica de Saldos**: Sustitución de cálculos en frontend por `get_theoretical_balance` (SQL RPC), garantizando exactitud matemática total.
 - [x] **Saneamiento de Datos**: Script de limpieza aplicado para eliminar duplicados generados por la lógica anterior.
+- [x] **Corrección Edición de Movimientos**: Habilitada la edición de fecha y guardado para movimientos de salida mediante el bypass de validación de stock en modo edición y mejora de UI del selector.
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
 - [x] **Refinamiento UI Historial (Ajuste Vertical)**: Reducción de rellenos en cabecera de métricas y selector de modo para maximizar densidad de información.
+- [x] **Rediseño Modal Detalle Cierres**: Solución de solapamiento de botones con el nombre del día y mejor integración de flechas de navegación en cabecera superior.
 - [x] **Vista Calendario en Historial (Refinado)**: Nueva visualización en estilo calendario (7 columnas) con tarjetas optimizadas (cabecera roja, layout simétrico de métricas y fuentes legibles en 7-col).
 
 ## 📅 PENDIENTE
