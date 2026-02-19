@@ -535,7 +535,7 @@ export default function HistoryPage() {
                             <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
                                 <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                                    <div className="flex gap-2 md:gap-3 w-full justify-between">
+                                    <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
                                         {METRICS.map(m => (
                                             <button
                                                 key={m.value}
