@@ -287,9 +287,23 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any) => {
         try {
             if (!selectedBox) return;
-            if (cashModalMode === 'audit') await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: 'ADJUSTMENT', amount: total, breakdown: breakdown, notes: 'Arqueo de caja' });
-            if (cashModalMode === 'audit') await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: 'ADJUSTMENT', amount: total, breakdown: breakdown, notes: 'Arqueo de caja' });
-            else await supabase.from('treasury_log').insert({ box_id: selectedBox.id, type: cashModalMode === 'in' ? 'IN' : 'OUT', amount: total, breakdown: breakdown, notes: notesOrOutBreakdown as string });
+            if (cashModalMode === 'audit') {
+                await supabase.from('treasury_log').insert({
+                    box_id: selectedBox.id,
+                    type: 'ADJUSTMENT',
+                    amount: total,
+                    breakdown: breakdown,
+                    notes: 'Arqueo de caja'
+                });
+            } else {
+                await supabase.from('treasury_log').insert({
+                    box_id: selectedBox.id,
+                    type: cashModalMode === 'in' ? 'IN' : 'OUT',
+                    amount: total,
+                    breakdown: breakdown,
+                    notes: notesOrOutBreakdown as string
+                });
+            }
             setCashModalMode('none'); setSelectedBox(null); fetchData();
         } catch (error) { console.error(error); alert("Error"); }
     };

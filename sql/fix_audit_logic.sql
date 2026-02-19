@@ -1,5 +1,5 @@
--- FIX: ARQUEO LOGIC (REPLACIVE INSTEAD OF ADDITIVE)
--- Ejecutar en Supabase SQL Editor
+-- FIX: ARQUEO LOGIC (Universal para todas las cajas: Operativa, Cambio 1 y 2)
+-- El arqueo ahora sustituye el inventario en lugar de sumarse.
 
 CREATE OR REPLACE FUNCTION public.fn_sync_box_inventory()
 RETURNS TRIGGER AS $$
