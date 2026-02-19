@@ -123,34 +123,7 @@ export default function MovementsPage() {
                 endISO = e.toISOString();
             }
 
-            // 1. Obtener todos los movimientos desde el FIN del rango hasta AHORA
-            // para calcular el saldo que había al finalizar el rango (REAL).
-            const { data: futureMoves } = await supabase
-                .from('treasury_log')
-                .select('amount, type')
-                .eq('box_id', box.id)
-                .gt('created_at', endISO);
-
-            const futureSum = futureMoves?.reduce((sum, m) => {
-                const delta = (m.type === 'OUT') ? -m.amount : ((m.type === 'IN' || m.type === 'CLOSE_ENTRY' || m.type === 'ADJUSTMENT') ? m.amount : 0);
-                return sum + delta;
-            }, 0) || 0;
-
-            const balanceAtEnd = box.current_balance - futureSum;
-
-            // 1.5. Obtener el descuadre acumulado TOTAL hasta el final del rango
-            // El descuadre es la suma de todos los ADJUSTMENT.amount (que ya son deltas)
-            const { data: globalAdjData } = await supabase
-                .from('treasury_log')
-                .select('amount')
-                .eq('box_id', box.id)
-                .eq('type', 'ADJUSTMENT')
-                .lte('created_at', endISO);
-
-            const globalDeltaAtEnd = globalAdjData?.reduce((sum, a) => sum + a.amount, 0) || 0;
-            const theoreticalEndValue = balanceAtEnd - globalDeltaAtEnd;
-
-            // 2. Obtener movimientos dentro del rango
+            // 1. Obtener datos básicos de la caja
             const { data: rangeMoves } = await supabase
                 .from('treasury_log')
                 .select('*')
@@ -158,8 +131,16 @@ export default function MovementsPage() {
                 .lte('created_at', endISO)
                 .order('created_at', { ascending: false });
 
+            // 2. Obtener SALDO TEÓRICO (Suma de IN/OUT históricos ignorando Arqueos)
+            // Para un periodo dado, el saldo al final es: SUM(IN) - SUM(OUT) de TODO el pasado.
+            const { data: runningData } = await supabase.rpc('get_theoretical_balance', {
+                target_date: endISO
+            });
+
+            const theoreticalEndValue = runningData || 0;
+
             if (rangeMoves) {
-                let currentTheoreticalRunning = theoreticalEndValue;
+                let currentRunning = theoreticalEndValue;
 
                 const processed = rangeMoves.map((m: any) => {
                     const movement: Movement = {
@@ -167,32 +148,32 @@ export default function MovementsPage() {
                         type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
                             (m.type === 'OUT' ? 'expense' : 'adjustment'),
                         original_type: m.type,
-                        running_balance: currentTheoreticalRunning
+                        running_balance: currentRunning
                     };
 
-                    // Solo actualizamos el saldo teórico para movimientos reales (IN/OUT)
-                    // Los arqueos (ADJUSTMENT) se ignoran en la línea de saldo teórico
+                    // El saldo en la tabla sigue la línea de flujo (IN/OUT)
                     if (m.type === 'IN' || m.type === 'CLOSE_ENTRY' || m.type === 'OUT') {
                         const isInc = (m.type === 'IN' || m.type === 'CLOSE_ENTRY');
-                        currentTheoreticalRunning -= (isInc ? m.amount : -m.amount);
+                        currentRunning -= (isInc ? m.amount : -m.amount);
                     }
                     return movement;
                 });
 
-                // REGLA: No mostrar arqueos ni intercambios en la tabla
                 const filtered = processed.filter(m => m.original_type !== 'ADJUSTMENT' && m.original_type !== 'SWAP');
-
                 const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
                 const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
+
+                // La diferencia es: Caja Real ACTUAL - Saldo Teórico ACTUAL
+                const difference = box.current_balance - theoreticalEndValue;
 
                 setMovements(filtered);
                 setSummary({
                     income: inc,
                     expense: exp,
-                    difference: globalDeltaAtEnd, // Diferencia entre Saldo (Teórico) y Caja (Real)
-                    balance: theoreticalEndValue, // Saldo que debería haber (Teórico)
+                    difference: difference,
+                    balance: theoreticalEndValue,
                     currentBalance: box.current_balance,
-                    initialBalanceInRange: currentTheoreticalRunning
+                    initialBalanceInRange: currentRunning
                 });
             }
         } catch (error) { console.error(error); } finally { setLoading(false); }
@@ -202,13 +183,19 @@ export default function MovementsPage() {
         try {
             if (!boxData) return;
 
-            await supabase.from('treasury_log').insert({
+            const payload: any = {
                 box_id: boxData.id,
                 type: cashModalMode === 'audit' ? 'ADJUSTMENT' : (cashModalMode === 'in' ? 'IN' : 'OUT'),
                 amount: total,
                 breakdown: breakdown,
                 notes: cashModalMode === 'audit' ? 'Arqueo de caja' : notes
-            });
+            };
+
+            if (selectedDate) {
+                payload.created_at = selectedDate;
+            }
+
+            await supabase.from('treasury_log').insert(payload);
 
             setCashModalMode('none');
             fetchMovements();
@@ -352,7 +339,7 @@ export default function MovementsPage() {
                             >
                                 {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                     ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                    : 'FEBRERO 2026'}
+                                    : 'SELECCIONAR MES'}
                             </button>
 
                             <button
@@ -385,7 +372,7 @@ export default function MovementsPage() {
 
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
-                        {/* RESUMEN ULTRA-COMPACTO: Grid 2x2 en móvil, 4x1 en escritorio */}
+                        {/* RESUMEN: Grid 2x2 en móvil, 4x1 en escritorio */}
                         <div className="py-4 px-4 grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-y-0 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-xl md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
@@ -407,11 +394,19 @@ export default function MovementsPage() {
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">DIFERENCIA</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
                                 <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {summary.balance.toFixed(2)}€
+                                    {summary.currentBalance.toFixed(2)}€
                                 </span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">SALDO</span>
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">CAJA REAL</span>
+                            </div>
+                        </div>
+
+                        {/* Métrica Secundaria (Solo visible si hay diferencia) */}
+                        <div className="px-6 py-2 bg-zinc-50 flex justify-end gap-4 border-b border-zinc-100">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Saldo Teórico:</span>
+                                <span className="text-[10px] font-bold text-zinc-500 tabular-nums italic">{summary.balance.toFixed(2)}€</span>
                             </div>
                         </div>
 
@@ -419,7 +414,7 @@ export default function MovementsPage() {
                         <div className="p-3 bg-white">
                             <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="w-full">
-                                    <table className="w-full text-left">
+                                    <table className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <th className="px-1.5 md:px-6 py-4 w-[70px] md:w-auto">FECHA</th>
@@ -439,10 +434,10 @@ export default function MovementsPage() {
                                                 </tr>
                                             ) : movements.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={4} className="py-20">
-                                                        <div className="flex flex-col items-center justify-center space-y-2 opacity-30">
+                                                    <td colSpan={4} className="py-20 text-center">
+                                                        <div className="flex flex-col items-center justify-center gap-2 opacity-20">
                                                             <PiggyBank size={32} />
-                                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">Sin movimientos</span>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -469,7 +464,7 @@ export default function MovementsPage() {
                                                             <td className="px-1.5 md:px-6 py-3">
                                                                 <div className="flex items-center gap-1.5 md:gap-3">
                                                                     <div className={cn(
-                                                                        "w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                                                                        "w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
                                                                         mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
                                                                             mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
                                                                                 "bg-orange-50 text-orange-500"
@@ -529,7 +524,7 @@ export default function MovementsPage() {
                 </div>
             </div>
 
-            {/* MODAL CALENDARIO */}
+            {/* MODALES EXTERNOS */}
             {showCalendar && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -537,14 +532,12 @@ export default function MovementsPage() {
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
                             <button onClick={() => setShowCalendar(null)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
                         </div>
-
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-6 px-2">
                                 <button onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
                                 <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
                                 <button onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
                             </div>
-
                             <div className="grid grid-cols-7 gap-1">
                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
                                     <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
@@ -554,7 +547,6 @@ export default function MovementsPage() {
                                     const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                     const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
                                     const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-
                                     return (
                                         <button
                                             key={i}
@@ -574,7 +566,6 @@ export default function MovementsPage() {
                 </div>
             )}
 
-            {/* MODAL SELECTOR DE MES / AÑO */}
             {showMonthPicker && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -582,25 +573,16 @@ export default function MovementsPage() {
                             <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
                             <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
                         </div>
-
                         <div className="p-6">
-                            {/* Selector de Año */}
                             <div className="flex items-center justify-between mb-8 px-2">
-                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
-                                    <ChevronLeft size={20} className="text-zinc-400" />
-                                </button>
+                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
                                 <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
-                                    <ChevronRight size={20} className="text-zinc-400" />
-                                </button>
+                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
                             </div>
-
-                            {/* Rejilla de Meses */}
                             <div className="grid grid-cols-3 gap-2">
                                 {Array.from({ length: 12 }).map((_, i) => {
                                     const date = new Date(pickerYear, i, 1);
                                     const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
-
                                     return (
                                         <button
                                             key={i}
@@ -614,9 +596,7 @@ export default function MovementsPage() {
                                             }}
                                             className={cn(
                                                 "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                                isSelected
-                                                    ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
-                                                    : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
+                                                isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
                                             )}
                                         >
                                             {format(date, 'MMM', { locale: es })}
@@ -629,16 +609,11 @@ export default function MovementsPage() {
                 </div>
             )}
 
-            {/* MODAL DE OPERACIONES */}
             {cashModalMode !== 'none' && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300" onClick={() => setCashModalMode('none')}>
                     <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
                         {cashModalMode === 'inventory' ? (
-                            <BoxInventoryView
-                                boxName={boxData?.name || 'Caja'}
-                                inventory={boxInventory}
-                                onBack={() => setCashModalMode('none')}
-                            />
+                            <BoxInventoryView boxName={boxData?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />
                         ) : (
                             <CashDenominationForm
                                 type={cashModalMode === 'audit' ? 'audit' : (cashModalMode === 'in' ? 'in' : 'out')}
@@ -652,12 +627,9 @@ export default function MovementsPage() {
                     </div>
                 </div>
             )}
-            {/* MODAL DE DETALLE DE MOVIMIENTO */}
+
             {selectedMovement && (
-                <MovementDetailModal
-                    movement={selectedMovement}
-                    onClose={() => setSelectedMovement(null)}
-                />
+                <MovementDetailModal movement={selectedMovement} onClose={() => setSelectedMovement(null)} />
             )}
 
             {isClosingModalOpen && (

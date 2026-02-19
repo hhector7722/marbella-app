@@ -515,7 +515,7 @@ export default function HistoryPage() {
                     {/* --- WHITE BODY --- */}
                     <div className="bg-white">
                         {/* COMPACT SUMMARY (Integrated) */}
-                        <div className="pt-2 md:pt-3 pb-1.5 md:pb-2 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="pt-1 md:pt-1.5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -531,23 +531,23 @@ export default function HistoryPage() {
                         </div>
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
-                        <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1.5 md:pt-2">
+                        <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
-                                <div className="bg-[#36606F] p-1 md:p-1.5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                                    <div className="flex gap-1 md:gap-2 w-full justify-between">
+                                <div className="bg-[#36606F] p-0.5 md:p-1 flex justify-between items-center overflow-x-auto no-scrollbar">
+                                    <div className="flex gap-1 md:gap-1.5 w-full justify-between">
                                         {METRICS.map(m => (
                                             <button
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "flex-1 h-7 md:h-9 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 px-2 whitespace-nowrap",
+                                                    "flex-1 h-6 md:h-8 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-1.5 whitespace-nowrap",
                                                     selectedMetric === m.value
                                                         ? "bg-white text-[#36606F] shadow-lg"
                                                         : "text-white/60 hover:text-white hover:bg-white/5"
                                                 )}
                                             >
-                                                <m.icon size={14} className={cn("hidden sm:block", selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
+                                                <m.icon size={12} className={cn("hidden sm:block", selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
                                                 {m.label}
                                             </button>
                                         ))}

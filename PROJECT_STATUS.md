@@ -36,9 +36,13 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Corrección de Lógica de Arqueo y Métricas (REFINADO)**: Implementación de lógica de deltas (descuadres) en la base de datos para que los arqueos no rompan el historial. Actualización de `/dashboard/movements` para mostrar Saldo Teórico (sin arqueos) vs. Diferencia según solicitud.
 - [x] **Triggers de Tesorería Proactivos**: Nuevo trigger `BEFORE INSERT` que calcula automáticamente el descuadre al realizar un arqueo, manteniendo la integridad del balance global.
 - [x] **Ocultación de Arqueos en Extracto**: Los arqueos ahora están ocultos de la tabla de movimientos para evitar confusión, pero sus descuadres se acumulan en la métrica "DIFERENCIA".
+- [x] **Sistema de Tesorería Atómico e Inmune a Duplicados**: Implementación de triggers avanzados que gestionan `UPDATE` y `DELETE` revirtiendo el impacto anterior, eliminando el error de duplicación de deudas.
+- [x] **Unificación de Lógica de Saldos**: Sustitución de cálculos en frontend por `get_theoretical_balance` (SQL RPC), garantizando exactitud matemática total.
+- [x] **Saneamiento de Datos**: Script de limpieza aplicado para eliminar duplicados generados por la lógica anterior.
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
+- [x] **Refinamiento UI Historial (Ajuste Vertical)**: Reducción de rellenos en cabecera de métricas y selector de modo para maximizar densidad de información.
 - [x] **Vista Calendario en Historial (Refinado)**: Nueva visualización en estilo calendario (7 columnas) con tarjetas optimizadas (cabecera roja, layout simétrico de métricas y fuentes legibles en 7-col).
 
 ## 📅 PENDIENTE
