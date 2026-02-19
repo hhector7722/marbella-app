@@ -39,6 +39,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Sistema de Tesorería Atómico e Inmune a Duplicados**: Implementación de triggers avanzados que gestionan `UPDATE` y `DELETE` revirtiendo el impacto anterior, eliminando el error de duplicación de deudas.
 - [x] **Unificación de Lógica de Saldos**: Sustitución de cálculos en frontend por `get_theoretical_balance` (SQL RPC), garantizando exactitud matemática total.
 - [x] **Saneamiento de Datos**: Script de limpieza aplicado para eliminar duplicados generados por la lógica anterior.
+- [x] **Habilitación de Cierres Retroactivos**: Implementación de selector de fecha/hora sutil en el modal de cierre, permitiendo corregir el momento del cierre y actualizando los datos de ventas automáticamente.
 - [x] **Corrección Edición de Movimientos**: Habilitada la edición de fecha y guardado para movimientos de salida mediante el bypass de validación de stock en modo edición y mejora de UI del selector.
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).

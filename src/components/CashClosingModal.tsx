@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     X, Save, Banknote, Coins, Calculator,
@@ -65,6 +65,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
     // 3. STATE: OPENING CASH
     const [openingCash, setOpeningCash] = useState(0);
 
+    // 4. STATE: DATE/TIME (HIDDEN EDIT)
+    const [selectedDateTime, setSelectedDateTime] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+    const datePickerRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
         if (isOpen) {
             // fetchOpening(); // Se elimina el fondo de caja fijo
@@ -72,6 +76,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         } else {
             // Reset state on close
             setStep('tpv_data');
+            const now = format(new Date(), "yyyy-MM-dd'T'HH:mm");
+            setSelectedDateTime(now);
             setTpvData({
                 totalSales: 0, cardSales: 0, pendingSales: 0,
                 debtRecovered: 0, ticketsCount: 0, weather: 'Soleado'
@@ -80,15 +86,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isOpen) {
+            fetchTodayVentas();
+        }
+    }, [selectedDateTime]);
+
     async function fetchTodayVentas() {
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const dateObj = new Date(selectedDateTime);
+        const dateStr = format(dateObj, 'yyyy-MM-dd');
 
         // ARCHITECT_ULTRAFLUIDITY: Aggregated fetch instead of downloading ALL tickets
         // Using get_hourly_sales RPC for totals to avoid data bloat
         const { data: aggregated, error } = await supabase
             .rpc('get_hourly_sales', {
-                p_start_date: todayStr,
-                p_end_date: todayStr
+                p_start_date: dateStr,
+                p_end_date: dateStr
             });
 
         if (error) {
@@ -102,7 +115,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         const { count } = await supabase
             .from('tickets_marbella')
             .select('*', { count: 'exact', head: true })
-            .eq('fecha', todayStr)
+            .eq('fecha', dateStr)
             .neq('total_documento', 0);
 
         setTpvData(prev => ({
@@ -131,10 +144,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            const now = new Date();
+            const chosenDate = new Date(selectedDateTime);
 
             // Format movement name for treasury: "Cierre Sab 14 Feb"
-            const movementName = `Cierre ${format(now, "EEE d MMM", { locale: es })}`;
+            const movementName = `Cierre ${format(chosenDate, "EEE d MMM", { locale: es })}`;
 
             // Calculate Net Sales (Excluding 10% IVA as expected by Dashboard)
             const netSalesCalculated = totalSalesGross / 1.10;
@@ -150,9 +163,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
             const { data: closing, error } = await supabase
                 .from('cash_closings')
                 .insert({
-                    closed_at: now.toISOString(),
+                    closed_at: chosenDate.toISOString(),
                     closed_by: user?.id,
-                    closing_date: format(now, "yyyy-MM-dd"),
+                    closing_date: format(chosenDate, "yyyy-MM-dd"),
                     tpv_sales: totalSalesGross,
                     net_sales: netSalesCalculated,
                     sales_card: tpvData.cardSales,
@@ -209,9 +222,21 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                 {/* Header (Detail View Style) */}
                 <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-2 opacity-60 mb-1">
+                        <div
+                            className="flex items-center gap-2 opacity-60 mb-1 cursor-pointer hover:opacity-100 transition-opacity"
+                            onClick={() => datePickerRef.current?.showPicker()}
+                        >
                             <Calculator size={14} />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Cierre de Caja Diaria</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                                {format(new Date(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
+                            </span>
+                            <input
+                                ref={datePickerRef}
+                                type="datetime-local"
+                                className="sr-only"
+                                value={selectedDateTime}
+                                onChange={(e) => setSelectedDateTime(e.target.value)}
+                            />
                         </div>
                         <div className="flex items-center gap-4 mt-1">
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'tpv_data' ? 'text-white' : 'text-white/40')}>1. Datos</div>
