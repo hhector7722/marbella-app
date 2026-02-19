@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save, Calendar } from 'lucide-react';
+import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -47,24 +47,70 @@ export const CashDenominationForm = ({
     const nowStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     const [selectedDate, setSelectedDate] = useState(initialDate ? formatForInput(initialDate) : nowStr);
 
-    const calculateTotal = () => DENOMINATIONS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
-    const handleCountChange = (val: number, qty: string) => setCounts(prev => ({ ...prev, [val]: parseInt(qty) || 0 }));
-    const total = calculateTotal();
+    // 5. PURCHASE MODE STATES
+    const [isPurchaseMode, setIsPurchaseMode] = useState(false);
+    const [purchasePrice, setPurchasePrice] = useState<number>(0);
+    const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
+    const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
+
+    const calculateTotal = (c: Record<number, number>) => DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
+
+    const handleCountChange = (val: number, qty: string) => {
+        const numQty = parseInt(qty) || 0;
+        if (isPurchaseMode && purchaseTab === 'received') {
+            setReceivedCounts(prev => ({ ...prev, [val]: numQty }));
+        } else {
+            setCounts(prev => ({ ...prev, [val]: numQty }));
+        }
+    };
+
+    const totalGiven = calculateTotal(counts);
+    const totalReceived = calculateTotal(receivedCounts);
+    const total = isPurchaseMode ? purchasePrice : totalGiven;
+
+    const netDifference = Math.abs((totalGiven - totalReceived) - purchasePrice);
+    const isMathCorrect = netDifference < 0.01;
+    const canSubmitPurchase = isMathCorrect && purchasePrice > 0;
+
+    const handleConfirm = () => {
+        if (isPurchaseMode) {
+            // Calculate net breakdown: Given - Received
+            const netBreakdown: any = {};
+            DENOMINATIONS.forEach(d => {
+                const net = (counts[d] || 0) - (receivedCounts[d] || 0);
+                if (net !== 0) netBreakdown[d] = net;
+            });
+            onSubmit(purchasePrice, netBreakdown, notes || 'Compra', selectedDate ? new Date(selectedDate).toISOString() : undefined);
+        } else {
+            onSubmit(totalGiven, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined);
+        }
+    };
+
     const isAudit = type === 'audit';
     const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl">
             <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                <div>
-                    <h3 className="text-lg font-black uppercase tracking-wider">
-                        {isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida')}
-                    </h3>
-                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg",
+                        isPurchaseMode ? "bg-orange-500" : (type === 'in' ? "bg-emerald-500" : "bg-rose-500")
+                    )}>
+                        {isPurchaseMode ? <ShoppingCart size={20} className="text-white" /> : (type === 'in' ? <ArrowRightLeft size={20} /> : <ArrowRight size={20} />)}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black uppercase tracking-wider">
+                            {isPurchaseMode ? 'Compra' : (isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida'))}
+                        </h3>
+                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
-                        <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black">Total Acumulado</span>
+                        <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black">
+                            {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
+                        </span>
                         <span className="text-xl font-black">{total.toFixed(2)}€</span>
                     </div>
                 </div>
@@ -73,8 +119,30 @@ export const CashDenominationForm = ({
                 </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-                {/* DATE & NOTES ROW */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
+                {/* PURCHASE MODE TOGGLE */}
+                {type === 'out' && !isEditing && (
+                    <div className="flex items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-zinc-100">
+                        <div className="flex-1">
+                            <h4 className="text-[10px] font-black text-[#36606F] uppercase tracking-widest leading-none">Modo Compra</h4>
+                            <p className="text-[8px] text-zinc-400 font-bold uppercase mt-1">Actívalo para pagar y recibir cambio</p>
+                        </div>
+                        <button
+                            onClick={() => setIsPurchaseMode(!isPurchaseMode)}
+                            className={cn(
+                                "w-12 h-6 rounded-full transition-all relative outline-none",
+                                isPurchaseMode ? "bg-orange-500" : "bg-zinc-200"
+                            )}
+                        >
+                            <div className={cn(
+                                "absolute w-4 h-4 bg-white rounded-full top-1 transition-all shadow-md",
+                                isPurchaseMode ? "left-7" : "left-1"
+                            )} />
+                        </button>
+                    </div>
+                )}
+
+                {/* DATE & NOTES & PRICE ROW */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 px-1">
                     <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
                         <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
                             <Calendar size={8} />
@@ -84,22 +152,77 @@ export const CashDenominationForm = ({
                             type="datetime-local"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full bg-transparent border-none p-0 text-zinc-600 text-[11px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
+                            className="w-full bg-transparent border-none p-0 text-zinc-600 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
                         />
                     </div>
-                    {!isAudit && (
-                        <div className="flex flex-col">
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Concepto / Motivo</label>
+
+                    {isPurchaseMode ? (
+                        <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm">
+                            <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio de la Compra</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={purchasePrice || ''}
+                                    onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
+                                    placeholder="0.00"
+                                    className="w-full bg-transparent border-none p-0 text-orange-600 text-xl font-black outline-none focus:ring-0"
+                                />
+                                <span className="text-orange-400 font-black">€</span>
+                            </div>
+                        </div>
+                    ) : !isAudit && (
+                        <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto / Motivo</label>
                             <input
                                 type="text"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 placeholder="Ej. Cambio banco, Pago proveedor..."
-                                className="w-full p-2.5 rounded-xl border-2 border-transparent focus:border-[#5B8FB9]/20 bg-white shadow-sm outline-none transition-all font-bold placeholder:text-gray-300 text-xs"
+                                className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
+                            />
+                        </div>
+                    )}
+
+                    {isPurchaseMode && (
+                        <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm sm:col-span-2 lg:col-span-1">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
+                            <input
+                                type="text"
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Nombre del proveedor o artículo..."
+                                className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
                             />
                         </div>
                     )}
                 </div>
+
+                {/* PURCHASE TABS */}
+                {isPurchaseMode && (
+                    <div className="flex gap-2 bg-zinc-100 p-1.5 rounded-2xl">
+                        <button
+                            onClick={() => setPurchaseTab('given')}
+                            className={cn(
+                                "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
+                                purchaseTab === 'given' ? "bg-white text-rose-500 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
+                            )}
+                        >
+                            <span>Lo que das</span>
+                            <span className="text-[14px] mt-0.5">{totalGiven.toFixed(2)}€</span>
+                        </button>
+                        <button
+                            onClick={() => setPurchaseTab('received')}
+                            className={cn(
+                                "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
+                                purchaseTab === 'received' ? "bg-white text-emerald-500 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
+                            )}
+                        >
+                            <span>Tu cambio</span>
+                            <span className="text-[14px] mt-0.5">{totalReceived.toFixed(2)}€</span>
+                        </button>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                     {DENOMINATIONS.map(denom => (
@@ -114,15 +237,17 @@ export const CashDenominationForm = ({
                                 <input
                                     type="number"
                                     min="0"
-                                    value={counts[denom] || ''}
+                                    value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
                                     onChange={(e) => handleCountChange(denom, e.target.value)}
                                     placeholder="0"
                                     className={cn(
                                         "w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
-                                        type === 'out' && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" : "border-transparent focus:border-[#5B8FB9]/20 text-[#5B8FB9] focus:ring-[#5B8FB9]/5"
+                                        (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
+                                            (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0)) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
+                                                "border-transparent focus:border-[#5B8FB9]/20 text-[#5B8FB9] focus:ring-[#5B8FB9]/5"
                                     )}
                                 />
-                                {type === 'out' && (availableStock[denom] || 0) > 0 && (
+                                {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (
                                     <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
                                 )}
                             </div>
@@ -138,17 +263,26 @@ export const CashDenominationForm = ({
                     Cancelar
                 </button>
                 <button
-                    onClick={() => onSubmit(total, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined)}
-                    disabled={!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0))}
+                    onClick={handleConfirm}
+                    disabled={isPurchaseMode ? !canSubmitPurchase : (!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => (qty as number) > (availableStock[Number(denom)] || 0)))}
                     className={cn(
-                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
-                        (!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => qty > (availableStock[Number(denom)] || 0)))
-                            ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
-                            : bgClass + " hover:brightness-110 shadow-emerald-200"
+                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
+                        isPurchaseMode
+                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                            : ((!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => (qty as number) > (availableStock[Number(denom)] || 0)))
+                                ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
+                                : bgClass + " hover:brightness-110 shadow-emerald-200")
                     )}
                 >
-                    <Save size={18} strokeWidth={3} />
-                    {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
+                    <div className="flex items-center gap-2">
+                        <Save size={16} strokeWidth={3} />
+                        {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
+                    </div>
+                    {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
+                        <span className="text-[7px] opacity-80">
+                            {totalGiven - totalReceived > purchasePrice ? `Sobra ${(totalGiven - totalReceived - purchasePrice).toFixed(2)}€` : `Falta ${(purchasePrice - (totalGiven - totalReceived)).toFixed(2)}€`}
+                        </span>
+                    )}
                 </button>
             </div>
         </div>

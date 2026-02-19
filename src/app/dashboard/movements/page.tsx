@@ -179,7 +179,7 @@ export default function MovementsPage() {
         } catch (error) { console.error(error); } finally { setLoading(false); }
     }
 
-    const handleCashTransaction = async (total: number, breakdown: any, notes: string) => {
+    const handleCashTransaction = async (total: number, breakdown: any, notes: string, customDate?: string) => {
         try {
             if (!boxData) return;
 
@@ -191,7 +191,9 @@ export default function MovementsPage() {
                 notes: cashModalMode === 'audit' ? 'Arqueo de caja' : notes
             };
 
-            if (selectedDate) {
+            if (customDate) {
+                payload.created_at = customDate;
+            } else if (selectedDate) {
                 payload.created_at = selectedDate;
             }
 
