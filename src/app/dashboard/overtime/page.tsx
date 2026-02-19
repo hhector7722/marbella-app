@@ -26,7 +26,7 @@ import {
 import React, { memo, useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, getISOWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getOvertimeData, togglePaidStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ const StaffDetailRow = memo(({
 }) => {
     const formatValue = (val: number, suffix: string = '') => {
         if (val === 0) return " ";
-        return `${val.toFixed(0)}${suffix}`;
+        return `${val.toFixed(2)}${suffix}`;
     };
 
     const formatHours = (val: number) => {
@@ -52,44 +52,40 @@ const StaffDetailRow = memo(({
     };
 
     return (
-        <div className="bg-gray-50 p-4 rounded-3xl flex items-center justify-between border border-transparent hover:border-blue-100 transition-all">
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100/50 hover:bg-white hover:shadow-xl hover:scale-[1.01] transition-all group">
             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#5B8FB9] text-white flex items-center justify-center text-sm font-black shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-[#36606F] text-white flex items-center justify-center text-xs font-black shadow-lg">
                     {staff.name.charAt(0)}
                 </div>
                 <div>
-                    <span className="text-sm font-black text-gray-800 block">{staff.name}</span>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-500 text-[8px] font-black rounded-lg uppercase">{formatHours(staff.totalHours)}</span>
+                    <span className="text-sm font-black text-[#36606F] block tracking-tight uppercase">{staff.name}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{formatHours(staff.totalHours)} totales</span>
                         {staff.overtimeHours > 0 && (
-                            <span className="px-2 py-0.5 bg-orange-50 text-orange-500 text-[8px] font-black rounded-lg uppercase">
-                                {formatHours(staff.overtimeHours)} EXTRA
-                            </span>
+                            <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">• {formatHours(staff.overtimeHours)} EXTRA</span>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-6">
-                <div className="text-right">
+            <div className="flex items-center gap-4">
+                <div className="text-right flex flex-col items-end">
                     <span className={cn(
-                        "text-lg font-black block leading-none",
-                        staff.isPaid ? "text-gray-300 line-through" : "text-gray-800"
+                        "text-lg font-black tabular-nums leading-none tracking-tighter",
+                        staff.isPaid ? "text-emerald-500" : "text-[#36606F]"
                     )}>
                         {formatValue(staff.totalCost, '€')}
                     </span>
-                    {staff.overtimeCost > 0 && !staff.isPaid && (
-                        <span className="text-[9px] font-bold text-rose-500">Extras: {formatValue(staff.overtimeCost, '€')}</span>
-                    )}
+                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-1">COSTO EXTRA</span>
                 </div>
                 <button
                     onClick={() => onTogglePaid(staff.id, staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
-                    className="transition-all active:scale-90"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-100 shadow-sm transition-all hover:scale-110 active:scale-95 group-hover:border-[#36606F]/20"
                 >
                     {staff.isPaid ? (
-                        <CheckCircle2 size={28} className="text-emerald-500 fill-emerald-50" />
+                        <CheckCircle2 size={20} className="text-emerald-500" strokeWidth={3} />
                     ) : (
-                        <Circle size={28} className="text-gray-200 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors" />
+                        <Circle size={20} className="text-zinc-200" strokeWidth={3} />
                     )}
                 </button>
             </div>
@@ -119,36 +115,56 @@ const WeekOvertimeCard = memo(({
         return `${val.toFixed(1)}h`;
     };
 
+    const weekNumber = getISOWeek(week.startDate);
+
     return (
         <div
             onClick={onClick}
-            className="bg-white rounded-3xl border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"
+            className="group relative bg-white rounded-[2.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden animate-in fade-in duration-300"
         >
-            <div className="p-4 flex justify-between items-center select-none">
-                <div className="flex items-center gap-4">
-                    <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                        allStaffPaid ? "bg-emerald-50 text-emerald-500" : "bg-blue-50 text-blue-500"
-                    )}>
-                        {allStaffPaid ? <CheckCircle2 size={18} /> : <Calendar size={18} />}
+            {/* Header Rojo Compacto (Refined) */}
+            <div className="bg-[#D64D5D] p-3 flex justify-center items-center shadow-sm relative overflow-hidden">
+                <span className="text-[11px] font-black text-white uppercase tracking-wider relative z-10">
+                    Semana {weekNumber} • {format(week.startDate, 'd MMM', { locale: es })} - {format(addDays(week.startDate, 6), 'd MMM', { locale: es })}
+                </span>
+                {allStaffPaid && (
+                    <div className="absolute right-4 bg-emerald-500/20 text-white p-1 rounded-full border border-white/20">
+                        <CheckCircle2 size={12} strokeWidth={4} />
                     </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-black text-gray-800 uppercase tracking-tight">{week.label}</h3>
-                            {allStaffPaid ? (
-                                <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">PAGADA</span>
-                            ) : (
-                                <span className="bg-orange-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">{paidCount}/{totalCount} PAGADOS</span>
-                            )}
+                )}
+            </div>
+
+            <div className="p-5 flex flex-col">
+                {/* Main Metric Row */}
+                <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                        {formatValue(week.totalAmount, '€')}
+                    </span>
+                    <div className="flex flex-col items-end">
+                        <div className={cn(
+                            "text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
+                            allStaffPaid ? "text-emerald-500" : "text-orange-500"
+                        )}>
+                            {allStaffPaid ? 'PAGADO' : `${paidCount}/${totalCount} LISTO`}
                         </div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">{formatHours(week.totalHours)} totales</p>
+                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70 mt-1">ESTADO PAGO</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="text-right">
-                        <span className="text-lg font-black text-gray-800 leading-none">{formatValue(week.totalAmount, '€')}</span>
+
+                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-4">
+                    COSTO EXTRA SEMANAL
+                </span>
+
+                {/* Symmetrical Metrics Footer (Bento style) */}
+                <div className="grid grid-cols-2 gap-0 pt-3 border-t border-zinc-100 mt-auto">
+                    <div className="flex flex-col items-center">
+                        <span className="text-[11px] font-black text-zinc-900 tabular-nums">{formatHours(week.totalHours)}</span>
+                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Producción</span>
                     </div>
-                    <ChevronDown size={16} className="text-gray-300" />
+                    <div className="flex flex-col items-center border-l border-zinc-100">
+                        <span className="text-[11px] font-black text-[#36606F] tabular-nums">{week.staff.length}</span>
+                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Trabajadores</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -253,13 +269,13 @@ export default function OvertimePage() {
         return filteredWeeksData.slice(0, displayLimit);
     }, [filteredWeeksData, displayLimit]);
 
-    const togglePaid = async (staffId: string, weekStartDate: Date, currentPaidStatus: boolean, stats: { totalHours: number, overtimeHours: number }) => {
-        const mondayISO = format(weekStartDate, 'yyyy-MM-dd');
+    const togglePaid = async (staffId: string, weekStart: string, currentPaidStatus: boolean, stats: { totalHours: number, overtimeHours: number }) => {
+        const mondayISO = weekStart;
         const newStatus = !currentPaidStatus;
 
         // Optimistic update in weeksData
         setWeeksData(prev => prev.map(w => {
-            if (format(w.startDate, 'yyyy-MM-dd') === mondayISO) {
+            if (w.weekId === mondayISO) {
                 return {
                     ...w,
                     staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: newStatus } : s)
@@ -269,7 +285,7 @@ export default function OvertimePage() {
         }));
 
         // Optimistic update in selectedWeek if open
-        if (selectedWeek && format(selectedWeek.startDate, 'yyyy-MM-dd') === mondayISO) {
+        if (selectedWeek && selectedWeek.weekId === mondayISO) {
             setSelectedWeek(prev => prev ? {
                 ...prev,
                 staff: prev.staff.map(s => s.id === staffId ? { ...s, isPaid: newStatus } : s)
@@ -318,14 +334,19 @@ export default function OvertimePage() {
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
-                    {/* CABECERA ESTRECHA MARBELLA DETAIL */}
-                    <div className="bg-[#36606F] px-8 py-5 flex items-center justify-between">
-                        <h1 className="text-xl font-black text-white uppercase tracking-wider">
-                            Histórico Extras
-                        </h1>
-                        <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors p-2">
-                            <X size={24} />
-                        </button>
+                    {/* --- INTEGRATED DARK HEADER --- */}
+                    <div className="bg-[#36606F] p-4 md:p-6 space-y-4 relative">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 md:gap-4">
+                                <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
+                                    <ArrowLeft className="w-5 h-5" strokeWidth={3} />
+                                </button>
+                                <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Histórico Extras</h1>
+                            </div>
+                            <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors p-2">
+                                <X size={24} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="p-6 md:p-8 w-full bg-white min-h-screen">
@@ -482,62 +503,74 @@ export default function OvertimePage() {
                         </div>
 
                         {/* KPI SUMMARY CLEAN */}
-                        <div className="grid grid-cols-3 gap-2 mb-8 py-6 border-y border-gray-50">
+                        <div className="grid grid-cols-3 gap-0 mb-8 py-8 border-y border-gray-50 bg-gray-50/30 rounded-3xl mx-1">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Periodo</span>
-                                <span className="text-xl font-black text-[#5B8FB9]">{formatValue(summary.totalCost, '€')}</span>
+                                <span className="text-2xl md:text-3xl font-black text-zinc-900 tabular-nums leading-none mb-1">{formatValue(summary.totalCost, '€')}</span>
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest font-bold">TOTAL PERIODO</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Excesos</span>
-                                <span className="text-xl font-black text-orange-500">{formatValue(summary.totalOvertimeCost, '€')}</span>
+                            <div className="flex flex-col items-center justify-center text-center border-x border-gray-100 italic">
+                                <span className="text-2xl md:text-3xl font-black text-orange-500 tabular-nums leading-none mb-1">{formatValue(summary.totalOvertimeCost, '€')}</span>
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest font-bold">EXCESOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Producción</span>
-                                <span className="text-xl font-black text-blue-500">{formatHours(summary.totalHours)}</span>
+                                <span className="text-2xl md:text-3xl font-black text-blue-500 tabular-nums leading-none mb-1">{formatHours(summary.totalHours)}</span>
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest font-bold">PRODUCCIÓN</span>
                             </div>
                         </div>
 
-                        {/* LISTADO DE SEMANAS */}
-                        <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
-                            <div className="space-y-4 pb-10">
-                                {loading ? (
-                                    <div className="text-center py-20 text-gray-300 font-bold animate-pulse uppercase tracking-widest text-xs">Calculando nóminas...</div>
-                                ) : filteredWeeksData.length === 0 ? (
-                                    <div className="text-center py-20 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-100">
-                                        <p className="text-gray-400 font-bold text-sm">Sin resultados</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {visibleWeeks.map(week => (
-                                            <WeekOvertimeCard
-                                                key={week.weekId}
-                                                week={week}
-                                                onClick={() => setSelectedWeek(week)}
-                                            />
-                                        ))}
+                        <div className="flex items-center justify-between mb-4 px-2 italic">
+                            <h2 className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">Desglose Semanal</h2>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span className="text-[9px] font-black text-zinc-400 uppercase">Todo Pagado</span>
+                            </div>
+                        </div>
 
-                                        {filteredWeeksData.length > displayLimit && (
-                                            <div
-                                                className="py-10 flex justify-center"
-                                                ref={(el) => {
-                                                    if (!el) return;
-                                                    const observer = new IntersectionObserver((entries) => {
-                                                        if (entries[0].isIntersecting) {
-                                                            setDisplayLimit(prev => prev + 15);
-                                                        }
-                                                    });
-                                                    observer.observe(el);
-                                                }}
-                                            >
-                                                <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest animate-pulse">
-                                                    Cargando más semanas...
-                                                </div>
+                        <div className="p-2 md:p-3 bg-white flex-1 overflow-y-auto no-scrollbar">
+                            <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden min-h-[500px]">
+                                {/* LISTADO DE SEMANAS */}
+                                <div className="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
+                                        {loading ? (
+                                            <div className="col-span-full text-center py-20 text-blue-400 font-bold animate-pulse uppercase tracking-widest text-xs">Calculando nóminas...</div>
+                                        ) : filteredWeeksData.length === 0 ? (
+                                            <div className="col-span-full text-center py-20 bg-white/50 rounded-[2rem] border-2 border-dashed border-gray-100">
+                                                <p className="text-gray-400 font-bold text-sm">Sin resultados</p>
                                             </div>
+                                        ) : (
+                                            <>
+                                                {visibleWeeks.map(week => (
+                                                    <WeekOvertimeCard
+                                                        key={week.weekId}
+                                                        week={week}
+                                                        onClick={() => setSelectedWeek(week)}
+                                                    />
+                                                ))}
+
+                                                {filteredWeeksData.length > displayLimit && (
+                                                    <div
+                                                        className="col-span-full py-10 flex justify-center"
+                                                        ref={(el) => {
+                                                            if (!el) return;
+                                                            const observer = new IntersectionObserver((entries) => {
+                                                                if (entries[0].isIntersecting) {
+                                                                    setDisplayLimit(prev => prev + 15);
+                                                                }
+                                                            });
+                                                            observer.observe(el);
+                                                        }}
+                                                    >
+                                                        <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest animate-pulse">
+                                                            Cargando más semanas...
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
-                                    </>
-                                )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -546,34 +579,39 @@ export default function OvertimePage() {
 
             {/* MODAL DETALLE SEMANA */}
             {selectedWeek && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-sm" onClick={() => setSelectedWeek(null)}></div>
-                    <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl relative overflow-hidden animate-in zoom-in duration-300">
-                        {/* Cabecera Modal */}
-                        <div className="bg-[#36606F] p-8 pb-10 flex justify-between items-start">
-                            <div>
-                                <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-1">{selectedWeek.label}</h2>
-                                <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Desglose de personal y pagos</p>
-                            </div>
-                            <button onClick={() => setSelectedWeek(null)} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white transition-all">
-                                <X size={24} />
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-[#36606F]/80 backdrop-blur-md" onClick={() => setSelectedWeek(null)}></div>
+                    <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                        {/* Header Azul Marbella */}
+                        <div className="bg-[#36606F] p-8 text-white relative shrink-0 text-center">
+                            <button
+                                onClick={() => setSelectedWeek(null)}
+                                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 active:scale-95"
+                            >
+                                <X size={20} strokeWidth={3} />
                             </button>
+
+                            <div className="mt-4">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block font-bold">Resumen de Nómina</span>
+                                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mx-auto max-w-[90%] break-words italic text-white/90">
+                                    {selectedWeek.label}
+                                </h2>
+                                <div className="flex items-center justify-center gap-6 mt-8">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-xl font-black text-white">{selectedWeek.totalAmount.toFixed(0)}€</span>
+                                        <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mt-1">Extra Total</span>
+                                    </div>
+                                    <div className="h-8 w-px bg-white/10"></div>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-xl font-black text-emerald-400">{selectedWeek.staff.filter(s => s.isPaid).length}/{selectedWeek.staff.length}</span>
+                                        <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mt-1">Pagados</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* KPIs de la Semana */}
-                        <div className="grid grid-cols-2 gap-4 px-8 -mt-6">
-                            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-xl">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Coste Total</span>
-                                <span className="text-2xl font-black text-gray-800">{formatValue(selectedWeek.totalAmount, '€')}</span>
-                            </div>
-                            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-xl">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Horas Totales</span>
-                                <span className="text-2xl font-black text-[#5B8FB9]">{formatHours(selectedWeek.totalHours)}</span>
-                            </div>
-                        </div>
-
-                        {/* Lista de Personal */}
-                        <div className="p-6 max-h-[60vh] overflow-y-auto no-scrollbar">
+                        {/* Lista de Trabajadores */}
+                        <div className="p-6 md:p-8 space-y-3 overflow-y-auto flex-1 custom-scrollbar bg-[#EFEDED] no-scrollbar">
                             <div className="space-y-3">
                                 {selectedWeek.staff.map((staff, idx) => (
                                     <StaffDetailRow
@@ -581,7 +619,7 @@ export default function OvertimePage() {
                                         staff={staff}
                                         selectedWeekName={selectedWeek.label}
                                         onTogglePaid={(staffId, currentPaidStatus, stats) =>
-                                            togglePaid(staffId, selectedWeek.startDate, currentPaidStatus, stats)
+                                            togglePaid(staffId, selectedWeek.weekId, currentPaidStatus, stats)
                                         }
                                     />
                                 ))}
@@ -589,10 +627,10 @@ export default function OvertimePage() {
                         </div>
 
                         {/* Footer Modal */}
-                        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                        <div className="p-6 bg-white border-t border-gray-100/50">
                             <button
                                 onClick={() => setSelectedWeek(null)}
-                                className="px-8 py-3 bg-[#36606F] text-white text-xs font-black rounded-2xl shadow-lg hover:shadow-xl transition-all uppercase tracking-widest active:scale-95"
+                                className="w-full h-14 bg-[#36606F] text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
                                 Cerrar Detalle
                             </button>

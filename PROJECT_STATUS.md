@@ -42,7 +42,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Habilitación de Cierres Retroactivos**: Implementación de selector de fecha/hora sutil en el modal de cierre, permitiendo corregir el momento del cierre y actualizando los datos de ventas automáticamente.
 - [x] **Rediseño Resumen Movimientos**: Refactorización de métricas superiores en `/movements`, eliminando "Caja Real", priorizando "Saldo" y "Diferencia" para mayor claridad operativa.
 - [x] **Modo Compra en Movimientos**: Nueva funcionalidad en el modal de Salidas que permite desglosar dinero entregado y cambio recibido, calculando el precio neto y actualizando el inventario de caja con exactitud.
-- [x] **Corrección Edición de Movimientos**: Habilitada la edición de fecha y guardado para movimientos de salida mediante el bypass de validación de stock en modo edición y mejora de UI del selector.
+- [x] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
+- [x] **Rediseño de Histórico de Extras**: Implementación de la nueva vista `/dashboard/overtime` con diseño premium "Marbella Clean", filtros temporales, resumen KPI y tarjetas con cabecera roja. Incluye modal de desglose por trabajador y gestión de pagos con actualizaciones optimistas.
+- [x] **Optimización Dashboard Extras**: Limitación de la tarjeta de horas extras en el dashboard principal a las últimas dos semanas finalizadas para mayor foco y claridad operativa.
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
