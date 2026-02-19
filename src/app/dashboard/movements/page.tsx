@@ -131,7 +131,7 @@ export default function MovementsPage() {
                 .lte('created_at', endISO)
                 .order('created_at', { ascending: false });
 
-            // 2. Obtener SALDO TEÓRICO (Suma de IN/OUT históricos ignorando Arqueos)
+            // 2. Obtener SALDO (Suma de IN/OUT históricos ignorando Arqueos)
             // Para un periodo dado, el saldo al final es: SUM(IN) - SUM(OUT) de TODO el pasado.
             const { data: runningData } = await supabase.rpc('get_theoretical_balance', {
                 target_date: endISO
@@ -163,7 +163,7 @@ export default function MovementsPage() {
                 const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
                 const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
 
-                // La diferencia es: Caja Real ACTUAL - Saldo Teórico ACTUAL
+                // La diferencia es: Caja Real ACTUAL - Saldo ACTUAL
                 const difference = box.current_balance - theoreticalEndValue;
 
                 setMovements(filtered);
@@ -387,6 +387,13 @@ export default function MovementsPage() {
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center md:border-l border-zinc-100 px-2">
+                                <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
+                                    {summary.balance.toFixed(2)}€
+                                </span>
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">SALDO</span>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
                                 <span className={cn(
                                     "text-xl md:text-2xl font-black line-clamp-1",
                                     summary.difference > 0 ? "text-blue-500" : summary.difference < 0 ? "text-orange-500" : "text-zinc-400"
@@ -394,21 +401,6 @@ export default function MovementsPage() {
                                     {Math.abs(summary.difference) < 0.01 ? " " : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(2)}€`}
                                 </span>
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">DIFERENCIA</span>
-                            </div>
-
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
-                                <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {summary.currentBalance.toFixed(2)}€
-                                </span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">CAJA REAL</span>
-                            </div>
-                        </div>
-
-                        {/* Métrica Secundaria (Solo visible si hay diferencia) */}
-                        <div className="px-6 py-2 bg-zinc-50 flex justify-end gap-4 border-b border-zinc-100">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Saldo Teórico:</span>
-                                <span className="text-[10px] font-bold text-zinc-500 tabular-nums italic">{summary.balance.toFixed(2)}€</span>
                             </div>
                         </div>
 
