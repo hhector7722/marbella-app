@@ -16,16 +16,16 @@ import {
     Pencil,
     Trash2,
     Save,
-    ArrowUpRight,
-    ArrowDownRight,
     Search,
     ChevronRight as ChevronRightIcon,
     Banknote,
-    Plus
+    Plus,
+    LayoutGrid,
+    List
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -150,6 +150,7 @@ export default function HistoryPage() {
 
     // UI State
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'grid' | 'calendar'>('calendar');
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
@@ -158,6 +159,15 @@ export default function HistoryPage() {
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
+
+    // Lógica de Calendario
+    const calendarDays = useMemo(() => {
+        const base = filterMode === 'range' && rangeStart ? new Date(rangeStart) : new Date(selectedDate);
+        const startVisible = startOfWeek(startOfMonth(base), { weekStartsOn: 1 });
+        const endVisible = endOfWeek(endOfMonth(base), { weekStartsOn: 1 });
+
+        return eachDayOfInterval({ start: startVisible, end: endVisible });
+    }, [filterMode, rangeStart, selectedDate]);
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState<any>(null);
     const [isManager, setIsManager] = useState(false);
@@ -394,16 +404,40 @@ export default function HistoryPage() {
                                 <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
                             </div>
 
-                            {/* Ghost Action Button for Closing */}
-                            <button
-                                onClick={() => setShowClosingModal(true)}
-                                className="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
-                            >
-                                <div className="bg-emerald-500 text-white p-1 md:p-1.5 rounded-full shadow-lg group-hover:scale-110 transition-transform">
-                                    <Plus size={12} className="md:w-3.5 md:h-3.5" strokeWidth={4} />
+                            <div className="flex items-center gap-2">
+                                {/* View Mode Toggle */}
+                                <div className="bg-black/20 p-1 rounded-xl flex gap-1 mr-2">
+                                    <button
+                                        onClick={() => setViewMode('calendar')}
+                                        className={cn(
+                                            "p-1.5 md:p-2 rounded-lg transition-all",
+                                            viewMode === 'calendar' ? "bg-white text-[#36606F] shadow-sm" : "text-white/40 hover:text-white"
+                                        )}
+                                    >
+                                        <Calendar size={16} className="md:w-5 md:h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={cn(
+                                            "p-1.5 md:p-2 rounded-lg transition-all",
+                                            viewMode === 'grid' ? "bg-white text-[#36606F] shadow-sm" : "text-white/40 hover:text-white"
+                                        )}
+                                    >
+                                        <LayoutGrid size={16} className="md:w-5 md:h-5" />
+                                    </button>
                                 </div>
-                                <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-widest">Cierre</span>
-                            </button>
+
+                                {/* Ghost Action Button for Closing */}
+                                <button
+                                    onClick={() => setShowClosingModal(true)}
+                                    className="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
+                                >
+                                    <div className="bg-emerald-500 text-white p-1 md:p-1.5 rounded-full shadow-lg group-hover:scale-110 transition-transform">
+                                        <Plus size={12} className="md:w-3.5 md:h-3.5" strokeWidth={4} />
+                                    </div>
+                                    <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-widest hidden sm:inline">Cierre</span>
+                                </button>
+                            </div>
                         </div>
 
 
@@ -503,7 +537,7 @@ export default function HistoryPage() {
                                         <Calendar size={32} />
                                         <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                     </div>
-                                ) : (
+                                ) : viewMode === 'grid' ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4 p-4 md:p-6">
                                         {closings.map((c) => {
                                             const mainVal = c[selectedMetric] || 0;
@@ -566,6 +600,71 @@ export default function HistoryPage() {
                                                 </div>
                                             );
                                         })}
+                                    </div>
+                                ) : (
+                                    /* CALENDAR VIEW */
+                                    <div className="p-4 md:p-6 overflow-x-auto no-scrollbar">
+                                        <div className="min-w-[800px] lg:min-w-0">
+                                            {/* Days of Week Header */}
+                                            <div className="grid grid-cols-7 mb-4 px-2">
+                                                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
+                                                    <div key={d} className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] text-center">{d}</div>
+                                                ))}
+                                            </div>
+
+                                            {/* Calendar Grid */}
+                                            <div className="grid grid-cols-7 gap-2 md:gap-3">
+                                                {calendarDays.map((day, idx) => {
+                                                    const closing = closings.find(c => isSameDay(new Date(c.closed_at), day));
+                                                    const isCurrentMonth = filterMode === 'range' && rangeStart
+                                                        ? isSameMonth(day, new Date(rangeStart))
+                                                        : filterMode === 'single' ? isSameMonth(day, new Date(selectedDate)) : true;
+
+                                                    if (!closing) {
+                                                        return (
+                                                            <div key={idx} className={cn(
+                                                                "h-24 md:h-32 rounded-2xl border border-zinc-100/50 flex flex-col p-2 md:p-3 transition-opacity",
+                                                                isCurrentMonth ? "bg-white/40" : "bg-transparent opacity-10"
+                                                            )}>
+                                                                <span className="text-[10px] font-black text-zinc-300">{format(day, 'd')}</span>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    const mainVal = closing[selectedMetric] || 0;
+                                                    const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
+
+                                                    return (
+                                                        <div
+                                                            key={closing.id}
+                                                            onClick={() => setSelectedClosing(closing)}
+                                                            className="group relative bg-white h-24 md:h-auto rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
+                                                        >
+                                                            <div className="bg-[#D64D5D]/10 px-2 py-1 flex justify-between items-center">
+                                                                <span className="text-[10px] font-black text-[#D64D5D]">{format(day, 'd')}</span>
+                                                            </div>
+                                                            <div className="p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/50 transition-colors">
+                                                                <div className="mb-auto">
+                                                                    <div className="text-xs md:text-lg font-black text-zinc-900 tabular-nums leading-none">
+                                                                        {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                                    </div>
+                                                                    <div className={cn(
+                                                                        "text-[8px] md:text-[10px] font-black uppercase mt-1",
+                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                                    )}>
+                                                                        {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.round(Math.abs(parseFloat(diffPerc)))}%
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="mt-2 text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>

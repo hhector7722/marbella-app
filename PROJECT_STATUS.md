@@ -37,6 +37,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
+- [x] **Vista Calendario en Historial**: Nueva visualización opcional en estilo calendario (7 columnas) que permite identificar patrones semanales y días sin actividad, con soporte para scroll horizontal en móvil.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
