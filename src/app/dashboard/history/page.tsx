@@ -389,13 +389,13 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-32">
+        <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20">
             <div className="max-w-5xl mx-auto">
                 {/* --- GLOBAL INTEGRATED CARD --- */}
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
                     {/* --- INTEGRATED DARK HEADER --- */}
-                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6 relative">
+                    <div className="bg-[#36606F] p-2 md:p-4 space-y-3 relative">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 md:gap-4">
                                 <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
@@ -488,7 +488,7 @@ export default function HistoryPage() {
                     {/* --- WHITE BODY --- */}
                     <div className="bg-white">
                         {/* COMPACT SUMMARY (Integrated) */}
-                        <div className="pt-4 md:pt-6 pb-2 md:pb-3 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="pt-2 md:pt-3 pb-1.5 md:pb-2 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -504,17 +504,17 @@ export default function HistoryPage() {
                         </div>
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
-                        <div className="px-3 md:px-6 pb-3 md:pb-6 pt-3 md:pt-4">
+                        <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1.5 md:pt-2">
                             <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
-                                <div className="bg-[#36606F] p-2 md:p-3 flex justify-between items-center overflow-x-auto no-scrollbar">
+                                <div className="bg-[#36606F] p-1 md:p-1.5 flex justify-between items-center overflow-x-auto no-scrollbar">
                                     <div className="flex gap-1 md:gap-2 w-full justify-between">
                                         {METRICS.map(m => (
                                             <button
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "flex-1 h-8 md:h-12 rounded-xl md:rounded-2xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 px-2 whitespace-nowrap",
+                                                    "flex-1 h-7 md:h-9 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 px-2 whitespace-nowrap",
                                                     selectedMetric === m.value
                                                         ? "bg-white text-[#36606F] shadow-lg"
                                                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -603,10 +603,10 @@ export default function HistoryPage() {
                                     </div>
                                 ) : (
                                     /* CALENDAR VIEW */
-                                    <div className="p-4 md:p-6 overflow-x-auto no-scrollbar">
+                                    <div className="p-2 md:p-3 overflow-x-auto no-scrollbar">
                                         <div className="min-w-[800px] lg:min-w-0">
                                             {/* Days of Week Header */}
-                                            <div className="grid grid-cols-7 mb-4 px-2">
+                                            <div className="grid grid-cols-7 mb-2 px-2">
                                                 {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
                                                     <div key={d} className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] text-center">{d}</div>
                                                 ))}
