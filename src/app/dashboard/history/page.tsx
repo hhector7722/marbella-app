@@ -103,33 +103,60 @@ const DonutChart = ({ size = 60, percentage = 75, color = "#10b981" }: { size?: 
     );
 };
 
-const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total }: { isOpen: boolean, onClose: () => void, breakdown: any, date: string, total: number }) => {
+const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing = false, onUpdate }: { isOpen: boolean, onClose: () => void, breakdown: any, date: string, total: number, isEditing?: boolean, onUpdate?: (den: string, qty: number) => void }) => {
     if (!isOpen) return null;
+
+    // Cuando se edita, mostramos todas las denominaciones posibles
+    const displayBreakdown = isEditing ? {
+        ...BILLS.reduce((acc, b) => ({ ...acc, [b.toString()]: 0 }), {}),
+        ...COINS.reduce((acc, c) => ({ ...acc, [c.toString()]: 0 }), {}),
+        ...breakdown
+    } : breakdown;
+
     return (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className="bg-[#36606F] p-6 text-white text-center relative">
-                    <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-xl transition-all"><X size={20} /></button>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 block">Arqueo de Efectivo</span>
-                    <h3 className="text-lg font-black uppercase tracking-tighter">{format(new Date(date), 'eeee d MMM', { locale: es })}</h3>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#36606F] p-8 text-white text-center relative">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-xl transition-all"><X size={20} /></button>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 block">Arqueo de Efectivo</span>
+                    <h3 className="text-xl font-black uppercase tracking-tighter">{format(new Date(date), 'eeee d MMM', { locale: es })}</h3>
                 </div>
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     <div className="space-y-2">
-                        {Object.entries(breakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => (
-                            <div key={den} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
+                        {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => (
+                            <div key={den} className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100/50">
                                 <span className="text-xs font-black text-gray-400">{parseFloat(den) < 1 ? (parseFloat(den) * 100).toFixed(0) + 'c' : den + '€'}</span>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xs font-black text-gray-400">x{qty as number}</span>
-                                    <span className="text-sm font-black text-[#36606F]">{(parseFloat(den) * (qty as number)).toFixed(2)}€</span>
+                                <div className="flex items-center gap-4">
+                                    {isEditing ? (
+                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm">
+                                            <span className="text-[10px] font-black text-gray-300 uppercase">x</span>
+                                            <input
+                                                type="number"
+                                                className="w-12 bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
+                                                value={qty as number || ''}
+                                                onChange={e => onUpdate?.(den, parseInt(e.target.value) || 0)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span className="text-xs font-black text-gray-400">x{qty as number}</span>
+                                    )}
+                                    <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">{(parseFloat(den) * (qty as number || 0)).toFixed(2)}€</span>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center px-2">
-                        <span className="text-xs font-black text-gray-400 uppercase">Total Contado</span>
-                        <span className="text-xl font-black text-[#36606F]">{total.toFixed(2)}€</span>
+                    <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center px-2">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Contado</span>
+                        <span className="text-2xl font-black text-[#36606F]">{total.toFixed(2)}€</span>
                     </div>
                 </div>
+                {isEditing && (
+                    <div className="p-6 bg-gray-50/50 border-t border-gray-100">
+                        <button onClick={onClose} className="w-full h-12 bg-[#36606F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all">
+                            Confirmar Arqueo
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -704,40 +731,74 @@ export default function HistoryPage() {
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-8 text-white relative shrink-0 text-center">
-                            <div className="absolute top-8 left-8 flex gap-2">
-                                <button onClick={() => handleNavigateClosing('prev')} className="p-2 hover:bg-white/10 rounded-xl transition-all disabled:opacity-20" disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}><ChevronLeft size={24} /></button>
-                                <button onClick={() => handleNavigateClosing('next')} className="p-2 hover:bg-white/10 rounded-xl transition-all disabled:opacity-20" disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}><ChevronRight size={24} /></button>
+                            {/* Navigation Arrows - Lateralized */}
+                            <div className="absolute inset-y-0 left-0 flex items-center px-4">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
+                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all disabled:opacity-0 active:scale-90 border border-white/5"
+                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                >
+                                    <ChevronLeft size={28} />
+                                </button>
                             </div>
-                            <button onClick={() => { setIsEditing(false); setSelectedClosing(null); }} className="absolute top-8 right-8 p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-4">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
+                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all disabled:opacity-0 active:scale-90 border border-white/5"
+                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                >
+                                    <ChevronRight size={28} />
+                                </button>
+                            </div>
 
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Detalle de Cierre</span>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter">
+                            {/* Header Actions - Integrated in Header */}
+                            <div className="absolute top-8 right-8 flex gap-2">
+                                {!isEditing && isManager && (
+                                    <>
+                                        <button
+                                            onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                            className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg"
+                                            title="Editar Cierre"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
+                                        <button
+                                            onClick={handleDeleteClosing}
+                                            className="p-2.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg"
+                                            title="Eliminar Cierre"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </>
+                                )}
+                                <button
+                                    onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                    className="p-2.5 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95"
+                                >
+                                    <X size={18} strokeWidth={3} />
+                                </button>
+                            </div>
+
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter max-w-[70%] mx-auto">
                                 {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
                             </h2>
                             <div className="flex items-center justify-center gap-4 mt-6">
                                 <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
                                     <CloudSun size={14} className="text-amber-400" />
-                                    <span className="text-[11px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
+                                    <span className="text-[10px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
                                 </div>
                                 <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
                                     <Receipt size={14} className="text-blue-400" />
-                                    <span className="text-[11px] font-black uppercase tracking-widest">{selectedClosing.tickets_count || 0} Tickets</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{selectedClosing.tickets_count || 0} Tickets</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="p-8 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Facturación</span>
-                                        {!isEditing && isManager && (
-                                            <div className="flex gap-1">
-                                                <button onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }} className="p-2 text-[#5B8FB9] hover:bg-white rounded-xl shadow-sm transition-all"><Pencil size={14} /></button>
-                                                <button onClick={handleDeleteClosing} className="p-2 text-rose-500 hover:bg-white rounded-xl shadow-sm transition-all"><Trash2 size={14} /></button>
-                                            </div>
-                                        )}
-                                    </div>
+                                <div className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 flex flex-col justify-between">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 block">Facturación Total</span>
                                     {isEditing ? (
                                         <input type="number" className="w-full bg-transparent text-2xl font-black text-gray-900 border-b-2 border-[#5B8FB9] outline-none pb-1" value={editData?.tpv_sales || 0} onChange={e => handleFieldUpdate('tpv_sales', parseFloat(e.target.value) || 0)} />
                                     ) : (
@@ -770,11 +831,11 @@ export default function HistoryPage() {
                                                 "flex items-center justify-between p-5 rounded-[1.5rem] transition-all",
                                                 isDiff ? (val === 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600") :
                                                     isCash ? "bg-[#36606F]/5 text-[#36606F] cursor-pointer hover:bg-[#36606F]/10 active:scale-[0.98]" : "bg-gray-50/50"
-                                            )} onClick={() => isCash && !isEditing && setShowCashDetails(true)}>
+                                            )} onClick={() => isCash && setShowCashDetails(true)}>
                                                 <div className="flex items-center gap-3">
                                                     {row.icon && <row.icon size={16} className="opacity-40" />}
                                                     <span className="text-[11px] font-black uppercase tracking-widest">{row.label}</span>
-                                                    {isCash && !isEditing && <ChevronRightIcon size={14} className="opacity-40" />}
+                                                    {isCash && <ChevronRightIcon size={14} className="opacity-40" />}
                                                 </div>
                                                 {isEditing && !['difference', 'cash_counted'].includes(row.key) ? (
                                                     <input type="number" className="bg-transparent text-right font-black outline-none border-b border-black/10 text-lg" value={val || 0} onChange={e => handleFieldUpdate(row.key, parseFloat(e.target.value) || 0)} />
@@ -803,9 +864,11 @@ export default function HistoryPage() {
                 <CashBreakdownModal
                     isOpen={showCashDetails}
                     onClose={() => setShowCashDetails(false)}
-                    breakdown={selectedClosing.breakdown}
+                    breakdown={isEditing ? editData.breakdown : selectedClosing.breakdown}
                     date={selectedClosing.closed_at}
-                    total={selectedClosing.cash_counted}
+                    total={isEditing ? editData.cash_counted : selectedClosing.cash_counted}
+                    isEditing={isEditing}
+                    onUpdate={handleBreakdownUpdate}
                 />
             )}
 
