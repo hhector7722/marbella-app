@@ -665,23 +665,23 @@ export default function HistoryPage() {
                                                                     {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                 </div>
 
-                                                                {/* 2x2 Bento Grid Footer (Compact) */}
-                                                                <div className="grid grid-cols-2 gap-y-1 gap-x-1 mt-auto w-full pt-1 border-t border-zinc-100">
+                                                                {/* 2x2 Bento Grid Footer (Refined Scaling) */}
+                                                                <div className="grid grid-cols-2 gap-y-1.5 gap-x-1.5 mt-auto w-full pt-1.5 border-t border-zinc-100">
                                                                     <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">V</span>
+                                                                        <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
+                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Ventas</span>
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">M</span>
+                                                                        <span className="text-[8px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
+                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Media</span>
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">C</span>
+                                                                        <span className="text-[8px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
+                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Cash</span>
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[9px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
-                                                                        <span className="text-[4px] md:text-[5px] font-black text-zinc-400 uppercase leading-none mt-0.5">T</span>
+                                                                        <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
+                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Tarjeta</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
