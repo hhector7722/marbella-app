@@ -513,50 +513,53 @@ export default function HistoryPage() {
                                                 <div
                                                     key={c.id}
                                                     onClick={() => setSelectedClosing(c)}
-                                                    className="group relative bg-white rounded-2xl md:rounded-[1.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col gap-3"
+                                                    className="group relative bg-white rounded-2xl md:rounded-[2.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
                                                 >
-                                                    <div className="bg-rose-600 rounded-t-2xl md:rounded-t-[1.5rem] p-3 flex justify-between items-center mb-1 shadow-sm">
-                                                        <div className="flex flex-col">
-                                                            <span className="hidden md:block text-[10px] font-black text-white uppercase tracking-wider">
-                                                                {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
-                                                            </span>
-                                                            <span className="md:hidden text-[10px] font-black text-white uppercase tracking-wider">
-                                                                {format(new Date(c.closed_at), 'd MMM', { locale: es })}
-                                                            </span>
-                                                        </div>
-                                                        <div className="bg-white/20 p-1.5 rounded-lg text-white">
+                                                    {/* Header Rojo Compacto */}
+                                                    <div className="bg-rose-600 p-2 md:p-3 flex justify-between items-center shadow-sm">
+                                                        <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider">
+                                                            {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
+                                                        </span>
+                                                        <div className="bg-white/20 p-1 rounded-lg text-white">
                                                             <Calendar size={12} />
                                                         </div>
                                                     </div>
 
-                                                    <div className="px-4 pb-4 flex flex-col gap-1">
-                                                        <div className={cn(
-                                                            "text-[9px] font-black uppercase tracking-tighter mb-1",
-                                                            parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                                        )}>
-                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% vs media
+                                                    <div className="p-4 md:p-5 flex flex-col">
+                                                        {/* Main Metric & Comparison Row */}
+                                                        <div className="flex items-baseline justify-between gap-2 mb-1">
+                                                            <span className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                            </span>
+                                                            <div className={cn(
+                                                                "text-[10px] md:text-[11px] font-black uppercase tracking-tighter whitespace-nowrap",
+                                                                parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                            )}>
+                                                                {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}% <span className="text-[8px] opacity-70">VS MEDIA</span>
+                                                            </div>
                                                         </div>
 
-                                                        <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-1">
+                                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
-                                                        <span className="text-3xl md:text-3xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                            {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                        </span>
 
-                                                        {/* Mini Metrics Footer */}
-                                                        <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-50 mt-2">
+                                                        {/* 4-Column Metrics Footer */}
+                                                        <div className="grid grid-cols-4 gap-1 pt-3 border-t border-zinc-100 mt-auto">
                                                             <div className="flex flex-col">
-                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Factur.</span>
-                                                                <span className="text-[9px] font-black text-zinc-700 tabular-nums">{Math.round(c.tpv_sales)}€</span>
+                                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-900 tabular-nums">{Math.round(c.tpv_sales)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Factur.</span>
                                                             </div>
                                                             <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Media</span>
-                                                                <span className="text-[9px] font-black text-zinc-700 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-900 tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Media</span>
                                                             </div>
                                                             <div className="flex flex-col border-l border-zinc-50 pl-1">
-                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">Efec.</span>
-                                                                <span className="text-[9px] font-black text-emerald-500 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+                                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-600 tabular-nums">{Math.round(c.sales_card || 0)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Tarjeta</span>
+                                                            </div>
+                                                            <div className="flex flex-col border-l border-zinc-50 pl-1">
+                                                                <span className="text-[9px] md:text-[10px] font-black text-emerald-600 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Efec.</span>
                                                             </div>
                                                         </div>
                                                     </div>
