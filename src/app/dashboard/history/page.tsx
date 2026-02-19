@@ -454,24 +454,24 @@ export default function HistoryPage() {
                     {/* --- WHITE BODY --- */}
                     <div className="bg-white">
                         {/* COMPACT SUMMARY (Integrated) */}
-                        <div className="py-2 md:py-4 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="pt-4 md:pt-6 pb-2 md:pb-3 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-lg md:text-2xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">VENTAS</span>
+                                <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
+                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
-                                <span className="text-lg md:text-2xl font-black text-[#5B8FB9] tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">V. NETA</span>
+                                <span className="text-lg md:text-2xl font-black text-emerald-600 tabular-nums leading-none">{formatValue(summary.totalNet, 'net_sales')}</span>
+                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTA NETA</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                                <span className="text-lg md:text-2xl font-black text-[#5B8FB9] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">T. MEDIO</span>
+                                <span className="text-lg md:text-2xl font-black text-[#36606F] tabular-nums leading-none">{summary.avgTicket.toFixed(1)}€</span>
+                                <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">TICKET MEDIO</span>
                             </div>
                         </div>
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
-                        <div className="p-3 md:p-6">
-                            <div className="bg-[#FAFAFA] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
+                        <div className="px-3 md:px-6 pb-3 md:pb-6 pt-3 md:pt-4">
+                            <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
                                 <div className="bg-[#36606F] p-2 md:p-3 flex justify-between items-center overflow-x-auto no-scrollbar">
                                     <div className="flex gap-1 md:gap-2 w-full justify-between">
@@ -516,7 +516,7 @@ export default function HistoryPage() {
                                                     className="group relative bg-white rounded-2xl md:rounded-[2.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
                                                 >
                                                     {/* Header Rojo Compacto (Refined) */}
-                                                    <div className="bg-rose-500 p-2.5 md:p-3 flex justify-center items-center shadow-sm">
+                                                    <div className="bg-[#D64D5D] p-2.5 md:p-3 flex justify-center items-center shadow-sm">
                                                         <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider">
                                                             {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
                                                         </span>
