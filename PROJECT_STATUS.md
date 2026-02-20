@@ -47,6 +47,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Robustez en Cálculo de Extras**: Mejora de la acción de servidor para incluir buffers de cálculo, garantizando la consistencia de los balances arrastrados en cualquier rango de fechas.
 - [x] **Limpieza de Etiquetas en Movimientos**: Eliminación del sufijo " (Editado)" en las notas de movimientos de tesorería al modificar cierres de caja.
 - [x] **Optimización de Modal de Cambio (Mobile)**: Rediseño radical del modal utilizando un layout basado en filas con controles laterales para facilitar el uso en smartphones. Se han optimizado los targets táctiles (44px+) y se ha integrado un resumen de balance en la cabecera siguiendo el estilo Marbella Premium.
+- [x] **Autocompletado Proactivo en Cierres**: Implementación de autocompletado instantáneo de ventas y tickets en el modal de cierre utilizando datos del dashboard en tiempo real. Se ha añadido un botón de sincronización manual y mejora de UX en campos numéricos (0-display).
 - [x] **Corrección de Métrica de Ventas en Historial**: Se ha corregido el mapeo de la métrica "Ventas" de `gross_sales` a `tpv_sales` en `/history`, solucionando el problema de visualización de "0€".
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
@@ -55,6 +56,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Modal Detalle Cierres**: Solución de solapamiento de botones con el nombre del día y mejor integración de flechas de navegación en cabecera superior.
 - [x] **Rediseño Vista Calendario Historial (Refinado)**: Nueva visualización en estilo calendario (7 columnas) con tarjetas optimizadas (cabecera roja, layout simétrico de métricas y fuentes legibles en 7-col).
 - [x] **Refinamiento UI Header Historial**: Ajuste de padding y dimensiones en el selector de métricas para evitar que el botón seleccionado toque los márgenes, mejorando la estética premium.
+- [x] **Compactación Radical Modal de Cambio**: Reducción drástica del ancho del modal (a 400px) y de los controles de entrada/salida para una experiencia más ágil.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
