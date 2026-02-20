@@ -262,13 +262,20 @@ export const CashDenominationForm = ({
                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
                                     {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                 </span>
-                                <div className="flex items-center">
+                                <div className="flex items-center border-2 border-zinc-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                                    style={{
+                                        borderColor: (
+                                            (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ||
+                                            (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0))
+                                        ) ? '#f87171' : undefined
+                                    }}
+                                >
                                     <button
                                         type="button"
                                         onClick={() => handleAdjust(denom, -1)}
-                                        className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-rose-500 active:scale-95 transition-all shrink-0"
+                                        className="min-w-[28px] h-8 flex items-center justify-center text-zinc-400 hover:text-rose-500 hover:bg-rose-50 active:scale-95 transition-all border-r border-zinc-200 shrink-0"
                                     >
-                                        <Minus size={14} strokeWidth={3} />
+                                        <Minus size={12} strokeWidth={3} />
                                     </button>
                                     <input
                                         type="number"
@@ -277,18 +284,18 @@ export const CashDenominationForm = ({
                                         onChange={(e) => handleCountChange(denom, e.target.value)}
                                         placeholder="0"
                                         className={cn(
-                                            "w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
-                                            (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
-                                                (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0)) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
-                                                    "border-transparent focus:border-[#5B8FB9]/20 text-[#5B8FB9] focus:ring-[#5B8FB9]/5"
+                                            "flex-1 min-w-0 bg-transparent p-1 text-center font-black outline-none text-xs transition-all",
+                                            (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ? "text-rose-600" :
+                                                (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0)) ? "text-rose-600" :
+                                                    "text-[#5B8FB9]"
                                         )}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => handleAdjust(denom, 1)}
-                                        className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-emerald-500 active:scale-95 transition-all shrink-0"
+                                        className="min-w-[28px] h-8 flex items-center justify-center text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 active:scale-95 transition-all border-l border-zinc-200 shrink-0"
                                     >
-                                        <Plus size={14} strokeWidth={3} />
+                                        <Plus size={12} strokeWidth={3} />
                                     </button>
                                 </div>
                                 {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (

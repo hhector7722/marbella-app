@@ -483,23 +483,16 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     const isOk = Math.abs(diff) < 0.01;
 
                                     return (
-                                        <div key={box.id} className="flex flex-row gap-2">
+                                        <div key={box.id} className="flex flex-row gap-2 items-center">
                                             {/* Caja Display */}
-                                            <div
-                                                className={cn(
-                                                    "grow-[1.5] basis-0 px-4 py-3 rounded-2xl flex flex-row items-center justify-between transition-all border-2",
-                                                    isOk ? "border-emerald-200 bg-emerald-50/50" : "border-orange-200 bg-orange-50/40"
-                                                )}
-                                            >
+                                            <div className="grow-[1.5] basis-0 px-4 py-3 rounded-2xl flex flex-row items-center justify-between border border-zinc-100 bg-gray-50/50">
                                                 <div className="flex flex-col items-start leading-none gap-0.5">
                                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Cambio {idx + 1}</span>
                                                     <span className="text-2xl font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
-                                                </div>
-                                                <div className="flex items-center justify-center">
                                                     {isOk ? (
-                                                        <Check className="w-4 h-4 text-emerald-500" strokeWidth={4} />
+                                                        <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5" strokeWidth={4} />
                                                     ) : (
-                                                        <span className="text-sm font-black text-orange-500">
+                                                        <span className={cn("text-sm font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
                                                             {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
                                                         </span>
                                                     )}
@@ -510,7 +503,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div className="flex-[1] basis-0 grid grid-cols-2 gap-2">
                                                 <button
                                                     onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                    className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group"
+                                                    className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                                 >
                                                     <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                         <ArrowRightLeft size={14} strokeWidth={4} className="text-white" />
@@ -519,7 +512,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </button>
                                                 <button
                                                     onClick={() => openTreasuryModal(box, 'audit')}
-                                                    className="bg-transparent hover:bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group"
+                                                    className="bg-transparent hover:bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                                 >
                                                     <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                         <RefreshCw size={14} strokeWidth={4} className="text-white" />
@@ -676,36 +669,38 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     const diff = box.current_balance - 300;
                                     const isOk = Math.abs(diff) < 0.01;
                                     return (
-                                        <div key={box.id} className="flex flex-col gap-2">
-                                            <div className={cn(
-                                                "w-full px-3 py-2 rounded-xl flex items-center justify-between border-2",
-                                                isOk ? "border-emerald-200 bg-emerald-50/50" : "border-orange-200 bg-orange-50/40"
-                                            )}>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[7px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
-                                                    <span className="text-sm font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
-                                                </div>
-                                                {!isOk && (
-                                                    <span className="text-[9px] font-black text-orange-500">
+                                        <div key={box.id} className="flex flex-row gap-2 items-center">
+                                            {/* Caja Display */}
+                                            <div className="flex-[1.5] basis-0 px-2.5 py-2 rounded-xl border border-zinc-100 bg-gray-50/50 flex flex-col">
+                                                <span className="text-[7px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
+                                                <span className="text-sm font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
+                                                {isOk ? (
+                                                    <Check size={10} strokeWidth={4} className="text-emerald-500 mt-0.5" />
+                                                ) : (
+                                                    <span className={cn("text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
                                                         {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
                                                     </span>
                                                 )}
-                                                {isOk && <Check size={12} strokeWidth={4} className="text-emerald-500" />}
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2">
+                                            {/* Botones */}
+                                            <div className="flex-[1] basis-0 grid grid-cols-2 gap-1.5">
                                                 <button
                                                     onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                    className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-50 active:scale-95 transition-all text-[#5B8FB9]"
+                                                    className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                                 >
-                                                    <ArrowRightLeft size={12} strokeWidth={3} />
-                                                    <span className="text-[8px] font-black uppercase">Cambiar</span>
+                                                    <div className="w-7 h-7 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                        <ArrowRightLeft size={12} strokeWidth={3} className="text-white" />
+                                                    </div>
+                                                    <span className="text-[7px] font-black text-zinc-900 uppercase tracking-widest leading-none">Cambiar</span>
                                                 </button>
                                                 <button
                                                     onClick={() => openTreasuryModal(box, 'audit')}
-                                                    className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-50 active:scale-95 transition-all text-[#5B8FB9]"
+                                                    className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                                 >
-                                                    <RefreshCw size={11} strokeWidth={3} />
-                                                    <span className="text-[8px] font-black uppercase">Arqueo</span>
+                                                    <div className="w-7 h-7 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                        <RefreshCw size={11} strokeWidth={3} className="text-white" />
+                                                    </div>
+                                                    <span className="text-[7px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
                                                 </button>
                                             </div>
                                         </div>
