@@ -339,9 +339,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
+    const isMobileExpanded = isMovementsExpanded || overtimeData.some(w => w.expanded);
 
     return (
-        <div className="pb-28 pt-1 animate-in fade-in duration-500">
+        <div className={cn(
+            "pt-1 animate-in fade-in duration-500 w-full",
+            "md:pb-28 md:overflow-visible md:max-h-none",
+            isMobileExpanded ? "pb-28 overflow-y-auto" : "pb-12 md:pb-28 overflow-hidden max-h-[calc(100svh-120px)]"
+        )}>
             <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
@@ -396,7 +401,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
                     {/* Desktop Col 2: Cajas + Iconos */}
                     <div className="space-y-6">
-                        <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
+                        <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-4" : "p-4 pb-2")}>
                             {boxes.filter(b => b.type === 'operational').map(box => (
                                 <div key={box.id} className="flex flex-col h-full">
                                     <div className="flex flex-row gap-2 mb-4">
@@ -454,7 +459,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         </div>
                                     </div>
                                     <div className="flex flex-col flex-1 min-h-0">
-                                        <div className="flex justify-between items-center px-2 mb-3">
+                                        <div className={cn("flex justify-between items-center px-2", isMovementsExpanded ? "mb-3" : "mb-0")}>
                                             <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
                                             <Link href="/dashboard/movements" className="text-[10px] font-black text-[#5B8FB9] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2.5 h-2.5" /></Link>
                                         </div>
@@ -555,7 +560,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 2. CAJA INICIAL + MOVIMIENTOS */}
-                    <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
+                    <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-4" : "p-4 pb-2")}>
                         {boxes.filter(b => b.type === 'operational').map(box => (
                             <div key={box.id} className="flex flex-col h-full">
                                 <div className="flex flex-row gap-2 mb-3">
@@ -613,7 +618,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col flex-1 min-h-0">
-                                    <div className="flex justify-between items-center px-1 mb-2">
+                                    <div className={cn("flex justify-between items-center px-1", isMovementsExpanded ? "mb-2" : "mb-0")}>
                                         <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
                                         <Link href="/dashboard/movements" className="text-[8px] font-black text-[#5B8FB9] bg-gray-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2" /></Link>
                                     </div>
