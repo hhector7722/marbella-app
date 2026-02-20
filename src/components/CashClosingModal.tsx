@@ -107,37 +107,40 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     }, [selectedDateTime]);
 
     async function fetchTodayVentas() {
-        const dateObj = new Date(selectedDateTime);
-        const dateStr = format(dateObj, 'yyyy-MM-dd');
+        setLoading(true);
+        try {
+            const dateObj = new Date(selectedDateTime);
+            const dateStr = format(dateObj, 'yyyy-MM-dd');
 
-        // ARCHITECT_ULTRAFLUIDITY: Aggregated fetch instead of downloading ALL tickets
-        // Using get_hourly_sales RPC for totals to avoid data bloat
-        const { data: aggregated, error } = await supabase
-            .rpc('get_hourly_sales', {
-                p_start_date: dateStr,
-                p_end_date: dateStr
+            // Robust fetch: Aggregated sum directly from the table to avoid RPC dependency issues
+            const { data: tickets, error: salesError } = await supabase
+                .from('tickets_marbella')
+                .select('total_documento')
+                .eq('fecha', dateStr);
+
+            if (salesError) throw salesError;
+
+            let total = 0;
+            let count = 0;
+            tickets?.forEach(t => {
+                const val = Number(t.total_documento) || 0;
+                if (val !== 0) {
+                    total += val;
+                    count += (val > 0 ? 1 : -1);
+                }
             });
 
-        if (error) {
-            console.error("Error fetching aggregated sales:", error);
+            setTpvData(prev => ({
+                ...prev,
+                totalSales: Math.max(0, Math.round(total * 100) / 100),
+                ticketsCount: Math.max(0, count)
+            }));
+        } catch (error) {
+            console.error("Error fetching sales data:", error);
+            toast.error("Error al sincronizar datos de ventas");
+        } finally {
             setLoading(false);
-            return;
         }
-
-        const total = aggregated?.reduce((sum: number, row: any) => sum + (Number(row.total) || 0), 0) || 0;
-
-        // Total count of documents for today
-        const { count } = await supabase
-            .from('tickets_marbella')
-            .select('*', { count: 'exact', head: true })
-            .eq('fecha', dateStr)
-            .neq('total_documento', 0);
-
-        setTpvData(prev => ({
-            ...prev,
-            totalSales: Math.round(total * 100) / 100,
-            ticketsCount: count || 0
-        }));
     }
 
     // --- CALCULATIONS ---

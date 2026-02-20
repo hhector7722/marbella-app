@@ -93,6 +93,7 @@ export default function StaffDashboardView() {
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [showSwapModal, setShowSwapModal] = useState(false);
+    const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
 
     useEffect(() => { initialize(); }, []);
 
@@ -279,6 +280,21 @@ export default function StaffDashboardView() {
             } else {
                 setNextShifts([]);
             }
+
+            // --- FETCH LIVE TICKETS FOR CLOSING ---
+            const { data: ticketsToday } = await supabase.from('tickets_marbella')
+                .select('total_documento')
+                .eq('fecha', todayISO);
+
+            const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
+            const countVentas = ticketsToday?.reduce((count, t) => {
+                const val = Number(t.total_documento) || 0;
+                if (val > 0) return count + 1;
+                if (val < 0) return count - 1;
+                return count;
+            }, 0) || 0;
+            setLiveTickets({ total: totalVentas, count: Math.max(0, countVentas) });
+
         } catch (error) { console.error(error); }
         finally { setLoading(false); }
     }
@@ -558,7 +574,7 @@ export default function StaffDashboardView() {
 
                         {/* Iconos Flotantes - Ahora fuera de Horarios */}
                         <div className="grid grid-cols-2 xl:grid-cols-2 gap-1.5 md:gap-3 w-1/2 md:w-full xl:w-44 shrink-0 px-0 md:px-2 lg:px-0">
-                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={async () => {
+                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
                                 if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
                                 setShowSwapModal(true);
                             }} />
@@ -708,6 +724,8 @@ export default function StaffDashboardView() {
                 isOpen={isClosingModalOpen}
                 onClose={() => setIsClosingModalOpen(false)}
                 onSuccess={() => initialize()}
+                initialTotalSales={liveTickets.total}
+                initialTicketsCount={liveTickets.count}
             />
         </div>
     );

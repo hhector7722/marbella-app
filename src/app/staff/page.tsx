@@ -561,7 +561,7 @@ export default function StaffDashboard() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 flex-1">
-                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Cambiar" onClick={() => toast.info("Abriendo guía...")} />
+                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={() => toast.info("Abriendo guía...")} />
                             <IOSIconBoxed img="/icons/recipes.png" color="bg-zinc-800" label="Receptes" onClick={() => router.push('/recipes')} />
                         </div>
 

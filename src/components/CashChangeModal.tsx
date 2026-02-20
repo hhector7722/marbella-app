@@ -110,10 +110,10 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                         </div>
 
                         <div className="flex items-center justify-between gap-2 px-1">
-                            {/* ENTRA KPI */}
+                            {/* SALE KPI */}
                             <div className="flex-1 flex flex-col items-center">
-                                <span className="bg-emerald-500 text-white text-[9px] font-black px-4 py-1.5 rounded-lg uppercase tracking-wider mb-1 shadow-lg shadow-emerald-900/20">Entra</span>
-                                <span className="text-lg font-black text-emerald-300 tabular-nums">{totalIn.toFixed(2)}€</span>
+                                <span className="bg-rose-500 text-white text-[9px] font-black px-5 py-1.5 rounded-lg uppercase tracking-wider mb-1 shadow-lg shadow-rose-900/20">Sale</span>
+                                <span className="text-lg font-black text-rose-300 tabular-nums">{totalOut.toFixed(2)}€</span>
                             </div>
 
                             {/* DIF KPI */}
@@ -127,10 +127,10 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                                 </div>
                             </div>
 
-                            {/* SALE KPI */}
+                            {/* ENTRA KPI */}
                             <div className="flex-1 flex flex-col items-center">
-                                <span className="bg-rose-500 text-white text-[9px] font-black px-5 py-1.5 rounded-lg uppercase tracking-wider mb-1 shadow-lg shadow-rose-900/20">Sale</span>
-                                <span className="text-lg font-black text-rose-300 tabular-nums">{totalOut.toFixed(2)}€</span>
+                                <span className="bg-emerald-500 text-white text-[9px] font-black px-4 py-1.5 rounded-lg uppercase tracking-wider mb-1 shadow-lg shadow-emerald-900/20">Entra</span>
+                                <span className="text-lg font-black text-emerald-300 tabular-nums">{totalIn.toFixed(2)}€</span>
                             </div>
                         </div>
                     </div>
@@ -141,9 +141,14 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                     <div className="flex flex-col">
                         {ALL_DENOMS.map((denom, idx) => (
                             <div key={denom} className="grid grid-cols-[1fr_80px_1fr] items-stretch border-b border-zinc-50 relative min-h-[72px]">
-                                {/* LEFT: ENTRA (INTENSIFIED GREEN) */}
-                                <div className="flex justify-center items-center py-4 bg-emerald-500/[0.06] border-r border-zinc-100/50">
-                                    <DenomControl denom={denom} count={inCounts[denom] || 0} side="in" />
+                                {/* LEFT: SALE (INTENSIFIED RED) */}
+                                <div className="flex justify-center items-center py-4 bg-rose-500/[0.06] border-r border-zinc-100/50">
+                                    <div className="relative">
+                                        <DenomControl denom={denom} count={outCounts[denom] || 0} side="out" />
+                                        {outCounts[denom] > (availableStock[denom] || 0) && (
+                                            <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 rounded-full border-2 border-white animate-pulse shadow-sm" />
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* CENTER: DENOM INFO */}
@@ -157,14 +162,9 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                                     )}
                                 </div>
 
-                                {/* RIGHT: SALE (INTENSIFIED RED) */}
-                                <div className="flex justify-center items-center py-4 bg-rose-500/[0.06] border-l border-zinc-100/50">
-                                    <div className="relative">
-                                        <DenomControl denom={denom} count={outCounts[denom] || 0} side="out" />
-                                        {outCounts[denom] > (availableStock[denom] || 0) && (
-                                            <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 rounded-full border-2 border-white animate-pulse shadow-sm" />
-                                        )}
-                                    </div>
+                                {/* RIGHT: ENTRA (INTENSIFIED GREEN) */}
+                                <div className="flex justify-center items-center py-4 bg-emerald-500/[0.06] border-l border-zinc-100/50">
+                                    <DenomControl denom={denom} count={inCounts[denom] || 0} side="in" />
                                 </div>
                             </div>
                         ))}

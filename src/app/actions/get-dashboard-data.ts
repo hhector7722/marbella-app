@@ -123,13 +123,21 @@ export async function getDashboardData() {
         boxes = sorted;
         const opBox = sorted.find(b => b.type === 'operational');
         if (opBox) {
-            const { data: moves } = await supabase.from('treasury_log')
-                .select('*')
-                .eq('box_id', opBox.id)
-                .neq('type', 'ADJUSTMENT')
-                .order('created_at', { ascending: false })
-                .limit(3);
+            const [{ data: moves }, { data: theoreticalBalance }] = await Promise.all([
+                supabase.from('treasury_log')
+                    .select('*')
+                    .eq('box_id', opBox.id)
+                    .neq('type', 'ADJUSTMENT')
+                    .order('created_at', { ascending: false })
+                    .limit(3),
+                supabase.rpc('get_theoretical_balance', { target_date: new Date().toISOString() })
+            ]);
+
             boxMovements = moves || [];
+
+            // Add difference to the operational box
+            const diff = (opBox.current_balance || 0) - (theoreticalBalance || 0);
+            opBox.difference = diff;
         }
     }
 

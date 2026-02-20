@@ -23,6 +23,8 @@ import {
     LayoutGrid,
     List
 } from 'lucide-react';
+import Image from 'next/image';
+import { CURRENCY_IMAGES } from '@/lib/constants';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
@@ -124,15 +126,30 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     <div className="space-y-2">
                         {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => (
-                            <div key={den} className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100/50">
-                                <span className="text-xs font-black text-gray-400">{parseFloat(den) < 1 ? (parseFloat(den) * 100).toFixed(0) + 'c' : den + '€'}</span>
+                            <div key={den} className="flex items-center justify-between p-3 bg-gray-50 rounded-[1.5rem] border border-gray-100/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-6 relative shrink-0 flex items-center justify-center">
+                                        {CURRENCY_IMAGES[parseFloat(den)] && (
+                                            <Image
+                                                src={CURRENCY_IMAGES[parseFloat(den)]}
+                                                alt={`${den}€`}
+                                                width={40}
+                                                height={24}
+                                                className="h-full w-auto object-contain drop-shadow-sm"
+                                            />
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                                        {parseFloat(den) < 1 ? (parseFloat(den) * 100).toFixed(0) + 'c' : den + '€'}
+                                    </span>
+                                </div>
                                 <div className="flex items-center gap-4">
                                     {isEditing ? (
-                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm">
+                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm transition-all focus-within:border-[#5B8FB9]/50">
                                             <span className="text-[10px] font-black text-gray-300 uppercase">x</span>
                                             <input
                                                 type="number"
-                                                className="w-12 bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
+                                                className="w-10 bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
                                                 value={qty as number || ''}
                                                 onChange={e => onUpdate?.(den, parseInt(e.target.value) || 0)}
                                             />

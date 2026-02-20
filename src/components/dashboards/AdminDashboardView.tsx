@@ -8,7 +8,7 @@ import {
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, X, FileText,
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
-    PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon
+    PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
@@ -408,7 +408,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
                                                 <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                             </div>
-                                            <ArrowRight className="w-5 h-5 opacity-30" />
+                                            <div className="flex items-center justify-center">
+                                                {Math.abs(box.difference || 0) < 0.01 ? (
+                                                    <Check className="w-5 h-5 text-white" strokeWidth={4} />
+                                                ) : (
+                                                    <span className={cn(
+                                                        "text-lg font-black",
+                                                        (box.difference || 0) < 0 ? "text-rose-400" : "text-white"
+                                                    )}>
+                                                        {(box.difference || 0) > 0 ? '+' : ''}
+                                                        {(box.difference || 0).toFixed(2)}€
+                                                    </span>
+                                                )}
+                                            </div>
                                         </button>
 
                                         <div className="flex-[2] basis-0 grid grid-cols-3 gap-2">
@@ -513,7 +525,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
                                             <span className="text-lg font-black">{box.current_balance.toFixed(2)}€</span>
                                         </div>
-                                        <ArrowRight className="w-4 h-4 opacity-30" />
+                                        <div className="flex items-center justify-center">
+                                            {Math.abs(box.difference || 0) < 0.01 ? (
+                                                <Check className="w-4 h-4 text-white" strokeWidth={4} />
+                                            ) : (
+                                                <span className={cn(
+                                                    "text-sm font-black",
+                                                    (box.difference || 0) < 0 ? "text-rose-400" : "text-white"
+                                                )}>
+                                                    {(box.difference || 0) > 0 ? '+' : ''}
+                                                    {(box.difference || 0).toFixed(2)}€
+                                                </span>
+                                            )}
+                                        </div>
                                     </button>
 
                                     <div className="flex-[2] basis-0 grid grid-cols-3 gap-1.5">
@@ -633,7 +657,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <div className="p-4 grid grid-cols-2 gap-4">
                                     {selectedBox?.type === 'change' ? (
                                         <>
-                                            <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-16 h-16"><Image src="/icons/reverse.png" alt="Cambiar" width={64} height={64} className="w-full h-full object-contain" /></div><span className="font-black text-xl text-zinc-900">Cambiar</span></button>
+                                            <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-16 h-16"><Image src="/icons/reverse.png" alt="Caja" width={64} height={64} className="w-full h-full object-contain" /></div><span className="font-black text-xl text-zinc-900">Caja</span></button>
                                             <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('audit'); }} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/change.png" alt="Arqueo" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Arqueo</span></button>
                                             <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); setBoxInventory(data || []); setCashModalMode('inventory'); }} className="bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/wallet.png" alt="Ver Desglose" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Ver Desglose</span></button>
                                         </>
