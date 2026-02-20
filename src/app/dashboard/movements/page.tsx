@@ -286,44 +286,44 @@ export default function MovementsPage() {
 
                     {/* CABECERA OSCURA INTEGRADA (TÍTULO + ACCIONES + FILTROS) */}
                     <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-between gap-2 md:gap-4">
+                            <div className="flex items-center gap-3 md:gap-4 flex-1">
                                 <button
                                     onClick={() => router.back()}
-                                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95 shrink-0"
+                                    className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95 shrink-0"
                                 >
-                                    <ArrowLeft size={20} strokeWidth={3} />
+                                    <ArrowLeft className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
                                 </button>
-                                <h1 className="text-xl md:text-4xl font-black text-white uppercase tracking-tight italic">Caja Inicial</h1>
+                                <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Caja Inicial</h1>
                             </div>
 
-                            <div className="flex items-center justify-between gap-4 w-full md:w-auto">
+                            <div className="flex items-center justify-end gap-1 md:gap-4 shrink-0">
                                 <button
                                     onClick={() => setCashModalMode('in')}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
+                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Plus size={16} strokeWidth={4} className="text-white" />
+                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Plus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/90">ENTRADA</span>
+                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">ENTRA</span>
                                 </button>
                                 <button
                                     onClick={openOut}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
+                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Minus size={16} strokeWidth={4} className="text-white" />
+                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <Minus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/90">SALIDA</span>
+                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">SALE</span>
                                 </button>
                                 <button
                                     onClick={openAudit}
-                                    className="bg-transparent hover:bg-white/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group flex-1 md:flex-none"
+                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
                                 >
-                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <RefreshCw size={14} strokeWidth={4} className="text-white" />
+                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                                        <RefreshCw className="w-3 h-3 md:w-4 md:h-4 text-white" strokeWidth={4} />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/90">ARQUEO</span>
+                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">ARQUEO</span>
                                 </button>
                             </div>
                         </div>
@@ -374,33 +374,33 @@ export default function MovementsPage() {
 
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
-                        {/* RESUMEN: Grid 2x2 en móvil, 4x1 en escritorio */}
-                        <div className="py-4 px-4 grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-y-0 border-b border-zinc-50">
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-xl md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">INGRESOS</span>
+                        {/* RESUMEN: Grid 4x1 en móvil y escritorio */}
+                        <div className="py-4 px-2 grid grid-cols-4 border-b border-zinc-50">
+                            <div className="flex flex-col items-center justify-center text-center px-1">
+                                <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
-                                <span className="text-xl md:text-2xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">GASTOS</span>
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
+                                <span className="text-[13px] md:text-2xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">GASTOS</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center md:border-l border-zinc-100 px-2">
-                                <span className="text-xl md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {summary.balance.toFixed(2)}€
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
+                                <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
+                                    {summary.balance.toFixed(0)}€
                                 </span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">SALDO</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO</span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-2">
+                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className={cn(
-                                    "text-xl md:text-2xl font-black line-clamp-1",
+                                    "text-[13px] md:text-2xl font-black line-clamp-1",
                                     summary.difference > 0 ? "text-blue-500" : summary.difference < 0 ? "text-orange-500" : "text-zinc-400"
                                 )}>
-                                    {Math.abs(summary.difference) < 0.01 ? " " : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(2)}€`}
+                                    {Math.abs(summary.difference) < 0.01 ? "0€" : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(0)}€`}
                                 </span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">DIFERENCIA</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFERENCIA</span>
                             </div>
                         </div>
 
@@ -411,10 +411,10 @@ export default function MovementsPage() {
                                     <table className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                                <th className="px-1.5 md:px-6 py-4 w-[70px] md:w-auto">FECHA</th>
-                                                <th className="px-1.5 md:px-6 py-4">CONCEPTO</th>
-                                                <th className="px-1.5 md:px-6 py-4 text-center w-[80px] md:w-auto">IMPORTE</th>
-                                                <th className="px-2 md:px-8 py-4 text-right w-[80px] md:w-auto">SALDO</th>
+                                                <th className="px-3 md:px-6 py-4 w-[22%]">FECHA</th>
+                                                <th className="px-2 md:px-6 py-4 w-[38%]">CONCEPTO</th>
+                                                <th className="px-2 md:px-6 py-4 text-center w-[20%]">IMPORTE</th>
+                                                <th className="px-3 md:px-8 py-4 text-right w-[20%]">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
@@ -444,47 +444,47 @@ export default function MovementsPage() {
                                                             className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100"
                                                             onClick={() => setSelectedMovement(mov)}
                                                         >
-                                                            <td className="px-1.5 md:px-6 py-3">
+                                                            <td className="px-3 md:px-6 py-3">
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[11px] md:text-[13px] font-black text-zinc-900 italic">
+                                                                    <span className="text-[10px] md:text-[13px] font-black text-zinc-900 italic">
                                                                         <span className="md:inline hidden">{format(date, 'eeee d MMM', { locale: es })}</span>
                                                                         <span className="md:hidden inline">{format(date, 'd MMM', { locale: es })}</span>
                                                                     </span>
-                                                                    <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 font-mono">
+                                                                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 font-mono">
                                                                         {format(date, 'HH:mm')}
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-1.5 md:px-6 py-3">
+                                                            <td className="px-2 md:px-6 py-3">
                                                                 <div className="flex items-center gap-1.5 md:gap-3">
                                                                     <div className={cn(
-                                                                        "w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                                                        "w-5 h-5 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
                                                                         mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
                                                                             mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
                                                                                 "bg-orange-50 text-orange-500"
                                                                     )}>
-                                                                        {mov.type === 'income' ? <Plus size={14} className="md:size-[16px]" strokeWidth={3} /> :
-                                                                            mov.type === 'expense' ? <ArrowUp size={14} className="md:size-[16px]" strokeWidth={3} /> :
-                                                                                <RefreshCw size={12} className="md:size-[14px]" strokeWidth={3} />}
+                                                                        {mov.type === 'income' ? <Plus size={10} className="md:size-[16px]" strokeWidth={3} /> :
+                                                                            mov.type === 'expense' ? <ArrowUp size={10} className="md:size-[16px]" strokeWidth={3} /> :
+                                                                                <RefreshCw size={10} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[10px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[100px] md:max-w-[200px]">
+                                                                    <span className="text-[9px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[60px] md:max-w-[200px]">
                                                                         {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-1.5 md:px-6 py-3 text-center">
+                                                            <td className="px-2 md:px-6 py-3 text-center">
                                                                 <span className={cn(
-                                                                    "text-[12px] md:text-[15px] font-black tabular-nums",
+                                                                    "text-[10px] md:text-[15px] font-black tabular-nums",
                                                                     mov.type === 'income' ? "text-emerald-500" :
                                                                         mov.type === 'expense' ? "text-rose-500" :
                                                                             mov.amount > 0 ? "text-blue-500" : "text-orange-500"
                                                                 )}>
-                                                                    {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
+                                                                    {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(0)}€
                                                                 </span>
                                                             </td>
-                                                            <td className="px-2 md:px-8 py-3 text-right">
-                                                                <span className="text-[12px] md:text-[15px] font-black text-zinc-900 tabular-nums">
-                                                                    {mov.running_balance.toFixed(2)}€
+                                                            <td className="px-3 md:px-8 py-3 text-right">
+                                                                <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">
+                                                                    {mov.running_balance.toFixed(0)}€
                                                                 </span>
                                                             </td>
                                                         </tr>

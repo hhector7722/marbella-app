@@ -63,6 +63,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento de Etiquetas**: Cambio de la etiqueta "Cambiar" por "Caja" en el dashboard de staff y administrador para mayor claridad operativa.
 - [x] **Mejora UX Modal de Caja**: Inversión de columnas en el modal de cambio (ahora "Sale" a la izquierda y "Entra" a la derecha) para una interacción más natural.
 - [x] **Rediseño Botón Cierre**: Nuevo diseño con icono de "+" blanco en círculo verde redondo y lógica de visibilidad para Managers y Supervisores en el dashboard de staff.
+- [x] **Métrica de Diferencia en Dashboard**: Sustitución de la flecha en la tarjeta de Caja Inicial por el valor de la diferencia, con lógica de colores (rojo < 0, blanco > 0) y tick para descuadre cero.
+- [x] **Optimización Mobile Movimientos**: Ajuste radical de la vista smartphone en `/dashboard/movements`. Acciones de cabecera alineadas con el título, resumen de KPIs en fila única de 4 columnas y refinamiento de la distribución de anchos en la tabla de movimientos para evitar solapamientos.
+- [x] **Refinamiento Estético de Iconos**: Sustitución de props de tamaño por clases Tailwind y unificación de estilos en iconos de acción de tesorería.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
