@@ -84,7 +84,7 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
             <button
                 onClick={() => handleAdjust(denom, side, -1)}
                 className={cn(
-                    "w-7 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors border-r border-zinc-100 shrink-0",
+                    "w-7 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors shrink-0",
                     side === 'in' ? "hover:bg-emerald-50 hover:text-emerald-500" : "hover:bg-rose-50 hover:text-rose-500"
                 )}
             >
@@ -97,14 +97,14 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                 onChange={(e) => handleCountChange(denom, side, e.target.value)}
                 placeholder="0"
                 className={cn(
-                    "flex-1 w-0 h-full bg-transparent text-center font-black outline-none p-0 text-xs transition-colors focus:bg-blue-50/20",
+                    "flex-1 w-0 h-full bg-transparent text-center font-black outline-none p-0 text-[11px] transition-colors focus:bg-blue-50/20",
                     count > 0 ? (side === 'in' ? "text-emerald-700" : "text-rose-700") : "text-zinc-400"
                 )}
             />
             <button
                 onClick={() => handleAdjust(denom, side, 1)}
                 className={cn(
-                    "w-7 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors border-l border-zinc-100 shrink-0",
+                    "w-7 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors shrink-0",
                     side === 'in' ? "hover:bg-emerald-50 hover:text-emerald-500" : "hover:bg-rose-50 hover:text-rose-500"
                 )}
             >

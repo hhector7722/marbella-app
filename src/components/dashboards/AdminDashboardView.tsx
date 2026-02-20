@@ -503,18 +503,18 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div className="flex-[1] basis-0 grid grid-cols-2 gap-2">
                                                 <button
                                                     onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                    className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
+                                                    className="bg-transparent hover:bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                                 >
-                                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                    <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                         <ArrowRightLeft size={14} strokeWidth={4} className="text-white" />
                                                     </div>
                                                     <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Cambiar</span>
                                                 </button>
                                                 <button
                                                     onClick={() => openTreasuryModal(box, 'audit')}
-                                                    className="bg-transparent hover:bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
+                                                    className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
                                                 >
-                                                    <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                         <RefreshCw size={14} strokeWidth={4} className="text-white" />
                                                     </div>
                                                     <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
@@ -683,24 +683,24 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 )}
                                             </div>
                                             {/* Botones */}
-                                            <div className="flex-[1] basis-0 grid grid-cols-2 gap-1.5">
+                                            <div className="flex-[1] basis-0 grid grid-cols-2 gap-1">
                                                 <button
                                                     onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                    className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                                    className="bg-transparent p-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                                 >
-                                                    <div className="w-7 h-7 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                                        <ArrowRightLeft size={12} strokeWidth={3} className="text-white" />
+                                                    <div className="w-6 h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                        <ArrowRightLeft size={10} strokeWidth={3} className="text-white" />
                                                     </div>
-                                                    <span className="text-[7px] font-black text-zinc-900 uppercase tracking-widest leading-none">Cambiar</span>
+                                                    <span className="text-[6px] font-black text-zinc-900 uppercase tracking-wider leading-none">Cambiar</span>
                                                 </button>
                                                 <button
                                                     onClick={() => openTreasuryModal(box, 'audit')}
-                                                    className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                                    className="bg-transparent p-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
                                                 >
-                                                    <div className="w-7 h-7 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                                        <RefreshCw size={11} strokeWidth={3} className="text-white" />
+                                                    <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                        <RefreshCw size={10} strokeWidth={3} className="text-white" />
                                                     </div>
-                                                    <span className="text-[7px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
+                                                    <span className="text-[6px] font-black text-zinc-900 uppercase tracking-wider leading-none">Arqueo</span>
                                                 </button>
                                             </div>
                                         </div>

@@ -271,7 +271,7 @@ export const CashDenominationForm = ({
                                     <button
                                         type="button"
                                         onClick={() => handleAdjust(denom, -1)}
-                                        className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"
+                                        className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
                                     >
                                         <Minus size={14} strokeWidth={3} />
                                     </button>
@@ -281,12 +281,12 @@ export const CashDenominationForm = ({
                                         value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
                                         onChange={(e) => handleCountChange(denom, e.target.value)}
                                         placeholder="0"
-                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-sm focus:bg-blue-50/20 transition-colors"
+                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[11px] focus:bg-blue-50/20 transition-colors"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => handleAdjust(denom, 1)}
-                                        className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"
+                                        className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
                                     >
                                         <Plus size={14} strokeWidth={3} />
                                     </button>
