@@ -283,7 +283,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-white rounded-2xl shadow-lg border border-purple-100 overflow-hidden ring-1 ring-purple-100/50 ring-offset-2">
                             {/* Days Grid */}
                             <div className="grid grid-cols-7 border-b border-gray-100">
                                 {weekData.days.map((day, i) => (

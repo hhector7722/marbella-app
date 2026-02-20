@@ -9,7 +9,7 @@ import {
     Info, Package,
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
-    Plus, Minus
+    Plus, Minus, BookOpen, CalendarCheck, ExternalLink
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
@@ -88,7 +88,7 @@ export default function StaffDashboardView() {
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
-    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | null>(null);
+    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | 'carta' | null>(null);
     const [preferStock, setPreferStock] = useState(false);
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
@@ -618,7 +618,7 @@ export default function StaffDashboardView() {
 
             {activeMenu && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-xs')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
                         {infoSubMenu && (
                             <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
                                 <ArrowLeft size={16} />
@@ -631,7 +631,7 @@ export default function StaffDashboardView() {
                                 </button>
                                 <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
                                     <Info size={24} className="text-blue-500" />
-                                    {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : 'Información'}
+                                    {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
                                 </h3>
                                 <div className="p-8 space-y-2 overflow-y-auto">
                                     {!infoSubMenu && (
@@ -647,6 +647,14 @@ export default function StaffDashboardView() {
                                             <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
                                                 <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Scale size={24} strokeWidth={2.5} /></div>
                                                 <span className="font-bold text-base tracking-tight text-left flex-1">Código de Conducta</span>
+                                            </button>
+                                            <button onClick={() => setInfoSubMenu('reservas')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><CalendarCheck size={24} strokeWidth={2.5} /></div>
+                                                <span className="font-bold text-base tracking-tight text-left flex-1">Reservas</span>
+                                            </button>
+                                            <button onClick={() => setInfoSubMenu('carta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><BookOpen size={24} strokeWidth={2.5} /></div>
+                                                <span className="font-bold text-base tracking-tight text-left flex-1">Carta</span>
                                             </button>
                                         </>
                                     )}
@@ -669,10 +677,49 @@ export default function StaffDashboardView() {
                                         </div>
                                     )}
                                     {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
-                                        <div className="h-[60vh] w-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                                            <iframe src={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'} className="w-full h-full" title="Documento PDF" />
-                                            <div className="bg-white p-2 text-center border-t border-gray-200">
-                                                <a href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'} target="_blank" download className="text-xs font-bold text-blue-600 hover:underline">Descargar PDF si no visualiza</a>
+                                        <div className="flex flex-col items-center gap-6 py-4">
+                                            <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                                <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-base font-black text-gray-800 mb-1">
+                                                    {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
+                                                </p>
+                                                <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
+                                            </div>
+                                            <button
+                                                onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
+                                                className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                            >
+                                                <ExternalLink size={20} />
+                                                <span>Abrir Documento</span>
+                                            </button>
+                                            <a
+                                                href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
+                                                download
+                                                className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
+                                            >
+                                                Descargar PDF
+                                            </a>
+                                        </div>
+                                    )}
+                                    {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
+                                        <div className="flex flex-col items-center gap-6 py-4">
+                                            <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
+                                                {infoSubMenu === 'reservas' ? (
+                                                    <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
+                                                ) : (
+                                                    <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-base font-black text-gray-800 mb-1">
+                                                    {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
+                                                </p>
+                                                <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
+                                            </div>
+                                            <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
+                                                <span className="text-sm">En desarrollo</span>
                                             </div>
                                         </div>
                                     )}

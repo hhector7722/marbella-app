@@ -487,19 +487,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             {/* Caja Display */}
                                             <div
                                                 className={cn(
-                                                    "grow-[1.5] basis-0 px-4 py-3 rounded-2xl shadow-md flex flex-row items-center justify-between text-white transition-all",
-                                                    isOk ? "bg-[#36606F]" : "bg-orange-400"
+                                                    "grow-[1.5] basis-0 px-4 py-3 rounded-2xl flex flex-row items-center justify-between transition-all border-2",
+                                                    isOk ? "border-emerald-200 bg-emerald-50/50" : "border-orange-200 bg-orange-50/40"
                                                 )}
                                             >
                                                 <div className="flex flex-col items-start leading-none gap-0.5">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Cambio {idx + 1}</span>
-                                                    <span className="text-2xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Cambio {idx + 1}</span>
+                                                    <span className="text-2xl font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
                                                 </div>
                                                 <div className="flex items-center justify-center">
                                                     {isOk ? (
-                                                        <Check className="w-4 h-4 text-white" strokeWidth={4} />
+                                                        <Check className="w-4 h-4 text-emerald-500" strokeWidth={4} />
                                                     ) : (
-                                                        <span className="text-sm font-black text-white">
+                                                        <span className="text-sm font-black text-orange-500">
                                                             {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
                                                         </span>
                                                     )}
@@ -678,19 +678,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     return (
                                         <div key={box.id} className="flex flex-col gap-2">
                                             <div className={cn(
-                                                "w-full px-3 py-2 rounded-xl flex items-center justify-between text-white",
-                                                isOk ? "bg-[#36606F]" : "bg-orange-400"
+                                                "w-full px-3 py-2 rounded-xl flex items-center justify-between border-2",
+                                                isOk ? "border-emerald-200 bg-emerald-50/50" : "border-orange-200 bg-orange-50/40"
                                             )}>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[7px] font-black uppercase tracking-wider opacity-70">Cambio {idx + 1}</span>
-                                                    <span className="text-sm font-black">{box.current_balance.toFixed(2)}€</span>
+                                                    <span className="text-[7px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
+                                                    <span className="text-sm font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
                                                 </div>
                                                 {!isOk && (
-                                                    <span className="text-[9px] font-black bg-white/20 px-1.5 py-0.5 rounded-md">
+                                                    <span className="text-[9px] font-black text-orange-500">
                                                         {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
                                                     </span>
                                                 )}
-                                                {isOk && <Check size={12} strokeWidth={4} />}
+                                                {isOk && <Check size={12} strokeWidth={4} className="text-emerald-500" />}
                                             </div>
                                             <div className="grid grid-cols-2 gap-2">
                                                 <button
