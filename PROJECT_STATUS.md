@@ -58,7 +58,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Modal Detalle Cierres**: Solución de solapamiento de botones con el nombre del día y mejor integración de flechas de navegación en cabecera superior.
 - [x] **Rediseño Vista Calendario Historial (Refinado)**: Nueva visualización en estilo calendario (7 columnas) con tarjetas optimizadas (cabecera roja, layout simétrico de métricas y fuentes legibles en 7-col).
 - [x] **Refinamiento UI Header Historial**: Ajuste de padding y dimensiones en el selector de métricas para evitar que el botón seleccionado toque los márgenes, mejorando la estética premium.
-- [x] **Compactación Radical Modal de Cambio**: Reducción drástica del ancho del modal (a 400px) y de los controles de entrada/salida para una experiencia más ágil.
+- [x] **Rediseño Radical Modal de Cambio**: Optimización total siguiendo referencia visual. Estructura de 3 columnas (Entra | Denom | Sale) con fondos de color intensificados y cabecera de KPIs dinámica, manteniendo el formato compacto.
 
 ## 📅 PENDIENTE
 - [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
