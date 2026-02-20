@@ -49,6 +49,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Optimización de Modal de Cambio (Mobile)**: Rediseño radical del modal utilizando un layout basado en filas con controles laterales para facilitar el uso en smartphones. Se han optimizado los targets táctiles (44px+) y se ha integrado un resumen de balance en la cabecera siguiendo el estilo Marbella Premium.
 - [x] **Autocompletado Proactivo en Cierres**: Implementación de autocompletado instantáneo de ventas y tickets en el modal de cierre utilizando datos del dashboard en tiempo real. Se ha añadido un botón de sincronización manual y mejora de UX en campos numéricos (0-display).
 - [x] **Corrección de Métrica de Ventas en Historial**: Se ha corregido el mapeo de la métrica "Ventas" de `gross_sales` a `tpv_sales` en `/history`, solucionando el problema de visualización de "0€".
+- [x] **Restricción de Rol Supervisor**: Eliminación del acceso de supervisores al panel de administración y a la lista de plantilla, redirigiéndolos automáticamente al panel de staff para mantener la seguridad operativa.
+
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
