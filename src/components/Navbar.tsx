@@ -11,7 +11,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
-    const [userData, setUserData] = useState<{ name: string; role: string; email: string } | null>(null);
+    const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
     useEffect(() => {
@@ -20,13 +20,14 @@ export default function Navbar() {
             if (user) {
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('first_name, role, email')
+                    .select('first_name, role, email, is_supervisor')
                     .eq('id', user.id)
                     .single();
                 setUserData({
                     name: profile?.first_name || 'Empleado',
                     role: profile?.role || 'staff',
-                    email: user.email || ''
+                    email: user.email || '',
+                    is_supervisor: profile?.is_supervisor || false
                 });
             }
         };
@@ -38,9 +39,9 @@ export default function Navbar() {
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
 
-    // Authorization logic for the special "+ CIERRE" button
-    const AUTHORIZED_EMAILS = ["s29valiente@gmail.com", "hhector7722@gmail.com"];
-    const showClosureButton = pathname === '/staff/dashboard' && userData?.email && AUTHORIZED_EMAILS.includes(userData.email);
+    // Authorization logic for the special "CIERRE" button
+    const showClosureButton = pathname === '/staff/dashboard' &&
+        (userData?.role === 'manager' || userData?.is_supervisor === true || userData?.role === 'supervisor');
 
     return (
         <>
@@ -74,10 +75,12 @@ export default function Navbar() {
                         {showClosureButton && (
                             <button
                                 onClick={() => setIsClosingModalOpen(true)}
-                                className="flex items-center gap-1.5 px-3 h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-md active:scale-95 group"
+                                className="flex items-center gap-2 px-3 h-8 bg-transparent hover:bg-white/5 text-white rounded-xl transition-all active:scale-95 group"
                             >
-                                <Plus size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
-                                <span className="text-[9px] font-black tracking-widest uppercase">Cierre</span>
+                                <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                    <Plus size={14} strokeWidth={4} className="text-white" />
+                                </div>
+                                <span className="text-[10px] font-black tracking-widest uppercase">Cierre</span>
                             </button>
                         )}
 

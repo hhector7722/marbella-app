@@ -60,9 +60,11 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento UI Header Historial**: Ajuste de padding y dimensiones en el selector de métricas para evitar que el botón seleccionado toque los márgenes, mejorando la estética premium.
 - [x] **Rediseño Radical Modal de Cambio**: Optimización total siguiendo referencia visual. Estructura de 3 columnas (Entra | Denom | Sale) con fondos de color intensificados y cabecera de KPIs dinámica, manteniendo el formato compacto.
 - [x] **Corrección de Build (Tipos Supabase)**: Restauración de `src/types/supabase.ts` tras una corrupción causada por un prompt interactivo de CLI, unificando el entorno y desbloqueando la compilación.
+- [x] **Refinamiento de Etiquetas**: Cambio de la etiqueta "Cambiar" por "Caja" en el dashboard de staff y administrador para mayor claridad operativa.
+- [x] **Mejora UX Modal de Caja**: Inversión de columnas en el modal de cambio (ahora "Sale" a la izquierda y "Entra" a la derecha) para una interacción más natural.
+- [x] **Rediseño Botón Cierre**: Nuevo diseño con icono de "+" blanco en círculo verde redondo y lógica de visibilidad para Managers y Supervisores en el dashboard de staff.
 
 ## 📅 PENDIENTE
-- [ ] **Ajuste de Saldo Inicial:** Corregir saldo a 336.21€ al cierre del 13/02 (Botón "Arreglar Saldo" en Movimientos).
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
