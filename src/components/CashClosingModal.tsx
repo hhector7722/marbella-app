@@ -288,36 +288,40 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100 transition-all">
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas</label>
                                 <div className="flex items-center gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAdjustTpv('totalSales', -1)}
-                                        className="text-[#5B8FB9] active:scale-95 transition-all"
-                                    >
-                                        <Minus size={24} strokeWidth={3} />
-                                    </button>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        className="w-full text-4xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0 text-center"
-                                        placeholder="0.00"
-                                        value={tpvData.totalSales === 0 ? '0' : tpvData.totalSales}
-                                        onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAdjustTpv('totalSales', 1)}
-                                        className="text-[#5B8FB9] active:scale-95 transition-all"
-                                    >
-                                        <Plus size={24} strokeWidth={3} />
-                                    </button>
+                                    <div className="flex-1 flex items-center justify-between h-14 bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAdjustTpv('totalSales', -1)}
+                                            className="w-14 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"
+                                        >
+                                            <Minus size={20} strokeWidth={3} />
+                                        </button>
+                                        <div className="flex-1 h-full relative flex items-center">
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                className="w-full h-full text-3xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0 text-center p-0 focus:bg-blue-50/20 transition-colors"
+                                                placeholder="0.00"
+                                                value={tpvData.totalSales === 0 ? '0' : tpvData.totalSales}
+                                                onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
+                                            />
+                                            <span className="text-3xl font-black text-[#5B8FB9]/40 absolute right-4 pointer-events-none">€</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAdjustTpv('totalSales', 1)}
+                                            className="w-14 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"
+                                        >
+                                            <Plus size={20} strokeWidth={3} />
+                                        </button>
+                                    </div>
                                     <button
                                         onClick={() => fetchTodayVentas()}
-                                        className="p-2 hover:bg-white/50 rounded-xl transition-all active:scale-90 text-[#36606F]/40 hover:text-[#36606F]"
+                                        className="p-3 hover:bg-white/80 rounded-2xl transition-all active:scale-95 text-[#36606F]/60 hover:text-[#36606F] shadow-sm bg-white"
                                         title="Sincronizar con TPV"
                                     >
                                         <RefreshCw size={24} className={cn(loading && "animate-spin")} />
                                     </button>
-                                    <span className="text-4xl font-black text-[#5B8FB9]/40">€</span>
                                 </div>
                             </div>
 
@@ -341,20 +345,20 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <div className="space-y-4">
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><CreditCard size={12} /> Tarjeta</label>
-                                        <div className="flex items-center">
-                                            <button onClick={() => handleAdjustTpv('cardSales', -1)} className="text-gray-300 hover:text-rose-500 active:scale-95 px-1"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9] text-center"
+                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
+                                            <button onClick={() => handleAdjustTpv('cardSales', -1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"><Minus size={14} strokeWidth={3} /></button>
+                                            <input type="number" className="flex-1 w-0 h-full p-0 text-sm font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
                                                 value={tpvData.cardSales === 0 ? '0' : tpvData.cardSales} onChange={e => setTpvData({ ...tpvData, cardSales: parseFloat(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('cardSales', 1)} className="text-gray-300 hover:text-emerald-500 active:scale-95 px-1"><Plus size={14} strokeWidth={3} /></button>
+                                            <button onClick={() => handleAdjustTpv('cardSales', 1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"><Plus size={14} strokeWidth={3} /></button>
                                         </div>
                                     </div>
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><UserMinus size={12} /> Pendiente</label>
-                                        <div className="flex items-center">
-                                            <button onClick={() => handleAdjustTpv('pendingSales', -1)} className="text-gray-300 hover:text-rose-500 active:scale-95 px-1"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9] text-center"
+                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
+                                            <button onClick={() => handleAdjustTpv('pendingSales', -1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"><Minus size={14} strokeWidth={3} /></button>
+                                            <input type="number" className="flex-1 w-0 h-full p-0 text-sm font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
                                                 value={tpvData.pendingSales === 0 ? '0' : tpvData.pendingSales} onChange={e => setTpvData({ ...tpvData, pendingSales: parseFloat(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('pendingSales', 1)} className="text-gray-300 hover:text-emerald-500 active:scale-95 px-1"><Plus size={14} strokeWidth={3} /></button>
+                                            <button onClick={() => handleAdjustTpv('pendingSales', 1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"><Plus size={14} strokeWidth={3} /></button>
                                         </div>
                                     </div>
                                 </div>
@@ -362,20 +366,20 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <div className="space-y-4">
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><ArchiveRestore size={12} /> Cobros</label>
-                                        <div className="flex items-center">
-                                            <button onClick={() => handleAdjustTpv('debtRecovered', -1)} className="text-gray-300 hover:text-rose-500 active:scale-95 px-1"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9] text-center"
+                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
+                                            <button onClick={() => handleAdjustTpv('debtRecovered', -1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"><Minus size={14} strokeWidth={3} /></button>
+                                            <input type="number" className="flex-1 w-0 h-full p-0 text-sm font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
                                                 value={tpvData.debtRecovered === 0 ? '0' : tpvData.debtRecovered} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('debtRecovered', 1)} className="text-gray-300 hover:text-emerald-500 active:scale-95 px-1"><Plus size={14} strokeWidth={3} /></button>
+                                            <button onClick={() => handleAdjustTpv('debtRecovered', 1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"><Plus size={14} strokeWidth={3} /></button>
                                         </div>
                                     </div>
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><Receipt size={12} /> Nº Tickets</label>
-                                        <div className="flex items-center">
-                                            <button onClick={() => handleAdjustTpv('ticketsCount', -1)} className="text-gray-300 hover:text-rose-500 active:scale-95 px-1"><Minus size={14} strokeWidth={3} /></button>
-                                            <input type="number" className="flex-1 p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9] text-center"
+                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:border-[#5B8FB9]/40 focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
+                                            <button onClick={() => handleAdjustTpv('ticketsCount', -1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"><Minus size={14} strokeWidth={3} /></button>
+                                            <input type="number" className="flex-1 w-0 h-full p-0 text-sm font-black text-zinc-700 bg-transparent outline-none text-center focus:bg-blue-50/20 transition-colors"
                                                 value={tpvData.ticketsCount === 0 ? '0' : tpvData.ticketsCount} onChange={e => setTpvData({ ...tpvData, ticketsCount: parseInt(e.target.value) || 0 })} />
-                                            <button onClick={() => handleAdjustTpv('ticketsCount', 1)} className="text-gray-300 hover:text-emerald-500 active:scale-95 px-1"><Plus size={14} strokeWidth={3} /></button>
+                                            <button onClick={() => handleAdjustTpv('ticketsCount', 1)} className="w-10 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"><Plus size={14} strokeWidth={3} /></button>
                                         </div>
                                     </div>
                                 </div>
@@ -411,12 +415,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                             </div>
                                             <div className="text-center w-full">
                                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">{bill}€</span>
-                                                <div className="flex items-center">
-                                                    <button onClick={() => handleAdjustCount(bill, -1)} className="text-gray-300 hover:text-rose-500 active:scale-95 transition-all px-1"><Minus size={14} strokeWidth={3} /></button>
+                                                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                    <button onClick={() => handleAdjustCount(bill, -1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"><Minus size={14} strokeWidth={3} /></button>
                                                     <input type="number" min="0" placeholder="0"
-                                                        className="w-full bg-white border-2 border-transparent focus:border-[#5B8FB9]/20 rounded-xl p-1.5 text-center font-black text-[#5B8FB9] outline-none text-xs focus:ring-4 focus:ring-[#5B8FB9]/5 transition-all shadow-sm"
+                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-sm focus:bg-blue-50/20 transition-colors"
                                                         value={counts[bill] || ''} onChange={(e) => updateCount(bill, e.target.value)} />
-                                                    <button onClick={() => handleAdjustCount(bill, 1)} className="text-gray-300 hover:text-emerald-500 active:scale-95 transition-all px-1"><Plus size={14} strokeWidth={3} /></button>
+                                                    <button onClick={() => handleAdjustCount(bill, 1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"><Plus size={14} strokeWidth={3} /></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -434,12 +438,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                             </div>
                                             <div className="text-center w-full">
                                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">{coin < 1 ? (coin * 100).toFixed(0) + "c" : coin + "€"}</span>
-                                                <div className="flex items-center">
-                                                    <button onClick={() => handleAdjustCount(coin, -1)} className="text-gray-300 hover:text-rose-500 active:scale-95 transition-all px-1"><Minus size={14} strokeWidth={3} /></button>
+                                                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                    <button onClick={() => handleAdjustCount(coin, -1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"><Minus size={14} strokeWidth={3} /></button>
                                                     <input type="number" min="0" placeholder="0"
-                                                        className="w-full bg-white border-2 border-transparent focus:border-[#5B8FB9]/20 rounded-xl p-1.5 text-center font-black text-[#5B8FB9] outline-none text-xs focus:ring-4 focus:ring-[#5B8FB9]/5 transition-all shadow-sm"
+                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-sm focus:bg-blue-50/20 transition-colors"
                                                         value={counts[coin] || ''} onChange={(e) => updateCount(coin, e.target.value)} />
-                                                    <button onClick={() => handleAdjustCount(coin, 1)} className="text-gray-300 hover:text-emerald-500 active:scale-95 transition-all px-1"><Plus size={14} strokeWidth={3} /></button>
+                                                    <button onClick={() => handleAdjustCount(coin, 1)} className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"><Plus size={14} strokeWidth={3} /></button>
                                                 </div>
                                             </div>
                                         </div>

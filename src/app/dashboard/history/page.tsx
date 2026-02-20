@@ -20,6 +20,7 @@ import {
     ChevronRight as ChevronRightIcon,
     Banknote,
     Plus,
+    Minus,
     LayoutGrid,
     List
 } from 'lucide-react';
@@ -145,14 +146,26 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
                                 </div>
                                 <div className="flex items-center gap-4">
                                     {isEditing ? (
-                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm transition-all focus-within:border-[#5B8FB9]/50">
-                                            <span className="text-[10px] font-black text-gray-300 uppercase">x</span>
+                                        <div className="flex items-center justify-between w-24 h-9 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20 font-sans">
+                                            <button
+                                                onClick={() => onUpdate?.(den, Math.max(0, (qty as number || 0) - 1))}
+                                                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors border-r border-zinc-100 shrink-0"
+                                            >
+                                                <Minus size={14} strokeWidth={3} />
+                                            </button>
                                             <input
                                                 type="number"
-                                                className="w-10 bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
+                                                min="0"
+                                                className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-xs focus:bg-blue-50/20 transition-colors tabular-nums"
                                                 value={qty as number || ''}
                                                 onChange={e => onUpdate?.(den, parseInt(e.target.value) || 0)}
                                             />
+                                            <button
+                                                onClick={() => onUpdate?.(den, (qty as number || 0) + 1)}
+                                                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors border-l border-zinc-100 shrink-0"
+                                            >
+                                                <Plus size={14} strokeWidth={3} />
+                                            </button>
                                         </div>
                                     ) : (
                                         <span className="text-xs font-black text-gray-400">x{qty as number}</span>

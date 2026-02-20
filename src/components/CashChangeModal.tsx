@@ -52,6 +52,15 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
         }
     };
 
+    const handleCountChange = (denom: number, side: 'in' | 'out', val: string) => {
+        const numQty = parseInt(val) || 0;
+        if (side === 'in') {
+            setInCounts(prev => ({ ...prev, [denom]: Math.max(0, numQty) }));
+        } else {
+            setOutCounts(prev => ({ ...prev, [denom]: Math.max(0, numQty) }));
+        }
+    };
+
     const handleSubmit = async () => {
         try {
             await supabase.from('treasury_log').insert({
@@ -71,22 +80,33 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
     };
 
     const DenomControl = ({ denom, count, side }: { denom: number, count: number, side: 'in' | 'out' }) => (
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center justify-between w-[84px] h-9 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20 mx-auto">
             <button
                 onClick={() => handleAdjust(denom, side, -1)}
-                className="w-8 h-8 flex items-center justify-center text-zinc-400 active:scale-95 transition-all hover:text-rose-500 shrink-0"
+                className={cn(
+                    "w-7 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors border-r border-zinc-100 shrink-0",
+                    side === 'in' ? "hover:bg-emerald-50 hover:text-emerald-500" : "hover:bg-rose-50 hover:text-rose-500"
+                )}
             >
                 <Minus size={14} strokeWidth={3} />
             </button>
-            <span className={cn(
-                "w-6 text-center text-sm font-black tabular-nums",
-                count > 0 ? (side === 'in' ? "text-emerald-700" : "text-rose-700") : "text-zinc-300"
-            )}>
-                {count || 0}
-            </span>
+            <input
+                type="number"
+                min="0"
+                value={count || ''}
+                onChange={(e) => handleCountChange(denom, side, e.target.value)}
+                placeholder="0"
+                className={cn(
+                    "flex-1 w-0 h-full bg-transparent text-center font-black outline-none p-0 text-xs transition-colors focus:bg-blue-50/20",
+                    count > 0 ? (side === 'in' ? "text-emerald-700" : "text-rose-700") : "text-zinc-400"
+                )}
+            />
             <button
                 onClick={() => handleAdjust(denom, side, 1)}
-                className="w-8 h-8 flex items-center justify-center text-zinc-400 active:scale-95 transition-all hover:text-emerald-500 shrink-0"
+                className={cn(
+                    "w-7 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors border-l border-zinc-100 shrink-0",
+                    side === 'in' ? "hover:bg-emerald-50 hover:text-emerald-500" : "hover:bg-rose-50 hover:text-rose-500"
+                )}
             >
                 <Plus size={14} strokeWidth={3} />
             </button>
