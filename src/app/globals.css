@@ -41,3 +41,16 @@
 .animate-spinner-fade {
   animation: animate-spinner-fade 1.2s linear infinite;
 }
+
+@layer base {
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
