@@ -477,10 +477,59 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <div className="bg-[#36606F] px-6 py-2.5 flex items-center text-white shrink-0">
                                 <h3 className="text-sm font-black uppercase tracking-wider">Cajas Cambio</h3>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 p-4">
-                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                    <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="bg-gray-50 rounded-2xl p-3 hover:bg-gray-100 transition-all active:scale-95 flex flex-col justify-center items-center text-center group"><span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cambio {idx + 1}</span><span className="text-lg font-black text-[#5B8FB9] group-hover:scale-105 transition-transform">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span></button>
-                                ))}
+                            <div className="p-4 space-y-4">
+                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
+                                    const diff = box.current_balance - 300;
+                                    const isOk = Math.abs(diff) < 0.01;
+
+                                    return (
+                                        <div key={box.id} className="flex flex-row gap-2">
+                                            {/* Caja Display */}
+                                            <div
+                                                className={cn(
+                                                    "grow-[1.5] basis-0 px-4 py-3 rounded-2xl shadow-md flex flex-row items-center justify-between text-white transition-all",
+                                                    isOk ? "bg-[#36606F]" : "bg-rose-600"
+                                                )}
+                                            >
+                                                <div className="flex flex-col items-start leading-none gap-0.5">
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Cambio {idx + 1}</span>
+                                                    <span className="text-2xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                                </div>
+                                                <div className="flex items-center justify-center">
+                                                    {isOk ? (
+                                                        <Check className="w-4 h-4 text-white" strokeWidth={4} />
+                                                    ) : (
+                                                        <span className="text-sm font-black text-rose-100">
+                                                            {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Botones de Acción */}
+                                            <div className="flex-[1] basis-0 grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
+                                                    className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group"
+                                                >
+                                                    <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                        <ArrowRightLeft size={14} strokeWidth={4} className="text-white" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Cambiar</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => openTreasuryModal(box, 'audit')}
+                                                    className="bg-transparent hover:bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group"
+                                                >
+                                                    <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                                        <RefreshCw size={14} strokeWidth={4} className="text-white" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
@@ -622,13 +671,46 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <div className="bg-[#36606F] px-4 py-2 flex items-center text-white shrink-0">
                                 <h3 className="text-[10px] font-black uppercase tracking-wider">Cajas Cambio</h3>
                             </div>
-                            <div className="p-3 flex flex-col justify-center gap-2.5 flex-1">
-                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => (
-                                    <button key={box.id} onClick={() => { setSelectedBox(box); setCashModalMode('menu'); }} className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-gray-50 active:scale-95 transition-all">
-                                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider">Cambio {idx + 1}</span>
-                                        <span className="text-sm font-black text-[#5B8FB9]">{box.current_balance > 0 ? `${box.current_balance.toFixed(2)}€` : '0.00'}</span>
-                                    </button>
-                                ))}
+                            <div className="p-3 space-y-3 flex-1">
+                                {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
+                                    const diff = box.current_balance - 300;
+                                    const isOk = Math.abs(diff) < 0.01;
+                                    return (
+                                        <div key={box.id} className="flex flex-col gap-2">
+                                            <div className={cn(
+                                                "w-full px-3 py-2 rounded-xl flex items-center justify-between text-white",
+                                                isOk ? "bg-[#36606F]" : "bg-rose-600"
+                                            )}>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[7px] font-black uppercase tracking-wider opacity-70">Cambio {idx + 1}</span>
+                                                    <span className="text-sm font-black">{box.current_balance.toFixed(2)}€</span>
+                                                </div>
+                                                {!isOk && (
+                                                    <span className="text-[9px] font-black bg-white/20 px-1.5 py-0.5 rounded-md">
+                                                        {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
+                                                    </span>
+                                                )}
+                                                {isOk && <Check size={12} strokeWidth={4} />}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
+                                                    className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-50 active:scale-95 transition-all text-[#5B8FB9]"
+                                                >
+                                                    <ArrowRightLeft size={12} strokeWidth={3} />
+                                                    <span className="text-[8px] font-black uppercase">Cambiar</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => openTreasuryModal(box, 'audit')}
+                                                    className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-50 active:scale-95 transition-all text-[#5B8FB9]"
+                                                >
+                                                    <RefreshCw size={11} strokeWidth={3} />
+                                                    <span className="text-[8px] font-black uppercase">Arqueo</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         {/* Columna derecha: 2x2 Iconos */}
