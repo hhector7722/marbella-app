@@ -442,7 +442,7 @@ export default function HistoryPage() {
                     <div className="bg-[#36606F] p-2 md:p-4 space-y-3 relative">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 md:gap-4">
-                                <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
+                                <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white hover:text-white/80 transition-all active:scale-95">
                                     <ArrowLeft className="w-4 md:w-5 h-4 md:h-5" strokeWidth={3} />
                                 </button>
                                 <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
@@ -551,14 +551,14 @@ export default function HistoryPage() {
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
-                                <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                                    <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
+                                <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-center items-center overflow-x-auto no-scrollbar">
+                                    <div className="flex gap-2 md:gap-3 justify-center">
                                         {METRICS.map(m => (
                                             <button
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "flex-1 h-8 md:h-10 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 whitespace-nowrap",
+                                                    "h-8 md:h-10 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-3 md:px-5 whitespace-nowrap w-auto",
                                                     selectedMetric === m.value
                                                         ? "bg-white text-[#36606F] shadow-lg"
                                                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -647,17 +647,17 @@ export default function HistoryPage() {
                                     </div>
                                 ) : (
                                     /* CALENDAR VIEW */
-                                    <div className="p-2 md:p-3 overflow-x-auto no-scrollbar">
-                                        <div className="min-w-[800px] lg:min-w-0">
+                                    <div className="p-1 md:p-3 overflow-x-hidden">
+                                        <div className="w-full">
                                             {/* Days of Week Header */}
-                                            <div className="grid grid-cols-7 mb-2 px-2">
-                                                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
-                                                    <div key={d} className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] text-center">{d}</div>
+                                            <div className="grid grid-cols-7 mb-2 px-1">
+                                                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
+                                                    <div key={d} className="text-[6px] xs:text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-tighter md:tracking-[0.2em] text-center">{d}</div>
                                                 ))}
                                             </div>
 
                                             {/* Calendar Grid */}
-                                            <div className="grid grid-cols-7 gap-2 md:gap-3">
+                                            <div className="grid grid-cols-7 gap-1 md:gap-3">
                                                 {calendarDays.map((day, idx) => {
                                                     const closing = closings.find(c => isSameDay(new Date(c.closed_at), day));
                                                     const isCurrentMonth = filterMode === 'range' && rangeStart
@@ -667,10 +667,10 @@ export default function HistoryPage() {
                                                     if (!closing) {
                                                         return (
                                                             <div key={idx} className={cn(
-                                                                "h-24 md:h-32 rounded-2xl border border-zinc-100/50 flex flex-col p-2 md:p-3 transition-opacity",
+                                                                "h-12 xs:h-16 md:h-32 rounded-lg md:rounded-2xl border border-zinc-100/50 flex flex-col p-1 md:p-3 transition-opacity",
                                                                 isCurrentMonth ? "bg-white/40" : "bg-transparent opacity-10"
                                                             )}>
-                                                                <span className="text-[10px] font-black text-zinc-300">{format(day, 'd')}</span>
+                                                                <span className="text-[8px] md:text-[10px] font-black text-zinc-300">{format(day, 'd')}</span>
                                                             </div>
                                                         );
                                                     }
@@ -682,22 +682,22 @@ export default function HistoryPage() {
                                                         <div
                                                             key={closing.id}
                                                             onClick={() => setSelectedClosing(closing)}
-                                                            className="group relative bg-white h-full min-h-[120px] rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
+                                                            className="group relative bg-white h-full min-h-[50px] xs:min-h-[70px] md:min-h-[120px] rounded-lg md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
                                                         >
                                                             {/* Header Rojo con Número Blanco */}
-                                                            <div className="bg-[#D64D5D] px-2 py-1 flex justify-center items-center shadow-sm">
-                                                                <span className="text-[10px] font-black text-white">{format(day, 'd')}</span>
+                                                            <div className="bg-[#D64D5D] px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shadow-sm">
+                                                                <span className="text-[7px] md:text-[10px] font-black text-white">{format(day, 'd')}</span>
                                                             </div>
 
                                                             <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
                                                                 {/* Main Value & Percentage Row - Aggressive Scaling */}
-                                                                <div className="flex items-center justify-between gap-1 mb-0.5 px-0.5">
-                                                                    <div className="text-[12px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none truncate max-w-[70%]">
+                                                                <div className="flex flex-col xs:flex-row items-center justify-between gap-0 xs:gap-1 mb-0 px-0.5">
+                                                                    <div className="text-[7px] xs:text-[9px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none truncate max-w-full xs:max-w-[70%]">
                                                                         {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                        {selectedMetric !== 'tickets_count' && <span className="text-[8px] md:text-[12px] ml-0.5 font-black">€</span>}
+                                                                        {selectedMetric !== 'tickets_count' && <span className="text-[5px] md:text-[12px] ml-0.5 font-black">€</span>}
                                                                     </div>
                                                                     <div className={cn(
-                                                                        "text-[8px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto",
+                                                                        "text-[5px] md:text-[10px] font-black uppercase whitespace-nowrap xs:ml-auto leading-none",
                                                                         parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
                                                                     )}>
                                                                         {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(Math.round(parseFloat(diffPerc)))}%
@@ -710,22 +710,22 @@ export default function HistoryPage() {
                                                                 </div>
 
                                                                 {/* 2x2 Bento Grid Footer (Refined Scaling) */}
-                                                                <div className="grid grid-cols-2 gap-y-1.5 gap-x-1.5 mt-auto w-full pt-1.5 border-t border-zinc-100">
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Ventas</span>
+                                                                <div className="grid grid-cols-2 gap-y-0.5 xs:gap-y-1 md:gap-y-1.5 gap-x-0.5 xs:gap-x-1 md:gap-x-1.5 mt-auto w-full pt-0.5 md:pt-1.5 border-t border-zinc-100 px-0.5">
+                                                                    <div className="flex flex-col items-center justify-center py-0 md:py-0.5">
+                                                                        <span className="text-[6px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
+                                                                        <span className="text-[4px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-0.5 md:mt-1 hidden xs:block">Vtas</span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Media</span>
+                                                                    <div className="flex flex-col items-center justify-center py-0 md:py-0.5">
+                                                                        <span className="text-[6px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
+                                                                        <span className="text-[4px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-0.5 md:mt-1 hidden xs:block">Med</span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Cash</span>
+                                                                    <div className="flex flex-col items-center justify-center py-0 md:py-0.5">
+                                                                        <span className="text-[6px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
+                                                                        <span className="text-[4px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-0.5 md:mt-1 hidden xs:block">Cash</span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Tarjeta</span>
+                                                                    <div className="flex flex-col items-center justify-center py-0 md:py-0.5">
+                                                                        <span className="text-[6px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
+                                                                        <span className="text-[4px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-0.5 md:mt-1 hidden xs:block">Tarj</span>
                                                                     </div>
                                                                 </div>
                                                             </div>

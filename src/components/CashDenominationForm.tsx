@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight } from 'lucide-react';
+import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -58,10 +58,22 @@ export const CashDenominationForm = ({
     const handleCountChange = (val: number, qty: string) => {
         const numQty = parseInt(qty) || 0;
         if (isPurchaseMode && purchaseTab === 'received') {
-            setReceivedCounts(prev => ({ ...prev, [val]: numQty }));
+            setReceivedCounts(prev => ({ ...prev, [val]: Math.max(0, numQty) }));
         } else {
-            setCounts(prev => ({ ...prev, [val]: numQty }));
+            setCounts(prev => ({ ...prev, [val]: Math.max(0, numQty) }));
         }
+    };
+
+    const handleAdjust = (val: number, delta: number) => {
+        if (isPurchaseMode && purchaseTab === 'received') {
+            setReceivedCounts(prev => ({ ...prev, [val]: Math.max(0, (prev[val] || 0) + delta) }));
+        } else {
+            setCounts(prev => ({ ...prev, [val]: Math.max(0, (prev[val] || 0) + delta) }));
+        }
+    };
+
+    const handleAdjustPrice = (delta: number) => {
+        setPurchasePrice(prev => Math.max(0, (prev || 0) + delta));
     };
 
     const totalGiven = calculateTotal(counts);
@@ -159,16 +171,32 @@ export const CashDenominationForm = ({
                     {isPurchaseMode ? (
                         <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm">
                             <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio de la Compra</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={purchasePrice || ''}
-                                    onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
-                                    placeholder="0.00"
-                                    className="w-full bg-transparent border-none p-0 text-orange-600 text-xl font-black outline-none focus:ring-0"
-                                />
-                                <span className="text-orange-400 font-black">€</span>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => handleAdjustPrice(-1)}
+                                    className="w-8 h-8 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
+                                >
+                                    <Minus size={16} strokeWidth={3} />
+                                </button>
+                                <div className="flex-1 flex items-center relative">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={purchasePrice || ''}
+                                        onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
+                                        placeholder="0.00"
+                                        className="w-full bg-transparent border-none p-0 text-orange-600 text-xl font-black outline-none focus:ring-0 text-center"
+                                    />
+                                    <span className="text-orange-400 font-black absolute right-0">€</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleAdjustPrice(1)}
+                                    className="w-8 h-8 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
+                                >
+                                    <Plus size={16} strokeWidth={3} />
+                                </button>
                             </div>
                         </div>
                     ) : !isAudit && (
@@ -234,21 +262,37 @@ export const CashDenominationForm = ({
                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
                                     {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                 </span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
-                                    onChange={(e) => handleCountChange(denom, e.target.value)}
-                                    placeholder="0"
-                                    className={cn(
-                                        "w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
-                                        (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
-                                            (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0)) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
-                                                "border-transparent focus:border-[#5B8FB9]/20 text-[#5B8FB9] focus:ring-[#5B8FB9]/5"
-                                    )}
-                                />
+                                <div className="flex items-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAdjust(denom, -1)}
+                                        className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-rose-500 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Minus size={14} strokeWidth={3} />
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
+                                        onChange={(e) => handleCountChange(denom, e.target.value)}
+                                        placeholder="0"
+                                        className={cn(
+                                            "w-full bg-white border-2 rounded-xl p-1.5 text-center font-black outline-none text-xs focus:ring-4 transition-all shadow-sm",
+                                            (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
+                                                (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0)) ? "border-rose-400 text-rose-600 focus:ring-rose-100" :
+                                                    "border-transparent focus:border-[#5B8FB9]/20 text-[#5B8FB9] focus:ring-[#5B8FB9]/5"
+                                        )}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAdjust(denom, 1)}
+                                        className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-emerald-500 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Plus size={14} strokeWidth={3} />
+                                    </button>
+                                </div>
                                 {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase">Disp: {availableStock[denom]}</span>
+                                    <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {availableStock[denom]}</span>
                                 )}
                             </div>
                         </div>

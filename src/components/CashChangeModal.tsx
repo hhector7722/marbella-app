@@ -71,10 +71,10 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
     };
 
     const DenomControl = ({ denom, count, side }: { denom: number, count: number, side: 'in' | 'out' }) => (
-        <div className="flex items-center gap-1.5 ">
+        <div className="flex items-center gap-0.5">
             <button
                 onClick={() => handleAdjust(denom, side, -1)}
-                className="w-8 h-8 flex items-center justify-center bg-white text-zinc-400 rounded-md active:scale-95 transition-all shadow-sm border border-zinc-200 hover:text-rose-500 hover:border-rose-200 shrink-0"
+                className="w-8 h-8 flex items-center justify-center text-zinc-400 active:scale-95 transition-all hover:text-rose-500 shrink-0"
             >
                 <Minus size={14} strokeWidth={3} />
             </button>
@@ -86,7 +86,7 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
             </span>
             <button
                 onClick={() => handleAdjust(denom, side, 1)}
-                className="w-8 h-8 flex items-center justify-center bg-white text-zinc-400 rounded-md active:scale-95 transition-all shadow-sm border border-zinc-200 hover:text-emerald-500 hover:border-emerald-200 shrink-0"
+                className="w-8 h-8 flex items-center justify-center text-zinc-400 active:scale-95 transition-all hover:text-emerald-500 shrink-0"
             >
                 <Plus size={14} strokeWidth={3} />
             </button>

@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-17
+**Última actualización:** 2026-02-20
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -50,6 +50,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Autocompletado Proactivo en Cierres (Refinado)**: Implementación de autocompletado instantáneo de ventas y tickets en el modal de cierre utilizando datos del dashboard en tiempo real. Se ha mejorado la robustez de la recuperación de datos mediante consultas directas a `tickets_marbella`, eliminando dependencias de RPC y garantizando la sincronización desde el panel de staff.
 - [x] **Corrección de Métrica de Ventas en Historial**: Se ha corregido el mapeo de la métrica "Ventas" de `gross_sales` a `tpv_sales` en `/history`, solucionando el problema de visualización de "0€".
 - [x] **Restricción de Rol Supervisor**: Eliminación del acceso de supervisores al panel de administración y a la lista de plantilla, redirigiéndolos automáticamente al panel de staff para mantener la seguridad operativa.
+- [x] 📸 **Imágenes en Desglose de Historial**: Integración de representaciones visuales de billetes y monedas en el modal de desglose de efectivo de `/dashboard/history`, mejorando la coherencia visual con el resto de la aplicación.
+- [x] 📱 **Refinamiento Mobile Historial**: Ajuste radical de la vista smartphone en `/history`. Eliminación de fondo circular en flecha de volver, ajuste dinámico del selector de métricas y optimización del calendario para visualización sin scroll horizontal en dispositivos móviles.
+- [x] 🔘 **Controles Monetarios Proactivos**: Implementación de botones "+" y "-" en todos los campos de entrada monetaria y desgloses de efectivo (Entradas, Salidas, Arqueos, Cierres). Los botones son "frameless" siguiendo el diseño minimalista de Marbella y permiten ajustes rápidos sin perder la capacidad de edición manual.
 
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
@@ -68,7 +71,6 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Refinamiento Estético de Iconos**: Sustitución de props de tamaño por clases Tailwind y unificación de estilos en iconos de acción de tesorería.
 
 ## 📅 PENDIENTE
-- [x] **Imágenes en Desglose de Historial**: Integración de representaciones visuales de billetes y monedas en el modal de desglose de efectivo de `/dashboard/history`, mejorando la coherencia visual con el resto de la aplicación.
 - [ ] Próximas integraciones de BI y alertas de stock.
 
 ---
