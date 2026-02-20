@@ -220,9 +220,9 @@ function RecipesContent() {
                         {/* Header del Modal */}
                         <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center shrink-0 border-b border-white/10">
                             <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0">
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center overflow-hidden shrink-0 p-1">
                                     {fullRecipeData?.photo_url ? (
-                                        <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-cover" />
+                                        <img src={fullRecipeData.photo_url} alt="" className="w-full h-full object-contain" />
                                     ) : (
                                         <ChefHat className="w-8 h-8 text-zinc-200" />
                                     )}

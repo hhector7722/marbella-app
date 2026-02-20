@@ -79,32 +79,34 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     return (
         <div className="relative group overflow-hidden h-full">
             <div className={cn(
-                "bg-white rounded-2xl p-3 shadow-md transition-all flex flex-col h-full",
+                "bg-white rounded-2xl shadow-md transition-all flex flex-col h-full overflow-hidden",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-xl" : "hover:shadow-lg hover:-translate-y-0.5"
             )}>
-                {/* Product Image */}
-                <div className="h-24 w-full bg-white rounded-2xl flex items-center justify-center mb-3 overflow-hidden relative grayscale-[0.2] group-hover:grayscale-0 transition-all border border-zinc-100">
-                    {ingredient.image_url ? (
-                        <img src={ingredient.image_url} className="w-full h-full object-contain p-2" alt={ingredient.name} />
-                    ) : (
-                        <Package className="text-gray-200 w-10 h-10" />
-                    )}
-                    {isUpdating && (
-                        <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px]">
-                            <LoadingSpinner size="sm" className="text-[#5E35B1]" />
-                        </div>
-                    )}
-                </div>
+                <div className="p-3 flex-1 flex flex-col">
+                    {/* Product Image */}
+                    <div className="h-24 w-full flex items-center justify-center mb-3 relative grayscale-[0.2] group-hover:grayscale-0 transition-all">
+                        {ingredient.image_url ? (
+                            <img src={ingredient.image_url} className="w-full h-full object-contain p-2" alt={ingredient.name} />
+                        ) : (
+                            <Package className="text-gray-200 w-10 h-10" />
+                        )}
+                        {isUpdating && (
+                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-2xl">
+                                <LoadingSpinner size="sm" className="text-[#5E35B1]" />
+                            </div>
+                        )}
+                    </div>
 
-                {/* Product Info */}
-                <div className="flex flex-col px-1 mb-2">
-                    <span className="font-black text-gray-800 text-[11px] leading-tight" title={ingredient.name}>
-                        {ingredient.name}
-                    </span>
+                    {/* Product Info */}
+                    <div className="flex flex-col px-1 mb-2 mt-auto">
+                        <span className="font-black text-gray-800 text-[11px] leading-tight" title={ingredient.name}>
+                            {ingredient.name}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Controls & Unit (Bottom Area) */}
-                <div className="mt-auto bg-[#36606F] rounded-xl p-1.5 flex flex-row items-center justify-between gap-1 shadow-inner">
+                <div className="bg-[#36606F] p-2 flex flex-row items-center justify-between shrink-0 shadow-inner">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
@@ -113,37 +115,39 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         <Minus size={16} strokeWidth={3} />
                     </button>
 
-                    <div className="flex-1 flex flex-row items-center justify-center gap-1 overflow-hidden">
-                        <input
-                            type="number"
-                            value={quantity === 0 ? "" : quantity}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                setQuantity(isNaN(val) ? 0 : Math.max(0, val));
-                            }}
-                            placeholder="0"
-                            className="w-8 bg-transparent text-right font-black text-base text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
+                    <div className="flex-1 flex flex-row items-center justify-center px-1">
+                        <div className="flex-1 flex justify-end">
+                            <input
+                                type="number"
+                                value={quantity === 0 ? "" : quantity}
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    setQuantity(isNaN(val) ? 0 : Math.max(0, val));
+                                }}
+                                placeholder="0"
+                                className="w-10 bg-transparent text-right font-black text-sm text-white outline-none pr-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                        </div>
 
-                        {isCustomUnit ? (
-                            <div className="flex items-center min-w-0">
-                                <input
-                                    type="text"
-                                    value={customUnit}
-                                    onChange={(e) => setCustomUnit(e.target.value)}
-                                    placeholder="?"
-                                    className="w-12 text-[10px] font-bold uppercase bg-white/10 text-white rounded px-1 py-1 outline-none"
-                                    autoFocus
-                                />
-                                <button
-                                    onClick={() => setIsCustomUnit(false)}
-                                    className="text-[10px] text-white/50 hover:text-white font-bold ml-1 shrink-0 p-1"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex-1 min-w-0">
+                        <div className="flex-1 flex justify-start min-w-0">
+                            {isCustomUnit ? (
+                                <div className="flex items-center min-w-0">
+                                    <input
+                                        type="text"
+                                        value={customUnit}
+                                        onChange={(e) => setCustomUnit(e.target.value)}
+                                        placeholder="?"
+                                        className="w-8 text-[10px] font-bold uppercase bg-white/10 text-white rounded px-1 py-1 outline-none"
+                                        autoFocus
+                                    />
+                                    <button
+                                        onClick={() => setIsCustomUnit(false)}
+                                        className="text-[10px] text-white/50 hover:text-white font-bold ml-1 shrink-0 p-1"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ) : (
                                 <select
                                     value={unit}
                                     onChange={(e) => {
@@ -159,8 +163,8 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                                         <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
                                     ))}
                                 </select>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     <button

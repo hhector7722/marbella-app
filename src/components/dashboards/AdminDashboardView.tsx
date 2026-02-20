@@ -61,11 +61,11 @@ const StaffOvertimeRow = memo(({
             <button
                 onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
                 className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
-                    isPaid ? "bg-emerald-500 text-white shadow-md" : "bg-white border-2 border-gray-200 text-transparent"
+                    "flex items-center justify-center transition-all active:scale-90",
+                    isPaid ? "text-emerald-500" : "text-gray-300 hover:text-gray-400"
                 )}
             >
-                <CheckCircle2 className="w-4 h-4" />
+                {isPaid ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
             </button>
         </div>
     </div>
@@ -91,8 +91,8 @@ const WeekOvertimeCard = memo(({
         <div className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
             <button onClick={() => onToggleWeek(week.weekId)} className={cn("w-full p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
                 <div className="flex items-center gap-3">
-                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>
-                        {isFullyPaid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    <div className={cn("flex items-center justify-center transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "text-white" : "text-orange-400")}>
+                        {isFullyPaid ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                     </div>
                     <div className="flex items-center gap-2">
                         <h4 className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
@@ -728,31 +728,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             {cashModalMode !== 'none' && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", cashModalMode === 'swap' ? "max-w-4xl" : "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-                        {cashModalMode === 'menu' && (
-                            <>
-                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0"><div><h3 className="text-lg font-black uppercase tracking-wider leading-none">{selectedBox?.type === 'operational' ? 'Caja Inicial' : (selectedBox?.type === 'change' ? `Caja ${selectedBox.name}` : 'Gestión de Caja')}</h3></div><button onClick={() => setCashModalMode('none')} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button></div>
-                                <div className="p-4 grid grid-cols-2 gap-4">
-                                    {selectedBox?.type === 'change' ? (
-                                        <>
-                                            <button onClick={() => setCashModalMode('swap')} className="col-span-2 bg-transparent border-0 hover:bg-orange-50/50 p-8 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-16 h-16"><Image src="/icons/reverse.png" alt="Caja" width={64} height={64} className="w-full h-full object-contain" /></div><span className="font-black text-xl text-zinc-900">Caja</span></button>
-                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('audit'); }} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/change.png" alt="Arqueo" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Arqueo</span></button>
-                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); setBoxInventory(data || []); setCashModalMode('inventory'); }} className="bg-transparent border-0 hover:bg-gray-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-12 h-12"><Image src="/icons/wallet.png" alt="Ver Desglose" width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Ver Desglose</span></button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={() => setCashModalMode('in')} className="bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/in.png" alt="Entrada" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Entrada</span></button>
-                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('out'); }} className="bg-transparent border-0 hover:bg-rose-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/out.png" alt="Salida" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Salida</span></button>
-                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); const initial: any = {}; data?.forEach(d => initial[d.denomination] = d.quantity); setBoxInventoryMap(initial); setBoxInventory(data || []); setCashModalMode('audit'); }} className="bg-transparent border-0 hover:bg-orange-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/change.png" alt="Arqueo" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Arqueo</span></button>
-                                            <button onClick={() => router.push('/dashboard/movements')} className="bg-transparent border-0 hover:bg-blue-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/admin.png" alt="Movimientos" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Movimientos</span></button>
-                                            <button onClick={async () => { const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', selectedBox.id).gt('quantity', 0); setBoxInventory(data || []); setCashModalMode('inventory'); }} className="col-span-2 bg-transparent border-0 hover:bg-emerald-50/50 p-6 rounded-2xl flex flex-col items-center gap-2 transition-all group active:scale-95"><div className="w-10 h-10 mb-1"><Image src="/icons/wallet.png" alt="Ver Desglose" width={40} height={40} className="w-full h-full object-contain" /></div><span className="font-black text-zinc-900">Ver Desglose</span></button>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        )}
+
                         {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && <CashDenominationForm type={cashModalMode as 'in' | 'out' | 'audit'} boxName={selectedBox?.name || 'Caja'} initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}} availableStock={boxInventoryMap} onCancel={() => setCashModalMode('none')} onSubmit={handleCashTransaction} />}
-                        {cashModalMode === 'swap' && <CashChangeModal boxId={selectedBox?.id} boxName={selectedBox?.name || 'Caja'} onClose={() => setCashModalMode('menu')} onSuccess={() => { fetchData(); setCashModalMode('menu'); }} />}
-                        {cashModalMode === 'inventory' && <BoxInventoryView boxName={selectedBox?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('menu')} />}
+                        {cashModalMode === 'swap' && <CashChangeModal boxId={selectedBox?.id} boxName={selectedBox?.name || 'Caja'} onClose={() => setCashModalMode('none')} onSuccess={() => { fetchData(); setCashModalMode('none'); }} />}
+                        {cashModalMode === 'inventory' && <BoxInventoryView boxName={selectedBox?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />}
                     </div>
                 </div>
             )}

@@ -69,7 +69,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Métrica de Diferencia en Dashboard**: Sustitución de la flecha en la tarjeta de Caja Inicial por el valor de la diferencia, con lógica de colores (rojo < 0, blanco > 0) y tick para descuadre cero.
 - [x] **Optimización Mobile Movimientos**: Ajuste radical de la vista smartphone en `/dashboard/movements`. Acciones de cabecera alineadas con el título, resumen de KPIs en fila única de 4 columnas y refinamiento de la distribución de anchos en la tabla de movimientos para evitar solapamientos.
 - [x] **Refinamiento Estético de Iconos**: Sustitución de props de tamaño por clases Tailwind y unificación de estilos en iconos de acción de tesorería.
-- [x] **Rediseño Tarjeta Producto (Pedidos)**: Reducción del tamaño de fuente del nombre del producto y reestructuración de la zona de controles con disposición horizontal (botón -, cantidad, unidad, botón +) sobre fondo color petróleo premium.
+- [x] **Rediseño Tarjeta Producto (Pedidos)**: Reducción del tamaño de fuente del nombre del producto y reestructuración de la zona inferior. **Refinado**: Eliminación de marco en imagen para efecto flotante, área de controles edge-to-edge color petróleo y disposición perfectamente simétrica de input numérico y selector de unidad con texto reducido (`text-sm`).
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
