@@ -6,7 +6,7 @@ import {
     X, Save, Banknote, Coins, Calculator,
     CreditCard, UserMinus, ArchiveRestore, Store,
     AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
-    CheckCircle2, TrendingUp
+    CheckCircle2, TrendingUp, RefreshCw
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
@@ -42,20 +42,22 @@ interface CashClosingModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
+    initialTotalSales?: number;
+    initialTicketsCount?: number;
 }
 
-export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClosingModalProps) {
+export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
 
     // 1. STATE: TPVs
     const [tpvData, setTpvData] = useState({
-        totalSales: 0,
+        totalSales: initialTotalSales || 0,
         cardSales: 0,
         pendingSales: 0,
         debtRecovered: 0,
-        ticketsCount: 0,
+        ticketsCount: initialTicketsCount || 0,
         weather: 'Soleado'
     });
 
@@ -71,8 +73,20 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
     useEffect(() => {
         if (isOpen) {
-            // fetchOpening(); // Se elimina el fondo de caja fijo
-            fetchTodayVentas();
+            // Priority: If opening for Today, use dashboard live data
+            const now = new Date();
+            const selectedDateStr = format(new Date(selectedDateTime), 'yyyy-MM-dd');
+            const todayStr = format(now, 'yyyy-MM-dd');
+
+            if (selectedDateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
+                setTpvData(prev => ({
+                    ...prev,
+                    totalSales: initialTotalSales,
+                    ticketsCount: initialTicketsCount
+                }));
+            } else {
+                fetchTodayVentas();
+            }
         } else {
             // Reset state on close
             setStep('tpv_data');
@@ -106,6 +120,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
 
         if (error) {
             console.error("Error fetching aggregated sales:", error);
+            setLoading(false);
             return;
         }
 
@@ -261,9 +276,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                         step="0.01"
                                         className="w-full text-4xl font-black text-[#5B8FB9] bg-transparent border-none outline-none focus:ring-0"
                                         placeholder="0.00"
-                                        value={tpvData.totalSales || ''}
+                                        value={tpvData.totalSales === 0 ? '0' : tpvData.totalSales}
                                         onChange={e => setTpvData({ ...tpvData, totalSales: parseFloat(e.target.value) || 0 })}
                                     />
+                                    <button
+                                        onClick={() => fetchTodayVentas()}
+                                        className="p-2 hover:bg-white/50 rounded-xl transition-all active:scale-90 text-[#36606F]/40 hover:text-[#36606F]"
+                                        title="Sincronizar con TPV"
+                                    >
+                                        <RefreshCw size={24} className={cn(loading && "animate-spin")} />
+                                    </button>
                                     <span className="text-4xl font-black text-[#5B8FB9]/40">€</span>
                                 </div>
                             </div>
@@ -289,12 +311,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><CreditCard size={12} /> Tarjeta</label>
                                         <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9]"
-                                            value={tpvData.cardSales || ''} onChange={e => setTpvData({ ...tpvData, cardSales: parseFloat(e.target.value) || 0 })} />
+                                            value={tpvData.cardSales === 0 ? '0' : tpvData.cardSales} onChange={e => setTpvData({ ...tpvData, cardSales: parseFloat(e.target.value) || 0 })} />
                                     </div>
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><UserMinus size={12} /> Pendiente</label>
                                         <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9]"
-                                            value={tpvData.pendingSales || ''} onChange={e => setTpvData({ ...tpvData, pendingSales: parseFloat(e.target.value) || 0 })} />
+                                            value={tpvData.pendingSales === 0 ? '0' : tpvData.pendingSales} onChange={e => setTpvData({ ...tpvData, pendingSales: parseFloat(e.target.value) || 0 })} />
                                     </div>
                                 </div>
 
@@ -302,12 +324,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess }: CashClo
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><ArchiveRestore size={12} /> Cobros</label>
                                         <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9]"
-                                            value={tpvData.debtRecovered || ''} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
+                                            value={tpvData.debtRecovered === 0 ? '0' : tpvData.debtRecovered} onChange={e => setTpvData({ ...tpvData, debtRecovered: parseFloat(e.target.value) || 0 })} />
                                     </div>
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><Receipt size={12} /> Nº Tickets</label>
                                         <input type="number" className="w-full p-2 text-sm font-bold border-b border-gray-200 bg-transparent outline-none focus:border-[#5B8FB9]"
-                                            value={tpvData.ticketsCount || ''} onChange={e => setTpvData({ ...tpvData, ticketsCount: parseInt(e.target.value) || 0 })} />
+                                            value={tpvData.ticketsCount === 0 ? '0' : tpvData.ticketsCount} onChange={e => setTpvData({ ...tpvData, ticketsCount: parseInt(e.target.value) || 0 })} />
                                     </div>
                                 </div>
                             </div>

@@ -22,10 +22,10 @@ export default async function HomePage() {
   const role = profile?.role;
 
   // Redirección basada en rol
-  if (role === "manager" || role === "supervisor") {
+  if (role === "manager") {
     redirect("/dashboard");
   } else {
-    // Por defecto redirigir a staff dashboard (para staff y otros roles)
+    // Por defecto redirigir a staff dashboard (para staff, supervisor y otros roles)
     redirect("/staff/dashboard");
   }
 }

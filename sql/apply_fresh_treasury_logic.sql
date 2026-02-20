@@ -144,11 +144,10 @@ BEGIN
             FROM cash_boxes WHERE type = 'operational' LIMIT 1;
         END IF;
     ELSIF TG_OP = 'UPDATE' THEN
-        -- Simplemente actualizamos la fila existente. El trigger fn_sync_box_inventory_v2 hará el resto.
         UPDATE treasury_log 
         SET amount = NEW.cash_withdrawn, 
             breakdown = NEW.breakdown, 
-            notes = 'Cierre TPV: ' || NEW.closing_date || ' (Editado)'
+            notes = 'Cierre TPV: ' || NEW.closing_date
         WHERE closing_id = NEW.id;
         
         -- Si no existía y ahora hay monto, insertar

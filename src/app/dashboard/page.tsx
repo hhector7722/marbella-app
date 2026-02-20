@@ -16,7 +16,7 @@ export default async function AdminDashboardPage() {
 
     if (profile) {
         // Redirect logic moved to server side
-        if (profile.role !== 'manager' && profile.role !== 'supervisor') {
+        if (profile.role !== 'manager') {
             redirect('/staff/dashboard');
         }
     }

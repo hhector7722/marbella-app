@@ -32,11 +32,11 @@ import { toast } from 'sonner';
 import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 
 // --- TYPES & CONSTANTS ---
-type MetricType = 'net_sales' | 'gross_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
+type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
 
 const METRICS: { label: string; value: MetricType; icon: any }[] = [
     { label: 'Venta Neta', value: 'net_sales', icon: TrendingUp },
-    { label: 'Ventas', value: 'gross_sales', icon: TrendingUp },
+    { label: 'Ventas', value: 'tpv_sales', icon: TrendingUp },
     { label: 'Tickets', value: 'tickets_count', icon: Calendar },
     { label: 'Efectivo', value: 'cash_counted', icon: Banknote },
 ];
@@ -517,7 +517,7 @@ export default function HistoryPage() {
                         {/* COMPACT SUMMARY (Integrated) */}
                         <div className="pt-1 md:pt-1.5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'gross_sales')}</span>
+                                <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">

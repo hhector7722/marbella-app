@@ -130,12 +130,11 @@ BEGIN
             VALUES (v_op_box_id, 'CLOSE_ENTRY', NEW.cash_withdrawn, NEW.breakdown, NEW.closed_by, 'Cierre TPV: ' || NEW.closing_date, NEW.id);
         END IF;
     ELSIF TG_OP = 'UPDATE' THEN
-        UPDATE treasury_log SET amount = NEW.cash_withdrawn, breakdown = NEW.breakdown, notes = 'Cierre TPV: ' || NEW.closing_date || ' (Editado)'
+        UPDATE treasury_log SET amount = NEW.cash_withdrawn, breakdown = NEW.breakdown, notes = 'Cierre TPV: ' || NEW.closing_date
         WHERE closing_id = NEW.id;
         
-        IF NOT FOUND AND v_op_box_id IS NOT NULL AND NEW.cash_withdrawn > 0 THEN
             INSERT INTO treasury_log (box_id, type, amount, breakdown, user_id, notes, closing_id)
-            VALUES (v_op_box_id, 'CLOSE_ENTRY', NEW.cash_withdrawn, NEW.breakdown, NEW.closed_by, 'Cierre TPV: ' || NEW.closing_date || ' (Editado)', NEW.id);
+            VALUES (v_op_box_id, 'CLOSE_ENTRY', NEW.cash_withdrawn, NEW.breakdown, NEW.closed_by, 'Cierre TPV: ' || NEW.closing_date, NEW.id);
         ELSIF NEW.cash_withdrawn <= 0 THEN
             DELETE FROM treasury_log WHERE closing_id = NEW.id;
         END IF;

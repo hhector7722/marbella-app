@@ -828,7 +828,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
                 )
             }
-            <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} />
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={fetchData}
+                initialTotalSales={liveTickets.total}
+                initialTicketsCount={liveTickets.count}
+            />
 
             {/* MODAL HISTORIAL TRABAJADOR */}
             <WorkerWeeklyHistoryModal
