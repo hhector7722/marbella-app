@@ -106,7 +106,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Controls & Unit (Bottom Area) */}
-                <div className="bg-[#36606F] p-2 flex flex-row items-center justify-between shrink-0 shadow-inner">
+                <div className="bg-[#36606F] p-2 flex flex-row items-center justify-between gap-1 shrink-0 shadow-inner w-full">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
@@ -115,57 +115,51 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         <Minus size={16} strokeWidth={3} />
                     </button>
 
-                    <div className="flex-1 flex flex-row items-center justify-center px-1">
-                        <div className="flex-1 flex justify-end">
-                            <input
-                                type="number"
-                                value={quantity === 0 ? "" : quantity}
-                                onChange={(e) => {
-                                    const val = parseFloat(e.target.value);
-                                    setQuantity(isNaN(val) ? 0 : Math.max(0, val));
-                                }}
-                                placeholder="0"
-                                className="w-10 bg-transparent text-right font-black text-sm text-white outline-none pr-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                        </div>
+                    <input
+                        type="number"
+                        value={quantity === 0 ? "" : quantity}
+                        onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            setQuantity(isNaN(val) ? 0 : Math.max(0, val));
+                        }}
+                        placeholder="0"
+                        className="w-10 bg-transparent text-center font-black text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
 
-                        <div className="flex-1 flex justify-start min-w-0">
-                            {isCustomUnit ? (
-                                <div className="flex items-center min-w-0">
-                                    <input
-                                        type="text"
-                                        value={customUnit}
-                                        onChange={(e) => setCustomUnit(e.target.value)}
-                                        placeholder="?"
-                                        className="w-8 text-[10px] font-bold uppercase bg-white/10 text-white rounded px-1 py-1 outline-none"
-                                        autoFocus
-                                    />
-                                    <button
-                                        onClick={() => setIsCustomUnit(false)}
-                                        className="text-[10px] text-white/50 hover:text-white font-bold ml-1 shrink-0 p-1"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ) : (
-                                <select
-                                    value={unit}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'otro...') {
-                                            setIsCustomUnit(true);
-                                        } else {
-                                            setUnit(e.target.value);
-                                        }
-                                    }}
-                                    className="w-full text-left text-[10px] font-bold uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors truncate"
-                                >
-                                    {unitOptions.map(opt => (
-                                        <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
-                                    ))}
-                                </select>
-                            )}
+                    {isCustomUnit ? (
+                        <div className="flex items-center shrink-0">
+                            <input
+                                type="text"
+                                value={customUnit}
+                                onChange={(e) => setCustomUnit(e.target.value)}
+                                placeholder="?"
+                                className="w-12 text-[10px] font-bold uppercase bg-white/10 text-white rounded px-1 py-1 outline-none text-center"
+                                autoFocus
+                            />
+                            <button
+                                onClick={() => setIsCustomUnit(false)}
+                                className="text-[10px] text-white/50 hover:text-white font-bold ml-1 shrink-0 p-1"
+                            >
+                                ✕
+                            </button>
                         </div>
-                    </div>
+                    ) : (
+                        <select
+                            value={unit}
+                            onChange={(e) => {
+                                if (e.target.value === 'otro...') {
+                                    setIsCustomUnit(true);
+                                } else {
+                                    setUnit(e.target.value);
+                                }
+                            }}
+                            className="w-auto text-center text-[10px] sm:text-[11px] font-bold uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
+                        >
+                            {unitOptions.map(opt => (
+                                <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
+                            ))}
+                        </select>
+                    )}
 
                     <button
                         onClick={handleIncrement}
