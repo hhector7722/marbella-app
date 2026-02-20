@@ -671,7 +671,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     return (
                                         <div key={box.id} className="flex flex-row gap-1 items-center">
                                             {/* Caja Display */}
-                                            <div className="flex-[1.5] basis-0 px-1 flex flex-col">
+                                            <div className="flex-[1.2] basis-0 px-1 flex flex-col">
                                                 <span className="text-[7px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
                                                 <span className="text-sm font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
                                                 {isOk ? (
@@ -683,10 +683,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 )}
                                             </div>
                                             {/* Botones */}
-                                            <div className="flex-[1] basis-0 grid grid-cols-2 gap-1">
+                                            <div className="flex-[1.3] basis-0 flex justify-between items-center gap-1">
                                                 <button
                                                     onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                    className="bg-transparent p-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                                    className="bg-transparent p-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px] -ml-1.5"
                                                 >
                                                     <div className="w-6 h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                         <ArrowRightLeft size={10} strokeWidth={3} className="text-white" />
