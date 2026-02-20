@@ -149,20 +149,20 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
                                         <div className="flex items-center justify-between w-24 h-9 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20 font-sans">
                                             <button
                                                 onClick={() => onUpdate?.(den, Math.max(0, (qty as number || 0) - 1))}
-                                                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
                                             >
                                                 <Minus size={14} strokeWidth={3} />
                                             </button>
                                             <input
                                                 type="number"
                                                 min="0"
-                                                className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[11px] focus:bg-blue-50/20 transition-colors tabular-nums"
+                                                className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
                                                 value={qty as number || ''}
                                                 onChange={e => onUpdate?.(den, parseInt(e.target.value) || 0)}
                                             />
                                             <button
                                                 onClick={() => onUpdate?.(den, (qty as number || 0) + 1)}
-                                                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
                                             >
                                                 <Plus size={14} strokeWidth={3} />
                                             </button>
@@ -703,42 +703,42 @@ export default function HistoryPage() {
                                                             </div>
 
                                                             <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
-                                                                {/* Main Value & Percentage Row - Aggressive Scaling */}
-                                                                <div className="flex items-center justify-between gap-0.5 md:gap-1 mb-0.5 px-0.5">
-                                                                    <div className="text-[9px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none truncate max-w-[70%]">
-                                                                        {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                        {selectedMetric !== 'tickets_count' && <span className="text-[6px] md:text-[12px] ml-0.5 font-black">€</span>}
-                                                                    </div>
-                                                                    <div className={cn(
-                                                                        "text-[6px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto bg-white/50 px-0.5 rounded",
-                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
-                                                                    )}>
-                                                                        {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(Math.round(parseFloat(diffPerc)))}%
+                                                                {/* Main Metric & Comparison Row */}
+                                                                <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-0.5 md:gap-2 mb-1">
+                                                                    <span className="text-[7px] min-[370px]:text-[8px] sm:text-[10px] md:text-[14px] lg:text-[18px] xl:text-[22px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none break-all sm:break-normal">
+                                                                        {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                                    </span>
+                                                                    <div className="flex flex-col items-start xl:items-end mt-0.5 xl:mt-0">
+                                                                        <div className={cn(
+                                                                            "text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter whitespace-nowrap leading-none",
+                                                                            parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                                        )}>
+                                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}%
+                                                                        </div>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Label - Full Concept (Compact) */}
-                                                                <div className="hidden md:block text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1 md:mb-2 px-0.5 truncate">
-                                                                    {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                                </div>
-
-                                                                {/* 2x2 Bento Grid Footer (Refined Scaling) */}
-                                                                <div className="grid grid-cols-2 gap-y-1 md:gap-y-1.5 gap-x-1 md:gap-x-1.5 mt-auto w-full pt-1 md:pt-1.5 border-t border-zinc-100">
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
-                                                                        <span className="hidden md:block text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Ventas</span>
+                                                                {/* Symmetrical 4-Column Metrics Footer */}
+                                                                <div className="grid grid-cols-4 gap-0 pt-1.5 md:pt-3 border-t border-zinc-100 mt-auto w-full">
+                                                                    <div className="flex flex-col items-center justify-center">
+                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter">
+                                                                            {Math.round(closing.tpv_sales)}€
+                                                                        </span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
-                                                                        <span className="hidden md:block text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Media</span>
+                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100 italic">
+                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-[#36606F] tabular-nums leading-none tracking-tighter">
+                                                                            {(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(1)}€
+                                                                        </span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
-                                                                        <span className="hidden md:block text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Cash</span>
+                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100">
+                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter">
+                                                                            {Math.round(closing.sales_card || 0)}€
+                                                                        </span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[7px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
-                                                                        <span className="hidden md:block text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Tarjeta</span>
+                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100">
+                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-emerald-600 tabular-nums leading-none tracking-tighter">
+                                                                            {(closing.cash_counted || 0).toFixed(0)}€
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>

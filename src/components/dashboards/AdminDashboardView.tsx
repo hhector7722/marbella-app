@@ -485,7 +485,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     return (
                                         <div key={box.id} className="flex flex-row gap-2 items-center">
                                             {/* Caja Display */}
-                                            <div className="grow-[1.5] basis-0 px-4 py-3 rounded-2xl flex flex-row items-center justify-between border border-zinc-100 bg-gray-50/50">
+                                            <div className="grow-[1.5] basis-0 px-2 py-1 flex flex-row items-center justify-between">
                                                 <div className="flex flex-col items-start leading-none gap-0.5">
                                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Cambio {idx + 1}</span>
                                                     <span className="text-2xl font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
@@ -664,14 +664,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <div className="bg-[#36606F] px-4 py-2 flex items-center text-white shrink-0">
                                 <h3 className="text-[10px] font-black uppercase tracking-wider">Cajas Cambio</h3>
                             </div>
-                            <div className="p-3 space-y-3 flex-1">
+                            <div className="p-2 py-1 space-y-1.5 flex-1 flex flex-col justify-center">
                                 {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
                                     const diff = box.current_balance - 300;
                                     const isOk = Math.abs(diff) < 0.01;
                                     return (
-                                        <div key={box.id} className="flex flex-row gap-2 items-center">
+                                        <div key={box.id} className="flex flex-row gap-1 items-center">
                                             {/* Caja Display */}
-                                            <div className="flex-[1.5] basis-0 px-2.5 py-2 rounded-xl border border-zinc-100 bg-gray-50/50 flex flex-col">
+                                            <div className="flex-[1.5] basis-0 px-1 flex flex-col">
                                                 <span className="text-[7px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
                                                 <span className="text-sm font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
                                                 {isOk ? (
