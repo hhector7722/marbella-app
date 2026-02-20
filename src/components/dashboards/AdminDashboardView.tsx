@@ -488,7 +488,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div
                                                 className={cn(
                                                     "grow-[1.5] basis-0 px-4 py-3 rounded-2xl shadow-md flex flex-row items-center justify-between text-white transition-all",
-                                                    isOk ? "bg-[#36606F]" : "bg-rose-600"
+                                                    isOk ? "bg-[#36606F]" : "bg-orange-400"
                                                 )}
                                             >
                                                 <div className="flex flex-col items-start leading-none gap-0.5">
@@ -499,7 +499,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                     {isOk ? (
                                                         <Check className="w-4 h-4 text-white" strokeWidth={4} />
                                                     ) : (
-                                                        <span className="text-sm font-black text-rose-100">
+                                                        <span className="text-sm font-black text-white">
                                                             {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
                                                         </span>
                                                     )}
@@ -679,7 +679,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <div key={box.id} className="flex flex-col gap-2">
                                             <div className={cn(
                                                 "w-full px-3 py-2 rounded-xl flex items-center justify-between text-white",
-                                                isOk ? "bg-[#36606F]" : "bg-rose-600"
+                                                isOk ? "bg-[#36606F]" : "bg-orange-400"
                                             )}>
                                                 <div className="flex flex-col">
                                                     <span className="text-[7px] font-black uppercase tracking-wider opacity-70">Cambio {idx + 1}</span>

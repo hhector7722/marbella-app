@@ -305,7 +305,7 @@ export default function MovementsPage() {
                                     <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <Plus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">ENTRA</span>
+                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">ENTRADA</span>
                                 </button>
                                 <button
                                     onClick={openOut}
@@ -314,7 +314,7 @@ export default function MovementsPage() {
                                     <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
                                         <Minus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">SALE</span>
+                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">SALIDA</span>
                                 </button>
                                 <button
                                     onClick={openAudit}
