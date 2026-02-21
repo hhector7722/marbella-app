@@ -75,6 +75,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Tarjeta Horas Extras**: Eliminación del relleno verde y borde lila, implementando fondos blancos flotantes con sombra y rediseño de marcadores (icono unificado ! rojo/blanco y tick esmeralda) tanto en Dashboard Admin como en /overtime.
 - [x] **Igualación Calendario/Escritorio (Historial)**: Adaptación exacta de proporciones en tarjetas de calendario (4 columnas), suprimiendo textos y asegurando legibilidad completa de números en móvil mediante diseño fluido extremo.
 - [x] **Optimización Altura Caja Inicial Mobile**: Reducción del espaciado dinámico debajo de la fila de 'Movimientos' cuando está plegada, permitiendo que el contenido inferior (Horas Extras, etc.) suba proporcionalmente para aprovechar el espacio en pantalla.
+- [x] **Ajuste Fino de Posiciones Mobile Dashboard**: Subido el bloque completo de contenido hacia la cabecera eliminando padding superior (`pt-0`) y ajustando el gap de Ventas, además de reducir ligeramente la altura de los indicadores (puntos) de paginación entre dashboards.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
