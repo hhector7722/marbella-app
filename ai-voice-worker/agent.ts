@@ -1,3 +1,5 @@
+// @ts-nocheck
+// Este archivo es un worker Node.js independiente. No es parte del bundle de Next.js.
 import { WorkerOptions, cli, defineAgent, llm, pipeline } from '@livekit/agents';
 import * as openai from '@livekit/agents-plugin-openai';
 import * as silero from '@livekit/agents-plugin-silero';
@@ -87,8 +89,20 @@ export default defineAgent({
             new openai.STT(),
             new openai.realtime.RealtimeModel({
                 instructions: SYSTEM_INSTRUCTION,
-                voice: 'shimmer', // Voz operativa
+                voice: 'shimmer',
                 temperature: 0.6,
+                // ─── VAD ENDURECIDO PARA ENTORNO DE HOSTELERÍA (+80dB) ───────────────
+                // threshold: 0.8 → Exige confianza alta. Ignora golpes, música y ruido blanco.
+                //   Default OpenAI: 0.5 — inaceptable en cocina o terraza.
+                // silence_duration_ms: 1200 → El personal duda al dictar pedidos.
+                //   Una pausa de 500ms (default) NO significa fin de turno. 1.2s es el umbral mínimo viable.
+                // prefix_padding_ms: 300 → Captura el inicio de la frase sin cortar la primera sílaba.
+                turn_detection: {
+                    type: 'server_vad',
+                    threshold: 0.8,
+                    silence_duration_ms: 1200,
+                    prefix_padding_ms: 300,
+                },
             }),
             new openai.TTS(),
             { fncCtx: fnContext }

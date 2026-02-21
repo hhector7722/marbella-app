@@ -1,15 +1,22 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import { useChat } from 'ai/react';
 import { useState, useRef, useEffect } from 'react';
 import { Mic, Send, Image as ImageIcon, X, Phone, User, Bot, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 
 export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
-    const { messages, input, handleInputChange, handleSubmit, isLoading, setInput, append } = useChat({
-        api: '/api/chat',
-    });
+    const {
+        messages,
+        input,
+        setInput,
+        handleInputChange,
+        handleSubmit,
+        append,
+        isLoading,
+    } = useChat({ api: '/api/chat' });
+
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessingVoice, setIsProcessingVoice] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -44,8 +51,9 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
             setSelectedImage(null);
         }
 
-        // Si usas attachments con Vercel AI SDK 3.x, los pasas en el evento.
-        handleSubmit(e, { data: { imageUrl: mediaUrl } });
+        // La imagen se adjunta como dato extra en RequestOptions que acepta `data: Record<string, string>`
+        const opts = mediaUrl ? { data: { imageUrl: mediaUrl } } : undefined;
+        handleSubmit(e as React.FormEvent<HTMLFormElement>, opts);
     };
 
     // Escucha Realtime para las inyecciones asíncronas del Agente de Voz (Transcripciones, Resúmenes...)
@@ -67,9 +75,8 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     if (newMsg.role === 'assistant' || newMsg.content_type === 'call_transcript') {
                         // Evitar duplicados si Vercel AI SDK ya lo renderizó (se podría perfeccionar comparando ids)
                         append({
-                            role: newMsg.role as 'assistant' | 'user' | 'system' | 'data',
+                            role: newMsg.role as 'user' | 'assistant',
                             content: newMsg.text_content || 'Transcripción guardada.',
-                            id: newMsg.id
                         });
                     }
                 })
@@ -102,7 +109,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                         const res = await fetch('/api/stt', { method: 'POST', body: formData });
                         const data = await res.json();
                         if (data.text) {
-                            setInput((prev: string) => prev + (prev ? ' ' : '') + data.text);
+                            setInput(data.text);
                         }
                     } catch (err) {
                         console.error('Error transcripting audio', err);
@@ -153,16 +160,20 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     </div>
                 )}
 
-                {messages.map(m => (
-                    <div key={m.id} className={cn("flex flex-col gap-1 w-full max-w-[85%]", m.role === 'user' ? "ml-auto items-end" : "mr-auto items-start")}>
-                        <div className={cn(
-                            "p-3 rounded-2xl text-sm shadow-sm relative overflow-hidden",
-                            m.role === 'user' ? "bg-zinc-800 text-white rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-700 rounded-tl-sm"
-                        )}>
-                            {m.content}
+                {messages.map(m => {
+                    // AI SDK v6: el contenido vive en `parts[0].text` o en `content` para backwards compat
+                    const textContent = (m as any).content ?? (m as any).parts?.find((p: any) => p.type === 'text')?.text ?? '';
+                    return (
+                        <div key={m.id} className={cn("flex flex-col gap-1 w-full max-w-[85%]", m.role === 'user' ? "ml-auto items-end" : "mr-auto items-start")}>
+                            <div className={cn(
+                                "p-3 rounded-2xl text-sm shadow-sm relative overflow-hidden",
+                                m.role === 'user' ? "bg-zinc-800 text-white rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-700 rounded-tl-sm"
+                            )}>
+                                {textContent}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {isLoading && (
                     <div className="flex items-center gap-2 text-zinc-400 p-2">
                         <Loader2 size={14} className="animate-spin" />
@@ -191,7 +202,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                 <form onSubmit={handleCustomSubmit} className="flex items-end gap-2">
                     <div className="flex-1 bg-zinc-100 rounded-2xl flex items-center pr-2 pl-4 py-1 min-h-[48px] focus-within:ring-2 focus-within:ring-[#5B8FB9] transition-all">
                         <textarea
-                            value={input}
+                            value={input ?? ''}
                             onChange={handleInputChange}
                             placeholder="Escribe tu consulta..."
                             className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-zinc-800 resize-none max-h-32 min-h-[20px] py-3"
@@ -238,7 +249,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
 
                     <button
                         type="submit"
-                        disabled={isLoading || (!input.trim() && !selectedImage)}
+                        disabled={isLoading || (!input?.trim() && !selectedImage)}
                         className="bg-[#5B8FB9] text-white p-3.5 rounded-2xl shadow-md min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50 disabled:active:scale-100 active:scale-95 transition-all"
                     >
                         <Send size={18} className="translate-x-0.5" />

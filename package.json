@@ -6,17 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:all": "concurrently \"npm run dev\" \"cd ai-voice-worker && npx tsx agent.ts\""
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.30",
+    "@ai-sdk/react": "^3.0.99",
+    "@livekit/components-react": "^2.9.20",
+    "@livekit/components-styles": "^1.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.1",
-    "ai": "^6.0.97",
+    "ai": "^3.4.33",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
+    "livekit-client": "^2.17.2",
     "livekit-server-sdk": "^2.15.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
@@ -27,7 +32,8 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -37,6 +43,7 @@
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.23",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
     "postcss": "^8.5.6",

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { MessageSquare, ChevronLeft, Plus } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import CashClosingModal from './CashClosingModal';
+import { useAIStore } from '@/store/aiStore';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -13,6 +14,7 @@ export default function Navbar() {
     const supabase = createClient();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+    const toggleChat = useAIStore((state) => state.toggleChat);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -102,6 +104,7 @@ export default function Navbar() {
 
                         {/* BOTÓN IA RECTANGULAR */}
                         <button
+                            onClick={toggleChat}
                             className="flex items-center gap-2 px-3 h-8 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95 group"
                         >
                             <span className="text-[9px] font-black tracking-[0.15em] text-white">IA</span>
