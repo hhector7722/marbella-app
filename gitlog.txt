@@ -1,0 +1,29 @@
+commit 77c89173f6fde02b417bca083e8f1c69c75611ba
+Author: hhector7722 <hhector7722@gmail.com>
+Date:   Sat Feb 21 13:05:17 2026 +0100
+
+    fix(dashboard): implement absolute scroll lock and tighten mobile paddings
+
+commit 310cdb57e17130194869676f4afef8ad18f60a5b
+Author: hhector7722 <hhector7722@gmail.com>
+Date:   Fri Feb 20 23:41:59 2026 +0100
+
+    fix(dashboard): remove default mobile scroll when no dropdown is active
+
+commit 92dad778e8150bbf6b51798c92cad6bb86edb87e
+Author: hhector7722 <hhector7722@gmail.com>
+Date:   Fri Feb 20 23:35:56 2026 +0100
+
+    style: optimize Cajas Cambio buttons layout for better readability
+
+commit c659a69748064de727f1225dfe581f2841c61856
+Author: hhector7722 <hhector7722@gmail.com>
+Date:   Fri Feb 20 23:28:50 2026 +0100
+
+    style(orders): refine OrderProductCard layout & symmetry
+
+commit dfe5b56e93c3493623887ae88688057820c7b58f
+Author: hhector7722 <hhector7722@gmail.com>
+Date:   Fri Feb 20 23:26:08 2026 +0100
+
+    UI: Hide HTML number spinners app-wide
