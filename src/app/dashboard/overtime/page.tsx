@@ -75,23 +75,29 @@ const WeekOvertimeCard = memo(({
     const [expanded, setExpanded] = useState(false);
 
     return (
-        <div className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
-            <button onClick={() => setExpanded(!expanded)} className={cn("w-full p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all">
+            <button onClick={() => setExpanded(!expanded)} className="w-full p-3 flex items-center justify-between text-left group transition-colors hover:bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "bg-white/20 text-white" : "bg-orange-400 text-white")}>
-                        {isFullyPaid ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    <div className="flex items-center justify-center transition-transform group-hover:scale-110 shrink-0">
+                        {isFullyPaid ? (
+                            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                        ) : (
+                            <div className="w-6 h-6 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                <span className="text-white font-black text-sm leading-none pt-[1px]">!</span>
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <h4 className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
-                        <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
-                        <p className={cn("text-[10px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>
+                        <h4 className="text-sm font-black text-gray-900">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                        <span className="font-light mx-0.5 text-gray-300">•</span>
+                        <p className="text-[10px] font-bold uppercase pt-0.5 text-gray-500">
                             {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
                         </p>
                     </div>
                 </div>
                 <div className="text-right flex items-center gap-3">
-                    <span className={cn("text-lg font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{formatDisplay(week.totalAmount, '€')}</span>
-                    <ChevronDown className={cn("w-4 h-4 transition-transform", expanded && "rotate-180", isFullyPaid ? "text-white/50" : "text-purple-300")} />
+                    <span className="text-lg font-black text-gray-900">{formatDisplay(week.totalAmount, '€')}</span>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform text-gray-400", expanded && "rotate-180")} />
                 </div>
             </button>
             {expanded && (
