@@ -55,14 +55,46 @@ export default function NewOrderPage() {
     const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
 
     useEffect(() => {
+        let channel: any;
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
                 await fetchData(user.id);
+
+                // Supabase Realtime para actualizar la IU al recibir comandos de voz de la IA
+                channel = supabase.channel('order_drafts_changes')
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'order_drafts',
+                        filter: `user_id=eq.${user.id}`
+                    }, (payload) => {
+                        console.log('Realtime AI worker event:', payload);
+                        if (payload.eventType === 'DELETE') {
+                            setDrafts(prev => {
+                                const newDrafts = { ...prev };
+                                delete newDrafts[payload.old.ingredient_id];
+                                return newDrafts;
+                            });
+                        } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                            setDrafts(prev => ({
+                                ...prev,
+                                [payload.new.ingredient_id]: {
+                                    quantity: Number(payload.new.quantity),
+                                    unit: payload.new.unit || 'unidad'
+                                }
+                            }));
+                        }
+                    })
+                    .subscribe();
             }
         };
         init();
+
+        return () => {
+            if (channel) supabase.removeChannel(channel);
+        };
     }, []);
 
     async function fetchData(uid: string) {
