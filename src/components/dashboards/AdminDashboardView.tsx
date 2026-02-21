@@ -93,7 +93,9 @@ const WeekOvertimeCard = memo(({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center transition-transform group-hover:scale-110 shrink-0">
                         {isFullyPaid ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
+                            </div>
                         ) : (
                             <div className="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
                                 <span className="text-white font-black text-xs leading-none">!</span>
@@ -345,10 +347,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
+    const isMobileExpanded = isMovementsExpanded || overtimeData.some(w => w.expanded);
 
     return (
-        <div className="pb-28 pt-1 animate-in fade-in duration-500">
-            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6">
+        <div className="pb-28 pt-0 md:pt-1 animate-in fade-in duration-500">
+            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
                     {/* Desktop Col 1: Ventas + Horas Extras */}
@@ -548,12 +551,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 <div className="md:hidden space-y-4">
                     {/* 1. VENTAS */}
                     <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
+                        <div className="bg-[#36606F] px-6 py-2 flex justify-between items-center text-white shrink-0 relative">
                             <div className="flex items-center gap-3"><div><h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3></div></div>
                             <div className="absolute left-1/2 -translate-x-1/2"><LiveClock /></div>
                             <div className="flex items-center gap-3"><Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link></div>
                         </div>
-                        <div className="p-4 grid grid-cols-3 gap-y-4 gap-x-2 flex-1 items-center">
+                        <div className="p-3 grid grid-cols-3 gap-y-3 gap-x-2 flex-1 items-center">
                             <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg font-black text-black leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span></div>
                             <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg font-black text-emerald-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span></div>
                             <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg font-black text-blue-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span></div>

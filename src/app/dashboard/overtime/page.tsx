@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/client";
 import {
-    ArrowLeft, Calendar, Filter, ChevronDown, CheckCircle2, Circle, X, AlertCircle
+    ArrowLeft, Calendar, Filter, ChevronDown, CheckCircle2, Circle, X, AlertCircle, Check
 } from 'lucide-react';
 import React, { memo, useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -80,7 +80,9 @@ const WeekOvertimeCard = memo(({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center transition-transform group-hover:scale-110 shrink-0">
                         {isFullyPaid ? (
-                            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                <Check className="w-4 h-4 text-white" strokeWidth={4} />
+                            </div>
                         ) : (
                             <div className="w-6 h-6 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
                                 <span className="text-white font-black text-sm leading-none pt-[1px]">!</span>
