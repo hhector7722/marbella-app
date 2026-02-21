@@ -72,6 +72,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Tarjeta Producto (Pedidos)**: Reducción del tamaño de fuente del nombre del producto y reestructuración de la zona inferior. **Refinado**: Eliminación de marco en imagen para efecto flotante, área de controles edge-to-edge color petróleo y disposición perfectamente simétrica de input numérico y selector de unidad con texto reducido (`text-sm`).
 - [x] **Ajuste Altura Contenedor Cajas Cambio (Mobile)**: Eliminación de bordes, fondos y reducción drástica de espaciados (paddings y gaps) en las tarjetas de Cambio 1 y Cambio 2 para que floten sobre el fondo blanco del panel y su altura total se compacte para coincidir con la fila de iconos adyacente.
 
+- [x] **Rediseño Tarjeta Horas Extras**: Eliminación del relleno verde y borde lila, implementando fondos blancos flotantes con sombra y rediseño de marcadores (icono unificado ! rojo/blanco y tick esmeralda) tanto en Dashboard Admin como en /overtime.
 - [x] **Igualación Calendario/Escritorio (Historial)**: Adaptación exacta de proporciones en tarjetas de calendario (4 columnas), suprimiendo textos y asegurando legibilidad completa de números en móvil mediante diseño fluido extremo.
 - [x] **Optimización Altura Caja Inicial Mobile**: Reducción del espaciado dinámico debajo de la fila de 'Movimientos' cuando está plegada, permitiendo que el contenido inferior (Horas Extras, etc.) suba proporcionalmente para aprovechar el espacio en pantalla.
 
