@@ -88,22 +88,28 @@ const WeekOvertimeCard = memo(({
     const isFullyPaid = week.staff?.every((s: any) => paidStatus[`${week.weekId}-${s.id}`]);
 
     return (
-        <div className={cn("rounded-2xl shadow-sm overflow-hidden transition-all", isFullyPaid ? "bg-emerald-500 border-0" : "bg-white border-2 border-purple-600")}>
-            <button onClick={() => onToggleWeek(week.weekId)} className={cn("w-full p-3 flex items-center justify-between text-left group transition-colors", isFullyPaid ? "hover:bg-white/10" : "hover:bg-purple-50/50")}>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all">
+            <button onClick={() => onToggleWeek(week.weekId)} className="w-full p-3 flex items-center justify-between text-left group transition-colors hover:bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                    <div className={cn("flex items-center justify-center transition-transform group-hover:scale-110 shrink-0", isFullyPaid ? "text-white" : "text-orange-400")}>
-                        {isFullyPaid ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                    <div className="flex items-center justify-center transition-transform group-hover:scale-110 shrink-0">
+                        {isFullyPaid ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        ) : (
+                            <div className="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                <span className="text-white font-black text-xs leading-none">!</span>
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <h4 className={cn("text-sm font-black", isFullyPaid ? "text-white" : "text-gray-900")}>Sem {getISOWeek(new Date(week.weekId))}</h4>
-                        <span className={cn("font-light mx-0.5", isFullyPaid ? "text-white/50" : "text-purple-300")}>•</span>
-                        <p className={cn("text-[10px] font-bold uppercase pt-0.5", isFullyPaid ? "text-white/70" : "text-gray-500")}>
+                        <h4 className="text-sm font-black text-gray-900">Sem {getISOWeek(new Date(week.weekId))}</h4>
+                        <span className="font-light mx-0.5 text-gray-300">•</span>
+                        <p className="text-[10px] font-bold uppercase pt-0.5 text-gray-500">
                             {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
                         </p>
                     </div>
                 </div>
                 <div className="text-right flex items-center gap-3">
-                    <span className={cn("text-lg font-black", isFullyPaid ? "text-white" : "text-gray-900")}>{week.total.toFixed(0)}€</span>
+                    <span className="text-lg font-black text-gray-900">{week.total.toFixed(0)}€</span>
                 </div>
             </button>
             {week.expanded && (
@@ -555,7 +561,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 2. CAJA INICIAL + MOVIMIENTOS */}
-                    <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 flex flex-col">
+                    <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-4" : "p-4 pb-2")}>
                         {boxes.filter(b => b.type === 'operational').map(box => (
                             <div key={box.id} className="flex flex-col h-full">
                                 <div className="flex flex-row gap-2 mb-3">
@@ -613,7 +619,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col flex-1 min-h-0">
-                                    <div className="flex justify-between items-center px-1 mb-2">
+                                    <div className={cn("flex justify-between items-center px-1", isMovementsExpanded ? "mb-2" : "mb-0")}>
                                         <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
                                         <Link href="/dashboard/movements" className="text-[8px] font-black text-[#5B8FB9] bg-gray-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2" /></Link>
                                     </div>
