@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
+import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { differenceInMinutes } from 'date-fns';
@@ -94,6 +95,7 @@ export default function StaffDashboardView() {
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [showSwapModal, setShowSwapModal] = useState(false);
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
+    const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
     useEffect(() => { initialize(); }, []);
 
@@ -585,7 +587,7 @@ export default function StaffDashboardView() {
                                     label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
                                     onClick={() => setActiveMenu('info')}
                                 />
-                                <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                                <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setIsSupplierModalOpen(true)} />
                                 {userRole === 'supervisor' && (
                                     <IOSIconBoxed
                                         icon={Calculator}
@@ -738,7 +740,16 @@ export default function StaffDashboardView() {
                                             { title: 'Inventario', img: '/icons/inventory.png' },
                                             { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers' },
                                         ].map((item, i) => (
-                                            <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
+                                            <button key={i} onClick={() => {
+                                                if (item.title === 'Pedidos') {
+                                                    setActiveMenu(null);
+                                                    setTimeout(() => setIsSupplierModalOpen(true), 150);
+                                                } else if (item.link) {
+                                                    router.push(item.link);
+                                                } else {
+                                                    toast.info(`${item.title} próximamente`);
+                                                }
+                                            }} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
                                                 <div className="w-14 h-14 transition-transform group-hover:scale-110">
                                                     <Image src={item.img} alt={item.title} width={56} height={56} className="w-full h-full object-contain" />
                                                 </div>
@@ -768,6 +779,11 @@ export default function StaffDashboardView() {
                     onSuccess={() => initialize()}
                     initialTotalSales={liveTickets.total}
                     initialTicketsCount={liveTickets.count}
+                />
+
+                <SupplierSelectionModal
+                    isOpen={isSupplierModalOpen}
+                    onClose={() => setIsSupplierModalOpen(false)}
                 />
             </div>
         </div>

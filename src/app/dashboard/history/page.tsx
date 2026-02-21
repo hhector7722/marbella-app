@@ -695,49 +695,69 @@ export default function HistoryPage() {
                                                         <div
                                                             key={closing.id}
                                                             onClick={() => setSelectedClosing(closing)}
-                                                            className="group relative bg-white h-full min-h-[70px] md:min-h-[120px] rounded-lg md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
+                                                            className="group relative bg-white h-full min-h-[70px] md:min-h-[140px] rounded-[0.7rem] md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-200 flex flex-col overflow-hidden"
                                                         >
                                                             {/* Header Rojo con Número Blanco */}
-                                                            <div className="bg-[#D64D5D] px-1 md:px-2 py-0.5 md:py-1 flex justify-center items-center shadow-sm">
-                                                                <span className="text-[8px] md:text-[10px] font-black text-white">{format(day, 'd')}</span>
+                                                            <div className="bg-[#D64D5D] px-1 md:px-2 py-1 md:py-2 flex justify-center items-center shadow-sm">
+                                                                <span className="text-[10px] sm:text-[12px] md:text-[16px] font-black text-white leading-none">{format(day, 'd')}</span>
                                                             </div>
 
-                                                            <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
+                                                            <div className="p-1 md:p-2.5 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
                                                                 {/* Main Metric & Comparison Row */}
-                                                                <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-0.5 md:gap-2 mb-1">
-                                                                    <span className="text-[7px] min-[370px]:text-[8px] sm:text-[10px] md:text-[14px] lg:text-[18px] xl:text-[22px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none break-all sm:break-normal">
-                                                                        {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                                    </span>
-                                                                    <div className="flex flex-col items-start xl:items-end mt-0.5 xl:mt-0">
-                                                                        <div className={cn(
-                                                                            "text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter whitespace-nowrap leading-none",
-                                                                            parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
-                                                                        )}>
-                                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}%
-                                                                        </div>
+                                                                <div className="flex flex-row justify-between items-start mb-1 md:mb-3 pb-1 md:pb-2">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-[7.5px] min-[370px]:text-[8.5px] sm:text-[10px] md:text-[14px] lg:text-[18px] xl:text-[20px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                            {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                                        </span>
+                                                                        <span className="text-[4px] min-[370px]:text-[4.5px] sm:text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1">
+                                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className={cn(
+                                                                        "text-[5.5px] sm:text-[6.5px] md:text-[9px] lg:text-[11px] font-black uppercase tracking-tighter leading-none mt-0.5",
+                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                                    )}>
+                                                                        {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(parseFloat(diffPerc))}%
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Symmetrical 4-Column Metrics Footer */}
-                                                                <div className="grid grid-cols-4 gap-0 pt-1.5 md:pt-3 border-t border-zinc-100 mt-auto w-full">
+                                                                {/* 2x2 Grid for the other 4 metrics */}
+                                                                <div className="grid grid-cols-2 gap-x-1 gap-y-1.5 md:gap-y-3 mt-auto w-full">
+                                                                    {/* Ventas */}
                                                                     <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter">
-                                                                            {Math.round(closing.tpv_sales)}€
+                                                                        <span className="text-[6.5px] min-[370px]:text-[7.5px] sm:text-[8px] md:text-[12px] xl:text-[15px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
+                                                                            {Math.round(closing.tpv_sales)}
+                                                                        </span>
+                                                                        <span className="text-[3.5px] min-[370px]:text-[4px] sm:text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest mt-0.5 md:mt-1">
+                                                                            Ventas
                                                                         </span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100 italic">
-                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-[#36606F] tabular-nums leading-none tracking-tighter">
-                                                                            {(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(1)}€
+                                                                    {/* Medio */}
+                                                                    <div className="flex flex-col items-center justify-center">
+                                                                        <span className="text-[6.5px] min-[370px]:text-[7.5px] sm:text-[8px] md:text-[12px] xl:text-[15px] font-black text-[#36606F] tabular-nums leading-none tracking-tighter drop-shadow-sm">
+                                                                            {Math.round(closing.tpv_sales / (closing.tickets_count || 1))}
+                                                                        </span>
+                                                                        <span className="text-[3.5px] min-[370px]:text-[4px] sm:text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest mt-0.5 md:mt-1">
+                                                                            Medio
                                                                         </span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100">
-                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter">
-                                                                            {Math.round(closing.sales_card || 0)}€
+
+                                                                    {/* Efectivo */}
+                                                                    <div className="flex flex-col items-center justify-center">
+                                                                        <span className="text-[6.5px] min-[370px]:text-[7.5px] sm:text-[8px] md:text-[12px] xl:text-[15px] font-black text-emerald-600 tabular-nums leading-none tracking-tighter drop-shadow-sm">
+                                                                            {Math.round(closing.cash_counted || 0)}
+                                                                        </span>
+                                                                        <span className="text-[3.5px] min-[370px]:text-[4px] sm:text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest mt-0.5 md:mt-1">
+                                                                            Efectivo
                                                                         </span>
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center border-l border-zinc-100">
-                                                                        <span className="text-[4px] min-[360px]:text-[5px] sm:text-[6px] md:text-[9px] xl:text-[11px] font-black text-emerald-600 tabular-nums leading-none tracking-tighter">
-                                                                            {(closing.cash_counted || 0).toFixed(0)}€
+                                                                    {/* Tarjeta */}
+                                                                    <div className="flex flex-col items-center justify-center">
+                                                                        <span className="text-[6.5px] min-[370px]:text-[7.5px] sm:text-[8px] md:text-[12px] xl:text-[15px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
+                                                                            {Math.round(closing.sales_card || 0)}
+                                                                        </span>
+                                                                        <span className="text-[3.5px] min-[370px]:text-[4px] sm:text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest mt-0.5 md:mt-1">
+                                                                            Tarjeta
                                                                         </span>
                                                                     </div>
                                                                 </div>

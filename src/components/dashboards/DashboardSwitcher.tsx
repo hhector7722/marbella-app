@@ -74,8 +74,8 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
 
             // Lógica de resistencia en los bordes
             let controlledDiff = diffX;
-            if (view === 'staff' && diffX > 0) controlledDiff = diffX * 0.2;
-            if (view === 'admin' && diffX < 0) controlledDiff = diffX * 0.2;
+            if (view === 'admin' && diffX > 0) controlledDiff = diffX * 0.2;
+            if (view === 'staff' && diffX < 0) controlledDiff = diffX * 0.2;
 
             setOffsetX(controlledDiff);
         }
@@ -89,12 +89,12 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
         const threshold = containerWidth.current / 4;
 
         if (Math.abs(offsetX) > threshold) {
-            if (offsetX < 0 && view === 'staff') {
-                setView('admin');
-                router.replace('/dashboard');
-            } else if (offsetX > 0 && view === 'admin') {
+            if (offsetX < 0 && view === 'admin') {
                 setView('staff');
                 router.replace('/staff/dashboard');
+            } else if (offsetX > 0 && view === 'staff') {
+                setView('admin');
+                router.replace('/dashboard');
             }
         }
 
@@ -104,7 +104,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
 
     // Estilos dinámicos
     const isManager = userRole === 'manager';
-    const currentTranslate = view === 'staff' ? 0 : -100; // -100% del parent (= 1 viewport de desplazamiento)
+    const currentTranslate = view === 'admin' ? 0 : -100; // -100% del parent (= 1 viewport de desplazamiento)
     const dragTranslatePercent = isManager ? (offsetX / (containerWidth.current || 1)) * 100 : 0;
     const finalTranslate = isManager ? currentTranslate + dragTranslatePercent : 0;
 
@@ -127,29 +127,37 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
                 )}
                 style={isManager ? { marginLeft: `${finalTranslate}%` } : {}}
             >
-                <div className={cn("h-full flex-shrink-0", isManager ? "w-1/2" : "w-full")}>
-                    {(!isManager || view === 'staff' || isDragging) && <StaffDashboardView />}
-                </div>
-                {isManager && (
-                    <div className="w-1/2 h-full flex-shrink-0">
-                        {(view === 'admin' || isDragging) && <AdminDashboardView initialData={initialData} />}
+                {isManager ? (
+                    <>
+                        <div className="w-1/2 h-full flex-shrink-0">
+                            {(view === 'admin' || isDragging) && <AdminDashboardView initialData={initialData} />}
+                        </div>
+                        <div className="w-1/2 h-full flex-shrink-0">
+                            {(view === 'staff' || isDragging) && <StaffDashboardView />}
+                        </div>
+                    </>
+                ) : (
+                    <div className="w-full h-full flex-shrink-0">
+                        <StaffDashboardView />
                     </div>
                 )}
             </div>
 
             {/* Indicadores estilo iPhone */}
-            {isManager && (
-                <div className="fixed bottom-[88px] left-0 right-0 flex justify-center gap-1 z-50 pointer-events-none">
-                    <div className={cn(
-                        "w-1 h-1 rounded-full transition-all duration-300",
-                        view === 'staff' ? "bg-white scale-110" : "bg-white/30"
-                    )} />
-                    <div className={cn(
-                        "w-1 h-1 rounded-full transition-all duration-300",
-                        view === 'admin' ? "bg-white scale-110" : "bg-white/30"
-                    )} />
-                </div>
-            )}
-        </div>
+            {
+                isManager && (
+                    <div className="fixed bottom-[88px] left-0 right-0 flex justify-center gap-1 z-50 pointer-events-none">
+                        <div className={cn(
+                            "w-1 h-1 rounded-full transition-all duration-300",
+                            view === 'admin' ? "bg-white scale-110" : "bg-white/30"
+                        )} />
+                        <div className={cn(
+                            "w-1 h-1 rounded-full transition-all duration-300",
+                            view === 'staff' ? "bg-white scale-110" : "bg-white/30"
+                        )} />
+                    </div>
+                )
+            }
+        </div >
     );
 }

@@ -7,6 +7,7 @@ import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-r
 import { createClient } from "@/utils/supabase/client";
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 
 export default function BottomNavStaff() {
     const pathname = usePathname();
@@ -15,6 +16,7 @@ export default function BottomNavStaff() {
 
     const [userData, setUserData] = useState<{ name: string; role: string; avatar_url: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
     if (pathname === '/login') return null;
 
@@ -94,7 +96,12 @@ export default function BottomNavStaff() {
             {/* MOBILE: Bottom Bar - same height as admin (h-20) */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {staffItems.map((item) => (
-                    <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`}>
+                    <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`} onClick={(e) => {
+                        if (item.name.toLowerCase() === 'pedidos') {
+                            e.preventDefault();
+                            setIsSupplierModalOpen(true);
+                        }
+                    }}>
                         {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={20} />}
                         <span className="text-[7.5px] font-bold mt-0.5 uppercase tracking-tighter whitespace-nowrap">{item.name}</span>
                     </Link>
@@ -110,6 +117,12 @@ export default function BottomNavStaff() {
                             key={item.href}
                             href={item.href}
                             className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 active:scale-95 ${getClass(item.href, true)}`}
+                            onClick={(e) => {
+                                if (item.name.toLowerCase() === 'pedidos') {
+                                    e.preventDefault();
+                                    setIsSupplierModalOpen(true);
+                                }
+                            }}
                         >
                             {typeof item.icon === 'function' ? (
                                 <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
@@ -131,6 +144,11 @@ export default function BottomNavStaff() {
                     ))}
                 </div>
             </aside>
+
+            <SupplierSelectionModal
+                isOpen={isSupplierModalOpen}
+                onClose={() => setIsSupplierModalOpen(false)}
+            />
         </>
     );
 }

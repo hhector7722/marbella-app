@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
+import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import Link from 'next/link';
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -166,6 +167,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
     const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
     const [isRecalculating, setIsRecalculating] = useState(false);
@@ -910,7 +912,16 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     { title: 'Stock', img: '/icons/productes.png', hover: 'hover:bg-blue-50/30' },
                                     { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers', hover: 'hover:bg-zinc-100/30' },
                                 ].map((item, i) => (
-                                    <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
+                                    <button key={i} onClick={() => {
+                                        if (item.title === 'Pedidos') {
+                                            setIsProductModalOpen(false);
+                                            setTimeout(() => setIsSupplierModalOpen(true), 150);
+                                        } else if (item.link) {
+                                            router.push(item.link);
+                                        } else {
+                                            toast.info(`${item.title} próximamente`);
+                                        }
+                                    }} className={cn("bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95", item.hover)}><div className="w-12 h-12 transition-transform group-hover:scale-110"><Image src={item.img} alt={item.title} width={48} height={48} className="w-full h-full object-contain" /></div><span className="font-black text-sm text-gray-700">{item.title}</span></button>
                                 ))}
                             </div>
                         </div>
@@ -931,6 +942,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 onClose={() => setSelectedHistory(null)}
                 workerId={selectedHistory?.workerId || ''}
                 weekStart={selectedHistory?.weekId || ''}
+            />
+
+            <SupplierSelectionModal
+                isOpen={isSupplierModalOpen}
+                onClose={() => setIsSupplierModalOpen(false)}
             />
         </div >
     );

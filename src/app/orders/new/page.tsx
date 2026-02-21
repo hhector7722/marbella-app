@@ -38,7 +38,10 @@ export default function NewOrderPage() {
     const [drafts, setDrafts] = useState<Record<string, DraftItem>>({});
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const initialSupplier = searchParams.get('supplier');
+
+    const [selectedSupplier, setSelectedSupplier] = useState<string | null>(initialSupplier);
     const [showSupplierPopup, setShowSupplierPopup] = useState(false);
     const [suppliers, setSuppliers] = useState<string[]>([]);
     const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null }[]>([]);
