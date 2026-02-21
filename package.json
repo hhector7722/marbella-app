@@ -10,13 +10,14 @@
     "dev:all": "concurrently \"npm run dev\" \"cd ai-voice-worker && npx tsx agent.ts\""
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.30",
+    "@ai-sdk/google": "^1.2.22",
+    "@ai-sdk/openai": "^0.0.66",
     "@ai-sdk/react": "^3.0.99",
     "@livekit/components-react": "^2.9.20",
     "@livekit/components-styles": "^1.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.1",
-    "ai": "^3.4.33",
+    "ai": "4.1.x",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",

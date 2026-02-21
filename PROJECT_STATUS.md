@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-20
+**Última actualización:** 2026-02-21
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -80,7 +80,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Alineación Mobile Staff Dashboard**: Reestructuración radical de la sección inferior ("Horarios" y cuadrícula de iconos) adoptando una cuadrícula dividida al 50% (`grid-cols-2`) con los mismos espaciados que el panel de administración, centrando perfectamente el contenido con los puntos de paginación de la interfaz.
 - [x] **Rediseño Tarjetas Calendario (Historial)**: Adaptación perfecta de proporciones ("Ventas", "Medio", "Efectivo", "Tarjeta" en grid simétrico 2x2) en la versión de escritorio y reducción proporcional fluida para encajar todos los elementos en móviles sin alterar proporciones.
 ## 🚧 EN PROCESO
-- [ ] **IA Operativa (Worker de Voz)**: Implementación de Agente LiveKit Multimodal. Tool Calling configurado (`restaurantContext.ts`) con conexión directa a DB y Supabase Realtime para control por voz reactivo de pedidos (UI frontend), horarios, ventas y recetas.
+- [✅] **IA Operativa (Gemini 1.5 Flash Unified)**: Migración completa de Texto y Voz a Google Gemini. Implementado `toDataStreamResponse` y refactorización de `AIChatWidget` para estabilidad operativa total.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -15,6 +15,19 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Limpieza de tokens zombi: si hay un refresh_token inválido en el navegador
+    // Supabase lanza AuthApiError en cada request. Hacemos signOut silencioso al montar.
+    useEffect(() => {
+        const cleanZombieSession = async () => {
+            const { error } = await supabase.auth.getSession();
+            if (error) {
+                console.warn('[LOGIN] Sesión corrupta detectada. Limpiando tokens...');
+                await supabase.auth.signOut();
+            }
+        };
+        cleanZombieSession();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

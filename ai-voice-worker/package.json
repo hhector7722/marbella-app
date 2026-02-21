@@ -12,6 +12,8 @@
   "type": "commonjs",
   "dependencies": {
     "@livekit/agents": "^1.0.47",
+    "@livekit/agents-plugin-google": "^1.0.47",
+    "@livekit/agents-plugin-silero": "^1.0.47",
     "@livekit/rtc-node": "^0.13.24",
     "@supabase/supabase-js": "^2.97.0",
     "dotenv": "^17.3.1",

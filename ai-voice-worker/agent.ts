@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Este archivo es un worker Node.js independiente. No es parte del bundle de Next.js.
 import { WorkerOptions, cli, defineAgent, llm, pipeline } from '@livekit/agents';
-import * as openai from '@livekit/agents-plugin-openai';
+import * as google from '@livekit/agents-plugin-google';
 import * as silero from '@livekit/agents-plugin-silero';
 import { restaurantTools } from './plugins/restaurantContext';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ Reglas:
 5. Para facturación/cajas, usa la herramienta de ventas (solo si el usuario tiene rol 'admin').
 6. Si no hay datos, di 'Dato no disponible'. No inventes.`;
 
-// Contexto de Herramientas para LLM (Inyectadas al modelo OpenAI Realtime)
+// Contexto de Herramientas para LLM (Inyectadas al modelo Gemini)
 class RestaurantFunctionContext extends llm.FunctionContext {
     @llm.aiCallable({
         name: 'consultar_turnos_horas',
@@ -83,32 +83,29 @@ export default defineAgent({
         // Mapear funciones herramientas al contexto del LLM
         const fnContext = new RestaurantFunctionContext();
 
-        // Inicializar el Agente Multimodal Realtime de OpenAI
+        // Inicializar el Agente Multimodal Realtime con Google Gemini Live API
         const agent = new pipeline.VoicePipelineAgent(
             new silero.VAD.load(),
-            new openai.STT(),
-            new openai.realtime.RealtimeModel({
-                instructions: SYSTEM_INSTRUCTION,
-                voice: 'shimmer',
-                temperature: 0.6,
-                // ─── VAD ENDURECIDO PARA ENTORNO DE HOSTELERÍA (+80dB) ───────────────
-                // threshold: 0.8 → Exige confianza alta. Ignora golpes, música y ruido blanco.
-                //   Default OpenAI: 0.5 — inaceptable en cocina o terraza.
-                // silence_duration_ms: 1200 → El personal duda al dictar pedidos.
-                //   Una pausa de 500ms (default) NO significa fin de turno. 1.2s es el umbral mínimo viable.
-                // prefix_padding_ms: 300 → Captura el inicio de la frase sin cortar la primera sílaba.
-                turn_detection: {
-                    type: 'server_vad',
-                    threshold: 0.8,
-                    silence_duration_ms: 1200,
-                    prefix_padding_ms: 300,
-                },
+            new google.STT(),
+            new google.LLM({
+                model: 'gemini-2.0-flash-exp',
             }),
-            new openai.TTS(),
-            { fncCtx: fnContext }
+            new google.TTS({
+                // Voz en español de Google Cloud TTS
+                voice: 'es-ES-Chirp3-HD-Charon',
+                language: 'es-ES',
+            }),
+            {
+                fncCtx: fnContext,
+                chatCtx: new llm.ChatContext().append({
+                    role: llm.ChatRole.SYSTEM,
+                    text: SYSTEM_INSTRUCTION,
+                }),
+            }
         );
 
         agent.start(ctx.room);
+
 
         agent.on('agent_speech_committed', (msg) => {
             // Log local para debug de respuestas de voz

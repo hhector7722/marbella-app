@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 export async function GET(req: NextRequest) {
     try {
         // 1. VERIFICACIÓN CRÍTICA DE SESIÓN (db-supabase-master rule)
-        const supabase = createClient();
+        const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {

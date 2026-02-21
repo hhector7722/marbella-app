@@ -133,7 +133,7 @@ function CallInterface({ onClose, setHardwareError }: { onClose: () => void, set
     const [isMuted, setIsMuted] = useState(false);
 
     useEffect(() => {
-        if (connectionState === ConnectionState.Failed) {
+        if (connectionState === ConnectionState.Disconnected) {
             setHardwareError('La red ha fallado y no se ha podido establecer la conexión con el Agente.');
         }
     }, [connectionState, setHardwareError]);
@@ -155,7 +155,8 @@ function CallInterface({ onClose, setHardwareError }: { onClose: () => void, set
                         trackRef={audioTrack}
                         barCount={7}
                         className="w-32 h-24"
-                        options={{ minHeight: 4, colors: ['#10b981', '#34d399', '#059669'] }}
+                        style={{ '--lk-fg': '#10b981', '--lk-va-bg': '#059669' } as React.CSSProperties}
+                        options={{ minHeight: 4 }}
                     />
                 )}
                 {!audioTrack && connectionState === ConnectionState.Connecting && (

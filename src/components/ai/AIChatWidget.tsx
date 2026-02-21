@@ -2,11 +2,12 @@
 
 import { useChat } from 'ai/react';
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Image as ImageIcon, X, Phone, User, Bot, Loader2 } from 'lucide-react';
+import { Mic, Send, Image as ImageIcon, X, Phone, Bot, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 
 export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
+    const [authError, setAuthError] = useState<string | null>(null);
     const {
         messages,
         input,
@@ -15,7 +16,19 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         handleSubmit,
         append,
         isLoading,
-    } = useChat({ api: '/api/chat' });
+    } = useChat({
+        api: '/api/chat',
+        onError: (error) => {
+            const msg = error.message ?? '';
+            if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
+                setAuthError('Sesión expirada. Cierra sesión y vuelve a entrar.');
+            } else {
+                setAuthError('Error de conexión con la IA. Reinténtalo.');
+            }
+        },
+    });
+
+
 
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessingVoice, setIsProcessingVoice] = useState(false);
@@ -33,12 +46,12 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
 
     const handleCustomSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim() && !selectedImage) return;
+        const trimmedInput = input.trim();
+        if (!trimmedInput && !selectedImage) return;
 
         let mediaUrl = undefined;
 
         if (selectedImage) {
-            // Logica para subir la imagen a Supabase Storage (bucket ai_assets)
             const { data: userData } = await supabase.auth.getUser();
             if (userData.user) {
                 const fileName = `${userData.user.id}/${Date.now()}-${selectedImage.name}`;
@@ -51,12 +64,13 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
             setSelectedImage(null);
         }
 
-        // La imagen se adjunta como dato extra en RequestOptions que acepta `data: Record<string, string>`
-        const opts = mediaUrl ? { data: { imageUrl: mediaUrl } } : undefined;
-        handleSubmit(e as React.FormEvent<HTMLFormElement>, opts);
+        // La imagen se adjunta como dato extra
+        handleSubmit(e as React.FormEvent<HTMLFormElement>, {
+            data: mediaUrl ? { imageUrl: mediaUrl } : undefined
+        });
     };
 
-    // Escucha Realtime para las inyecciones asíncronas del Agente de Voz (Transcripciones, Resúmenes...)
+    // Escucha Realtime para las inyecciones asíncronas del Agente de Voz
     useEffect(() => {
         let channel: any;
         const initRealtime = async () => {
@@ -71,9 +85,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     filter: `user_id=eq.${user.id}`
                 }, (payload) => {
                     const newMsg = payload.new;
-                    // Omitimos mensajes de texto normales del user ya que Vercel AI SDK los gestiona optimísticamente localmente
                     if (newMsg.role === 'assistant' || newMsg.content_type === 'call_transcript') {
-                        // Evitar duplicados si Vercel AI SDK ya lo renderizó (se podría perfeccionar comparando ids)
                         append({
                             role: newMsg.role as 'user' | 'assistant',
                             content: newMsg.text_content || 'Transcripción guardada.',
@@ -84,7 +96,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         }
         initRealtime();
         return () => { if (channel) supabase.removeChannel(channel); }
-    }, []);
+    }, [append, supabase]);
 
     const toggleRecording = async () => {
         if (!isRecording) {
@@ -105,7 +117,6 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     formData.append('file', audioBlob, 'voice.webm');
 
                     try {
-                        // Llamada al endpoint STT (Whisper)
                         const res = await fetch('/api/stt', { method: 'POST', body: formData });
                         const data = await res.json();
                         if (data.text) {
@@ -137,7 +148,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
             <div className="bg-white border-b border-zinc-100 p-4 shadow-sm flex items-center justify-between sticky top-0 z-10">
                 <div>
                     <h3 className="font-black text-sm text-zinc-800 uppercase tracking-widest">Asistente AI</h3>
-                    <p className="text-[10px] font-bold text-zinc-400">Modo Asíncrono</p>
+                    <p className="text-[10px] font-bold text-zinc-400">Modo Unificado (Gemini)</p>
                 </div>
                 <button
                     type="button"
@@ -160,21 +171,23 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     </div>
                 )}
 
-                {messages.map(m => {
-                    // AI SDK v6: el contenido vive en `parts[0].text` o en `content` para backwards compat
-                    const textContent = (m as any).content ?? (m as any).parts?.find((p: any) => p.type === 'text')?.text ?? '';
-                    return (
-                        <div key={m.id} className={cn("flex flex-col gap-1 w-full max-w-[85%]", m.role === 'user' ? "ml-auto items-end" : "mr-auto items-start")}>
-                            <div className={cn(
-                                "p-3 rounded-2xl text-sm shadow-sm relative overflow-hidden",
-                                m.role === 'user' ? "bg-zinc-800 text-white rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-700 rounded-tl-sm"
-                            )}>
-                                {textContent}
-                            </div>
+                {messages.map((m) => (
+                    <div key={m.id} className={cn("flex flex-col gap-1 w-full max-w-[85%]", m.role === 'user' ? "ml-auto items-end" : "mr-auto items-start")}>
+                        <div className={cn(
+                            "p-3 rounded-2xl text-sm shadow-sm relative overflow-hidden whitespace-pre-wrap",
+                            m.role === 'user' ? "bg-zinc-800 text-white rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-700 rounded-tl-sm"
+                        )}>
+                            {m.content}
                         </div>
-                    );
-                })}
-                {isLoading && (
+                    </div>
+                ))}
+                {authError && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 rounded-xl px-3 py-2 mx-2 my-1">
+                        <span className="text-xs font-bold">{authError}</span>
+                        <button onClick={() => setAuthError(null)} className="ml-auto text-red-400 hover:text-red-600 text-xs underline">Cerrar</button>
+                    </div>
+                )}
+                {isLoading && !authError && (
                     <div className="flex items-center gap-2 text-zinc-400 p-2">
                         <Loader2 size={14} className="animate-spin" />
                         <span className="text-xs font-medium">IA pensando...</span>
@@ -183,7 +196,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Zona de Input (Bento Grid Style + Touch targets > 44px) */}
+            {/* Zona de Input */}
             <div className="bg-white p-3 border-t border-zinc-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
                 {selectedImage && (
                     <div className="mb-2 relative inline-block">
@@ -202,7 +215,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                 <form onSubmit={handleCustomSubmit} className="flex items-end gap-2">
                     <div className="flex-1 bg-zinc-100 rounded-2xl flex items-center pr-2 pl-4 py-1 min-h-[48px] focus-within:ring-2 focus-within:ring-[#5B8FB9] transition-all">
                         <textarea
-                            value={input ?? ''}
+                            value={input}
                             onChange={handleInputChange}
                             placeholder="Escribe tu consulta..."
                             className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-zinc-800 resize-none max-h-32 min-h-[20px] py-3"
@@ -249,7 +262,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
 
                     <button
                         type="submit"
-                        disabled={isLoading || (!input?.trim() && !selectedImage)}
+                        disabled={isLoading || (!input.trim() && !selectedImage)}
                         className="bg-[#5B8FB9] text-white p-3.5 rounded-2xl shadow-md min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50 disabled:active:scale-100 active:scale-95 transition-all"
                     >
                         <Send size={18} className="translate-x-0.5" />

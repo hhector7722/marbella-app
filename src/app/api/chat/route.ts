@@ -1,13 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { streamText } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 
-export const maxDuration = 30; // 30s max para serverless Vercel if needed
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
+    // GUARD: Verificación temprana de API Key antes de cualquier operación
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+        console.error('[CHAT_ROUTE] FATAL: Falta GOOGLE_GENERATIVE_AI_API_KEY en las variables de entorno del servidor.');
+        return new Response(JSON.stringify({ error: 'Configuración de servidor incompleta: Falta GOOGLE_GENERATIVE_AI_API_KEY.' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+
     try {
-        const supabase = createClient();
+        const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
@@ -15,12 +24,10 @@ export async function POST(req: NextRequest) {
         }
 
         const { messages } = await req.json();
-
-        // 1. EXTRAER EL ÚLTIMO MENSAJE DEL USUARIO
         const latestMessage = messages[messages.length - 1];
 
-        // 2. VALIDAR O CREAR SESIÓN DE CHAT ASÍNCRONO
-        let sessionId = null;
+        // Obtener o crear sesión de chat
+        let sessionId: string | null = null;
         const { data: activeSession } = await supabase
             .from('ai_chat_sessions')
             .select('id')
@@ -38,25 +45,30 @@ export async function POST(req: NextRequest) {
                 .insert({ user_id: user.id })
                 .select('id')
                 .single();
-            if (sError) throw sError;
+            if (sError) {
+                console.error('[CHAT_ROUTE] Error creando sesión de chat:', sError);
+                throw sError;
+            }
             sessionId = newSession.id;
         }
 
-        // 3. GUARDAR EL MENSAJE DEL USUARIO EN BD
+        // Guardar mensaje del usuario en BD
         await supabase.from('ai_chat_messages').insert({
             session_id: sessionId,
             user_id: user.id,
             role: 'user',
-            content_type: 'text', // Simplificado para este ejemplo inicial (podría ser image)
+            content_type: 'text',
             text_content: latestMessage.content
         });
 
-        // 4. LLAMAR AL MODELO LLM DE OPENAI (Via AI SDK)
-        const result = streamText({
-            model: openai('gpt-4o-mini'),
-            messages: [{ role: 'system', content: 'Eres el Agente de Texto de Bar La Marbella. Tu propósito es ayudar por chat.' }, ...messages],
+        // Llamar al modelo y streamear respuesta (Gemini 1.5 Flash)
+        const result = await streamText({
+            model: google('gemini-1.5-flash'),
+            messages: [
+                { role: 'system', content: 'Eres el Agente de Texto de Bar La Marbella. Respuestas cortas, directas y operativas.' },
+                ...messages
+            ],
             async onFinish({ text }) {
-                // 5. GUARDAR LA RESPUESTA DEL ASISTENTE EN BD UNA VEZ TERMINA DE STREAMEAR
                 await supabase.from('ai_chat_messages').insert({
                     session_id: sessionId,
                     user_id: user.id,
@@ -67,11 +79,14 @@ export async function POST(req: NextRequest) {
             },
         });
 
-        // Devolver el stream de texto al cliente
         return result.toDataStreamResponse();
 
-    } catch (error: any) {
-        console.error('[CHAT_API_ERROR]', error);
-        return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } catch (error: unknown) {
+        console.error('[CHAT_ROUTE] Fallo letal en Chat Route:', error);
+        const msg = error instanceof Error ? error.message : 'Error interno desconocido';
+        return new Response(JSON.stringify({ error: msg }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }

@@ -11,12 +11,16 @@ import { es } from 'date-fns/locale';
  * Parent never re-renders from clock updates.
  */
 const LiveClock = memo(function LiveClock() {
-    const [now, setNow] = useState(new Date());
+    const [now, setNow] = useState<Date | null>(null);
 
     useEffect(() => {
+        // Set immediately on mount to avoid blank flash
+        setNow(new Date());
         const timer = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    if (!now) return null;
 
     return (
         <div className="flex flex-col items-center leading-tight">
