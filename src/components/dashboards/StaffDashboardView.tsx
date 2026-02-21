@@ -399,8 +399,8 @@ export default function StaffDashboardView() {
     return (
         <div className="pb-28 pt-0 md:pt-1 animate-in fade-in duration-500">
             <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    <div className="lg:col-span-2 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 items-start">
+                    <div className="lg:col-span-2 space-y-4 md:space-y-6">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
                             <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
@@ -526,7 +526,7 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-1 space-y-6">
+                    <div className="lg:col-span-1 space-y-4 md:space-y-6">
                         <div className="grid grid-cols-2 gap-3">
                             <div
                                 onClick={() => router.push('/staff/schedule')}
