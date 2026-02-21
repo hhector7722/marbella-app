@@ -253,7 +253,6 @@ export default function HistoryPage() {
             let endISO: string;
 
             if (filterMode === 'single') {
-                // Use selectedDate for both start and end
                 startISO = selectedDate;
                 endISO = selectedDate;
             } else {
@@ -266,7 +265,6 @@ export default function HistoryPage() {
                 endISO = rangeEnd;
             }
 
-            // 1. Fetch Closings (Parallel)
             const closingsPromise = supabase
                 .from('cash_closings')
                 .select('*')
@@ -274,13 +272,11 @@ export default function HistoryPage() {
                 .lte('closing_date', endISO)
                 .order('closing_date', { ascending: false });
 
-            // 2. Fetch Aggregated Hourly Sales (RPC)
             const [closingsRes] = await Promise.all([closingsPromise]);
 
             if (closingsRes.error) throw closingsRes.error;
             setClosings(closingsRes.data || []);
 
-            // 3. Optional Hourly Data
             try {
                 const { data: hourlyData, error: hourlyError } = await supabase
                     .rpc('get_hourly_sales', {
@@ -334,7 +330,7 @@ export default function HistoryPage() {
         } else if (showCalendar === 'range') {
             if (!rangeStart || (rangeStart && rangeEnd)) {
                 setRangeStart(dateStr);
-                setRangeEnd(null); // Clear end date to start new selection
+                setRangeEnd(null);
             } else {
                 if (new Date(dateStr) < new Date(rangeStart)) {
                     setRangeStart(dateStr);
@@ -360,15 +356,12 @@ export default function HistoryPage() {
         };
     }, [closings]);
 
-    // Helpers para la UI
     const formatValue = (val: number, type: MetricType) => {
         if (type === 'tickets_count') return val.toString();
-        // REGLA ZERO-DISPLAY: En vistas de lectura (no formularios), cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
         if (val === 0) return " ";
         return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: val < 100 ? 2 : 0 }).format(val);
     };
 
-    // --- HANDLERS EDICIÓN (Mantenidos del original) ---
     const handleFieldUpdate = (field: string, value: number) => {
         if (!editData) return;
         const newData = { ...editData, [field]: value };
@@ -709,7 +702,7 @@ export default function HistoryPage() {
                                                                         <span className="text-[6px] min-[370px]:text-[7px] sm:text-[9px] md:text-[14px] lg:text-[16px] xl:text-[18px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                             {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                                         </span>
-                                                                        <span className="text-[3.5px] min-[370px]:text-[4px] sm:text-[4.5px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">
+                                                                        <span className="hidden sm:block text-[4.5px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">
                                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                         </span>
                                                                     </div>
@@ -728,7 +721,7 @@ export default function HistoryPage() {
                                                                         <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
                                                                             {Math.round(closing.tpv_sales)}
                                                                         </span>
-                                                                        <span className="text-[3px] min-[370px]:text-[3.5px] sm:text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
+                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
                                                                             Ventas
                                                                         </span>
                                                                     </div>
@@ -737,7 +730,7 @@ export default function HistoryPage() {
                                                                         <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-[#36606F] tabular-nums leading-none tracking-tighter drop-shadow-sm">
                                                                             {Math.round(closing.tpv_sales / (closing.tickets_count || 1))}
                                                                         </span>
-                                                                        <span className="text-[3px] min-[370px]:text-[3.5px] sm:text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
+                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
                                                                             Medio
                                                                         </span>
                                                                     </div>
@@ -747,7 +740,7 @@ export default function HistoryPage() {
                                                                         <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-emerald-600 tabular-nums leading-none tracking-tighter drop-shadow-sm">
                                                                             {Math.round(closing.cash_counted || 0)}
                                                                         </span>
-                                                                        <span className="text-[3px] min-[370px]:text-[3.5px] sm:text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
+                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
                                                                             Efectivo
                                                                         </span>
                                                                     </div>
@@ -756,7 +749,7 @@ export default function HistoryPage() {
                                                                         <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
                                                                             {Math.round(closing.sales_card || 0)}
                                                                         </span>
-                                                                        <span className="text-[3px] min-[370px]:text-[3.5px] sm:text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
+                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
                                                                             Tarjeta
                                                                         </span>
                                                                     </div>

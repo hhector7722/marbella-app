@@ -79,6 +79,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Ajuste Fino de Posiciones Mobile Dashboard**: Subido el bloque completo de contenido hacia la cabecera eliminando padding superior (`pt-0`) y ajustando el gap de Ventas, además de reducir ligeramente la altura de los indicadores (puntos) de paginación entre dashboards.
 - [x] **Alineación Mobile Staff Dashboard**: Reestructuración radical de la sección inferior ("Horarios" y cuadrícula de iconos) adoptando una cuadrícula dividida al 50% (`grid-cols-2`) con los mismos espaciados que el panel de administración, centrando perfectamente el contenido con los puntos de paginación de la interfaz.
 - [x] **Rediseño Tarjetas Calendario (Historial)**: Adaptación perfecta de proporciones ("Ventas", "Medio", "Efectivo", "Tarjeta" en grid simétrico 2x2) en la versión de escritorio y reducción proporcional fluida para encajar todos los elementos en móviles sin alterar proporciones.
+## 🚧 EN PROCESO
+- [ ] **IA Operativa (Worker de Voz)**: Implementación de Agente LiveKit Multimodal. Tool Calling configurado (`restaurantContext.ts`) con conexión directa a DB y Supabase Realtime para control por voz reactivo de pedidos (UI frontend), horarios, ventas y recetas.
+
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
 
