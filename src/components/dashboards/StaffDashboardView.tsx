@@ -367,21 +367,16 @@ export default function StaffDashboardView() {
     const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
             onClick={onClick}
-            className={cn(
-                "flex flex-col items-center justify-center gap-1.5 w-full h-full",
-                "bg-white rounded-2xl shadow-sm",
-                "active:scale-95 transition-all duration-150 p-2 group",
-                "min-h-[88px]"
-            )}
+            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group aspect-square w-full h-full"
         >
-            <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
                 {img ? (
                     <Image
                         src={img}
                         alt={typeof label === 'string' ? label : 'Icon'}
-                        width={48}
-                        height={48}
-                        className="w-full h-full object-contain transition-transform group-hover:scale-110"
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-contain"
                     />
                 ) : (
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
@@ -389,7 +384,7 @@ export default function StaffDashboardView() {
                     </div>
                 )}
             </div>
-            <span className="text-[10px] font-bold text-zinc-500 text-center leading-tight group-hover:text-zinc-900 uppercase tracking-tight">{label}</span>
+            <span className="text-[7px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{label}</span>
         </button>
     );
 
@@ -402,378 +397,379 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                        {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">
-                                    {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
-                                </span>
-                            </div>
-                            <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
-                                Historial <ArrowRight size={10} strokeWidth={3} />
-                            </Link>
-                        </div>
-
-                        <div className="p-4">
-
-                            <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                                <div className="grid grid-cols-7 border-b border-gray-100">
-                                    {weekDays.map((day, i) => (
-                                        <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                            <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                            </div>
-                                            <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
-                                                <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
-                                                    <div className="h-3 flex items-center justify-center gap-1">
-                                                        {day.hasLog ? (
-                                                            <>
-                                                                <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                            </>
-                                                        ) : null}
-                                                    </div>
-                                                    <div className="h-3 flex items-center justify-center gap-1">
-                                                        {day.hasLog && day.clockOut ? (
-                                                            <>
-                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                            </>
-                                                        ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
-                                                    </div>
-                                                </div>
-                                                <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                    {day.hasLog && day.totalHours > 0 ? (
-                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                            <span className="ml-0.5">H</span>
-                                                            <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
-                                                        </div>
-                                                    ) : <div className="h-3" />}
-                                                    {day.extraHours > 0 ? (
-                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                            <span className="ml-0.5">Ex</span>
-                                                            <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
-                                                        </div>
-                                                    ) : <div className="h-3" />}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                    <div className="h-4 flex items-center">
-                                        <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
-                                    </div>
-                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                </div>
-
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                    <div className="h-4 flex items-center">
-                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                            {formatBalance(weeklySummary.startBalance)}
-                                        </span>
-                                    </div>
-                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                </div>
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100">
-                                    <div className="h-4 flex items-center">
-                                        <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.currentBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                                            {weeklySummary.currentBalance > 0 ? formatBalance(weeklySummary.currentBalance) : " "}
-                                        </span>
-                                    </div>
-                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">H Extras</span>
-                                </div>
-                                <div className="flex flex-col items-center flex-1">
-                                    <div className="h-4 flex items-center">
-                                        <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                            {!preferStock ? formatMoney(weeklySummary.estimatedPayout) : " "}
-                                        </span>
-                                    </div>
-                                    <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
-                        <button
-                            onClick={openConfirmation}
-                            disabled={status === 'finished' || actionLoading}
-                            className={cn(
-                                "w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
-                                status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200",
-                                status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
-                                status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
-                            )}>
-                            {actionLoading ? (
-                                <>
-                                    <LoadingSpinner size="sm" className="text-white" />
-                                    <span className="text-xl font-black uppercase tracking-wider">
-                                        {modalAction === 'in' ? 'Iniciando...' : 'Cerrando...'}
+        <div className="pb-28 pt-0 md:pt-1 animate-in fade-in duration-500">
+            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                            {/* Header Estrecho - Estilo Vista Marbella Detail */}
+                            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                                        {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                     </span>
-                                </>
-                            ) : (
-                                <span className="text-xl font-black uppercase tracking-wider">
-                                    {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
-                                </span>
-                            )}
-                        </button>
-                        <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
-                    </div>
-                </div>
-
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="flex flex-row md:flex-col xl:flex-row gap-3 md:gap-6">
-                        <div
-                            onClick={() => router.push('/staff/schedule')}
-                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden relative min-h-[180px] w-1/2 md:w-full xl:flex-1 cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
-                        >
-                            {/* Header Lila - Estilo Personalizado */}
-                            <div className="bg-purple-600 px-3 md:px-6 py-2.5 md:py-3 flex justify-between items-center text-white shrink-0">
-                                <h3 className="font-black flex items-center gap-1.5 text-[9px] md:text-xs uppercase tracking-wider">
-                                    <CalendarDays size={14} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
-                                </h3>
-                                <Link href="/staff/schedule" className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest shrink-0">Ver más</Link>
+                                </div>
+                                <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
+                                    Historial <ArrowRight size={10} strokeWidth={3} />
+                                </Link>
                             </div>
 
-                            <div className="p-4 flex-1">
-                                <div className="grid grid-cols-1 gap-3 lg:gap-4 flex-1 justify-items-start">
-                                    {nextShifts.length === 0 ? (
-                                        <div className="flex items-center justify-start py-6 lg:py-10 px-4">
-                                            <p className="text-[9px] lg:text-xs text-gray-400 text-left font-bold italic">No tienes turnos.</p>
-                                        </div>
-                                    ) : (
-                                        nextShifts.slice(0, 2).map((shift, idx) => (
-                                            <div key={idx} className="flex items-center gap-2 md:gap-4 p-1.5 md:p-3 transition-colors group w-full">
-                                                <div className="bg-white p-1 md:p-2 rounded-xl text-gray-500 font-black text-[9px] md:text-xs text-center min-w-[36px] md:min-w-[50px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors shrink-0">
-                                                    <span className="block text-[6px] md:text-[8px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                                    <span className="leading-none text-xs md:text-lg text-gray-800">{shift.date.getDate()}</span>
+                            <div className="p-4">
+
+                                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                    <div className="grid grid-cols-7 border-b border-gray-100">
+                                        {weekDays.map((day, i) => (
+                                            <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                                <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
+                                                    <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                                 </div>
-                                                <div className="flex flex-col gap-0 overflow-hidden items-start min-w-0">
-                                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate w-full">{shift.activity || 'Turno'}</span>
-                                                    <div className="flex flex-wrap items-center gap-x-1 gap-y-0 text-[10px] md:text-sm font-black w-full">
-                                                        <span className="text-green-600 whitespace-nowrap">{shift.startTime}</span>
-                                                        <span className="text-gray-300 font-light">-</span>
-                                                        <span className="text-red-500 whitespace-nowrap">{shift.endTime}</span>
+                                                <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
+                                                    <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                                    <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
+                                                        <div className="h-3 flex items-center justify-center gap-1">
+                                                            {day.hasLog ? (
+                                                                <>
+                                                                    <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                </>
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="h-3 flex items-center justify-center gap-1">
+                                                            {day.hasLog && day.clockOut ? (
+                                                                <>
+                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                </>
+                                                            ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                        {day.hasLog && day.totalHours > 0 ? (
+                                                            <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                <span className="ml-0.5">H</span>
+                                                                <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
+                                                            </div>
+                                                        ) : <div className="h-3" />}
+                                                        {day.extraHours > 0 ? (
+                                                            <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                <span className="ml-0.5">Ex</span>
+                                                                <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
+                                                            </div>
+                                                        ) : <div className="h-3" />}
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Iconos Flotantes - Ahora fuera de Horarios */}
-                        <div className="grid grid-cols-2 xl:grid-cols-2 gap-1.5 md:gap-3 w-1/2 md:w-full xl:w-44 shrink-0 px-0 md:px-2 lg:px-0">
-                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
-                                if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
-                                setShowSwapModal(true);
-                            }} />
-                            <IOSIconBoxed
-                                img="/icons/recipes.png"
-                                color="bg-white"
-                                label="Recetas"
-                                onClick={() => router.push('/recipes?view=staff')}
-                            />
-                            <IOSIconBoxed
-                                img="/icons/information.png"
-                                color="bg-blue-500"
-                                label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
-                                onClick={() => setActiveMenu('info')}
-                            />
-                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
-                            {userRole === 'supervisor' && (
-                                <IOSIconBoxed
-                                    icon={Calculator}
-                                    color="bg-[#5B8FB9]"
-                                    label="Cierre"
-                                    onClick={() => setIsClosingModalOpen(true)}
-                                />
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {showModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
-                            <button onClick={handleClockAction} className={cn("h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg", modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200")}>Confirmar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeMenu && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
-                        {infoSubMenu && (
-                            <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
-                                <ArrowLeft size={16} />
-                            </button>
-                        )}
-                        {activeMenu === 'info' && (
-                            <>
-                                <button onClick={closeMenus} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
-                                    <X size={16} />
-                                </button>
-                                <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
-                                    <Info size={24} className="text-blue-500" />
-                                    {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
-                                </h3>
-                                <div className="p-8 space-y-2 overflow-y-auto">
-                                    {!infoSubMenu && (
-                                        <>
-                                            <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Phone size={24} strokeWidth={2.5} /></div>
-                                                <span className="font-bold text-base tracking-tight text-left flex-1">Contactos</span>
-                                            </button>
-                                            <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><FileText size={24} strokeWidth={2.5} /></div>
-                                                <span className="font-bold text-base tracking-tight text-left flex-1">Convenio</span>
-                                            </button>
-                                            <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Scale size={24} strokeWidth={2.5} /></div>
-                                                <span className="font-bold text-base tracking-tight text-left flex-1">Código de Conducta</span>
-                                            </button>
-                                            <button onClick={() => setInfoSubMenu('reservas')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><CalendarCheck size={24} strokeWidth={2.5} /></div>
-                                                <span className="font-bold text-base tracking-tight text-left flex-1">Reservas</span>
-                                            </button>
-                                            <button onClick={() => setInfoSubMenu('carta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><BookOpen size={24} strokeWidth={2.5} /></div>
-                                                <span className="font-bold text-base tracking-tight text-left flex-1">Carta</span>
-                                            </button>
-                                        </>
-                                    )}
-                                    {infoSubMenu === 'contactos' && (
-                                        <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
-                                            {CONTACTS_DATA.map((c, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
-                                                        <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
-                                                    </div>
-                                                    <div className="flex gap-4 items-center">
-                                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
-                                                        <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
-                                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
-                                        <div className="flex flex-col items-center gap-6 py-4">
-                                            <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                                <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-base font-black text-gray-800 mb-1">
-                                                    {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
-                                                </p>
-                                                <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
-                                            </div>
-                                            <button
-                                                onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
-                                                className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
-                                            >
-                                                <ExternalLink size={20} />
-                                                <span>Abrir Documento</span>
-                                            </button>
-                                            <a
-                                                href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
-                                                download
-                                                className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
-                                            >
-                                                Descargar PDF
-                                            </a>
-                                        </div>
-                                    )}
-                                    {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
-                                        <div className="flex flex-col items-center gap-6 py-4">
-                                            <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
-                                                {infoSubMenu === 'reservas' ? (
-                                                    <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
-                                                ) : (
-                                                    <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
-                                                )}
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-base font-black text-gray-800 mb-1">
-                                                    {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
-                                                </p>
-                                                <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
-                                            </div>
-                                            <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
-                                                <span className="text-sm">En desarrollo</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                        {activeMenu === 'pedidos' && (
-                            <>
-                                <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                                    <div className="flex flex-col">
-                                        <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
-                                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
+                                        ))}
                                     </div>
-                                    <button onClick={closeMenus} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                        <X size={20} strokeWidth={3} />
-                                    </button>
                                 </div>
-                                <div className="p-8 grid grid-cols-2 gap-4 bg-transparent overflow-y-auto">
-                                    {[
-                                        { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new' },
-                                        { title: 'Inventario', img: '/icons/inventory.png' },
-                                        { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers' },
-                                    ].map((item, i) => (
-                                        <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
-                                            <div className="w-14 h-14 transition-transform group-hover:scale-110">
-                                                <Image src={item.img} alt={item.title} width={56} height={56} className="w-full h-full object-contain" />
+
+                                <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                    <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                        <div className="h-4 flex items-center">
+                                            <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                        </div>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                    </div>
+
+                                    <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                        <div className="h-4 flex items-center">
+                                            <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                {formatBalance(weeklySummary.startBalance)}
+                                            </span>
+                                        </div>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                    </div>
+                                    <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                        <div className="h-4 flex items-center">
+                                            <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.currentBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                                {weeklySummary.currentBalance > 0 ? formatBalance(weeklySummary.currentBalance) : " "}
+                                            </span>
+                                        </div>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">H Extras</span>
+                                    </div>
+                                    <div className="flex flex-col items-center flex-1">
+                                        <div className="h-4 flex items-center">
+                                            <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
+                                                {!preferStock ? formatMoney(weeklySummary.estimatedPayout) : " "}
+                                            </span>
+                                        </div>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
+                            <button
+                                onClick={openConfirmation}
+                                disabled={status === 'finished' || actionLoading}
+                                className={cn(
+                                    "w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
+                                    status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200",
+                                    status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
+                                    status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
+                                )}>
+                                {actionLoading ? (
+                                    <>
+                                        <LoadingSpinner size="sm" className="text-white" />
+                                        <span className="text-xl font-black uppercase tracking-wider">
+                                            {modalAction === 'in' ? 'Iniciando...' : 'Cerrando...'}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className="text-xl font-black uppercase tracking-wider">
+                                        {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
+                                    </span>
+                                )}
+                            </button>
+                            <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-1 space-y-6">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div
+                                onClick={() => router.push('/staff/schedule')}
+                                className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden relative min-h-[180px] cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                            >
+                                {/* Header Lila - Estilo Personalizado */}
+                                <div className="bg-purple-600 px-4 py-2 flex items-center text-white shrink-0">
+                                    <h3 className="font-black flex items-center gap-1.5 text-[10px] uppercase tracking-wider">
+                                        <CalendarDays size={14} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
+                                    </h3>
+                                </div>
+
+                                <div className="p-2 py-1 flex-1 flex flex-col justify-center">
+                                    <div className="grid grid-cols-1 gap-1.5 justify-items-center">
+                                        {nextShifts.length === 0 ? (
+                                            <div className="flex items-center justify-center py-6 px-2">
+                                                <p className="text-[10px] text-gray-400 text-center font-bold italic">No tienes turnos.</p>
                                             </div>
-                                            <span className="font-black text-xs text-zinc-500 uppercase tracking-tight group-hover:text-zinc-900">{item.title}</span>
-                                        </button>
-                                    ))}
+                                        ) : (
+                                            nextShifts.slice(0, 2).map((shift, idx) => (
+                                                <div key={idx} className="flex items-center gap-2 p-1 transition-colors group w-full">
+                                                    <div className="bg-white p-1 rounded-xl text-gray-500 font-black text-center min-w-[36px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors shrink-0">
+                                                        <span className="block text-[6px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                        <span className="leading-none text-xs text-gray-800">{shift.date.getDate()}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-0 overflow-hidden items-start min-w-0">
+                                                        <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest truncate w-full">{shift.activity || 'Turno'}</span>
+                                                        <div className="flex flex-wrap items-center gap-x-1 gap-y-0 text-[10px] font-black w-full">
+                                                            <span className="text-green-600 whitespace-nowrap">{shift.startTime}</span>
+                                                            <span className="text-gray-300 font-light">-</span>
+                                                            <span className="text-red-500 whitespace-nowrap">{shift.endTime}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
-                            </>
-                        )}
+                            </div>
+
+                            {/* Iconos Flotantes - Ahora fuera de Horarios */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
+                                    if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
+                                    setShowSwapModal(true);
+                                }} />
+                                <IOSIconBoxed
+                                    img="/icons/recipes.png"
+                                    color="bg-white"
+                                    label="Recetas"
+                                    onClick={() => router.push('/recipes?view=staff')}
+                                />
+                                <IOSIconBoxed
+                                    img="/icons/information.png"
+                                    color="bg-blue-500"
+                                    label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
+                                    onClick={() => setActiveMenu('info')}
+                                />
+                                <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setActiveMenu('pedidos')} />
+                                {userRole === 'supervisor' && (
+                                    <IOSIconBoxed
+                                        icon={Calculator}
+                                        color="bg-[#5B8FB9]"
+                                        label="Cierre"
+                                        onClick={() => setIsClosingModalOpen(true)}
+                                    />
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            )}
 
-            {/* MODAL: Cambio de Efectivo (Cambio 1) */}
-            {showSwapModal && changeBox && (
-                <CashChangeModal
-                    boxId={changeBox.id}
-                    boxName={changeBox.name}
-                    onClose={() => setShowSwapModal(false)}
-                    onSuccess={() => { initialize(); setShowSwapModal(false); }}
+                {showModal && (
+                    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
+                        <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
+                            <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
+                                <button onClick={handleClockAction} className={cn("h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg", modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200")}>Confirmar</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeMenu && (
+                    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
+                        <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
+                            {infoSubMenu && (
+                                <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
+                                    <ArrowLeft size={16} />
+                                </button>
+                            )}
+                            {activeMenu === 'info' && (
+                                <>
+                                    <button onClick={closeMenus} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
+                                        <X size={16} />
+                                    </button>
+                                    <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
+                                        <Info size={24} className="text-blue-500" />
+                                        {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
+                                    </h3>
+                                    <div className="p-8 space-y-2 overflow-y-auto">
+                                        {!infoSubMenu && (
+                                            <>
+                                                <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Phone size={24} strokeWidth={2.5} /></div>
+                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Contactos</span>
+                                                </button>
+                                                <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><FileText size={24} strokeWidth={2.5} /></div>
+                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Convenio</span>
+                                                </button>
+                                                <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Scale size={24} strokeWidth={2.5} /></div>
+                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Código de Conducta</span>
+                                                </button>
+                                                <button onClick={() => setInfoSubMenu('reservas')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><CalendarCheck size={24} strokeWidth={2.5} /></div>
+                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Reservas</span>
+                                                </button>
+                                                <button onClick={() => setInfoSubMenu('carta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
+                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><BookOpen size={24} strokeWidth={2.5} /></div>
+                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Carta</span>
+                                                </button>
+                                            </>
+                                        )}
+                                        {infoSubMenu === 'contactos' && (
+                                            <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+                                                {CONTACTS_DATA.map((c, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
+                                                            <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
+                                                        </div>
+                                                        <div className="flex gap-4 items-center">
+                                                            <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
+                                                            <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
+                                                                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
+                                            <div className="flex flex-col items-center gap-6 py-4">
+                                                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                                    <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-base font-black text-gray-800 mb-1">
+                                                        {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
+                                                    className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                                >
+                                                    <ExternalLink size={20} />
+                                                    <span>Abrir Documento</span>
+                                                </button>
+                                                <a
+                                                    href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
+                                                    download
+                                                    className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
+                                                >
+                                                    Descargar PDF
+                                                </a>
+                                            </div>
+                                        )}
+                                        {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
+                                            <div className="flex flex-col items-center gap-6 py-4">
+                                                <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
+                                                    {infoSubMenu === 'reservas' ? (
+                                                        <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
+                                                    ) : (
+                                                        <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
+                                                    )}
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-base font-black text-gray-800 mb-1">
+                                                        {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
+                                                </div>
+                                                <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
+                                                    <span className="text-sm">En desarrollo</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                            {activeMenu === 'pedidos' && (
+                                <>
+                                    <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                                        <div className="flex flex-col">
+                                            <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
+                                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
+                                        </div>
+                                        <button onClick={closeMenus} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                            <X size={20} strokeWidth={3} />
+                                        </button>
+                                    </div>
+                                    <div className="p-8 grid grid-cols-2 gap-4 bg-transparent overflow-y-auto">
+                                        {[
+                                            { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new' },
+                                            { title: 'Inventario', img: '/icons/inventory.png' },
+                                            { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers' },
+                                        ].map((item, i) => (
+                                            <button key={i} onClick={() => item.link ? router.push(item.link) : toast.info(`${item.title} próximamente`)} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
+                                                <div className="w-14 h-14 transition-transform group-hover:scale-110">
+                                                    <Image src={item.img} alt={item.title} width={56} height={56} className="w-full h-full object-contain" />
+                                                </div>
+                                                <span className="font-black text-xs text-zinc-500 uppercase tracking-tight group-hover:text-zinc-900">{item.title}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL: Cambio de Efectivo (Cambio 1) */}
+                {showSwapModal && changeBox && (
+                    <CashChangeModal
+                        boxId={changeBox.id}
+                        boxName={changeBox.name}
+                        onClose={() => setShowSwapModal(false)}
+                        onSuccess={() => { initialize(); setShowSwapModal(false); }}
+                    />
+                )}
+
+                <CashClosingModal
+                    isOpen={isClosingModalOpen}
+                    onClose={() => setIsClosingModalOpen(false)}
+                    onSuccess={() => initialize()}
+                    initialTotalSales={liveTickets.total}
+                    initialTicketsCount={liveTickets.count}
                 />
-            )}
-
-            <CashClosingModal
-                isOpen={isClosingModalOpen}
-                onClose={() => setIsClosingModalOpen(false)}
-                onSuccess={() => initialize()}
-                initialTotalSales={liveTickets.total}
-                initialTicketsCount={liveTickets.count}
-            />
+            </div>
         </div>
     );
 }
