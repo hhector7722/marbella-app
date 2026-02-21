@@ -341,13 +341,38 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const laborPercent = dailyStats?.porcentajeManoObra || 0;
     const isMobileExpanded = isMovementsExpanded || overtimeData.some(w => w.expanded);
 
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            if (!isMobileExpanded) {
+                document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+                document.body.style.height = '100%';
+            } else {
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.width = '';
+                document.body.style.height = '';
+            }
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
+        };
+    }, [isMobileExpanded]);
+
     return (
         <div className={cn(
-            "pt-1 animate-in fade-in duration-500 w-full",
+            "pt-0 md:pt-1 animate-in fade-in duration-500 w-full flex flex-col",
             "md:pb-28 md:overflow-visible md:max-h-none",
-            isMobileExpanded ? "pb-28 overflow-y-auto" : "pb-12 md:pb-28 overflow-hidden max-h-[calc(100svh-120px)]"
+            isMobileExpanded ? "pb-28 overflow-y-auto" : "h-[calc(100svh-120px)] overflow-hidden"
         )}>
-            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6">
+            <div className={cn(
+                "w-full max-w-6xl mx-auto flex-1 flex flex-col",
+                isMobileExpanded ? "px-4 md:p-6 space-y-4 md:space-y-6" : "px-3 md:p-6 space-y-0 md:space-y-6"
+            )}>
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
                     {/* Desktop Col 1: Ventas + Horas Extras */}
@@ -544,15 +569,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </div>
 
                 {/* ============ MOBILE LAYOUT ============ */}
-                <div className="md:hidden space-y-4">
+                <div className={cn("md:hidden flex-1", isMobileExpanded ? "space-y-4" : "flex flex-col justify-between py-1")}>
                     {/* 1. VENTAS */}
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0 relative">
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden shrink-0">
+                        <div className={cn("bg-[#36606F] px-4 flex justify-between items-center text-white relative", isMobileExpanded ? "py-2.5" : "py-1.5")}>
                             <div className="flex items-center gap-3"><div><h3 className="text-sm font-black uppercase tracking-wider">Ventas</h3></div></div>
                             <div className="absolute left-1/2 -translate-x-1/2"><LiveClock /></div>
                             <div className="flex items-center gap-3"><Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link></div>
                         </div>
-                        <div className="p-4 grid grid-cols-3 gap-y-4 gap-x-2 flex-1 items-center">
+                        <div className={cn("grid grid-cols-3 gap-x-2 items-center", isMobileExpanded ? "p-4 gap-y-4" : "p-3 py-2 gap-y-2")}>
                             <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg font-black text-black leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span></div>
                             <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg font-black text-emerald-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span></div>
                             <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg font-black text-blue-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span></div>
@@ -560,13 +585,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 2. CAJA INICIAL + MOVIMIENTOS */}
-                    <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-4" : "p-4 pb-2")}>
+                    <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300 shrink-0", isMovementsExpanded ? "p-4" : "p-3 pb-1")}>
                         {boxes.filter(b => b.type === 'operational').map(box => (
                             <div key={box.id} className="flex flex-col h-full">
-                                <div className="flex flex-row gap-2 mb-3">
+                                <div className={cn("flex flex-row gap-2", isMovementsExpanded ? "mb-3" : "mb-2")}>
                                     <button
                                         onClick={() => router.push('/dashboard/movements')}
-                                        className="flex-[1.2] basis-0 px-4 py-3 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
+                                        className={cn("flex-[1.2] basis-0 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95", isMovementsExpanded ? "px-4 py-3" : "px-3 py-2")}
                                     >
                                         <div className="flex flex-col items-start leading-none gap-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
@@ -590,30 +615,30 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <div className="flex-[2] basis-0 grid grid-cols-3 gap-1.5">
                                         <button
                                             onClick={() => openTreasuryModal(box, 'in')}
-                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                            className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[44px]"
                                         >
                                             <div className="w-7 h-7 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <Plus size={14} strokeWidth={4} className="text-white" />
                                             </div>
-                                            <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Entrada</span>
+                                            <span className="text-[8px] font-black text-zinc-900 uppercase tracking-widest leading-none">Entrada</span>
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'out')}
-                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                            className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[44px]"
                                         >
                                             <div className="w-7 h-7 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <Minus size={14} strokeWidth={4} className="text-white" />
                                             </div>
-                                            <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Salida</span>
+                                            <span className="text-[8px] font-black text-zinc-900 uppercase tracking-widest leading-none">Salida</span>
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'audit')}
-                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                            className="bg-transparent p-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[44px]"
                                         >
                                             <div className="w-7 h-7 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <RefreshCw size={12} strokeWidth={4} className="text-white" />
                                             </div>
-                                            <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
+                                            <span className="text-[8px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
                                         </button>
                                     </div>
                                 </div>
@@ -639,12 +664,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 3. HORAS EXTRAS */}
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        <div className="bg-purple-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden shrink-0">
+                        <div className={cn("bg-purple-600 px-4 flex justify-between items-center text-white relative", isMobileExpanded ? "py-2.5" : "py-1.5")}>
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                         </div>
-                        <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
+                        <div className={cn("overflow-y-auto no-scrollbar pr-1", isMobileExpanded ? "p-4 space-y-3 max-h-[400px]" : "p-3 space-y-2 max-h-[160px]")}>
                             {overtimeData.length === 0 ? (
                                 <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
                             ) : (
@@ -663,7 +688,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 4. FILA INFERIOR: Cajas de Cambio (izq) + Iconos (dcha) */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2 shrink-0">
                         {/* Columna izquierda: Cajas de cambio */}
                         <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                             <div className="bg-[#36606F] px-4 py-2 flex items-center text-white shrink-0">
@@ -721,8 +746,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 { title: 'Plantilla', img: '/icons/admin.png', color: 'bg-purple-500', link: '/staff' },
                                 { title: 'Producto', img: '/icons/suppliers.png', color: 'bg-orange-500', link: '/ingredients' },
                             ].map((card, i) => (
-                                <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group aspect-square">
-                                    <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110"><Image src={card.img} alt={card.title} width={40} height={40} priority={true} className="w-full h-full object-contain" /></div>
+                                <button key={i} onClick={() => { if (card.title === 'Plantilla') setIsStaffModalOpen(true); else if (card.title === 'Producto') setIsProductModalOpen(true); else if (card.link) router.push(card.link); }} className={cn("bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group aspect-square", isMobileExpanded ? "p-2" : "p-1.5")}>
+                                    <div className={cn("flex items-center justify-center transition-transform group-hover:scale-110", isMobileExpanded ? "w-10 h-10" : "w-8 h-8")}><Image src={card.img} alt={card.title} width={isMobileExpanded ? 40 : 32} height={isMobileExpanded ? 40 : 32} priority={true} className="w-full h-full object-contain" /></div>
                                     <span className="text-[7px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{card.title}</span>
                                 </button>
                             ))}

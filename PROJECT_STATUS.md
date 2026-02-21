@@ -74,7 +74,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 
 - [x] **Igualación Calendario/Escritorio (Historial)**: Adaptación exacta de proporciones en tarjetas de calendario (4 columnas), suprimiendo textos y asegurando legibilidad completa de números en móvil mediante diseño fluido extremo.
 - [x] **Optimización Altura Caja Inicial Mobile**: Reducción del espaciado dinámico debajo de la fila de 'Movimientos' cuando está plegada, permitiendo que el contenido inferior (Horas Extras, etc.) suba proporcionalmente para aprovechar el espacio en pantalla.
-- [x] **Eliminación de Scroll Innecesario en Dashboard**: Corrección de la vista smartphone en `/dashboard` aplicando `max-h` dinámico y `overflow-hidden` por defecto, habilitando el scroll expansivo únicamente cuando las tarjetas de Movimientos u Horas Extras son desplegadas.
+- [x] **Eliminación Absoluta de Scroll en Dashboard**: Corrección radical de la vista smartphone en `/dashboard`. Se ha implementado un bloqueo total de scroll (`overflow: hidden` en `document.body` + `position: fixed`) y una compactación extrema de los paddings verticales para pantallas móviles cuando no hay tarjetas expandidas, garantizando una vista de control remoto perfecta tipo "Kiosco". El scroll nativo se restaura automáticamente al desplegar los detalles.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
