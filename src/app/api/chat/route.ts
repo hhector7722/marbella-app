@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
 
 export const maxDuration = 30;
 
@@ -53,7 +54,7 @@ REGLAS CRÍTICAS:
             tools: {
                 get_ingredients: {
                     description: 'Obtiene la lista de ingredientes/productos con sus precios de compra y unidades.',
-                    parameters: { type: 'object', properties: {} },
+                    parameters: z.object({}),
                     execute: async () => {
                         const { data, error } = await supabase.from('ingredients').select('name, current_price, purchase_unit, order_unit');
                         if (error) throw error;
@@ -62,7 +63,7 @@ REGLAS CRÍTICAS:
                 },
                 get_menu: {
                     description: 'Obtiene la lista de platos del menú con sus categorías y precios de venta al público (PVP).',
-                    parameters: { type: 'object', properties: {} },
+                    parameters: z.object({}),
                     execute: async () => {
                         const { data, error } = await supabase.from('recipes').select('name, category, sale_price');
                         if (error) throw error;
@@ -71,7 +72,7 @@ REGLAS CRÍTICAS:
                 },
                 get_dashboard: {
                     description: 'Obtiene un resumen de las ventas de hoy y el estado de las cajas (Solo para Managers).',
-                    parameters: { type: 'object', properties: {} },
+                    parameters: z.object({}),
                     execute: async () => {
                         const today = new Date().toISOString().split('T')[0];
                         const [tickets, boxes] = await Promise.all([
@@ -84,7 +85,7 @@ REGLAS CRÍTICAS:
                 },
                 get_staff: {
                     description: 'Obtiene la lista de empleados y sus roles (Solo para Managers).',
-                    parameters: { type: 'object', properties: {} },
+                    parameters: z.object({}),
                     execute: async () => {
                         const { data, error } = await supabase.from('profiles').select('first_name, last_name, role, phone_number');
                         if (error) throw error;
