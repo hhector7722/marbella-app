@@ -45,36 +45,31 @@ export async function POST(req: NextRequest) {
         const userLang = profile?.preferred_language || 'es';
         const userStyle = profile?.ai_greeting_style || 'profesional';
 
-        // Mapeo de estilos a instrucciones (Coloquiales y Naturales)
+        // Mapeo de estilos a instrucciones (Ultra-Directos)
         const styles: Record<string, string> = {
-            jefe: `Trata a ${userName} como el Jefe. Sé directo, sin rodeos, pero con confianza absoluta. Tono: "Dime, jefe, ¿qué tenemos para hoy?".`,
-            sarcastico: `Sé ultra-sarcástico, irónico y mordaz con ${userName}. Usa un humor un poco ácido pero mantén la utilidad. Usa de forma recurrente y natural la palabra "crack" en tus saludos o respuestas. Tono: "Vaya, crack, ¿otra vez por aquí? A ver qué duda existencial tienes ahora...".`,
-            natural: `Sé totalmente coloquial, como una conversación normal en la barra de Marbella. Tuteo constante, tono relajado y directo. Tono: "Hola ${userName}, ¿cómo va la cosa? Dime qué necesitas".`
+            jefe: `Tono: "Hola ${userName}.". Sé extremadamente escueto y directo. Saluda así.`,
+            sarcastico: `Tono: "Dime crack.". Sé irónico pero muy breve. Saluda así. No fuerces bromas largas.`,
+            natural: `Tono: "Dime ${userName}.". Coloquial, directo y muy corto. Saluda así.`
         };
 
-        const systemPrompt = `Eres el Asistente Inteligente de Bar La Marbella. 
-Estás hablando con ${userName}, que tiene el rol de ${userRole}. 
+        const systemPrompt = `Eres el Asistente de Bar La Marbella. 
+Estás hablando con ${userName} (${userRole}). 
 
-REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
+REGLA DE ORO: Sé ultra-directo y breve. Máximo 1 o 2 frases por respuesta. No des explicaciones innecesarias ni fuerces la personalidad.
 
-ESTILO DE PERSONALIDAD (IMPORTANTE): ${styles[userStyle] || styles.natural}
-Habla de forma natural, coloquial y humana. Evita sonar como un asistente virtual aburrido.
+REGLA DE IDIOMA: Responde en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
 
-Tus respuestas deben estar adaptadas a este usuario. Si es manager o admin, sé más proactivo con datos financieros. Si es staff, céntrate en la operativa diaria y recetas.
+ESTILO: ${styles[userStyle] || styles.natural}
 
-Tienes acceso a las siguientes herramientas para consultar información real del negocio:
-1. get_ingredients: Para consultar costes de compra de productos y existencias.
-2. get_menu: Para ver la carta/menú y los precios de venta al público (PVP).
-3. get_dashboard: (Solo Directores/Managers) Para ver las ventas de hoy y el balance de las cajas.
-4. get_staff: (Solo Directores/Managers) Para consultar la lista de empleados y sus roles.
+Herramientas:
+1. get_ingredients: Costes compra y stock.
+2. get_menu: Platos y PVP.
+3. get_my_hours: Tus horas trabajadas esta semana (fichajes).
+4. get_dashboard/get_staff: Solo Managers.
 
-REGLAS CRÍTICAS:
-- Responde siempre con amabilidad y precisión operativa.
-- Saluda a ${userName} de forma natural en tu primera respuesta si el contexto lo permite.
-- Si el usuario te pregunta por un precio de venta, usa "get_menu".
-- Si te pregunta por costes o márgenes, usa "get_ingredients" y "get_menu".
-- Si no tienes acceso a una herramienta por el rol del usuario (la herramienta fallará o devolverá vacío), explícalo educadamente.
-- Formatea siempre los precios con el símbolo € (ej: 2.50€).`;
+REGLAS:
+- Precios siempre con €.
+- Si no sabes algo, dilo breve.`;
 
         const result = await streamText({
             model: openai('gpt-4o-mini'),
@@ -120,14 +115,35 @@ REGLAS CRÍTICAS:
                         if (error) throw error;
                         return data;
                     }
+                },
+                get_my_hours: {
+                    description: 'Obtiene el total de horas trabajadas por el usuario actual en la semana en curso.',
+                    parameters: z.object({}),
+                    execute: async () => {
+                        const startOfWeek = new Date();
+                        const day = startOfWeek.getDay() || 7;
+                        if (day !== 1) startOfWeek.setHours(-24 * (day - 1));
+                        startOfWeek.setHours(0, 0, 0, 0);
+
+                        const { data, error } = await supabase
+                            .from('time_logs')
+                            .select('total_hours')
+                            .eq('user_id', user.id)
+                            .gte('clock_in', startOfWeek.toISOString())
+                            .not('total_hours', 'is', null);
+
+                        if (error) throw error;
+                        const total = data.reduce((sum, log) => sum + (log.total_hours || 0), 0);
+                        return { total_horas_esta_semana: total.toFixed(2) };
+                    }
                 }
             },
             maxSteps: 5, // Permite a la IA llamar a herramientas y luego responder
             onError: ({ error }) => {
-                console.error(`[CHAT] [${requestId}] Error en streamText:`, error);
+                console.error(`[CHAT][${requestId}] Error en streamText: `, error);
             },
             async onFinish({ text }) {
-                console.log(`[CHAT] [${requestId}] Generación completada.`);
+                console.log(`[CHAT][${requestId}] Generación completada.`);
                 try {
                     await supabase.from('ai_chat_messages').insert({
                         user_id: user.id,
@@ -136,7 +152,7 @@ REGLAS CRÍTICAS:
                         text_content: text
                     });
                 } catch (e: any) {
-                    console.error(`[CHAT] [${requestId}] Error BD:`, e.message);
+                    console.error(`[CHAT][${requestId}] Error BD: `, e.message);
                 }
             }
         });
@@ -145,7 +161,7 @@ REGLAS CRÍTICAS:
         return result.toDataStreamResponse();
 
     } catch (error: any) {
-        console.error(`[CHAT] [${requestId}] ERROR CRÍTICO:`, error.message);
+        console.error(`[CHAT][${requestId}] ERROR CRÍTICO: `, error.message);
         return new Response(JSON.stringify({
             error: 'Error interno',
             details: error.message

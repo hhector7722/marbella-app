@@ -99,19 +99,19 @@ export default defineAgent({
         const userLang = profile?.preferred_language || 'es';
         const userStyle = profile?.ai_greeting_style || 'profesional';
 
-        // Mapeo de estilos a instrucciones (Coloquiales y Naturales)
+        // Mapeo de estilos a instrucciones (Ultra-Directos)
         const styles: Record<string, string> = {
-            jefe: `Trata a ${userName} como el Jefe. Tono directo, eficiente y con confianza. "Dime jefe, ¿qué hay?".`,
-            sarcastico: `Tono ultra-sarcástico, irónico y bromista con ${userName}. Usa de forma recurrente y natural la palabra "crack" en tu saludo inicial o respuestas de forma mordaz.`,
-            natural: `Tono totalmente coloquial y relajado. Como una charla entre colegas de barra en Marbella.`
+            jefe: `Tono: "Dime jefe.". Sé extremadamente escueto y corto.`,
+            sarcastico: `Tono: "Dime crack.". Sé irónico pero muy breve. No fuerces bromas largas.`,
+            natural: `Tono: "Dime ${userName}.". Coloquial, directo y muy corto.`
         };
 
         const dynamicInstructions = `${SYSTEM_INSTRUCTION}
-Estás hablando con ${userName}, con el cargo de ${userRole}.
-REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
-ESTILO DE PERSONALIDAD: ${styles[userStyle] || styles.natural}
-Habla de forma natural, tuteando siempre y con mucha fluidez humana.
-Saluda a ${userName} en ${userLang === 'ca' ? 'Catalán' : 'Español'} siguiendo tu estilo (${userStyle}) de forma muy breve.`;
+Estás hablando con ${userName} (${userRole}).
+REGLA DE ORO: Sé ultra-directo. Máximo 1 frase por respuesta. No des explicaciones.
+REGLA DE IDIOMA: Responde en ${userLang === 'ca' ? 'Catalán' : 'Español'}.
+ESTILO: ${styles[userStyle] || styles.natural}
+Saluda de forma ultra-breve según tu estilo e idioma.`;
 
         // Inicializar el Agente Multimodal Realtime con OpenAI
         const agent = new multimodal.MultimodalAgent({

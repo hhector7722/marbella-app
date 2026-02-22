@@ -57,6 +57,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] 🧱 **Arquitectura de Entorno**: Saneamiento de la raíz del proyecto eliminando archivos `package.json` redundantes en el home del usuario, optimizando el rendimiento de Next.js/Turbopack.
 - [x] 🌍 **Personalización Avanzada IA (Premium)**: Implementación de detección dinámica de idioma (Catalán/Español) y estilos de saludo personalizados (Jefe, Colega, Profesional) basados en perfiles de Supabase para chat y voz.
 - [x] ✨ **Refinamiento Minimalista Chat**: Limpieza del fondo del chat (eliminación de textos e iconos de ayuda) y optimización del logo de cabecera (más grande y alineado al botón de cierre).
+- [x] ⚡ **IA Ultra-Concisa y Funcional**: Rediseño de prompts para respuestas de máximo 1-2 frases y activación de la herramienta `get_my_hours` para que los empleados consulten su tiempo trabajado semanal.
 
 - [x] **Refinamiento UI Historial (Alineación y Cabeceras)**: Reestructuración de tarjetas en vista grid (escritorio) con métricas alineadas a la izquierda y porcentajes integrados en la misma fila para optimizar espacio. Ajuste del selector de métricas para smartphones, reduciendo el ancho de la cápsula activa para ajustarse perfectamente al texto.
 - [x] **Refinamiento UI Historial (Ajuste Final de Densidad)**: Optimización de espaciados en vista escritorio (subiendo métricas hacia la cabecera) y simplificación radical de tarjetas de calendario para smartphone, mostrando solo la métrica seleccionada centrada para una lectura instantánea.
