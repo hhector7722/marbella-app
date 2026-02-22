@@ -90,16 +90,18 @@ export default defineAgent({
         // Obtener perfil del usuario desde Supabase
         const { data: profile } = await restaurantTools.supabase
             .from('profiles')
-            .select('first_name, role')
+            .select('first_name, role, preferred_language')
             .eq('id', userId)
             .single();
 
         const userName = profile?.first_name || 'compañero';
         const userRole = profile?.role || 'staff';
+        const userLang = profile?.preferred_language || 'es';
 
         const dynamicInstructions = `${SYSTEM_INSTRUCTION}
 Estás hablando con ${userName}, con el cargo de ${userRole}.
-Saluda a ${userName} de forma natural y breve en tu primera intervención.`;
+REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
+Saluda a ${userName} de forma natural y breve en tu primera intervención en ${userLang === 'ca' ? 'Catalán' : 'Español'}.`;
 
         // Inicializar el Agente Multimodal Realtime con OpenAI
         const agent = new multimodal.MultimodalAgent({

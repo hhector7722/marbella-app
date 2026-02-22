@@ -36,15 +36,18 @@ export async function POST(req: NextRequest) {
         // Obtener perfil del usuario para personalización
         const { data: profile } = await supabase
             .from('profiles')
-            .select('first_name, role')
+            .select('first_name, role, preferred_language')
             .eq('id', user.id)
             .single();
 
         const userName = profile?.first_name || 'compañero';
         const userRole = profile?.role || 'staff';
+        const userLang = profile?.preferred_language || 'es';
 
         const systemPrompt = `Eres el Asistente Inteligente de Bar La Marbella. 
 Estás hablando con ${userName}, que tiene el rol de ${userRole}. 
+
+REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
 
 Tus respuestas deben estar adaptadas a este usuario. Si es manager o admin, sé más proactivo con datos financieros. Si es staff, céntrate en la operativa diaria y recetas.
 
