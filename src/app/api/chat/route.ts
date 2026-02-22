@@ -66,7 +66,7 @@ Herramientas:
 1. get_ingredients: Costes compra y stock.
 2. get_menu: Platos y PVP.
 3. get_staff_work_info: Info laboral propia o de otros (si eres manager). Horas reales, extras y horarios. Parámetro: weekStart (YYYY-MM-DD, lunes de la semana). Por defecto: semana actual.
-4. get_dashboard/get_staff: Solo Managers.
+4. get_dashboard/get_staff: Módulo Financiero (Solo Managers). Usa esto para consultar VENTAS acumuladas y CIERRES de caja de HOY o de DÍAS ANTERIORES.
 
 REGLAS:
 - Precios siempre con €.
@@ -96,16 +96,32 @@ REGLAS:
                     }
                 },
                 get_dashboard: {
-                    description: 'Obtiene un resumen de las ventas de hoy y el estado de las cajas (Solo para Managers).',
-                    parameters: z.object({}),
-                    execute: async () => {
-                        const today = new Date().toISOString().split('T')[0];
-                        const [tickets, boxes] = await Promise.all([
-                            supabase.from('tickets_marbella').select('total_documento').eq('fecha', today),
-                            supabase.from('cash_boxes').select('name, current_balance')
+                    description: 'Obtiene un resumen de la FACTURACIÓN (Ventas Totales) y el saldo de CIERRES de cajas para una fecha específica (Solo Managers). Sirve para preguntar cuánto se vendió ayer, hoy o el jueves pasado.',
+                    parameters: z.object({
+                        dateStr: z.string().optional().describe('Fecha específica a consultar en formato YYYY-MM-DD. Si no se provee, asume el día de hoy.')
+                    }),
+                    execute: async ({ dateStr }) => {
+                        const targetDateStr = dateStr || new Date().toISOString().split('T')[0];
+                        const targetDateStart = new Date(targetDateStr);
+                        targetDateStart.setHours(0, 0, 0, 0);
+                        const targetDateEnd = new Date(targetDateStart);
+                        targetDateEnd.setDate(targetDateEnd.getDate() + 1);
+
+                        const [tickets, boxes, closings] = await Promise.all([
+                            supabase.from('tickets_marbella').select('total_documento').eq('fecha', targetDateStr),
+                            supabase.from('cash_boxes').select('name, current_balance'),
+                            supabase.from('cash_closings').select('box_name, expected_amount, actual_amount, difference').gte('closed_at', targetDateStart.toISOString()).lt('closed_at', targetDateEnd.toISOString())
                         ]);
+
                         const totalVentas = tickets.data?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-                        return { total_ventas_hoy: totalVentas, cajas: boxes.data };
+                        const isToday = targetDateStr === new Date().toISOString().split('T')[0];
+
+                        return {
+                            fecha_consulta: targetDateStr,
+                            facturacion_total_euros: totalVentas,
+                            estado_cajas_actual: isToday ? boxes.data : 'Solo disponible para el día de hoy',
+                            cierres_de_caja_realizados: closings.data || []
+                        };
                     }
                 },
                 get_staff: {
