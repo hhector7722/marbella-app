@@ -3,12 +3,20 @@ import { createClient } from '@/utils/supabase/server';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
+import { getInventoryTool } from '@/lib/ai/tools/inventory';
+import { getStaffAttendanceTool } from '@/lib/ai/tools/work_hours';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
     const requestId = Math.random().toString(36).substring(7);
     console.log(`[CHAT] [${requestId}] Petición recibida`);
+
+    // Extraer token de Supabase de los headers para delegación RLS
+    const authHeader = req.headers.get('Authorization');
+    const supabaseAccessToken = authHeader?.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : '';
 
     try {
         const supabase = await createClient();
@@ -63,15 +71,16 @@ REGLA DE IDIOMA: Responde en ${userLang === 'ca' ? 'Catalán (Català)' : 'Espa�
 ESTILO: ${styles[userStyle] || styles.natural}
 
 Herramientas:
-1. get_ingredients: Costes compra y stock.
+1. get_inventory: Consulta el inventario, costes de compra y stock (respetando tus permisos RLS).
 2. get_menu: Platos y PVP.
-3. get_staff_work_info: Info laboral propia o de otros (si eres manager). Horas reales y extras. Parámetro: weekStart (YYYY-MM-DD, lunes de la semana). Por defecto: semana actual.
+3. get_staff_attendance: Consulta las horas trabajadas y extras de la plantilla (respetando tus permisos RLS). Los managers ven todo, el staff solo lo suyo.
+4. get_staff_work_info: (DEPRECADA por get_staff_attendance para horas reales). 
 4. get_dashboard/get_staff: Módulo Financiero (Solo Managers). Usa esto para consultar VENTAS acumuladas y CIERRES de caja de HOY o de DÍAS ANTERIORES.
 6. get_recipe_details: Obtiene la RECETA EXACTA (Ingredientes y Elaboración) de un plato.
 
 REGLAS:
-- Precios siempre con €.
 - Si te preguntan "qué llevan los calamares" o "cómo se hace X", usa get_recipe_details.
+- PRIVACIDAD: Si al consultar horas el sistema devuelve datos vacíos para otros empleados, informa con rigor que el usuario no tiene nivel de acceso suficiente para ver registros ajenos. No inventes datos.
 - Si no sabes algo, dilo breve.`;
 
         const result = await streamText({
@@ -79,15 +88,8 @@ REGLAS:
             system: systemPrompt,
             messages,
             tools: {
-                get_ingredients: {
-                    description: 'Obtiene la lista de ingredientes/productos con sus precios de compra y unidades.',
-                    parameters: z.object({}),
-                    execute: async () => {
-                        const { data, error } = await supabase.from('ingredients').select('name, current_price, purchase_unit, order_unit');
-                        if (error) throw error;
-                        return data;
-                    }
-                },
+                get_inventory: getInventoryTool(supabaseAccessToken),
+                get_staff_attendance: getStaffAttendanceTool(supabaseAccessToken),
                 get_menu: {
                     description: 'Obtiene la lista de platos del menú con sus categorías y precios de venta al público (PVP).',
                     parameters: z.object({}),
