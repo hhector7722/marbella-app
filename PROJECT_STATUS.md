@@ -56,6 +56,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] 🧠 **IA Operativa (OpenAI gpt-4o-mini)**: Migración exitosa de Chat de Texto a OpenAI. Implementado protocolo de compatibilidad v1/v2 y resuelto conflicto crítico de variables de entorno del sistema. 
 - [x] 🧱 **Arquitectura de Entorno**: Saneamiento de la raíz del proyecto eliminando archivos `package.json` redundantes en el home del usuario, optimizando el rendimiento de Next.js/Turbopack.
 
+- [x] **Refinamiento UI Historial (Alineación y Cabeceras)**: Reestructuración de tarjetas en vista grid (escritorio) con métricas alineadas a la izquierda y porcentajes integrados en la misma fila para optimizar espacio. Ajuste del selector de métricas para smartphones, reduciendo el ancho de la cápsula activa para ajustarse perfectamente al texto.
 - [x] **Refinamiento UI Historial (Ajuste Final de Densidad)**: Optimización de espaciados en vista escritorio (subiendo métricas hacia la cabecera) y simplificación radical de tarjetas de calendario para smartphone, mostrando solo la métrica seleccionada centrada para una lectura instantánea.
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.

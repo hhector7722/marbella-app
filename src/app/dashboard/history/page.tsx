@@ -564,7 +564,7 @@ export default function HistoryPage() {
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "h-8 md:h-10 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-3 md:px-5 whitespace-nowrap w-auto",
+                                                    "h-8 md:h-10 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 md:px-5 whitespace-nowrap w-auto",
                                                     selectedMetric === m.value
                                                         ? "bg-white text-[#36606F] shadow-lg"
                                                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -607,12 +607,17 @@ export default function HistoryPage() {
                                                     </div>
 
                                                     <div className="p-3 md:p-4 flex flex-col pt-1.5 md:pt-2">
-                                                        {/* Main Metric & Comparison Row */}
-                                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                                            <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                            </span>
-                                                            <div className="hidden sm:flex flex-col items-end">
+                                                        {/* Main Metric & Comparison row - Integrated */}
+                                                        <div className="flex items-center justify-between mb-0.5 md:mb-1">
+                                                            <div className="flex flex-col items-start text-left">
+                                                                <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                    {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                                </span>
+                                                                <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-1">
+                                                                    {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex flex-col items-end text-right self-start pt-1 md:pt-2">
                                                                 <div className={cn(
                                                                     "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
                                                                     parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
@@ -622,10 +627,6 @@ export default function HistoryPage() {
                                                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
                                                             </div>
                                                         </div>
-
-                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-2 md:mb-3">
-                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                        </span>
 
                                                         {/* Symmetrical 4-Column Metrics Footer */}
                                                         <div className="grid grid-cols-4 gap-0 pt-3 border-t border-zinc-100 mt-auto">
