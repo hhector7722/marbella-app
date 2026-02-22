@@ -5,9 +5,9 @@ const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface TurnoParams {
+interface InfoLaboralParams {
     empleado_id: string;
-    tipo_consulta: 'horario_semanal' | 'horas_extra' | 'turno_hoy';
+    semana_iso?: string;
 }
 
 interface RecetaParams {
@@ -28,36 +28,42 @@ interface BorradorParams {
 
 export const restaurantTools = {
     supabase,
-    auditor_horas_nominas: async ({ empleado_id, tipo_consulta }: TurnoParams) => {
+    consultar_info_laboral: async ({ empleado_id, semana_iso }: InfoLaboralParams) => {
         try {
-            if (tipo_consulta === 'horario_semanal') {
-                const { data, error } = await supabase.from('time_logs')
-                    .select('clock_in, clock_out, shift_type')
-                    .eq('user_id', empleado_id)
-                    .order('clock_in', { ascending: false })
-                    .limit(7);
-                if (error) throw error;
-                return JSON.stringify(data || []);
-            } else if (tipo_consulta === 'horas_extra') {
-                const { data, error } = await supabase.from('user_balances')
-                    .select('horas_banco, acumula_horas')
-                    .eq('user_id', empleado_id)
-                    .single();
-                if (error) throw error;
-                return JSON.stringify(data);
-            } else {
-                // turno hoy
-                const today = new Date().toISOString().split('T')[0];
-                const { data, error } = await supabase.from('time_logs')
-                    .select('clock_in, clock_out, shift_type')
-                    .eq('user_id', empleado_id)
-                    .gte('clock_in', today)
-                    .single();
-                if (error && error.code !== 'PGRST116') throw error; // Ignorar not found
-                return JSON.stringify(data || { message: "El empleado no tiene turno hoy" });
-            }
+            // Lógica de fecha (Lunes de la semana)
+            const date = semana_iso ? new Date(semana_iso) : new Date();
+            const day = date.getDay() || 7;
+            if (day !== 1) date.setHours(-24 * (day - 1));
+            date.setHours(0, 0, 0, 0);
+            const mondayStr = date.toISOString().split('T')[0];
+            const sunday = new Date(date);
+            sunday.setDate(date.getDate() + 7);
+            const sundayStr = sunday.toISOString().split('T')[0];
+
+            const [logs, snapshot, shifts] = await Promise.all([
+                supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', empleado_id).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
+                supabase.from('weekly_snapshots').select('*').eq('user_id', empleado_id).eq('week_start', mondayStr).maybeSingle(),
+                supabase.from('shifts').select('*').eq('user_id', empleado_id).gte('start_time', mondayStr).lt('start_time', sundayStr).eq('is_published', true)
+            ]);
+
+            const totalHoursReal = logs.data?.reduce((sum, l) => sum + (l.total_hours || 0), 0) || 0;
+            const overtime = snapshot.data?.balance_hours || 0;
+            const horarios = shifts.data?.map(s => ({
+                dia: new Date(s.start_time).toLocaleDateString('es-ES', { weekday: 'long' }),
+                entrada: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                salida: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                actividad: s.activity
+            })) || [];
+
+            return JSON.stringify({
+                semana_consultada: mondayStr,
+                horas_trabajadas_reales: totalHoursReal.toFixed(2),
+                horas_extras_o_deuda: overtime.toFixed(2),
+                estado_pago: snapshot.data?.is_paid ? 'Pagado' : 'Pendiente o No aplica',
+                horarios_programados: horarios.length > 0 ? horarios : 'Sin turnos en esta semana'
+            });
         } catch (e: any) {
-            return `Error al consultar turnos: ${e.message}`;
+            return JSON.stringify({ error: `Error al consultar info laboral: ${e.message}` });
         }
     },
 

@@ -64,7 +64,7 @@ ESTILO: ${styles[userStyle] || styles.natural}
 Herramientas:
 1. get_ingredients: Costes compra y stock.
 2. get_menu: Platos y PVP.
-3. get_my_hours: Tus horas trabajadas esta semana (fichajes).
+3. get_staff_work_info: Info laboral propia o de otros (si eres manager). Horas reales, extras y horarios. Parámetro: weekStart (YYYY-MM-DD, lunes de la semana). Por defecto: semana actual.
 4. get_dashboard/get_staff: Solo Managers.
 
 REGLAS:
@@ -118,23 +118,53 @@ REGLAS:
                 },
                 get_my_hours: {
                     description: 'Obtiene el total de horas trabajadas por el usuario actual en la semana en curso.',
+                    status: 'deprecated', // Reemplazado por get_staff_work_info
                     parameters: z.object({}),
                     execute: async () => {
-                        const startOfWeek = new Date();
-                        const day = startOfWeek.getDay() || 7;
-                        if (day !== 1) startOfWeek.setHours(-24 * (day - 1));
-                        startOfWeek.setHours(0, 0, 0, 0);
+                        return { error: 'Usa get_staff_work_info en su lugar.' };
+                    }
+                },
+                get_staff_work_info: {
+                    description: 'Obtiene información laboral completa (horarios, horas reales, extras) de un usuario para una semana específica.',
+                    parameters: z.object({
+                        weekStart: z.string().optional().describe('Fecha del lunes de la semana a consultar (YYYY-MM-DD).'),
+                        userId: z.string().optional().describe('ID del usuario (opcional, por defecto el actual).')
+                    }),
+                    execute: async ({ weekStart, userId }) => {
+                        const targetUserId = userId || user.id;
 
-                        const { data, error } = await supabase
-                            .from('time_logs')
-                            .select('total_hours')
-                            .eq('user_id', user.id)
-                            .gte('clock_in', startOfWeek.toISOString())
-                            .not('total_hours', 'is', null);
+                        // Lógica de fecha (Lunes de la semana)
+                        const date = weekStart ? new Date(weekStart) : new Date();
+                        const day = date.getDay() || 7;
+                        if (day !== 1) date.setHours(-24 * (day - 1));
+                        date.setHours(0, 0, 0, 0);
+                        const mondayStr = date.toISOString().split('T')[0];
+                        const sunday = new Date(date);
+                        sunday.setDate(date.getDate() + 7);
+                        const sundayStr = sunday.toISOString().split('T')[0];
 
-                        if (error) throw error;
-                        const total = data.reduce((sum, log) => sum + (log.total_hours || 0), 0);
-                        return { total_horas_esta_semana: total.toFixed(2) };
+                        const [logs, snapshot, shifts] = await Promise.all([
+                            supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', targetUserId).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
+                            supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle(),
+                            supabase.from('shifts').select('*').eq('user_id', targetUserId).gte('start_time', mondayStr).lt('start_time', sundayStr).eq('is_published', true)
+                        ]);
+
+                        const totalHoursReal = logs.data?.reduce((sum, l) => sum + (l.total_hours || 0), 0) || 0;
+                        const overtime = snapshot.data?.balance_hours || 0;
+                        const horarios = shifts.data?.map(s => ({
+                            dia: new Date(s.start_time).toLocaleDateString('es-ES', { weekday: 'long' }),
+                            entrada: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            salida: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            actividad: s.activity
+                        })) || [];
+
+                        return {
+                            semana: mondayStr,
+                            horas_reales: totalHoursReal.toFixed(2),
+                            horas_extras_balance: overtime.toFixed(2),
+                            pagado: snapshot.data?.is_paid || false,
+                            horarios_programados: horarios
+                        };
                     }
                 }
             },

@@ -10,10 +10,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Definición de Sistema (Cerebro Operativo) según lo requerido
-const SYSTEM_INSTRUCTION = `Eres la IA operativa in-house de Bar La Marbella. Respondes a empleados y dirección basándote EXCLUSIVAMENTE en la base de datos.
+const SYSTEM_INSTRUCTION = `Eres la IA operativa in-house de Bar La Marbella. Respondes a empleados y dirección basándote EXCLUSIVamente en la base de datos.
 Reglas:
 1. Respuestas ultracortas, directas y sin cortesía.
-2. Para horas extra, saldos o auditoría de nóminas, usa la herramienta "auditor_horas_nominas".
+2. Para consultas de horas (reales, extras) y horarios, usa la herramienta "consultar_info_laboral". Si no se especifica semana, asume la actual.
 3. Para recetas/alérgenos, usa la herramienta de "recetas". Lee cantidades exactas.
 4. Si falta producto o piden añadir algo a la compra, usa la herramienta de pedidos para actualizar el borrador. NUNCA confirmes compras reales, solo actualiza el borrador.
 5. Para facturación/cajas, usa la herramienta de "ventas" (solo si el usuario tiene rol 'manager').
@@ -22,16 +22,16 @@ Reglas:
 // Contexto de Herramientas para LLM (Inyectadas al modelo OpenAI)
 class RestaurantFunctionContext extends llm.FunctionContext {
     @llm.aiCallable({
-        name: 'auditor_horas_nominas',
-        description: 'Consulta información de saldos de horas, horas extras, bolsa de horas y nóminas de un empleado.',
+        name: 'consultar_info_laboral',
+        description: 'Consulta información de horarios, horas trabajadas (reales) y horas extras (balance) de un empleado.',
         parameters: z.object({
-            empleado_id: z.string().describe('ID del empleado (UUID) que pregunta.'),
-            tipo_consulta: z.enum(['horario_semanal', 'horas_extra', 'turno_hoy']).describe('Tipo de consulta a realizar')
+            empleado_id: z.string().describe('ID del empleado (UUID) que pregunta u otro si es manager.'),
+            semana_iso: z.string().optional().describe('Fecha (YYYY-MM-DD) opcional indicando el lunes de la semana a consultar. Por defecto es la semana actual.')
         })
     })
-    async auditorHoras(params: z.infer<typeof this.auditorHoras.parameters>) {
-        console.log('[AGENT TOOL] Llamando a auditor_horas_nominas', params);
-        return await restaurantTools.auditor_horas_nominas(params);
+    async consultarInfoLaboral(params: z.infer<typeof this.consultarInfoLaboral.parameters>) {
+        console.log('[AGENT TOOL] Llamando a consultar_info_laboral', params);
+        return await restaurantTools.consultar_info_laboral(params);
     }
 
     @llm.aiCallable({
