@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-21
+**Última actualización:** 2026-02-22
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -52,7 +52,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Restricción de Rol Supervisor**: Eliminación del acceso de supervisores al panel de administración y a la lista de plantilla, redirigiéndolos automáticamente al panel de staff para mantener la seguridad operativa.
 - [x] 📸 **Imágenes en Desglose de Historial**: Integración de representaciones visuales de billetes y monedas en el modal de desglose de efectivo de `/dashboard/history`, mejorando la coherencia visual con el resto de la aplicación.
 - [x] 📱 **Refinamiento Mobile Historial**: Ajuste radical de la vista smartphone en `/history`. Eliminación de fondo circular en flecha de volver, ajuste dinámico del selector de métricas y optimización del calendario para visualización sin scroll horizontal en dispositivos móviles.
-- [x] 🔘 **Controles Monetarios Proactivos**: Implementación de botones "+" y "-" en todos los campos de entrada monetaria y desgloses de efectivo (Entradas, Salidas, Arqueos, Cierres). Los botones son "frameless" siguiendo el diseño minimalista de Marbella y permiten ajustes rápidos sin perder la capacidad de edición manual.
+- [x] 🔘 **Controles Monetarios Proactivos**: Implementación de botones "+" y "-" en todos los campos de entrada monetaria y desgloses de efectivo.
+- [x] 🧠 **IA Operativa (OpenAI gpt-4o-mini)**: Migración exitosa de Chat de Texto a OpenAI. Implementado protocolo de compatibilidad v1/v2 y resuelto conflicto crítico de variables de entorno del sistema. 
+- [x] 🧱 **Arquitectura de Entorno**: Saneamiento de la raíz del proyecto eliminando archivos `package.json` redundantes en el home del usuario, optimizando el rendimiento de Next.js/Turbopack.
 
 
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
@@ -79,8 +81,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Ajuste Fino de Posiciones Mobile Dashboard**: Subido el bloque completo de contenido hacia la cabecera eliminando padding superior (`pt-0`) y ajustando el gap de Ventas, además de reducir ligeramente la altura de los indicadores (puntos) de paginación entre dashboards.
 - [x] **Alineación Mobile Staff Dashboard**: Reestructuración radical de la sección inferior ("Horarios" y cuadrícula de iconos) adoptando una cuadrícula dividida al 50% (`grid-cols-2`) con los mismos espaciados que el panel de administración, centrando perfectamente el contenido con los puntos de paginación de la interfaz.
 - [x] **Rediseño Tarjetas Calendario (Historial)**: Adaptación perfecta de proporciones ("Ventas", "Medio", "Efectivo", "Tarjeta" en grid simétrico 2x2) en la versión de escritorio y reducción proporcional fluida para encajar todos los elementos en móviles sin alterar proporciones.
-## 🚧 EN PROCESO
-- [✅] **IA Operativa (Gemini 1.5 Flash Unified)**: Migración completa de Texto y Voz a Google Gemini. Implementado `toDataStreamResponse` y refactorización de `AIChatWidget` para estabilidad operativa total.
+- [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
+- [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
