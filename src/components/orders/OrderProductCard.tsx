@@ -79,40 +79,40 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     return (
         <div className="relative group overflow-hidden h-full">
             <div className={cn(
-                "bg-white rounded-2xl shadow-md transition-all flex flex-col h-full overflow-hidden",
-                quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-xl" : "hover:shadow-lg hover:-translate-y-0.5"
+                "bg-white rounded-xl shadow-sm transition-all flex flex-col h-full overflow-hidden",
+                quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-md" : "hover:shadow-md hover:-translate-y-0.5"
             )}>
-                <div className="p-3 flex-1 flex flex-col">
+                <div className="p-2 sm:p-3 flex-1 flex flex-col">
                     {/* Product Image */}
-                    <div className="h-24 w-full flex items-center justify-center mb-3 relative grayscale-[0.2] group-hover:grayscale-0 transition-all">
+                    <div className="h-20 sm:h-24 w-full flex items-center justify-center mb-2 sm:mb-3 relative grayscale-[0.2] group-hover:grayscale-0 transition-all">
                         {ingredient.image_url ? (
-                            <img src={ingredient.image_url} className="w-full h-full object-contain p-2" alt={ingredient.name} />
+                            <img src={ingredient.image_url} className="w-full h-full object-contain p-1 sm:p-2" alt={ingredient.name} />
                         ) : (
-                            <Package className="text-gray-200 w-10 h-10" />
+                            <Package className="text-gray-200 w-8 h-8 sm:w-10 sm:h-10" />
                         )}
                         {isUpdating && (
-                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-2xl">
+                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-xl">
                                 <LoadingSpinner size="sm" className="text-[#5E35B1]" />
                             </div>
                         )}
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex flex-col px-1 mb-2 mt-auto">
-                        <span className="font-black text-gray-800 text-[11px] leading-tight" title={ingredient.name}>
+                    <div className="flex flex-col px-0.5 mb-1 sm:mb-2 mt-auto">
+                        <span className="font-black text-gray-800 text-[9px] sm:text-[11px] leading-tight line-clamp-2" title={ingredient.name}>
                             {ingredient.name}
                         </span>
                     </div>
                 </div>
 
                 {/* Controls & Unit (Bottom Area) */}
-                <div className="bg-[#36606F] p-2 flex flex-row items-center justify-between gap-1 shrink-0 shadow-inner w-full">
+                <div className="bg-[#36606F] p-1.5 sm:p-2 flex flex-row items-center justify-between gap-1 shrink-0 shadow-inner w-full">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
-                        className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0"
+                        className="w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md sm:rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0"
                     >
-                        <Minus size={16} strokeWidth={3} />
+                        <Minus size={12} strokeWidth={3} className="sm:w-4 sm:h-4" />
                     </button>
 
                     <input
@@ -123,7 +123,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             setQuantity(isNaN(val) ? 0 : Math.max(0, val));
                         }}
                         placeholder="0"
-                        className="w-10 bg-transparent text-center font-black text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-6 sm:w-10 bg-transparent text-center font-black text-xs sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
 
                     {isCustomUnit ? (
@@ -133,12 +133,12 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                                 value={customUnit}
                                 onChange={(e) => setCustomUnit(e.target.value)}
                                 placeholder="?"
-                                className="w-12 text-[10px] font-bold uppercase bg-white/10 text-white rounded px-1 py-1 outline-none text-center"
+                                className="w-8 sm:w-12 text-[7px] sm:text-[10px] font-bold uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
                                 autoFocus
                             />
                             <button
                                 onClick={() => setIsCustomUnit(false)}
-                                className="text-[10px] text-white/50 hover:text-white font-bold ml-1 shrink-0 p-1"
+                                className="text-[7px] sm:text-[10px] text-white/50 hover:text-white font-bold ml-0.5 sm:ml-1 shrink-0 p-0.5"
                             >
                                 ✕
                             </button>
@@ -153,7 +153,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                                     setUnit(e.target.value);
                                 }
                             }}
-                            className="w-auto text-center text-[10px] sm:text-[11px] font-bold uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
+                            className="w-auto text-center text-[7px] sm:text-[10px] font-black uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
                         >
                             {unitOptions.map(opt => (
                                 <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
@@ -163,18 +163,18 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
                     <button
                         onClick={handleIncrement}
-                        className="w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-lg active:scale-95 transition-all shrink-0"
+                        className="w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md sm:rounded-lg active:scale-95 transition-all shrink-0"
                     >
-                        <Plus size={16} strokeWidth={3} />
+                        <Plus size={12} strokeWidth={3} className="sm:w-4 sm:h-4" />
                     </button>
                 </div>
 
                 {quantity > 0 && (
                     <button
                         onClick={handleTrash}
-                        className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-white/90 backdrop-blur shadow-sm rounded-full text-rose-500 hover:bg-rose-50 transition-all animate-in zoom-in duration-200"
+                        className="absolute top-1 right-1 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-white/90 backdrop-blur shadow-sm rounded-full text-rose-500 hover:bg-rose-50 transition-all animate-in zoom-in duration-200"
                     >
-                        <Trash2 size={16} />
+                        <Trash2 size={12} className="sm:w-4 sm:h-4" />
                     </button>
                 )}
             </div>

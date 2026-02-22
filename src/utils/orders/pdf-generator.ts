@@ -162,7 +162,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         bodyStyles: {
-            fillColor: [255, 255, 255, 0] // Transparent to show container
+            fillColor: [255, 255, 255, 0] as any // Transparent to show container
         },
 
         didDrawCell: function (data) {

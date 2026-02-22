@@ -39,31 +39,34 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                 <div className="flex-1 overflow-y-auto p-6">
                     <table className="w-full text-left border-separate border-spacing-y-2">
                         <thead>
-                            <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                <th className="px-4 py-2">Producto</th>
-                                <th className="px-4 py-2 text-right">Cantidad / Unidad</th>
+                            <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-zinc-100">
+                                <th className="px-4 py-4">Producto</th>
+                                <th className="px-4 py-4 text-center">Cantidad</th>
+                                <th className="px-4 py-4 text-right">Unidad</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.map((item) => (
-                                <tr key={item.id} className="bg-zinc-50 rounded-xl overflow-hidden group">
-                                    <td className="px-4 py-3 first:rounded-l-xl">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-zinc-100 shrink-0">
+                                <tr key={item.id} className="border-b border-zinc-50 group hover:bg-zinc-50/50 transition-colors">
+                                    <td className="px-4 py-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-zinc-100 shrink-0">
                                                 {item.image_url ? (
                                                     <img src={item.image_url} className="w-full h-full object-contain p-1" alt={item.name} />
                                                 ) : (
                                                     <div className="w-6 h-6 bg-zinc-100 rounded-full" />
                                                 )}
                                             </div>
-                                            <span className="font-bold text-gray-700 text-sm">{item.name}</span>
+                                            <span className="font-bold text-gray-700 text-base">{item.name}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-right last:rounded-r-xl">
-                                        <div className="flex flex-col items-end">
-                                            <span className="font-black text-[#5E35B1] text-lg">{item.quantity}</span>
-                                            <span className="text-[10px] text-gray-400 font-bold uppercase">{item.unit}</span>
-                                        </div>
+                                    <td className="px-4 py-4 text-center">
+                                        <span className="font-black text-[#36606F] text-xl">{item.quantity}</span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <span className="text-xs text-gray-400 font-bold uppercase py-1 px-3 bg-zinc-100 rounded-full tracking-wider">
+                                            {item.unit}
+                                        </span>
                                     </td>
                                 </tr>
                             ))}
