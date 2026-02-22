@@ -116,7 +116,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                     </button>
                 </div>
 
-                <div className="p-4 bg-gray-50 flex-1 overflow-hidden flex flex-col">
+                <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
                     {/* Buscador */}
                     <div className="relative mb-4 shrink-0">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -145,9 +145,9 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                                     <button
                                         key={supplier.id}
                                         onClick={() => handleSelectSupplier(supplier.name)}
-                                        className="bg-white border-2 border-gray-100 rounded-2xl p-3 flex flex-col items-center gap-2 transition-all hover:border-[#36606F]/30 hover:shadow-lg active:scale-95 min-h-[90px] justify-center"
+                                        className="bg-transparent border-0 rounded-2xl p-2 flex flex-col items-center gap-2 transition-all hover:bg-gray-50/50 hover:shadow-md active:scale-95 min-h-[90px] justify-center"
                                     >
-                                        <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100 p-1">
+                                        <div className="w-14 h-14 flex items-center justify-center overflow-hidden shrink-0 p-1">
                                             {logo ? (
                                                 <img
                                                     src={logo}

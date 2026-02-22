@@ -83,6 +83,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Ajuste Fino de Posiciones Mobile Dashboard**: Subido el bloque completo de contenido hacia la cabecera eliminando padding superior (`pt-0`) y ajustando el gap de Ventas, además de reducir ligeramente la altura de los indicadores (puntos) de paginación entre dashboards.
 - [x] **Alineación Mobile Staff Dashboard**: Reestructuración radical de la sección inferior ("Horarios" y cuadrícula de iconos) adoptando una cuadrícula dividida al 50% (`grid-cols-2`) con los mismos espaciados que el panel de administración, centrando perfectamente el contenido con los puntos de paginación de la interfaz.
 - [x] **Rediseño Tarjetas Calendario (Historial)**: Adaptación perfecta de proporciones ("Ventas", "Medio", "Efectivo", "Tarjeta" en grid simétrico 2x2) en la versión de escritorio y reducción proporcional fluida para encajar todos los elementos en móviles sin alterar proporciones.
+- [x] **Integración Modal de Proveedores**: Re-integración del modal de selección de proveedores en 3 puntos clave (Barra Nav, Admin y Staff). Se ha implementado una lógica de carga híbrida (DB + Lista estática) y un diseño Marbella Premium con tarjetas flotantes sin bordes sobre fondo blanco.
 - [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
