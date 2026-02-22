@@ -99,18 +99,19 @@ export default defineAgent({
         const userLang = profile?.preferred_language || 'es';
         const userStyle = profile?.ai_greeting_style || 'profesional';
 
-        // Mapeo de estilos a instrucciones
+        // Mapeo de estilos a instrucciones (Coloquiales y Naturales)
         const styles: Record<string, string> = {
-            jefe: `Trata a ${userName} como "Jefe" o "Director". Sé extremadamente ejecutivo y eficiente.`,
-            colega: `Trata a ${userName} como un compañero cercano. Tono informal y directo.`,
-            profesional: `Tono profesional y cordial. Preciso en la operativa.`
+            jefe: `Trata a ${userName} como el Jefe. Tono directo, eficiente y con confianza. "Dime jefe, ¿qué hay?".`,
+            sarcastico: `Tono ultra-sarcástico, irónico y bromista con ${userName}. Humor ácido sobre el trabajo en el bar.`,
+            natural: `Tono totalmente coloquial y relajado. Como una charla entre colegas de barra en Marbella.`
         };
 
         const dynamicInstructions = `${SYSTEM_INSTRUCTION}
 Estás hablando con ${userName}, con el cargo de ${userRole}.
 REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
-ESTILO DE PERSONALIDAD: ${styles[userStyle] || styles.profesional}
-Saluda a ${userName} de forma natural y breve en tu primera intervención en ${userLang === 'ca' ? 'Catalán' : 'Español'} siguiendo tu estilo (${userStyle}).`;
+ESTILO DE PERSONALIDAD: ${styles[userStyle] || styles.natural}
+Habla de forma natural, tuteando siempre y con mucha fluidez humana.
+Saluda a ${userName} en ${userLang === 'ca' ? 'Catalán' : 'Español'} siguiendo tu estilo (${userStyle}) de forma muy breve.`;
 
         // Inicializar el Agente Multimodal Realtime con OpenAI
         const agent = new multimodal.MultimodalAgent({
