@@ -62,7 +62,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] 👨‍🍳 **Herramienta de Recetario (`get_recipe_details`)**: Añadido soporte nativo a la IA del web chat para que pueda buscar dinámicamente cualquier plato del menú, cruzar con la tabla `recipe_ingredients` y leer su elaboración y qué ingredientes y unidades exactas lleva.
 - [x] 📱 **Experiencia Nativa Móvil**: Sustituida la altura basada en Viewport Relative (VH) por una interpolación en tiempo real del API `window.visualViewport` para iOS Safari, evitando que el teclado virtual empuje la cabecera fuera de la pantalla. Respetando el diseño de caja flotante modal original.
 
-- [x] **Refinamiento UI Historial (Alineación y Cabeceras)**: Reestructuración de tarjetas en vista grid (escritorio) con métricas alineadas a la izquierda y porcentajes integrados en la misma fila para optimizar espacio. Ajuste del selector de métricas para smartphones, reduciendo el ancho de la cápsula activa para ajustarse perfectamente al texto.
+- [x] **Refinamiento UI Historial (Alineación y Cabeceras)**: Reestructuración de tarjetas en vista grid (escritorio) con métricas alineadas a la izquierda y porcentajes integrados en la misma fila. Ajuste del selector de métricas para smartphones.
+- [x] **IA Operativa (OpenAI Realtime)**: Actualización del worker a `gpt-4o-realtime-preview` con saludos dinámicos y herramientas refinadas.
 - [x] **Refinamiento UI Historial (Ajuste Final de Densidad)**: Optimización de espaciados en vista escritorio (subiendo métricas hacia la cabecera) y simplificación radical de tarjetas de calendario para smartphone, mostrando solo la métrica seleccionada centrada para una lectura instantánea.
 - [x] **Estilo Rojo en Tarjetas Historial**: Aplicación de fondo rojo (`rose-500`) suavizado, eliminación de iconos superfluos y optimización de jerarquía visual (métricas, porcentajes y footer simétrico).
 - [x] **Refinamiento UI Historial**: Implementación de contenedor blanco roto (`bg-[#fafafa]`) y cabecera de métricas de ancho completo para una experiencia más limpia.
@@ -90,6 +91,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Tarjetas Calendario (Historial)**: Adaptación perfecta de proporciones ("Ventas", "Medio", "Efectivo", "Tarjeta" en grid simétrico 2x2) en la versión de escritorio y reducción proporcional fluida para encajar todos los elementos en móviles sin alterar proporciones.
 - [x] **Integración Modal de Proveedores**: Re-integración del modal de selección de proveedores en 3 puntos clave (Barra Nav, Admin y Staff). Se ha implementado una lógica de carga híbrida (DB + Lista estática) y un diseño Marbella Premium con tarjetas flotantes sin bordes sobre fondo blanco.
 - [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
+- [x] 📄 **Rediseño de Pedido PDF**: Implementación de un diseño minimalista y limpio ("Bento Grid"). Eliminación de cabeceras azules, reposicionamiento de logo y título, y creación de contenedor de tabla con bordes redondeados y cabecera en color petróleo (#36606F) para máxima legibilidad.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE

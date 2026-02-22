@@ -607,29 +607,31 @@ export default function HistoryPage() {
                                                     </div>
 
                                                     <div className="p-3 md:p-4 flex flex-col pt-1.5 md:pt-2">
-                                                        {/* Main Metric & Comparison row - Integrated */}
-                                                        <div className="flex items-center justify-between mb-0.5 md:mb-1">
-                                                            <div className="flex flex-col items-start text-left">
-                                                                <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                                    {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                                </span>
-                                                                <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-1">
-                                                                    {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex flex-col items-end text-right self-start pt-1 md:pt-2">
+                                                        {/* Main Metric row - Left Aligned */}
+                                                        <div className="flex items-start justify-start mb-0.5">
+                                                            <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Label & Comparison row - Integrated Space Saver */}
+                                                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                                                            <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                                                                {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                            </span>
+                                                            <div className="flex items-center gap-1">
                                                                 <div className={cn(
-                                                                    "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
+                                                                    "text-[10px] md:text-xs font-black uppercase tracking-tighter whitespace-nowrap leading-none",
                                                                     parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
                                                                 )}>
                                                                     {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}%
                                                                 </div>
-                                                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
+                                                                <span className="hidden md:inline text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
                                                             </div>
                                                         </div>
 
                                                         {/* Symmetrical 4-Column Metrics Footer */}
-                                                        <div className="grid grid-cols-4 gap-0 pt-3 border-t border-zinc-100 mt-auto">
+                                                        <div className="grid grid-cols-4 gap-0 pt-1.5 md:pt-2 border-t border-zinc-100 mt-auto">
                                                             <div className="flex flex-col items-center">
                                                                 <span className="text-[10px] md:text-[11px] font-black text-zinc-900 tabular-nums">{Math.round(c.tpv_sales)}€</span>
                                                                 <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Ventas</span>
