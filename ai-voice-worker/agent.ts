@@ -90,18 +90,27 @@ export default defineAgent({
         // Obtener perfil del usuario desde Supabase
         const { data: profile } = await restaurantTools.supabase
             .from('profiles')
-            .select('first_name, role, preferred_language')
+            .select('first_name, role, preferred_language, ai_greeting_style')
             .eq('id', userId)
             .single();
 
         const userName = profile?.first_name || 'compañero';
         const userRole = profile?.role || 'staff';
         const userLang = profile?.preferred_language || 'es';
+        const userStyle = profile?.ai_greeting_style || 'profesional';
+
+        // Mapeo de estilos a instrucciones
+        const styles: Record<string, string> = {
+            jefe: `Trata a ${userName} como "Jefe" o "Director". Sé extremadamente ejecutivo y eficiente.`,
+            colega: `Trata a ${userName} como un compañero cercano. Tono informal y directo.`,
+            profesional: `Tono profesional y cordial. Preciso en la operativa.`
+        };
 
         const dynamicInstructions = `${SYSTEM_INSTRUCTION}
 Estás hablando con ${userName}, con el cargo de ${userRole}.
 REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
-Saluda a ${userName} de forma natural y breve en tu primera intervención en ${userLang === 'ca' ? 'Catalán' : 'Español'}.`;
+ESTILO DE PERSONALIDAD: ${styles[userStyle] || styles.profesional}
+Saluda a ${userName} de forma natural y breve en tu primera intervención en ${userLang === 'ca' ? 'Catalán' : 'Español'} siguiendo tu estilo (${userStyle}).`;
 
         // Inicializar el Agente Multimodal Realtime con OpenAI
         const agent = new multimodal.MultimodalAgent({

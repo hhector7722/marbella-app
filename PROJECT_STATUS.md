@@ -55,6 +55,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] 🔘 **Controles Monetarios Proactivos**: Implementación de botones "+" y "-" en todos los campos de entrada monetaria y desgloses de efectivo.
 - [x] 🧠 **IA Operativa (OpenAI gpt-4o-mini)**: Migración exitosa de Chat de Texto a OpenAI. Implementado protocolo de compatibilidad v1/v2 y resuelto conflicto crítico de variables de entorno del sistema. 
 - [x] 🧱 **Arquitectura de Entorno**: Saneamiento de la raíz del proyecto eliminando archivos `package.json` redundantes en el home del usuario, optimizando el rendimiento de Next.js/Turbopack.
+- [x] 🌍 **Personalización Avanzada IA (Premium)**: Implementación de detección dinámica de idioma (Catalán/Español) y estilos de saludo personalizados (Jefe, Colega, Profesional) basados en perfiles de Supabase para chat y voz.
 
 - [x] **Refinamiento UI Historial (Alineación y Cabeceras)**: Reestructuración de tarjetas en vista grid (escritorio) con métricas alineadas a la izquierda y porcentajes integrados en la misma fila para optimizar espacio. Ajuste del selector de métricas para smartphones, reduciendo el ancho de la cápsula activa para ajustarse perfectamente al texto.
 - [x] **Refinamiento UI Historial (Ajuste Final de Densidad)**: Optimización de espaciados en vista escritorio (subiendo métricas hacia la cabecera) y simplificación radical de tarjetas de calendario para smartphone, mostrando solo la métrica seleccionada centrada para una lectura instantánea.

@@ -36,26 +36,36 @@ export async function POST(req: NextRequest) {
         // Obtener perfil del usuario para personalización
         const { data: profile } = await supabase
             .from('profiles')
-            .select('first_name, role, preferred_language')
+            .select('first_name, role, preferred_language, ai_greeting_style')
             .eq('id', user.id)
             .single();
 
         const userName = profile?.first_name || 'compañero';
         const userRole = profile?.role || 'staff';
         const userLang = profile?.preferred_language || 'es';
+        const userStyle = profile?.ai_greeting_style || 'profesional';
+
+        // Mapeo de estilos a instrucciones
+        const styles: Record<string, string> = {
+            jefe: `Trata a ${userName} como "Jefe" o "Director". Sé extremadamente ejecutivo, proactivo con datos de ventas y usa un tono de respeto pero eficiente.`,
+            colega: `Trata a ${userName} como un compañero de equipo cercano. Usa un tono informal, motivador y directo.`,
+            profesional: `Trata a ${userName} de forma profesional y cordial. Sé preciso y enfocado en la operativa.`
+        };
 
         const systemPrompt = `Eres el Asistente Inteligente de Bar La Marbella. 
 Estás hablando con ${userName}, que tiene el rol de ${userRole}. 
 
 REGLA DE IDIOMA CRÍTICA: Debes responder EXCLUSIVAMENTE en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
 
+ESTILO DE PERSONALIDAD: ${styles[userStyle] || styles.profesional}
+
 Tus respuestas deben estar adaptadas a este usuario. Si es manager o admin, sé más proactivo con datos financieros. Si es staff, céntrate en la operativa diaria y recetas.
 
 Tienes acceso a las siguientes herramientas para consultar información real del negocio:
-1. "get_ingredients": Para consultar costes de compra de productos y existencias.
-2. "get_menu": Para ver la carta/menú y los precios de venta al público (PVP).
-3. "get_dashboard": (Solo Directores/Managers) Para ver las ventas de hoy y el balance de las cajas.
-4. "get_staff": (Solo Directores/Managers) Para consultar la lista de empleados y sus roles.
+1. get_ingredients: Para consultar costes de compra de productos y existencias.
+2. get_menu: Para ver la carta/menú y los precios de venta al público (PVP).
+3. get_dashboard: (Solo Directores/Managers) Para ver las ventas de hoy y el balance de las cajas.
+4. get_staff: (Solo Directores/Managers) Para consultar la lista de empleados y sus roles.
 
 REGLAS CRÍTICAS:
 - Responde siempre con amabilidad y precisión operativa.
