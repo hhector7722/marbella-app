@@ -606,7 +606,7 @@ export default function HistoryPage() {
                                                         </span>
                                                     </div>
 
-                                                    <div className="p-4 md:p-5 flex flex-col">
+                                                    <div className="p-3 md:p-4 flex flex-col">
                                                         {/* Main Metric & Comparison Row */}
                                                         <div className="flex items-center justify-between gap-2 mb-1">
                                                             <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
@@ -706,10 +706,7 @@ export default function HistoryPage() {
                                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                         </span>
                                                                     </div>
-                                                                    <div className={cn(
-                                                                        "text-[4.5px] min-[370px]:text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter leading-none mt-0.5",
-                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
-                                                                    )}>
+                                                                    <div className="hidden sm:flex text-[4.5px] min-[370px]:text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter leading-none mt-0.5 text-emerald-500">
                                                                         {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(parseFloat(diffPerc))}%
                                                                     </div>
                                                                 </div>
