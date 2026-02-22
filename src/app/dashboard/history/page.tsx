@@ -690,19 +690,19 @@ export default function HistoryPage() {
                                                             onClick={() => setSelectedClosing(closing)}
                                                             className="group relative bg-white aspect-square w-full rounded-[0.5rem] md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-200 flex flex-col overflow-hidden"
                                                         >
-                                                            {/* Header Rojo con Número Blanco */}
-                                                            <div className="bg-[#D64D5D] px-1 md:px-2 py-0.5 md:py-1.5 flex justify-center items-center shadow-sm shrink-0">
-                                                                <span className="text-[8px] min-[370px]:text-[10px] sm:text-[12px] md:text-[16px] font-black text-white leading-none">{format(day, 'd')}</span>
+                                                            {/* Header Rojo con Número Blanco - Reduced Height */}
+                                                            <div className="bg-[#D64D5D] px-1 md:px-2 py-0 md:py-1 flex justify-center items-center shadow-sm shrink-0">
+                                                                <span className="text-[7px] min-[370px]:text-[8px] sm:text-[10px] md:text-[14px] font-black text-white leading-none">{format(day, 'd')}</span>
                                                             </div>
 
                                                             <div className="p-1 min-[370px]:p-1.5 md:p-3 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-between flex-1">
-                                                                {/* Main Metric & Comparison Row */}
-                                                                <div className="flex flex-row justify-between items-start mb-0.5 min-[370px]:mb-1 md:mb-2">
+                                                                {/* Main Metric & Comparison Row - Reduced Bottom Margin */}
+                                                                <div className="flex flex-row justify-between items-start mb-0 min-[370px]:mb-0.5 md:mb-1">
                                                                     <div className="flex flex-col">
                                                                         <span className="text-[6px] min-[370px]:text-[7px] sm:text-[9px] md:text-[14px] lg:text-[16px] xl:text-[18px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                             {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                                         </span>
-                                                                        <span className="hidden sm:block text-[4.5px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">
+                                                                        <span className="hidden sm:block text-[4.5px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0">
                                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                         </span>
                                                                     </div>
@@ -714,8 +714,8 @@ export default function HistoryPage() {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* 2x2 Grid for the other 4 metrics */}
-                                                                <div className="grid grid-cols-2 gap-x-0.5 min-[370px]:gap-x-1 gap-y-0.5 min-[370px]:gap-y-1 md:gap-y-2 mt-auto w-full">
+                                                                {/* 2x2 Grid for the other 4 metrics - Reduced Top Margin */}
+                                                                <div className="grid grid-cols-2 gap-x-0.5 min-[370px]:gap-x-1 gap-y-0 min-[370px]:gap-y-0.5 md:gap-y-1 mt-auto w-full">
                                                                     {/* Ventas */}
                                                                     <div className="flex flex-col items-center justify-center">
                                                                         <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
@@ -774,13 +774,33 @@ export default function HistoryPage() {
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
-                            {/* ABSOLUTE CLOSE BUTTON */}
-                            <button
-                                onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all shadow-xl active:scale-95 z-20"
-                            >
-                                <X size={20} strokeWidth={3} />
-                            </button>
+                            {/* ABSOLUTE TOP HEADER ACTIONS */}
+                            <div className="absolute top-6 right-6 flex items-center gap-2 z-20">
+                                {!isEditing && isManager && (
+                                    <>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/10 shadow-lg active:scale-95"
+                                            title="Editar Cierre"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClosing(); }}
+                                            className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95"
+                                            title="Eliminar Cierre"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </>
+                                )}
+                                <button
+                                    onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                    className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all shadow-xl active:scale-95"
+                                >
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
 
                             <div className="mt-4">
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
@@ -806,26 +826,8 @@ export default function HistoryPage() {
                                     </button>
                                 </div>
 
-                                <div className="mt-4 flex items-center justify-center gap-2">
-                                    {!isEditing && isManager && (
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
-                                                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95"
-                                                title="Editar Cierre"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button
-                                                onClick={handleDeleteClosing}
-                                                className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95"
-                                                title="Eliminar Cierre"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                                {/* Padding replacement for original buttons area */}
+                                <div className="mt-4 h-2 opacity-0" />
                                 <div className="flex items-center justify-center gap-4 mt-6">
                                     <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
                                         <CloudSun size={14} className="text-amber-400" />
