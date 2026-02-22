@@ -129,10 +129,35 @@ REGLAS:
                     description: 'Obtiene el HORARIO PROGRAMADO (teoricio) y las HORAS TRABAJADAS REALES (fichajes) de un usuario para una semana específica. Usa esto para cualquier pregunta sobre horarios o horas.',
                     parameters: z.object({
                         weekStart: z.string().optional().describe('Fecha del lunes de la semana a consultar (YYYY-MM-DD).'),
-                        userId: z.string().optional().describe('ID del usuario (opcional, por defecto el actual).')
+                        employeeNameOrId: z.string().optional().describe('Nombre, apellido o ID del usuario (opcional, por defecto el tuyo propio).')
                     }),
-                    execute: async ({ weekStart, userId }) => {
-                        const targetUserId = userId || user.id;
+                    execute: async ({ weekStart, employeeNameOrId }) => {
+                        let targetUserId = user.id;
+
+                        // Si han enviado un nombre o ID y el que pregunta es manager
+                        if (employeeNameOrId && userRole === 'manager') {
+                            // Detectar si parece un UUID
+                            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(employeeNameOrId);
+
+                            if (isUUID) {
+                                targetUserId = employeeNameOrId;
+                            } else {
+                                // Buscar por nombre real en public.profiles
+                                const { data: profileMatch } = await supabase
+                                    .from('profiles')
+                                    .select('id, first_name')
+                                    .ilike('first_name', `%${employeeNameOrId}%`)
+                                    .limit(1)
+                                    .maybeSingle();
+
+                                if (profileMatch) {
+                                    targetUserId = profileMatch.id;
+                                    console.log(`[AI Chat] Resuelto el nombre '${employeeNameOrId}' al ID: ${targetUserId}`);
+                                } else {
+                                    return { error: `No encontré a ningún empleado llamado "${employeeNameOrId}". Por favor dile al usuario que verifique el nombre.` };
+                                }
+                            }
+                        }
 
                         // Lógica de fecha (Lunes de la semana)
                         const date = weekStart ? new Date(weekStart) : new Date();

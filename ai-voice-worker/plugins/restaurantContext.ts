@@ -6,7 +6,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface InfoLaboralParams {
-    empleado_id: string;
+    empleado_nombre_o_id: string;
     semana_iso?: string;
 }
 
@@ -28,8 +28,28 @@ interface BorradorParams {
 
 export const restaurantTools = {
     supabase,
-    consultar_info_laboral: async ({ empleado_id, semana_iso }: InfoLaboralParams) => {
+    consultar_info_laboral: async ({ empleado_nombre_o_id, semana_iso }: InfoLaboralParams) => {
         try {
+            let targetUserId = empleado_nombre_o_id;
+
+            // Detectar si NO es un UUID para intentar resolverlo por nombre
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(empleado_nombre_o_id);
+            if (!isUUID) {
+                const { data: profileMatch } = await supabase
+                    .from('profiles')
+                    .select('id, first_name')
+                    .ilike('first_name', `%${empleado_nombre_o_id}%`)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (profileMatch) {
+                    targetUserId = profileMatch.id;
+                    console.log(`[AI Voice] Resuelto el nombre '${empleado_nombre_o_id}' al ID: ${targetUserId}`);
+                } else {
+                    return JSON.stringify({ error: `No encontré a ningún empleado llamado "${empleado_nombre_o_id}".` });
+                }
+            }
+
             // Lógica de fecha (Lunes de la semana)
             const date = semana_iso ? new Date(semana_iso) : new Date();
             const day = date.getDay() || 7;
@@ -41,9 +61,9 @@ export const restaurantTools = {
             const sundayStr = sunday.toISOString().split('T')[0];
 
             const [logs, snapshot, shifts] = await Promise.all([
-                supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', empleado_id).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
-                supabase.from('weekly_snapshots').select('*').eq('user_id', empleado_id).eq('week_start', mondayStr).maybeSingle(),
-                supabase.from('shifts').select('*').eq('user_id', empleado_id).gte('start_time', mondayStr).lt('start_time', sundayStr).eq('is_published', true)
+                supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', targetUserId).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
+                supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle(),
+                supabase.from('shifts').select('*').eq('user_id', targetUserId).gte('start_time', mondayStr).lt('start_time', sundayStr).eq('is_published', true)
             ]);
 
             const totalHoursReal = logs.data?.reduce((sum, l) => sum + (l.total_hours || 0), 0) || 0;

@@ -26,7 +26,7 @@ class RestaurantFunctionContext extends llm.FunctionContext {
         name: 'consultar_info_laboral',
         description: 'Consulta el HORARIO PROGRAMADO (teoricio) y las HORAS TRABAJADAS REALES (fichajes) de un empleado. Usa esto para cualquier pregunta sobre horarios o horas.',
         parameters: z.object({
-            empleado_id: z.string().describe('ID del empleado (UUID) que pregunta u otro si es manager.'),
+            empleado_nombre_o_id: z.string().describe('Nombre, apellido o ID (UUID) del empleado que pregunta u otro si es manager.'),
             semana_iso: z.string().optional().describe('Fecha (YYYY-MM-DD) opcional indicando el lunes de la semana a consultar. Por defecto es la semana actual.')
         })
     })
