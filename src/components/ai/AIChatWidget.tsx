@@ -18,7 +18,14 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         isLoading,
     } = useChat({
         api: '/api/chat',
+        onResponse: (response) => {
+            console.log("[DEBUG] [useChat] Recibida respuesta del servidor:", response.status, response.statusText);
+        },
+        onFinish: (message) => {
+            console.log("[DEBUG] [useChat] Stream finalizado. Mensaje completo:", message.content.substring(0, 50) + "...");
+        },
         onError: (error) => {
+            console.error("[CRÍTICO] Fallo en el stream de useChat:", error);
             const msg = error.message ?? '';
             if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
                 setAuthError('Sesión expirada. Cierra sesión y vuelve a entrar.');
