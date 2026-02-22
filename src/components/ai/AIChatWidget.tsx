@@ -8,6 +8,8 @@ import { createClient } from '@/utils/supabase/client';
 import { useAIStore } from '@/store/aiStore';
 
 export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
+    const supabase = createClient();
+    const [accessToken, setAccessToken] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
     const closeChat = useAIStore((state) => state.closeChat);
     const {
@@ -20,6 +22,9 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         isLoading,
     } = useChat({
         api: '/api/chat',
+        headers: accessToken ? {
+            'Authorization': `Bearer ${accessToken}`
+        } : {},
         onResponse: (response) => {
             console.log("[DEBUG] [useChat] Recibida respuesta del servidor:", response.status, response.statusText);
         },
@@ -46,7 +51,15 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
-    const supabase = createClient();
+
+    // Recuperar token de sesión para RLS
+    useEffect(() => {
+        const fetchSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) setAccessToken(session.access_token);
+        };
+        fetchSession();
+    }, [supabase]);
 
     // Auto-scroll al final del chat
     useEffect(() => {

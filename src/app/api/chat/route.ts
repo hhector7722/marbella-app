@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
         ? authHeader.split(' ')[1]
         : '';
 
+    // INYECCIÓN DE TELEMETRÍA EXACTA:
+    console.log("[AUTH DEBUG] Token extraído en API:", supabaseAccessToken ? "PRESENTE" : "AUSENTE CRÍTICO");
+
     try {
         const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();

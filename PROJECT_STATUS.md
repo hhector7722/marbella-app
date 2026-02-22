@@ -79,7 +79,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Métrica de Diferencia en Dashboard**: Sustitución de la flecha en la tarjeta de Caja Inicial por el valor de la diferencia, con lógica de colores (rojo < 0, blanco > 0) y tick para descuadre cero.
 - [x] **Optimización Mobile Movimientos**: Ajuste radical de la vista smartphone en `/dashboard/movements`. Acciones de cabecera alineadas con el título, resumen de KPIs en fila única de 4 columnas y refinamiento de la distribución de anchos en la tabla de movimientos para evitar solapamientos.
 - [x] **Refinamiento Estético de Iconos**: Sustitución de props de tamaño por clases Tailwind y unificación de estilos en iconos de acción de tesorería.
-- [x] **Rediseño Tarjeta Producto (Pedidos)**: Reducción del tamaño de fuente del nombre del producto y reestructuración de la zona inferior. **Refinado**: Eliminación de marco en imagen para efecto flotante, área de controles edge-to-edge color petróleo y disposición perfectamente simétrica de input numérico y selector de unidad con texto reducido (`text-sm`).
+- [x] **Rediseño Tarjeta Producto (Pedidos)**: Reducción del tamaño de fuente del nombre del producto y reestructuración de la zona inferior. **Optimización 3-Columnas**: Implementación de cuadrícula de 3 columnas en móviles (igual a `/recipes`) con reducción proporcional de fuentes (`text-[7px]` para unidades) y botones `w-5` para un ajuste perfecto sin tocar márgenes.
 - [x] **Ajuste Altura Contenedor Cajas Cambio (Mobile)**: Eliminación de bordes, fondos y reducción drástica de espaciados (paddings y gaps) en las tarjetas de Cambio 1 y Cambio 2 para que floten sobre el fondo blanco del panel y su altura total se compacte para coincidir con la fila de iconos adyacente.
 - [x] **Corrección de Transición Swipe Mobile**: Inversión del orden espacial en `DashboardSwitcher.tsx` (Panel Administrativo a la izquierda, Panel Staff a la derecha). Esto soluciona la resistencia de rebote y permite que deslizar hacia la derecha desde Staff vuelva a Administración de manera 100% fluida, coincidiendo con la heurística nativa de iOS "Atrás".
 
@@ -91,7 +91,8 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Rediseño Tarjetas Calendario (Historial)**: Adaptación perfecta de proporciones ("Ventas", "Medio", "Efectivo", "Tarjeta" en grid simétrico 2x2) en la versión de escritorio y reducción proporcional fluida para encajar todos los elementos en móviles sin alterar proporciones.
 - [x] **Integración Modal de Proveedores**: Re-integración del modal de selección de proveedores en 3 puntos clave (Barra Nav, Admin y Staff). Se ha implementado una lógica de carga híbrida (DB + Lista estática) y un diseño Marbella Premium con tarjetas flotantes sin bordes sobre fondo blanco.
 - [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
-- [x] 📄 **Rediseño de Pedido PDF**: Implementación de un diseño minimalista y limpio ("Bento Grid"). Eliminación de cabeceras azules, reposicionamiento de logo y título, y creación de contenedor de tabla con bordes redondeados y cabecera en color petróleo (#36606F) para máxima legibilidad.
+- [x] **Seguridad IA (RLS Delegado)**: Implementación de arquitectura de "Rayos X" donde la IA consulta Supabase usando la identidad real del usuario (JWT) en lugar del Service Role, respetando estrictamente los permisos de cada rol.
+- [x] 📄 **Rediseño de Pedido PDF**: Implementación de un diseño minimalista y limpio ("Bento Grid").
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE
