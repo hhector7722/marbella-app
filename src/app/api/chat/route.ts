@@ -67,9 +67,11 @@ Herramientas:
 2. get_menu: Platos y PVP.
 3. get_staff_work_info: Info laboral propia o de otros (si eres manager). Horas reales, extras y horarios. Parámetro: weekStart (YYYY-MM-DD, lunes de la semana). Por defecto: semana actual.
 4. get_dashboard/get_staff: Módulo Financiero (Solo Managers). Usa esto para consultar VENTAS acumuladas y CIERRES de caja de HOY o de DÍAS ANTERIORES.
+6. get_recipe_details: Obtiene la RECETA EXACTA (Ingredientes y Elaboración) de un plato.
 
 REGLAS:
 - Precios siempre con €.
+- Si te preguntan "qué llevan los calamares" o "cómo se hace X", usa get_recipe_details.
 - Si no sabes algo, dilo breve.`;
 
         const result = await streamText({
@@ -121,6 +123,34 @@ REGLAS:
                             facturacion_total_euros: totalVentas,
                             estado_cajas_actual: isToday ? boxes.data : 'Solo disponible para el día de hoy',
                             cierres_de_caja_realizados: closings.data || []
+                        };
+                    }
+                },
+                get_recipe_details: {
+                    description: 'Obtiene los INGREDIENTES EXACTOS y la ELABORACIÓN de un plato del menú.',
+                    parameters: z.object({
+                        recipeName: z.string().describe('El nombre del plato a buscar (ej. "calamares").')
+                    }),
+                    execute: async ({ recipeName }) => {
+                        const { data: recipe } = await supabase.from('recipes').select('id, name, elaboration, presentation').ilike('name', `%${recipeName}%`).limit(1).maybeSingle();
+                        if (!recipe) return { error: `No se encontró la receta de ${recipeName}.` };
+
+                        const { data: ingredientsData } = await supabase
+                            .from('recipe_ingredients')
+                            .select(`
+                                quantity,
+                                unit,
+                                ingredients ( name )
+                            `)
+                            .eq('recipe_id', recipe.id);
+
+                        const ingredients = ingredientsData?.map((ing: any) => `${ing.quantity} ${ing.unit} de ${ing.ingredients?.name}`) || [];
+
+                        return {
+                            plato: recipe.name,
+                            ingredientes: ingredients.length > 0 ? ingredients : 'No hay ingredientes listados.',
+                            elaboracion: recipe.elaboration || 'Sin instrucciones especificas.',
+                            presentacion: recipe.presentation || 'Sin presentación específica.'
                         };
                     }
                 },
