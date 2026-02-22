@@ -226,7 +226,6 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                         <textarea
                             value={input}
                             onChange={handleInputChange}
-                            placeholder="Escribe tu consulta..."
                             className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-zinc-800 resize-none max-h-32 min-h-[20px] py-3"
                             rows={1}
                             onKeyDown={(e) => {
