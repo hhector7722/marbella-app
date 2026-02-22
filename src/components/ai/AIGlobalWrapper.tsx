@@ -30,7 +30,7 @@ export function AIGlobalWrapper() {
         // REGLA 1: NUNCA se desmonta del DOM. La visibilidad se controla por clases CSS (sin conditional rendering).
         <div
             className={cn(
-                'fixed inset-0 z-[9999] flex items-end sm:items-center justify-center transition-all duration-300',
+                'fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 transition-all duration-300',
                 isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             )}
             aria-hidden={!isOpen}
@@ -43,7 +43,7 @@ export function AIGlobalWrapper() {
 
             {/* Contenedor principal del chat: detiene propagación al backdrop */}
             <div
-                className="relative w-full sm:w-[95%] max-w-2xl h-[92dvh] sm:h-[85vh] bg-[#fafafa] rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+                className="relative w-full max-w-lg h-[80vh] sm:h-[75vh] bg-[#fafafa] rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Widget de Chat Asíncrono — SIEMPRE en el DOM */}

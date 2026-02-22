@@ -5,9 +5,11 @@ import { useState, useRef, useEffect } from 'react';
 import { Mic, Send, Image as ImageIcon, X, Phone, Bot, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
+import { useAIStore } from '@/store/aiStore';
 
 export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
     const [authError, setAuthError] = useState<string | null>(null);
+    const closeChat = useAIStore((state) => state.closeChat);
     const {
         messages,
         input,
@@ -151,19 +153,27 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
 
     return (
         <div className="flex flex-col h-full bg-[#fafafa]">
-            {/* Cabecera Premium Marbella */}
-            <div className="bg-white border-b border-zinc-100 p-4 shadow-sm flex items-center justify-between sticky top-0 z-10">
-                <div>
-                    <h3 className="font-black text-sm text-zinc-800 uppercase tracking-widest">Asistente AI</h3>
-                    <p className="text-[10px] font-bold text-zinc-400">Modo Unificado (Gemini)</p>
+            {/* Cabecera Premium Marbella - Color Petróleo */}
+            <div className="bg-[#36606F] p-4 shadow-md flex items-center justify-between sticky top-0 z-10 text-white">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={closeChat}
+                        className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                    <div>
+                        <h3 className="font-black text-xs uppercase tracking-widest leading-none">Asistente AI</h3>
+                        <p className="text-[9px] font-bold text-white/60 mt-1">Modo Unificado (Genius)</p>
+                    </div>
                 </div>
                 <button
                     type="button"
                     onClick={onStartCall}
-                    className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm min-h-[44px]"
+                    className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg min-h-[40px]"
                 >
-                    <Phone size={16} fill="currentColor" />
-                    <span className="font-bold text-xs uppercase tracking-wider">Llamada</span>
+                    <Phone size={14} fill="currentColor" />
+                    <span className="font-black text-[10px] uppercase tracking-wider">Llamada</span>
                 </button>
             </div>
 
