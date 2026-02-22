@@ -14,6 +14,7 @@ const SYSTEM_INSTRUCTION = `Eres la IA operativa in-house de Bar La Marbella. Re
 Reglas:
 1. Respuestas ultracortas, directas y sin cortesía.
 2. Para consultas de horas (reales, extras) y horarios, usa la herramienta "consultar_info_laboral". Si no se especifica semana, asume la actual.
+DIFERENCIACIÓN LABORAL: "Horarios" = los turnos teóricos asignados para trabajar. "Horas trabajadas" = la realidad fichada en la máquina. Nunca los confundas.
 3. Para recetas/alérgenos, usa la herramienta de "recetas". Lee cantidades exactas.
 4. Si falta producto o piden añadir algo a la compra, usa la herramienta de pedidos para actualizar el borrador. NUNCA confirmes compras reales, solo actualiza el borrador.
 5. Para facturación/cajas, usa la herramienta de "ventas" (solo si el usuario tiene rol 'manager').
@@ -23,7 +24,7 @@ Reglas:
 class RestaurantFunctionContext extends llm.FunctionContext {
     @llm.aiCallable({
         name: 'consultar_info_laboral',
-        description: 'Consulta información de horarios, horas trabajadas (reales) y horas extras (balance) de un empleado.',
+        description: 'Consulta el HORARIO PROGRAMADO (teoricio) y las HORAS TRABAJADAS REALES (fichajes) de un empleado. Usa esto para cualquier pregunta sobre horarios o horas.',
         parameters: z.object({
             empleado_id: z.string().describe('ID del empleado (UUID) que pregunta u otro si es manager.'),
             semana_iso: z.string().optional().describe('Fecha (YYYY-MM-DD) opcional indicando el lunes de la semana a consultar. Por defecto es la semana actual.')

@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
 Estás hablando con ${userName} (${userRole}). 
 
 REGLA DE ORO: Sé ultra-directo y breve. Máximo 1 o 2 frases por respuesta. No des explicaciones innecesarias ni fuerces la personalidad.
+DIFERENCIACIÓN LABORAL: "Horarios" = los turnos teóricos asignados para trabajar. "Horas trabajadas" = la realidad fichada en la máquina. Nunca los confundas.
 
 REGLA DE IDIOMA: Responde en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
 
@@ -125,7 +126,7 @@ REGLAS:
                     }
                 },
                 get_staff_work_info: {
-                    description: 'Obtiene información laboral completa (horarios, horas reales, extras) de un usuario para una semana específica.',
+                    description: 'Obtiene el HORARIO PROGRAMADO (teoricio) y las HORAS TRABAJADAS REALES (fichajes) de un usuario para una semana específica. Usa esto para cualquier pregunta sobre horarios o horas.',
                     parameters: z.object({
                         weekStart: z.string().optional().describe('Fecha del lunes de la semana a consultar (YYYY-MM-DD).'),
                         userId: z.string().optional().describe('ID del usuario (opcional, por defecto el actual).')
