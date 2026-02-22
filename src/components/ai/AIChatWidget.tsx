@@ -155,17 +155,14 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         <div className="flex flex-col h-full bg-[#fafafa]">
             {/* Cabecera Premium Marbella - Color Petróleo */}
             <div className="bg-[#36606F] p-4 shadow-md flex items-center justify-between sticky top-0 z-10 text-white">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     <button
                         onClick={closeChat}
                         className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
                     >
-                        <X size={20} />
+                        <X size={24} />
                     </button>
-                    <div>
-                        <h3 className="font-black text-xs uppercase tracking-widest leading-none">Asistente AI</h3>
-                        <p className="text-[9px] font-bold text-white/60 mt-1">Modo Unificado (Genius)</p>
-                    </div>
+                    <img src="/icons/logo-white.png" alt="Logo Marbella" className="h-8 w-auto object-contain" />
                 </div>
                 <button
                     type="button"
