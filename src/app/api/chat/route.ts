@@ -6,72 +6,64 @@ import { openai } from '@ai-sdk/openai';
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-    console.log('[DEBUG] [CHAT_ROUTE] INICIO');
+    const requestId = Math.random().toString(36).substring(7);
+    console.log(`[CHAT] [${requestId}] Petición recibida`);
 
     try {
         const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
-            console.error('[DEBUG] [CHAT_ROUTE] No user');
+            console.error(`[CHAT] [${requestId}] Error Auth:`, authError);
             return new Response('Unauthorized', { status: 401 });
         }
 
-        const body = await req.json();
-        const { messages } = body;
+        const { messages } = await req.json();
 
-        console.log('[DEBUG] [CHAT_ROUTE] Mensajes recibidos:', messages?.length);
+        if (!messages || !Array.isArray(messages)) {
+            console.error(`[CHAT] [${requestId}] Mensajes inválidos`);
+            return new Response('Invalid messages', { status: 400 });
+        }
+
+        // Validación de API Key
+        const apiKey = process.env.OPENAI_API_KEY;
+        console.log(`[CHAT] [${requestId}] API Key cargada: ${apiKey ? 'SI (largo: ' + apiKey.length + ')' : 'NO'}`);
+        if (apiKey && apiKey.includes('your_api_key')) {
+            console.error(`[CHAT] [${requestId}] ERROR: La API Key sigue siendo el marcador de posición.`);
+        }
 
         const result = await streamText({
             model: openai('gpt-4o-mini'),
-            messages: [
-                { role: 'system', content: 'Eres el Agente de Texto de Bar La Marbella. Respuestas muy cortas.' },
-                ...messages
-            ],
+            messages,
+            onError: ({ error }) => {
+                console.error(`[CHAT] [${requestId}] Error en streamText:`, error);
+            },
             async onFinish({ text }) {
-                console.log('[DEBUG] [CHAT_ROUTE] onFinish - Text length:', text.length);
-                await supabase.from('ai_chat_messages').insert({
-                    user_id: user.id,
-                    role: 'assistant',
-                    content_type: 'text',
-                    text_content: text
-                }).catch(e => console.error('[DEBUG] [CHAT_ROUTE] DB Error:', e));
-            }
-        });
-
-        const encoder = new TextEncoder();
-
-        // Usamos un generador asíncrono robusto para el protocolo v1
-        const stream = new ReadableStream({
-            async start(controller) {
-                console.log('[DEBUG] [CHAT_ROUTE] Stream START');
+                console.log(`[CHAT] [${requestId}] Generación completada.`);
+                // Guardado asíncrono en BD con try-catch robusto
                 try {
-                    for await (const chunk of result.textStream) {
-                        // Formato v1: 0:"..."\n
-                        const payload = `0:${JSON.stringify(chunk)}\n`;
-                        controller.enqueue(encoder.encode(payload));
-                    }
-                    console.log('[DEBUG] [CHAT_ROUTE] Stream COMPLETO');
-                } catch (err) {
-                    console.error('[DEBUG] [CHAT_ROUTE] Stream ERROR:', err);
-                    controller.error(err);
-                } finally {
-                    controller.close();
+                    const { error: insertError } = await supabase.from('ai_chat_messages').insert({
+                        user_id: user.id,
+                        role: 'assistant',
+                        content_type: 'text',
+                        text_content: text
+                    });
+                    if (insertError) throw insertError;
+                } catch (e: any) {
+                    console.error(`[CHAT] [${requestId}] Error BD:`, e.message);
                 }
             }
         });
 
-        return new Response(stream, {
-            headers: {
-                'Content-Type': 'text/plain; charset=utf-8',
-                'x-vercel-ai-stream-protocol': 'v1',
-                'Cache-Control': 'no-cache',
-            },
-        });
+        // toDataStreamResponse es compatible con @ai-sdk/react@3.0.99
+        return result.toDataStreamResponse();
 
     } catch (error: any) {
-        console.error('[CHAT_ROUTE] FATAL:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        console.error(`[CHAT] [${requestId}] ERROR CRÍTICO:`, error.message);
+        return new Response(JSON.stringify({
+            error: 'Error interno',
+            details: error.message
+        }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
