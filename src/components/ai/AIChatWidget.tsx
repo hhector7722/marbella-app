@@ -155,14 +155,14 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         <div className="flex flex-col h-full bg-[#fafafa]">
             {/* Cabecera Premium Marbella - Color Petróleo */}
             <div className="bg-[#36606F] p-4 shadow-md flex items-center justify-between sticky top-0 z-10 text-white">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
                     <button
                         onClick={closeChat}
                         className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
                     >
                         <X size={24} />
                     </button>
-                    <img src="/icons/logo-white.png" alt="Logo Marbella" className="h-8 w-auto object-contain" />
+                    <img src="/icons/logo-white.png" alt="Logo Marbella" className="h-11 w-auto object-contain" />
                 </div>
                 <button
                     type="button"
@@ -177,12 +177,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
             {/* Zona de Mensajes */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full text-zinc-400 gap-2">
-                        <Bot size={32} className="opacity-50" />
-                        <p className="text-xs font-medium text-center px-8">
-                            Escribe, usa una nota de voz, sube una factura o inicia una llamada directa.
-                        </p>
-                    </div>
+                    <div className="h-full flex items-center justify-center opacity-0 pointer-events-none" />
                 )}
 
                 {messages.map((m) => (
