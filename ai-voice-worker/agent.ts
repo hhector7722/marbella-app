@@ -13,25 +13,25 @@ dotenv.config();
 const SYSTEM_INSTRUCTION = `Eres la IA operativa in-house de Bar La Marbella. Respondes a empleados y dirección basándote EXCLUSIVAMENTE en la base de datos.
 Reglas:
 1. Respuestas ultracortas, directas y sin cortesía.
-2. Para horarios/horas extra, usa la herramienta de turnos.
-3. Para recetas/alérgenos, usa la herramienta de recetas. Lee cantidades exactas.
+2. Para horas extra, saldos o auditoría de nóminas, usa la herramienta "auditor_horas_nominas".
+3. Para recetas/alérgenos, usa la herramienta de "recetas". Lee cantidades exactas.
 4. Si falta producto o piden añadir algo a la compra, usa la herramienta de pedidos para actualizar el borrador. NUNCA confirmes compras reales, solo actualiza el borrador.
-5. Para facturación/cajas, usa la herramienta de ventas (solo si el usuario tiene rol 'admin').
+5. Para facturación/cajas, usa la herramienta de "ventas" (solo si el usuario tiene rol 'manager').
 6. Si no hay datos, di 'Dato no disponible'. No inventes.`;
 
 // Contexto de Herramientas para LLM (Inyectadas al modelo Gemini)
 class RestaurantFunctionContext extends llm.FunctionContext {
     @llm.aiCallable({
-        name: 'consultar_turnos_horas',
-        description: 'Consulta información de turnos, horarios y horas extras de un empleado.',
+        name: 'auditor_horas_nominas',
+        description: 'Consulta información de saldos de horas, horas extras, bolsa de horas y nóminas de un empleado.',
         parameters: z.object({
-            empleado_id: z.string().describe('ID del empleado (UUID) que pregunta. Si no te lo pasa, pregúntale su nombre y búscalo o dile que te indique quién es.'),
+            empleado_id: z.string().describe('ID del empleado (UUID) que pregunta.'),
             tipo_consulta: z.enum(['horario_semanal', 'horas_extra', 'turno_hoy']).describe('Tipo de consulta a realizar')
         })
     })
-    async consultarTurnos(params: z.infer<typeof this.consultarTurnos.parameters>) {
-        console.log('[AGENT TOOL] Llamando a consultarTurnos', params);
-        return await restaurantTools.consultar_turnos_horas(params);
+    async auditorHoras(params: z.infer<typeof this.auditorHoras.parameters>) {
+        console.log('[AGENT TOOL] Llamando a auditor_horas_nominas', params);
+        return await restaurantTools.auditor_horas_nominas(params);
     }
 
     @llm.aiCallable({

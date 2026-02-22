@@ -27,7 +27,7 @@ interface BorradorParams {
 }
 
 export const restaurantTools = {
-    consultar_turnos_horas: async ({ empleado_id, tipo_consulta }: TurnoParams) => {
+    auditor_horas_nominas: async ({ empleado_id, tipo_consulta }: TurnoParams) => {
         try {
             if (tipo_consulta === 'horario_semanal') {
                 const { data, error } = await supabase.from('time_logs')

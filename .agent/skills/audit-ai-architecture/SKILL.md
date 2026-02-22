@@ -11,7 +11,8 @@ Esta habilidad está diseñada para diagnosticar fallos sistémicos en la integr
 
 ### 1. Frontera Cliente/Servidor (Hybrid Mesh)
 - **Rutas Críticas:** `src/components/ai/AIChatWidget.tsx` -> `src/app/api/chat/route.ts`.
-- **Hooks:** Validar el uso de `useChat` de `ai/react` vs versiones obsoletas.
+- **Modelos:** El chat web utiliza **OpenAI (gpt-4o-mini)**. El worker de voz utiliza **Gemini (2.0-flash-exp)**.
+- **Hooks:** Validar el uso de `useChat` de `ai/react` (v3+ compatible con OpenAI).
 - **Data Flow:** Verificar que el streaming no se rompe por buffers de middleware o headers de Supabase Auth.
 
 ### 2. Ecosistema de Voz (Worker-First)
@@ -30,7 +31,7 @@ Esta habilidad está diseñada para diagnosticar fallos sistémicos en la integr
 ### 4. Seguridad y Red (Isolation)
 - **Middleware:** Bloqueos en `middleware.ts` en rutas `/api/ai/*`.
 - **RLS:** Políticas de Supabase en tablas de logs de IA o historial.
-- **VARS:** Consistencia de `GEMINI_API_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` entre entornos.
+- **VARS:** Consistencia de `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`.
 
 ## REGLAS DE REPORTE
 - **Precisión:** Indicar archivo y número de línea exactos.
