@@ -606,7 +606,7 @@ export default function HistoryPage() {
                                                         </span>
                                                     </div>
 
-                                                    <div className="p-3 md:p-4 flex flex-col">
+                                                    <div className="p-3 md:p-4 flex flex-col pt-1.5 md:pt-2">
                                                         {/* Main Metric & Comparison Row */}
                                                         <div className="flex items-center justify-between gap-2 mb-1">
                                                             <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
@@ -623,7 +623,7 @@ export default function HistoryPage() {
                                                             </div>
                                                         </div>
 
-                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-4">
+                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-2 md:mb-3">
                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                         </span>
 
@@ -695,24 +695,22 @@ export default function HistoryPage() {
                                                                 <span className="text-[7px] min-[370px]:text-[8px] sm:text-[10px] md:text-[14px] font-black text-white leading-none">{format(day, 'd')}</span>
                                                             </div>
 
-                                                            <div className="p-1 min-[370px]:p-1.5 md:p-3 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-between flex-1">
-                                                                {/* Main Metric & Comparison Row - Reduced Bottom Margin */}
-                                                                <div className="flex flex-row justify-between items-start mb-0 min-[370px]:mb-0.5 md:mb-1">
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-[6px] min-[370px]:text-[7px] sm:text-[9px] md:text-[14px] lg:text-[16px] xl:text-[18px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                                            {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                                        </span>
-                                                                        <span className="hidden sm:block text-[4.5px] md:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0">
-                                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="hidden sm:flex text-[4.5px] min-[370px]:text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter leading-none mt-0.5 text-emerald-500">
+                                                            <div className="p-1 min-[370px]:p-1.5 md:p-3 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-center items-center flex-1">
+                                                                {/* Main Metric & Comparison Row - Centered for Mobile */}
+                                                                <div className="flex flex-col items-center justify-center text-center">
+                                                                    <span className="text-[7.5px] min-[370px]:text-[8.5px] sm:text-[10px] md:text-[14px] lg:text-[16px] xl:text-[20px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none drop-shadow-sm">
+                                                                        {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                                    </span>
+                                                                    <span className="text-[4.5px] min-[370px]:text-[5px] sm:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 max-w-full truncate">
+                                                                        {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                    </span>
+                                                                    <div className="hidden sm:flex text-[4.5px] min-[370px]:text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter leading-none mt-1 text-emerald-500">
                                                                         {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(parseFloat(diffPerc))}%
                                                                     </div>
                                                                 </div>
 
-                                                                {/* 2x2 Grid for the other 4 metrics - Reduced Top Margin */}
-                                                                <div className="grid grid-cols-2 gap-x-0.5 min-[370px]:gap-x-1 gap-y-0 min-[370px]:gap-y-0.5 md:gap-y-1 mt-auto w-full">
+                                                                {/* 2x2 Grid for the other 4 metrics - Hidden on Mobile */}
+                                                                <div className="hidden sm:grid grid-cols-2 gap-x-0.5 min-[370px]:gap-x-1 gap-y-0 min-[370px]:gap-y-0.5 md:gap-y-1 mt-auto w-full">
                                                                     {/* Ventas */}
                                                                     <div className="flex flex-col items-center justify-center">
                                                                         <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
