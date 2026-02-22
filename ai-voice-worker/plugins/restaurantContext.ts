@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 // Usar SERVICE_ROLE_KEY para que la IA (administradora transversal) salte el RLS y modifique datos a nombre del usuario
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface TurnoParams {
     empleado_id: string;

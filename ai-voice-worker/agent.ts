@@ -83,11 +83,29 @@ export default defineAgent({
         // Mapear funciones herramientas al contexto del LLM
         const fnContext = new RestaurantFunctionContext();
 
+        // Esperar a que el humano se conecte para saber quién es
+        const participant = await ctx.waitForParticipant();
+        const userId = participant.identity; // El token de LiveKit lleva el user.id de Supabase
+
+        // Obtener perfil del usuario desde Supabase
+        const { data: profile } = await restaurantTools.supabase
+            .from('profiles')
+            .select('first_name, role')
+            .eq('id', userId)
+            .single();
+
+        const userName = profile?.first_name || 'compañero';
+        const userRole = profile?.role || 'staff';
+
+        const dynamicInstructions = `${SYSTEM_INSTRUCTION}
+Estás hablando con ${userName}, con el cargo de ${userRole}.
+Saluda a ${userName} de forma natural y breve en tu primera intervención.`;
+
         // Inicializar el Agente Multimodal Realtime con OpenAI
         const agent = new multimodal.MultimodalAgent({
             model: new openai.realtime.RealtimeModel({
                 model: 'gpt-4o-realtime-preview',
-                instructions: SYSTEM_INSTRUCTION,
+                instructions: dynamicInstructions,
             }),
             fncCtx: fnContext,
         });
