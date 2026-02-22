@@ -32,23 +32,79 @@ export async function POST(req: NextRequest) {
             console.error(`[CHAT] [${requestId}] ERROR: La API Key sigue siendo el marcador de posición.`);
         }
 
+        const systemPrompt = `Eres el Asistente Inteligente de Bar La Marbella. 
+Tienes acceso a las siguientes herramientas para consultar información real del negocio:
+1. "get_ingredients": Para consultar costes de compra de productos y existencias.
+2. "get_menu": Para ver la carta/menú y los precios de venta al público (PVP).
+3. "get_dashboard": (Solo Directores) Para ver las ventas de hoy y el balance de las cajas.
+4. "get_staff": (Solo Directores) Para consultar la lista de empleados y sus roles.
+
+REGLAS CRÍTICAS:
+- Responde siempre con amabilidad y precisión operativa.
+- Si el usuario te pregunta por un precio de venta, usa "get_menu".
+- Si te pregunta por costes o márgenes, usa "get_ingredients" y "get_menu".
+- Si no tienes acceso a una herramienta por el rol del usuario (la herramienta fallará o devolverá vacío), explícalo educadamente.
+- Formatea siempre los precios con el símbolo € (ej: 2.50€).`;
+
         const result = await streamText({
             model: openai('gpt-4o-mini'),
+            system: systemPrompt,
             messages,
+            tools: {
+                get_ingredients: {
+                    description: 'Obtiene la lista de ingredientes/productos con sus precios de compra y unidades.',
+                    parameters: { type: 'object', properties: {} },
+                    execute: async () => {
+                        const { data, error } = await supabase.from('ingredients').select('name, current_price, purchase_unit, order_unit');
+                        if (error) throw error;
+                        return data;
+                    }
+                },
+                get_menu: {
+                    description: 'Obtiene la lista de platos del menú con sus categorías y precios de venta al público (PVP).',
+                    parameters: { type: 'object', properties: {} },
+                    execute: async () => {
+                        const { data, error } = await supabase.from('recipes').select('name, category, sale_price');
+                        if (error) throw error;
+                        return data;
+                    }
+                },
+                get_dashboard: {
+                    description: 'Obtiene un resumen de las ventas de hoy y el estado de las cajas (Solo para Managers).',
+                    parameters: { type: 'object', properties: {} },
+                    execute: async () => {
+                        const today = new Date().toISOString().split('T')[0];
+                        const [tickets, boxes] = await Promise.all([
+                            supabase.from('tickets_marbella').select('total_documento').eq('fecha', today),
+                            supabase.from('cash_boxes').select('name, current_balance')
+                        ]);
+                        const totalVentas = tickets.data?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
+                        return { total_ventas_hoy: totalVentas, cajas: boxes.data };
+                    }
+                },
+                get_staff: {
+                    description: 'Obtiene la lista de empleados y sus roles (Solo para Managers).',
+                    parameters: { type: 'object', properties: {} },
+                    execute: async () => {
+                        const { data, error } = await supabase.from('profiles').select('first_name, last_name, role, phone_number');
+                        if (error) throw error;
+                        return data;
+                    }
+                }
+            },
+            maxSteps: 5, // Permite a la IA llamar a herramientas y luego responder
             onError: ({ error }) => {
                 console.error(`[CHAT] [${requestId}] Error en streamText:`, error);
             },
             async onFinish({ text }) {
                 console.log(`[CHAT] [${requestId}] Generación completada.`);
-                // Guardado asíncrono en BD con try-catch robusto
                 try {
-                    const { error: insertError } = await supabase.from('ai_chat_messages').insert({
+                    await supabase.from('ai_chat_messages').insert({
                         user_id: user.id,
                         role: 'assistant',
                         content_type: 'text',
                         text_content: text
                     });
-                    if (insertError) throw insertError;
                 } catch (e: any) {
                     console.error(`[CHAT] [${requestId}] Error BD:`, e.message);
                 }

@@ -439,7 +439,7 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20">
+        <div className="min-h-screen bg-[#5B8FB9] p-2 md:p-6 pb-24">
             <div className="max-w-5xl mx-auto">
                 {/* --- GLOBAL INTEGRATED CARD --- */}
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
@@ -538,7 +538,7 @@ export default function HistoryPage() {
                     {/* --- WHITE BODY --- */}
                     <div className="bg-white">
                         {/* COMPACT SUMMARY (Integrated) */}
-                        <div className="pt-1 md:pt-1.5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="pt-2 md:pt-4 pb-2 md:pb-4 px-6 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -554,7 +554,7 @@ export default function HistoryPage() {
                         </div>
 
                         {/* SECOND CONTAINER (METRICS + LIST) */}
-                        <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
+                        <div className="px-3 md:px-6 pb-4 md:pb-8 pt-2 md:pt-4">
                             <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 {/* METRIC SELECTOR (Integrated Full Width) */}
                                 <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-center items-center overflow-x-auto no-scrollbar">
@@ -612,7 +612,7 @@ export default function HistoryPage() {
                                                             <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                 {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                             </span>
-                                                            <div className="flex flex-col items-end">
+                                                            <div className="hidden sm:flex flex-col items-end">
                                                                 <div className={cn(
                                                                     "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
                                                                     parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
@@ -653,7 +653,7 @@ export default function HistoryPage() {
                                     </div>
                                 ) : (
                                     /* CALENDAR VIEW */
-                                    <div className="p-1 md:p-3 overflow-x-hidden">
+                                    <div className="p-2 md:p-6 overflow-x-hidden">
                                         <div className="w-full">
                                             {/* Days of Week Header */}
                                             <div className="grid grid-cols-7 mb-2 px-1">
@@ -695,7 +695,7 @@ export default function HistoryPage() {
                                                                 <span className="text-[8px] min-[370px]:text-[10px] sm:text-[12px] md:text-[16px] font-black text-white leading-none">{format(day, 'd')}</span>
                                                             </div>
 
-                                                            <div className="p-0.5 min-[370px]:p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-between flex-1">
+                                                            <div className="p-1 min-[370px]:p-1.5 md:p-3 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-between flex-1">
                                                                 {/* Main Metric & Comparison Row */}
                                                                 <div className="flex flex-row justify-between items-start mb-0.5 min-[370px]:mb-1 md:mb-2">
                                                                     <div className="flex flex-col">
@@ -774,20 +774,41 @@ export default function HistoryPage() {
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
-                            {/* Top Action Bar */}
-                            <div className="flex items-center justify-between mb-2 relative z-10">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group"
-                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
-                                    title="Día Anterior"
-                                >
-                                    <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
-                                </button>
+                            {/* ABSOLUTE CLOSE BUTTON */}
+                            <button
+                                onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all shadow-xl active:scale-95 z-20"
+                            >
+                                <X size={20} strokeWidth={3} />
+                            </button>
 
-                                <div className="flex items-center gap-2">
+                            <div className="mt-4">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
+                                <div className="flex items-center justify-center gap-4">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
+                                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group shrink-0"
+                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                    >
+                                        <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
+                                    </button>
+
+                                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter break-words leading-tight">
+                                        {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
+                                    </h2>
+
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
+                                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group shrink-0"
+                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                    >
+                                        <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-center gap-2">
                                     {!isEditing && isManager && (
-                                        <>
+                                        <div className="flex gap-2">
                                             <button
                                                 onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
                                                 className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95"
@@ -802,31 +823,9 @@ export default function HistoryPage() {
                                             >
                                                 <Trash2 size={16} />
                                             </button>
-                                        </>
+                                        </div>
                                     )}
-                                    <button
-                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                        className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 ml-2"
-                                    >
-                                        <X size={16} strokeWidth={3} />
-                                    </button>
                                 </div>
-
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group"
-                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
-                                    title="Día Siguiente"
-                                >
-                                    <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
-                                </button>
-                            </div>
-
-                            <div className="mt-4">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
-                                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mx-auto max-w-[90%] break-words">
-                                    {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
-                                </h2>
                                 <div className="flex items-center justify-center gap-4 mt-6">
                                     <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
                                         <CloudSun size={14} className="text-amber-400" />
