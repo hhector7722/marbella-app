@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Este archivo es un worker Node.js independiente. No es parte del bundle de Next.js.
-import { WorkerOptions, cli, defineAgent, llm, pipeline } from '@livekit/agents';
-import * as google from '@livekit/agents-plugin-google';
+import { WorkerOptions, cli, defineAgent, llm, multimodal } from '@livekit/agents';
+import * as openai from '@livekit/agents-plugin-openai';
 import * as silero from '@livekit/agents-plugin-silero';
 import { restaurantTools } from './plugins/restaurantContext';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ Reglas:
 5. Para facturación/cajas, usa la herramienta de "ventas" (solo si el usuario tiene rol 'manager').
 6. Si no hay datos, di 'Dato no disponible'. No inventes.`;
 
-// Contexto de Herramientas para LLM (Inyectadas al modelo Gemini)
+// Contexto de Herramientas para LLM (Inyectadas al modelo OpenAI)
 class RestaurantFunctionContext extends llm.FunctionContext {
     @llm.aiCallable({
         name: 'auditor_horas_nominas',
@@ -49,7 +49,7 @@ class RestaurantFunctionContext extends llm.FunctionContext {
 
     @llm.aiCallable({
         name: 'consultar_ventas',
-        description: 'Consulta métricas financieras y de caja. (Asegúrate de comprobar si el usuario es admin antes de proveer datos sensitivos, validando su ID)',
+        description: 'Consulta métricas financieras y de caja. (Asegúrate de comprobar si el usuario es manager antes de proveer datos sensitivos, validando su ID)',
         parameters: z.object({
             metrica: z.enum(['caja_actual', 'ticket_medio', 'facturacion_dia']).describe('Métrica financiera a consultar')
         })
@@ -83,26 +83,14 @@ export default defineAgent({
         // Mapear funciones herramientas al contexto del LLM
         const fnContext = new RestaurantFunctionContext();
 
-        // Inicializar el Agente Multimodal Realtime con Google Gemini Live API
-        const agent = new pipeline.VoicePipelineAgent(
-            new silero.VAD.load(),
-            new google.STT(),
-            new google.LLM({
-                model: 'gemini-2.0-flash-exp',
+        // Inicializar el Agente Multimodal Realtime con OpenAI
+        const agent = new multimodal.MultimodalAgent({
+            model: new openai.realtime.RealtimeModel({
+                model: 'gpt-4o-realtime-preview',
+                instructions: SYSTEM_INSTRUCTION,
             }),
-            new google.TTS({
-                // Voz en español de Google Cloud TTS
-                voice: 'es-ES-Chirp3-HD-Charon',
-                language: 'es-ES',
-            }),
-            {
-                fncCtx: fnContext,
-                chatCtx: new llm.ChatContext().append({
-                    role: llm.ChatRole.SYSTEM,
-                    text: SYSTEM_INSTRUCTION,
-                }),
-            }
-        );
+            fncCtx: fnContext,
+        });
 
         agent.start(ctx.room);
 
