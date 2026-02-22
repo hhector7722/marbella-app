@@ -12,7 +12,6 @@ interface InfoLaboralParams {
 
 interface RecetaParams {
     nombre_plato: string;
-    dato_requerido: 'ingredientes' | 'alergenos' | 'preparacion';
 }
 
 interface VentasParams {
@@ -60,57 +59,50 @@ export const restaurantTools = {
             sunday.setDate(date.getDate() + 7);
             const sundayStr = sunday.toISOString().split('T')[0];
 
-            const [logs, snapshot, shifts] = await Promise.all([
+            const [logs, snapshot] = await Promise.all([
                 supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', targetUserId).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
-                supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle(),
-                supabase.from('shifts').select('*').eq('user_id', targetUserId).gte('start_time', mondayStr).lt('start_time', sundayStr).eq('is_published', true)
+                supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle()
             ]);
 
             const totalHoursReal = logs.data?.reduce((sum, l) => sum + (l.total_hours || 0), 0) || 0;
-            const overtime = snapshot.data?.balance_hours || 0;
-            const horarios = shifts.data?.map(s => ({
-                dia: new Date(s.start_time).toLocaleDateString('es-ES', { weekday: 'long' }),
-                entrada: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                salida: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                actividad: s.activity
-            })) || [];
+            const overtime = snapshot.data?.overtime_hours || 0;
+            const pendingDebt = snapshot.data?.pending_debt_hours || 0;
 
             return JSON.stringify({
                 semana_consultada: mondayStr,
                 horas_trabajadas_reales: totalHoursReal.toFixed(2),
-                horas_extras_o_deuda: overtime.toFixed(2),
-                estado_pago: snapshot.data?.is_paid ? 'Pagado' : 'Pendiente o No aplica',
-                horarios_programados: horarios.length > 0 ? horarios : 'Sin turnos en esta semana'
+                horas_extras_a_pagar: overtime.toFixed(2),
+                deuda_horas_pendientes: pendingDebt.toFixed(2),
+                estado_pago: snapshot.data?.is_paid ? 'Pagado' : 'Pendiente o No aplica'
             });
         } catch (e: any) {
             return JSON.stringify({ error: `Error al consultar info laboral: ${e.message}` });
         }
     },
 
-    consultar_receta: async ({ nombre_plato, dato_requerido }: RecetaParams) => {
+    consultar_receta: async ({ nombre_plato }: RecetaParams) => {
         try {
-            const { data, error } = await supabase.from('recipes')
+            const { data: recipe } = await supabase.from('recipes').select('id, name, elaboration, presentation').ilike('name', `%${nombre_plato}%`).limit(1).maybeSingle();
+            if (!recipe) return JSON.stringify({ error: `No se encontró la receta de ${nombre_plato}.` });
+
+            const { data: ingredientsData } = await supabase
+                .from('recipe_ingredients')
                 .select(`
-                name, allergens, procedure,
-                recipe_ingredients (
-                    quantity, unit,
+                    quantity,
+                    unit,
                     ingredients ( name )
-                )
-            `)
-                .ilike('name', `%${nombre_plato}%`)
-                .single();
+                `)
+                .eq('recipe_id', recipe.id);
 
-            if (error || !data) return "Dato no disponible. No se encontró la receta.";
+            const ingredients = ingredientsData?.map((ing: any) => `${ing.quantity} ${ing.unit} de ${ing.ingredients?.name}`) || [];
 
-            if (dato_requerido === 'ingredientes') {
-                return JSON.stringify(data.recipe_ingredients);
-            } else if (dato_requerido === 'alergenos') {
-                return JSON.stringify(data.allergens);
-            } else {
-                return JSON.stringify(data.procedure);
-            }
+            return JSON.stringify({
+                plato: recipe.name,
+                ingredientes: ingredients.length > 0 ? ingredients : 'No hay ingredientes listados.',
+                elaboracion: recipe.elaboration || 'Sin instrucciones especificas.'
+            });
         } catch (e: any) {
-            return `Error al consultar receta: ${e.message}`;
+            return JSON.stringify({ error: `Error al consultar receta: ${e.message}` });
         }
     },
 

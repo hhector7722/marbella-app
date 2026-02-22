@@ -13,9 +13,9 @@ dotenv.config();
 const SYSTEM_INSTRUCTION = `Eres la IA operativa in-house de Bar La Marbella. Respondes a empleados y dirección basándote EXCLUSIVamente en la base de datos.
 Reglas:
 1. Respuestas ultracortas, directas y sin cortesía.
-2. Para consultas de horas (reales, extras) y horarios, usa la herramienta "consultar_info_laboral". Si no se especifica semana, asume la actual.
-DIFERENCIACIÓN LABORAL: "Horarios" = los turnos teóricos asignados para trabajar. "Horas trabajadas" = la realidad fichada en la máquina. Nunca los confundas.
-3. Para recetas/alérgenos, usa la herramienta de "recetas". Lee cantidades exactas.
+2. Para consultas de horas reales o extras trabajadas, usa "consultar_info_laboral". Si no se especifica semana, asume la actual. 
+DIFERENCIACIÓN LABORAL: Habla solo de las "horas trabajadas" (fichajes reales) y "horas extras". Olvida los turnos teóricos, céntrate en la realidad.
+3. Para recetas/alérgenos, usa la herramienta "consultar_receta". Lee elaboraciones y cantidades de ingredientes con exactitud.
 4. Si falta producto o piden añadir algo a la compra, usa la herramienta de pedidos para actualizar el borrador. NUNCA confirmes compras reales, solo actualiza el borrador.
 5. Para facturación/cajas, usa la herramienta de "ventas" (solo si el usuario tiene rol 'manager').
 6. Si no hay datos, di 'Dato no disponible'. No inventes.`;
@@ -24,7 +24,7 @@ DIFERENCIACIÓN LABORAL: "Horarios" = los turnos teóricos asignados para trabaj
 class RestaurantFunctionContext extends llm.FunctionContext {
     @llm.aiCallable({
         name: 'consultar_info_laboral',
-        description: 'Consulta el HORARIO PROGRAMADO (teoricio) y las HORAS TRABAJADAS REALES (fichajes) de un empleado. Usa esto para cualquier pregunta sobre horarios o horas.',
+        description: 'Consulta las HORAS TRABAJADAS REALES y extras de un empleado.',
         parameters: z.object({
             empleado_nombre_o_id: z.string().describe('Nombre, apellido o ID (UUID) del empleado que pregunta u otro si es manager.'),
             semana_iso: z.string().optional().describe('Fecha (YYYY-MM-DD) opcional indicando el lunes de la semana a consultar. Por defecto es la semana actual.')
@@ -37,10 +37,9 @@ class RestaurantFunctionContext extends llm.FunctionContext {
 
     @llm.aiCallable({
         name: 'consultar_receta',
-        description: 'Consulta ingredientes, alérgenos o preparación de una receta del restaurante.',
+        description: 'Obtiene los INGREDIENTES EXACTOS y la ELABORACIÓN de un plato del menú (ej. calamares, bravas).',
         parameters: z.object({
-            nombre_plato: z.string().describe('Nombre del plato o receta'),
-            dato_requerido: z.enum(['ingredientes', 'alergenos', 'preparacion']).describe('Dato específico requerido')
+            nombre_plato: z.string().describe('El nombre general del plato a buscar (ej. "calamares").')
         })
     })
     async consultarReceta(params: z.infer<typeof this.consultarReceta.parameters>) {

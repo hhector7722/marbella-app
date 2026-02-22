@@ -65,7 +65,7 @@ ESTILO: ${styles[userStyle] || styles.natural}
 Herramientas:
 1. get_ingredients: Costes compra y stock.
 2. get_menu: Platos y PVP.
-3. get_staff_work_info: Info laboral propia o de otros (si eres manager). Horas reales, extras y horarios. Parámetro: weekStart (YYYY-MM-DD, lunes de la semana). Por defecto: semana actual.
+3. get_staff_work_info: Info laboral propia o de otros (si eres manager). Horas reales y extras. Parámetro: weekStart (YYYY-MM-DD, lunes de la semana). Por defecto: semana actual.
 4. get_dashboard/get_staff: Módulo Financiero (Solo Managers). Usa esto para consultar VENTAS acumuladas y CIERRES de caja de HOY o de DÍAS ANTERIORES.
 6. get_recipe_details: Obtiene la RECETA EXACTA (Ingredientes y Elaboración) de un plato.
 
@@ -112,7 +112,7 @@ REGLAS:
                         const [tickets, boxes, closings] = await Promise.all([
                             supabase.from('tickets_marbella').select('total_documento').eq('fecha', targetDateStr),
                             supabase.from('cash_boxes').select('name, current_balance'),
-                            supabase.from('cash_closings').select('box_name, expected_amount, actual_amount, difference').gte('closed_at', targetDateStart.toISOString()).lt('closed_at', targetDateEnd.toISOString())
+                            supabase.from('cash_closings').select('tpv_sales, net_sales, tickets_count, difference, cash_counted, cash_expected').eq('closing_date', targetDateStr)
                         ]);
 
                         const totalVentas = tickets.data?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
@@ -172,7 +172,7 @@ REGLAS:
                     }
                 },
                 get_staff_work_info: {
-                    description: 'Obtiene el HORARIO PROGRAMADO (teoricio) y las HORAS TRABAJADAS REALES (fichajes) de un usuario para una semana específica. Usa esto para cualquier pregunta sobre horarios o horas.',
+                    description: 'Obtiene las horas reales fichadas y el saldo de horas extra de un empleado. ÚSATE PARA PREGUNTAS SOBRE HORAS TRABAJADAS.',
                     parameters: z.object({
                         weekStart: z.string().optional().describe('Fecha del lunes de la semana a consultar (YYYY-MM-DD).'),
                         employeeNameOrId: z.string().optional().describe('Nombre, apellido o ID del usuario (opcional, por defecto el tuyo propio).')
@@ -215,27 +215,20 @@ REGLAS:
                         sunday.setDate(date.getDate() + 7);
                         const sundayStr = sunday.toISOString().split('T')[0];
 
-                        const [logs, snapshot, shifts] = await Promise.all([
+                        const [logs, snapshot] = await Promise.all([
                             supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', targetUserId).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
-                            supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle(),
-                            supabase.from('shifts').select('*').eq('user_id', targetUserId).gte('start_time', mondayStr).lt('start_time', sundayStr).eq('is_published', true)
+                            supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle()
                         ]);
 
                         const totalHoursReal = logs.data?.reduce((sum, l) => sum + (l.total_hours || 0), 0) || 0;
-                        const overtime = snapshot.data?.balance_hours || 0;
-                        const horarios = shifts.data?.map(s => ({
-                            dia: new Date(s.start_time).toLocaleDateString('es-ES', { weekday: 'long' }),
-                            entrada: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            salida: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            actividad: s.activity
-                        })) || [];
+                        const weeklySnapshotData = snapshot.data || { total_hours: 0, overtime_hours: 0, pending_debt_hours: 0 };
 
                         return {
-                            semana: mondayStr,
-                            horas_reales: totalHoursReal.toFixed(2),
-                            horas_extras_balance: overtime.toFixed(2),
-                            pagado: snapshot.data?.is_paid || false,
-                            horarios_programados: horarios
+                            empleado_consultado: targetUserId,
+                            semana_inicio: mondayStr,
+                            horas_reales_trabajadas: totalHoursReal.toFixed(2),
+                            horas_extras_balance: weeklySnapshotData.overtime_hours.toFixed(2),
+                            deuda_horas_pendientes: weeklySnapshotData.pending_debt_hours.toFixed(2)
                         };
                     }
                 }
