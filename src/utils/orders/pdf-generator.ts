@@ -35,7 +35,7 @@ const COLORS = {
 };
 
 export async function generateOrderPDF(data: OrderData): Promise<Blob> {
-    console.log("PDF GENERATOR V5.0: Implementing clean minimalist design");
+    console.log("PDF GENERATOR V6.0: Precise visual correction");
 
     const doc = new jsPDF({
         orientation: 'p',
@@ -49,7 +49,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     // --------------------------------------------------------------------------
     // 0. PRE-LOAD IMAGES
     // --------------------------------------------------------------------------
-    const logoUrl = '/icons/logo-white.png'; // Using the same logo, but we'll draw it on white
+    const logoUrl = '/icons/logo-white.png';
     const logoPromise = loadImage(logoUrl).catch(() => null);
 
     const productImages = await Promise.all(
@@ -70,25 +70,26 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     // --------------------------------------------------------------------------
     let currentY = 15;
 
-    // Logo on the left
+    // Logo on the left (No more circle background, just the logo with a refined border)
     if (logoImage) {
-        // Draw a light blue circle background for the logo to make the white logo visible
-        doc.setFillColor(91, 143, 185); // #5B8FB9
-        doc.circle(margin + 12, currentY + 12, 13, 'F');
+        // Draw a refined blue ring to match the reference style
+        doc.setDrawColor(91, 143, 185); // #5B8FB9
+        doc.setLineWidth(1.5);
+        doc.circle(margin + 12, currentY + 12, 13, 'S');
         doc.addImage(logoImage, 'PNG', margin + 3, currentY + 3, 18, 18);
     }
 
-    // Title and Date on the right
-    doc.setTextColor(...COLORS.text);
+    // "Pedido" and Date on the right
+    doc.setTextColor(50, 50, 50);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(32);
-    doc.text('Pedido', pageWidth - margin, currentY + 15, { align: 'right' });
+    doc.setFontSize(28);
+    doc.text('Pedido', pageWidth - margin, currentY + 12, { align: 'right' });
 
     const today = format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
     const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
     doc.setFontSize(14);
     doc.setTextColor(100, 100, 100);
-    doc.text(formattedDate, pageWidth - margin, currentY + 24, { align: 'right' });
+    doc.text(formattedDate, pageWidth - margin, currentY + 22, { align: 'right' });
 
     // --------------------------------------------------------------------------
     // 2. COMPANY INFO (Supplier)
@@ -96,40 +97,28 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     currentY = 60;
     const infoX = margin;
 
-    doc.setTextColor(54, 96, 111); // Dark Teal/Primary
-    doc.setFontSize(22);
+    doc.setTextColor(54, 96, 111); // Dark Teal
+    doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text(COMPANY_INFO.name, infoX, currentY);
 
     currentY += 8;
-    doc.setFontSize(11);
-    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(10);
+    doc.setTextColor(110, 110, 110);
     doc.setFont('helvetica', 'normal');
     doc.text(COMPANY_INFO.nif, infoX, currentY);
 
-    currentY += 6;
+    currentY += 5;
     doc.text(COMPANY_INFO.address, infoX, currentY);
-    currentY += 6;
+    currentY += 5;
     doc.text(COMPANY_INFO.phone, infoX, currentY);
-    currentY += 6;
+    currentY += 5;
     doc.text(COMPANY_INFO.email, infoX, currentY);
 
     // --------------------------------------------------------------------------
     // 3. TABLE (Bento Grid Design)
     // --------------------------------------------------------------------------
-    const startTableY = 110;
-
-    // 1. Draw the container (Rounded rect for the body area)
-    const tableHeight = (data.items.length * 28) + 16; // Estimated height
-    doc.setDrawColor(230, 230, 230);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(margin, startTableY, pageWidth - (margin * 2), tableHeight, 8, 8, 'S');
-
-    // 2. Draw the header background (Rounded top)
-    doc.setFillColor(54, 96, 111); // #36606F
-    doc.roundedRect(margin, startTableY, pageWidth - (margin * 2), 14, 8, 8, 'F');
-    // Rect to square off the bottom of the header rounded rect
-    doc.rect(margin, startTableY + 7, pageWidth - (margin * 2), 7, 'F');
+    const startTableY = 105;
 
     autoTable(doc, {
         startY: startTableY,
@@ -139,7 +128,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         styles: {
             font: 'helvetica',
-            fontSize: 12,
+            fontSize: 11,
             textColor: [60, 60, 60],
             cellPadding: { top: 9, bottom: 9, left: 10, right: 10 },
             valign: 'middle',
@@ -147,12 +136,12 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         headStyles: {
-            fillColor: [0, 0, 0, 0] as any,
-            textColor: 255,
-            fontSize: 13,
+            fillColor: [54, 96, 111], // #36606F
+            textColor: [255, 255, 255],
+            fontSize: 14,
             fontStyle: 'bold',
             halign: 'center',
-            cellPadding: { top: 4, bottom: 4, left: 10, right: 10 }
+            cellPadding: { top: 6, bottom: 6, left: 10, right: 10 }
         },
 
         columnStyles: {
@@ -162,7 +151,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         bodyStyles: {
-            fillColor: [255, 255, 255, 0] as any // Transparent to show container
+            fillColor: [255, 255, 255] // Force white background to avoid black rows
         },
 
         didDrawCell: function (data) {
@@ -172,7 +161,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
                 const image = productImages[rowIndex];
                 if (image) {
                     const cell = data.cell;
-                    const imgSize = 20;
+                    const imgSize = 18;
                     const x = cell.x + 8;
                     const y = cell.y + (cell.height - imgSize) / 2;
                     doc.addImage(image, 'PNG', x, y, imgSize, imgSize);
@@ -181,7 +170,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
             // Bottom Border for rows (except last one)
             if (data.section === 'body' && data.row.index < data.table.body.length - 1) {
-                doc.setDrawColor(245, 245, 245);
+                doc.setDrawColor(240, 240, 240);
                 doc.setLineWidth(0.1);
                 doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
             }
@@ -189,15 +178,29 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         didParseCell: function (data: any) {
             if (data.section === 'body' && data.column.index === 0) {
-                // Indent text for image
                 data.cell.styles.cellPadding = { left: 35, top: 9, bottom: 9, right: 10 };
             }
         },
 
-        margin: { left: margin, right: margin }
+        margin: { left: margin, right: margin },
+
+        didDrawPage: function (data_table) {
+            // DRAW THE ROUNDED CONTAINER BEHIND THE TABLE
+            // We use the finalY to know where it ended
+            const tableWidth = pageWidth - (margin * 2);
+            const tableHeight = data_table.cursor!.y - startTableY;
+
+            // Draw a rounded shadow border for the whole table area
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.4);
+            doc.roundedRect(margin, startTableY, tableWidth, tableHeight, 8, 8, 'S');
+
+            // Draw the header rounded background again to overlay corners if needed, 
+            // but the header is already styled.
+        }
     });
 
-    console.log("PDF GENERATOR V5.0: Clean design implementation complete");
+    console.log("PDF GENERATOR V6.0: Design correction complete");
     return doc.output('blob');
 }
 

@@ -94,7 +94,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
 - [x] **Seguridad IA (RLS Delegado)**: Implementación de arquitectura de "Rayos X" donde la IA consulta Supabase usando la identidad real del usuario (JWT) en lugar del Service Role, respetando estrictamente los permisos de cada rol.
 - [x] **Renderizado Markdown Nativo**: Integración de `react-markdown` y `remark-gfm` en el widget de chat, permitiendo la visualización de tablas de ingredientes, listas de tareas y negritas de forma elegante.
-- [x] 📄 **Rediseño de Pedido PDF**: Implementación de un diseño minimalista y limpio ("Bento Grid").
+- [x] 📄 **Rediseño de Pedido PDF (FINAL)**: Implementación de diseño minimalista "Bento Grid" corregido. Eliminación definitiva de cabeceras azules, corrección de transparencia en tablas (evitando fondos negros), logo limpio y contenedor redondeado dinámico ajustado al contenido del pedido. Máxima fidelidad al diseño de referencia.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE
