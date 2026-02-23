@@ -690,63 +690,63 @@ export default function HistoryPage() {
                                                         <div
                                                             key={closing.id}
                                                             onClick={() => setSelectedClosing(closing)}
-                                                            className="group relative bg-white aspect-square w-full rounded-[0.5rem] md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-200 flex flex-col overflow-hidden"
+                                                            className="group relative bg-white aspect-square w-full rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm hover:shadow-xl hover:scale-[1.01] transition-all cursor-pointer border border-zinc-200 flex flex-col overflow-hidden"
                                                         >
-                                                            {/* Header Rojo con Número Blanco - Reduced Height */}
-                                                            <div className="bg-[#D64D5D] px-1 md:px-2 py-0 md:py-1 flex justify-center items-center shadow-sm shrink-0">
-                                                                <span className="text-[7px] min-[370px]:text-[8px] sm:text-[10px] md:text-[14px] font-black text-white leading-none">{format(day, 'd')}</span>
+                                                            {/* Header Rojo con Número Blanco - Pixel Perfect */}
+                                                            <div className="bg-[#D64D5D] px-2 py-1 md:py-1.5 flex justify-center items-center shadow-sm shrink-0">
+                                                                <span className="text-[10px] md:text-[16px] font-black text-white leading-none tracking-tighter">{format(day, 'd')}</span>
                                                             </div>
 
-                                                            <div className="p-1 min-[370px]:p-1.5 md:p-3 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-center items-center flex-1">
-                                                                {/* Main Metric & Comparison (Row 1) */}
-                                                                <div className="flex items-center justify-center gap-1 md:gap-2 leading-none whitespace-nowrap overflow-hidden">
-                                                                    <span className="text-[7.5px] min-[370px]:text-[8.5px] sm:text-[10px] md:text-[14px] lg:text-[16px] xl:text-[20px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                            <div className="p-1.5 md:p-4 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors flex-1 min-w-0">
+                                                                {/* Row 1: Main Metric & Comparison (Justify Between) */}
+                                                                <div className="flex items-center justify-between w-full leading-none gap-1">
+                                                                    <span className="text-[10px] sm:text-[12px] md:text-[22px] lg:text-[26px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none truncate">
                                                                         {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                                     </span>
                                                                     <div className={cn(
-                                                                        "text-[5px] min-[370px]:text-[6px] sm:text-[8px] md:text-[10px] lg:text-[12px] font-black uppercase tracking-tighter leading-none flex items-center gap-0.5",
-                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                                        "text-[7px] sm:text-[8px] md:text-[13px] lg:text-[15px] font-black uppercase tracking-tighter leading-none flex items-center shrink-0",
+                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
                                                                     )}>
                                                                         {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(parseFloat(diffPerc))}%
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Main Metric Label (Row 2) */}
-                                                                <div className="mt-0.5 md:mt-1 mb-1 md:mb-3">
-                                                                    <span className="text-[4.5px] min-[370px]:text-[5px] sm:text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                                                {/* Row 2: Main Metric Label (Left Aligned) */}
+                                                                <div className="mt-0.5 md:mt-1 mb-2 md:mb-5">
+                                                                    <span className="text-[5.5px] sm:text-[6.5px] md:text-[11px] lg:text-[13px] font-black text-[#8E9BAE] uppercase tracking-widest leading-none block">
                                                                         {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                     </span>
                                                                 </div>
 
-                                                                {/* 2x2 Grid for Secondary Metrics */}
-                                                                <div className="hidden sm:grid grid-cols-2 gap-x-2 md:gap-x-4 gap-y-1 md:gap-y-3 mt-auto w-full">
+                                                                {/* Row 3: 2x2 Grid for Secondary Metrics - Pixel Perfect */}
+                                                                <div className="grid grid-cols-2 gap-x-2 md:gap-x-6 gap-y-1.5 md:gap-y-4 mt-auto w-full pb-1 md:pb-2">
                                                                     {/* Ventas */}
-                                                                    <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                    <div className="flex flex-col items-center justify-center text-center px-0.5">
+                                                                        <span className="text-[8.5px] sm:text-[10px] md:text-[18px] lg:text-[22px] font-black text-zinc-900 tabular-nums leading-none truncate w-full">
                                                                             {Math.round(closing.tpv_sales) || " "}
                                                                         </span>
-                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">VENTAS</span>
+                                                                        <span className="text-[4.5px] sm:text-[5px] md:text-[9px] lg:text-[10px] font-black text-[#8E9BAE] uppercase tracking-[0.1em] mt-0.5 md:mt-1.5 leading-none">VENTAS</span>
                                                                     </div>
                                                                     {/* Medio */}
-                                                                    <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                    <div className="flex flex-col items-center justify-center text-center px-0.5">
+                                                                        <span className="text-[8.5px] sm:text-[10px] md:text-[18px] lg:text-[22px] font-black text-[#36606F] tabular-nums leading-none truncate w-full">
                                                                             {(closing.tickets_count > 0 ? Math.round(closing.tpv_sales / closing.tickets_count) : 0) || " "}
                                                                         </span>
-                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">MEDIO</span>
+                                                                        <span className="text-[4.5px] sm:text-[5px] md:text-[9px] lg:text-[10px] font-black text-[#8E9BAE] uppercase tracking-[0.1em] mt-0.5 md:mt-1.5 leading-none">MEDIO</span>
                                                                     </div>
                                                                     {/* Efectivo */}
-                                                                    <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-emerald-600 tabular-nums leading-none">
+                                                                    <div className="flex flex-col items-center justify-center text-center px-0.5">
+                                                                        <span className="text-[8.5px] sm:text-[10px] md:text-[18px] lg:text-[22px] font-black text-emerald-600 tabular-nums leading-none truncate w-full">
                                                                             {Math.round(closing.cash_counted) || " "}
                                                                         </span>
-                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">EFECTIVO</span>
+                                                                        <span className="text-[4.5px] sm:text-[5px] md:text-[9px] lg:text-[10px] font-black text-[#8E9BAE] uppercase tracking-[0.1em] mt-0.5 md:mt-1.5 leading-none">EFECTIVO</span>
                                                                     </div>
                                                                     {/* Tarjeta */}
-                                                                    <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                    <div className="flex flex-col items-center justify-center text-center px-0.5">
+                                                                        <span className="text-[8.5px] sm:text-[10px] md:text-[18px] lg:text-[22px] font-black text-zinc-900 tabular-nums leading-none truncate w-full">
                                                                             {Math.round(closing.sales_card) || " "}
                                                                         </span>
-                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">TARJETA</span>
+                                                                        <span className="text-[4.5px] sm:text-[5px] md:text-[9px] lg:text-[10px] font-black text-[#8E9BAE] uppercase tracking-[0.1em] mt-0.5 md:mt-1.5 leading-none">TARJETA</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
