@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-22
+**Última actualización:** 2026-02-23
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -80,7 +80,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Métrica de Diferencia en Dashboard**: Sustitución de la flecha en la tarjeta de Caja Inicial por el valor de la diferencia, con lógica de colores (rojo < 0, blanco > 0) y tick para descuadre cero.
 - [x] **Optimización Mobile Movimientos**: Ajuste radical de la vista smartphone en `/dashboard/movements`. Acciones de cabecera alineadas con el título, resumen de KPIs en fila única de 4 columnas y refinamiento de la distribución de anchos en la tabla de movimientos para evitar solapamientos.
 - [x] **Refinamiento Estético de Iconos**: Sustitución de props de tamaño por clases Tailwind y unificación de estilos en iconos de acción de tesorería.
-- [x] **Rediseño Tarjeta Producto (Pedidos)**: Evolución a **Plantilla Galería Cuadrada** (estilo `/recipes`). Optimización de la altura total mediante `aspect-square` en la imagen y reducción de espaciados verticales. Corrección de los botones de control (`+/-`) eliminando el recorte de los signos en smartphones mediante ajustes de padding y centrado. Reducción proporcional de fuentes para encajar perfectamente en cuadrícula de 3 columnas.
+- [x] **Rediseño Tarjeta Producto (Pedidos)**: Evolución a **Plantilla Galería Cuadrada** (estilo `/recipes`). Optimización de la altura total mediante `h-14` en la imagen y reducción de espaciados (imitando `/ingredients`). Rediseño de controles: desplazamiento a la izquierda y eliminación de fondos en los signos `+` y `-` para que floten directamente sobre el fondo, evitando cortes en smartphones.
 - [x] **Ajuste Altura Contenedor Cajas Cambio (Mobile)**: Eliminación de bordes, fondos y reducción drástica de espaciados (paddings y gaps) en las tarjetas de Cambio 1 y Cambio 2 para que floten sobre el fondo blanco del panel y su altura total se compacte para coincidir con la fila de iconos adyacente.
 - [x] **Corrección de Transición Swipe Mobile**: Inversión del orden espacial en `DashboardSwitcher.tsx` (Panel Administrativo a la izquierda, Panel Staff a la derecha). Esto soluciona la resistencia de rebote y permite que deslizar hacia la derecha desde Staff vuelva a Administración de manera 100% fluida, coincidiendo con la heurística nativa de iOS "Atrás".
 
@@ -95,6 +95,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Seguridad IA (RLS Delegado)**: Implementación de arquitectura de "Rayos X" donde la IA consulta Supabase usando la identidad real del usuario (JWT) en lugar del Service Role, respetando estrictamente los permisos de cada rol.
 - [x] **Renderizado Markdown Nativo**: Integración de `react-markdown` y `remark-gfm` en el widget de chat, permitiendo la visualización de tablas de ingredientes, listas de tareas y negritas de forma elegante.
 - [x] 📄 **Rediseño de Pedido PDF (FINAL)**: Implementación de diseño minimalista "Bento Grid" corregido. Eliminación definitiva de cabeceras azules, corrección de transparencia en tablas (evitando fondos negros), logo limpio y contenedor redondeado dinámico ajustado al contenido del pedido. Máxima fidelidad al diseño de referencia.
+- [x] 🔘 **Estandarización Modal de Cambio**: Unificación estética de `CashChangeModal` siguiendo el patrón de diseño Marbella Premium. Ahora es un modal flotante con márgenes en móvil (`p-4`) y se ha resuelto el problema de doble overlay en el panel de administración.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE

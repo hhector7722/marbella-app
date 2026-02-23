@@ -114,8 +114,8 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
     );
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center md:p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-[#f8fafb] w-full max-w-[420px] md:rounded-3xl shadow-2xl flex flex-col h-full md:h-auto md:max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 {/* STICKY HEADER - MATCHING REFERENCE */}
                 <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative pt-safe">
                     <div className="px-4 py-3 pb-4">

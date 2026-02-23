@@ -737,14 +737,33 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </div>
             </div>
             {cashModalMode !== 'none' && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
-                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", cashModalMode === 'swap' ? "max-w-4xl" : "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-
-                        {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && <CashDenominationForm type={cashModalMode as 'in' | 'out' | 'audit'} boxName={selectedBox?.name || 'Caja'} initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}} availableStock={boxInventoryMap} onCancel={() => setCashModalMode('none')} onSubmit={handleCashTransaction} />}
-                        {cashModalMode === 'swap' && <CashChangeModal boxId={selectedBox?.id} boxName={selectedBox?.name || 'Caja'} onClose={() => setCashModalMode('none')} onSuccess={() => { fetchData(); setCashModalMode('none'); }} />}
-                        {cashModalMode === 'inventory' && <BoxInventoryView boxName={selectedBox?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />}
-                    </div>
-                </div>
+                <>
+                    {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit' || cashModalMode === 'inventory') && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+                            <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                                {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
+                                    <CashDenominationForm
+                                        type={cashModalMode as 'in' | 'out' | 'audit'}
+                                        boxName={selectedBox?.name || 'Caja'}
+                                        initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
+                                        availableStock={boxInventoryMap}
+                                        onCancel={() => setCashModalMode('none')}
+                                        onSubmit={handleCashTransaction}
+                                    />
+                                )}
+                                {cashModalMode === 'inventory' && <BoxInventoryView boxName={selectedBox?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />}
+                            </div>
+                        </div>
+                    )}
+                    {cashModalMode === 'swap' && (
+                        <CashChangeModal
+                            boxId={selectedBox?.id}
+                            boxName={selectedBox?.name || 'Caja'}
+                            onClose={() => setCashModalMode('none')}
+                            onSuccess={() => { fetchData(); setCashModalMode('none'); }}
+                        />
+                    )}
+                </>
             )}
             {
                 isStaffModalOpen && (
