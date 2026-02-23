@@ -607,18 +607,18 @@ export default function HistoryPage() {
                                                     </div>
 
                                                     <div className="p-4 flex flex-col pt-2">
-                                                        {/* Compact Integrated Row: Label + Value (Left) | Percentage (Right) */}
-                                                        <div className="flex items-end justify-between mb-3 mt-1">
-                                                            <div className="flex flex-col items-start leading-none">
-                                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none">
+                                                        {/* Compact Single Row: Label + Value (Left) | Percentage (Right) */}
+                                                        <div className="flex items-center justify-between mb-1 mt-1">
+                                                            <div className="flex items-center gap-2 leading-none">
+                                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                                                     {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                 </span>
-                                                                <span className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                <span className="text-xl md:text-2xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                     {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                                 </span>
                                                             </div>
 
-                                                            <div className="flex flex-col items-end gap-1 leading-none">
+                                                            <div className="flex items-center gap-1.5 leading-none">
                                                                 <div className={cn(
                                                                     "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
                                                                     parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
