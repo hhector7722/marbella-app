@@ -129,28 +129,28 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                             </button>
                         </div>
 
-                        <div className="flex items-center justify-between gap-2 px-1">
+                        <div className="flex items-center justify-between gap-1.5 px-0.5">
                             {/* SALE KPI */}
-                            <div className="flex-1 flex flex-col items-center">
-                                <span className="bg-rose-500 text-white text-[9px] font-black px-5 py-1.5 rounded-lg uppercase tracking-wider mb-1 shadow-lg shadow-rose-900/20">Sale</span>
-                                <span className="text-lg font-black text-rose-300 tabular-nums">{totalOut.toFixed(2)}€</span>
+                            <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5 transition-all">
+                                <span className="text-[8px] font-black text-rose-300/60 uppercase tracking-widest mb-0.5">Sale</span>
+                                <span className="text-base md:text-xl font-black text-rose-300 tabular-nums leading-none">{totalOut.toFixed(2)}€</span>
                             </div>
 
                             {/* DIF KPI */}
-                            <div className="flex-1 bg-black/20 rounded-2xl py-2 flex flex-col items-center">
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-wider mb-0.5">Dif:</span>
+                            <div className="flex-1 bg-white/10 rounded-2xl py-2 flex flex-col items-center border border-white/10 shadow-inner">
+                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-0.5 font-sans">Dif:</span>
                                 <div className={cn(
-                                    "text-[13px] font-black px-3 py-0.5 rounded-full transition-colors",
-                                    isBalanced ? "text-emerald-300" : "text-rose-400"
+                                    "text-xs md:text-sm font-black px-3 py-0.5 rounded-full transition-colors",
+                                    isBalanced ? "text-emerald-400" : "text-rose-400"
                                 )}>
                                     {isBalanced ? "0.00€" : `${diff > 0 ? '+' : ''}${diff.toFixed(2)}€`}
                                 </div>
                             </div>
 
                             {/* ENTRA KPI */}
-                            <div className="flex-1 flex flex-col items-center">
-                                <span className="bg-emerald-500 text-white text-[9px] font-black px-4 py-1.5 rounded-lg uppercase tracking-wider mb-1 shadow-lg shadow-emerald-900/20">Entra</span>
-                                <span className="text-lg font-black text-emerald-300 tabular-nums">{totalIn.toFixed(2)}€</span>
+                            <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5 transition-all">
+                                <span className="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Entra</span>
+                                <span className="text-base md:text-xl font-black text-emerald-300 tabular-nums leading-none">{totalIn.toFixed(2)}€</span>
                             </div>
                         </div>
                     </div>

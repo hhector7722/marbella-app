@@ -743,6 +743,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                                 {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
                                     <CashDenominationForm
+                                        key={cashModalMode + (selectedBox?.id || '')}
                                         type={cashModalMode as 'in' | 'out' | 'audit'}
                                         boxName={selectedBox?.name || 'Caja'}
                                         initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}

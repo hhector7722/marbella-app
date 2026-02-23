@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,14 @@ export const CashDenominationForm = ({
     isEditing = false
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
+
+    // Sync counts when initialCounts changes (important for Arqueos)
+    useEffect(() => {
+        if (initialCounts && Object.keys(initialCounts).length > 0) {
+            setCounts(initialCounts);
+        }
+    }, [initialCounts]);
+
     const [notes, setNotes] = useState(initialNotes);
     // Initialize date state. If initialDate is provided, use it, otherwise default to now (though usually for new movements we rely on DB default, but here we can be explicit if needed, or just leave undefined for new).
     // For editing, initialDate will be present.
@@ -119,7 +127,7 @@ export const CashDenominationForm = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-6">
-                    <div className="text-right hidden sm:block">
+                    <div className="text-right">
                         <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black">
                             {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
                         </span>
