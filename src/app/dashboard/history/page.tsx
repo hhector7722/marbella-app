@@ -606,27 +606,26 @@ export default function HistoryPage() {
                                                         </span>
                                                     </div>
 
-                                                    <div className="p-3 md:p-4 flex flex-col pt-1.5 md:pt-2">
-                                                        {/* Main Metric row - Left Aligned */}
-                                                        <div className="flex items-start justify-start mb-0.5">
-                                                            <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                            </span>
-                                                        </div>
+                                                    <div className="p-4 flex flex-col pt-2">
+                                                        {/* Compact Integrated Row: Label + Value (Left) | Percentage (Right) */}
+                                                        <div className="flex items-end justify-between mb-3 mt-1">
+                                                            <div className="flex flex-col items-start leading-none">
+                                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none">
+                                                                    {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                </span>
+                                                                <span className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
+                                                                    {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
+                                                                </span>
+                                                            </div>
 
-                                                        {/* Label & Comparison row - Integrated Space Saver */}
-                                                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                                                            <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                                                                {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                            </span>
-                                                            <div className="flex items-center gap-1">
+                                                            <div className="flex flex-col items-end gap-1 leading-none">
                                                                 <div className={cn(
-                                                                    "text-[10px] md:text-xs font-black uppercase tracking-tighter whitespace-nowrap leading-none",
+                                                                    "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
                                                                     parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
                                                                 )}>
                                                                     {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}%
                                                                 </div>
-                                                                <span className="hidden md:inline text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
+                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
                                                             </div>
                                                         </div>
 
