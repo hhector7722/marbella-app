@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
+import { addDays } from 'date-fns';
 import {
     Play, Square, CheckCircle2, CalendarDays, AlertCircle, MapPin, ShieldAlert,
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
@@ -17,6 +18,7 @@ import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { addEmployeeDocument, getEmployeeDocuments, deleteEmployeeDocument, updateProfile } from '@/app/actions/profile';
+import { getISOWeekStartUTC, toUTCDateString } from '@/lib/date-utils';
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
 // --- DATA: CONTACTOS ---
@@ -117,23 +119,14 @@ export default function StaffDashboard() {
             if (!user) { console.error("No usuario"); return; }
             setUserId(user.id);
 
-            let contractHours = 40;
-            let overtimeRate = 0;
-            let historicalBalance = 0;
-            let preferStock = false;
-
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, hours_balance, prefer_stock_hours')
+                .select('first_name, role')
                 .eq('id', user.id)
                 .single();
 
             if (profile) {
                 setUserName(profile.first_name);
                 setUserRole(profile.role === 'manager' ? 'manager' : 'staff');
-                if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
-                if (profile.overtime_cost_per_hour !== null) overtimeRate = profile.overtime_cost_per_hour;
-                if (profile.hours_balance !== undefined && profile.hours_balance !== null) historicalBalance = profile.hours_balance;
-                if (profile.prefer_stock_hours) preferStock = profile.prefer_stock_hours;
             }
 
             const today = new Date();
@@ -153,21 +146,29 @@ export default function StaffDashboard() {
                 setStatus(log.clock_out ? 'finished' : 'working');
             } else { setTodayLog(null); setStatus('idle'); }
 
-            const dayOfWeek = today.getDay();
-            const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            const monday = new Date(today); monday.setDate(diffToMonday); monday.setHours(0, 0, 0, 0);
-            const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6); sunday.setHours(23, 59, 59, 999);
+            const mondayStr = getISOWeekStartUTC(today);
+            const mondayDate = new Date(mondayStr);
+            const sundayStr = toUTCDateString(addDays(mondayDate, 6));
 
-            setCurrentMonthName(monday.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
+            setCurrentMonthName(mondayDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
 
+            // 1. Fetch RAW logs for Daily Grid (keeps the grid alive)
             const { data: weekLogs } = await supabase.from('time_logs')
                 .select('clock_in, clock_out, total_hours')
                 .eq('user_id', user.id)
-                .gte('clock_in', monday.toISOString())
-                .lte('clock_in', sunday.toISOString())
+                .gte('clock_in', mondayStr)
+                .lte('clock_in', sundayStr + 'T23:59:59Z')
                 .order('clock_in', { ascending: true });
 
-            // ARCHITECT_ULTRAFLUIDITY: O(1) Lookup optimization
+            // 2. Fetch SSOT Summary from RPC
+            const { data: rpcStats, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
+                p_start_date: mondayStr,
+                p_end_date: sundayStr,
+                p_user_id: user.id
+            });
+
+            if (rpcError) console.error("RPC Error in Staff Dash:", rpcError);
+
             const logsByDay = new Map();
             weekLogs?.forEach(l => {
                 const day = new Date(l.clock_in).getDate();
@@ -175,11 +176,11 @@ export default function StaffDashboard() {
             });
 
             const daysStructure: DailyLog[] = [];
-            let totalWeekHours = 0;
+            let totalWeekHoursRaw = 0;
             const DAILY_LIMIT = 8;
 
             for (let i = 0; i < 7; i++) {
-                const currentDay = new Date(monday); currentDay.setDate(monday.getDate() + i);
+                const currentDay = new Date(mondayDate); currentDay.setDate(mondayDate.getDate() + i);
                 const isToday = currentDay.getDate() === today.getDate() && currentDay.getMonth() === today.getMonth();
                 const dayLog = logsByDay.get(currentDay.getDate());
 
@@ -192,7 +193,7 @@ export default function StaffDashboard() {
                         clockOutStr = outDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                     }
                     hours = dayLog.total_hours || 0;
-                    totalWeekHours += hours;
+                    totalWeekHoursRaw += hours;
                     if (hours > DAILY_LIMIT) dayExtras = hours - DAILY_LIMIT;
                 }
                 daysStructure.push({
@@ -202,15 +203,30 @@ export default function StaffDashboard() {
             }
             setWeekDays(daysStructure);
 
-            const isAugust = monday.getMonth() === 7;
-            const weekDifference = isAugust ? totalWeekHours : (totalWeekHours - contractHours);
-            const effectivePivot = (!preferStock && historicalBalance > 0) ? 0 : historicalBalance;
-            const balanceForDisplay = effectivePivot + weekDifference;
-            let payout = 0;
-            if (balanceForDisplay > 0 && !preferStock) payout = balanceForDisplay * overtimeRate;
+            // Mapping RPC data to UI Summary
+            let totalHours = totalWeekHoursRaw;
+            let totalExtraHours = 0;
+            let pendingHours = 0;
+            let estimatedPayout = 0;
+
+            if (rpcStats && rpcStats.weeksResult && rpcStats.weeksResult.length > 0) {
+                const currentWeek = rpcStats.weeksResult[0];
+                const staffData = currentWeek.staff[0];
+                if (staffData) {
+                    totalHours = staffData.totalHours;
+                    totalExtraHours = staffData.overtimeHours;
+                    pendingHours = staffData.overtimeHours;
+                    estimatedPayout = staffData.totalCost;
+                }
+            }
 
             setWeeklySummary({
-                totalHours: totalWeekHours, totalExtraHours: Math.max(0, weekDifference), pendingHours: balanceForDisplay, estimatedPayout: payout, status: 'pending', startBalance: effectivePivot
+                totalHours: totalHours,
+                totalExtraHours: totalExtraHours,
+                pendingHours: pendingHours,
+                estimatedPayout: estimatedPayout,
+                status: 'pending',
+                startBalance: 0
             });
 
             const { data: realShifts } = await supabase

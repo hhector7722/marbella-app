@@ -13,6 +13,7 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { calculateRoundedHours } from '@/lib/utils';
 
 interface DailyLaborStats {
     date: string;
@@ -194,19 +195,23 @@ export default function LaborHistoryPage() {
                 userHours.forEach((hours, userId) => {
                     const profile = profileMap.get(userId);
                     if (profile) {
+                        // Apply SSOT rounding to the hours before any financial calculation
+                        const roundedHours = calculateRoundedHours(hours);
+
                         const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
                         const regPrice = profile.regular_cost_per_hour || 0;
                         const overPrice = profile.overtime_cost_per_hour || regPrice;
+
                         if (profile.role === 'manager') {
-                            dailyCost += dailyContracted * regPrice + hours * overPrice;
-                            totalHours += dailyContracted + hours;
+                            dailyCost += dailyContracted * regPrice + roundedHours * overPrice;
+                            totalHours += dailyContracted + roundedHours;
                         } else {
-                            if (hours > dailyContracted) {
-                                dailyCost += dailyContracted * regPrice + (hours - dailyContracted) * overPrice;
+                            if (roundedHours > dailyContracted) {
+                                dailyCost += dailyContracted * regPrice + (roundedHours - dailyContracted) * overPrice;
                             } else {
-                                dailyCost += hours * regPrice;
+                                dailyCost += roundedHours * regPrice;
                             }
-                            totalHours += hours;
+                            totalHours += roundedHours;
                         }
                         countedUsers.add(userId);
                     }

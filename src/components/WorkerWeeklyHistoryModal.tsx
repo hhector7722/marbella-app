@@ -79,49 +79,37 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
         try {
             // 1. Fetch Profile
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, last_name, contracted_hours_weekly, overtime_cost_per_hour, is_fixed_salary, prefer_stock_hours, hours_balance, role')
+                .select('first_name, last_name')
                 .eq('id', workerId).single();
 
             if (profile) {
                 setWorkerName(`${profile.first_name} ${profile.last_name || ''}`);
             }
 
-            const contractHours = profile?.contracted_hours_weekly ?? 40;
-            const overtimeRate = profile?.overtime_cost_per_hour || 0;
-            const isFixedSalary = profile?.is_fixed_salary || false;
-            const isManager = profile?.role === 'manager';
-            const preferStock = profile?.prefer_stock_hours || false;
+            // 2. Define Date Range (UTC boundaries for Consistency)
+            const mondayDate = parseISO(weekStart);
+            const sundayDate = addDays(mondayDate, 6);
+            const mondayISO = weekStart;
+            const sundayISO = format(sundayDate, 'yyyy-MM-dd');
 
-            // 2. Define Date Range for the Week
-            const monday = parseISO(weekStart);
-            const sunday = addDays(monday, 6);
-            sunday.setHours(23, 59, 59, 999);
-
-            // 3. Fetch Logs
+            // 3. Fetch RAW Logs for Grid (Grid needs detailed times)
             const { data: logs } = await supabase.from('time_logs')
                 .select('*')
                 .eq('user_id', workerId)
-                .gte('clock_in', monday.toISOString())
-                .lte('clock_in', sunday.toISOString())
+                .gte('clock_in', mondayISO)
+                .lte('clock_in', sundayISO + 'T23:59:59Z')
                 .order('clock_in', { ascending: true });
 
-            // 4. Fetch Snapshot for this week (if exists)
-            const { data: snapshot } = await supabase.from('weekly_snapshots')
-                .select('*')
-                .eq('user_id', workerId)
-                .eq('week_start', weekStart)
-                .maybeSingle(); // Use maybeSingle to avoid 406 error if not found
+            // 4. Fetch SSOT Statistics from RPC
+            const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
+                p_start_date: mondayISO,
+                p_end_date: sundayISO,
+                p_user_id: workerId
+            });
 
-            // 5. Fetch Previous Snapshot (for pending balance calculation if no current snapshot)
-            const prevWeekDate = addDays(monday, -7);
-            const prevWeekISO = format(prevWeekDate, 'yyyy-MM-dd');
-            const { data: prevSnapshot } = await supabase.from('weekly_snapshots')
-                .select('*')
-                .eq('user_id', workerId)
-                .eq('week_start', prevWeekISO)
-                .single();
+            if (rpcError) throw rpcError;
 
-            // 6. Process Daily Logs (Architect_UltraFluidity Optimization: O(1) Lookup)
+            // 5. Process Daily Grid (keeps simple rounding for visual)
             const logsByDate = new Map();
             logs?.forEach(log => {
                 const dateStr = format(parseISO(log.clock_in), 'yyyy-MM-dd');
@@ -129,16 +117,18 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             });
 
             const weekDays: DailyLog[] = [];
-            let weekTotalHours = 0;
             let currentAccumulated = 0;
-            const isAugust = monday.getMonth() === 7;
-            const effContract = (isAugust || isManager || isFixedSalary) ? 0 : contractHours;
+            const DAILY_LIMIT = 8;
+
+            // Note: rpcData has the SSOT contracted hours etc but for the GRID we might need the weekly one
+            const rpcWeek = rpcData?.weeksResult?.[0];
+            const rpcStaff = rpcWeek?.staff?.[0];
+            const effContractForGrid = rpcStaff?.contracted_hours_weekly ?? 40;
 
             for (let i = 0; i < 7; i++) {
-                const d = addDays(monday, i);
+                const d = addDays(mondayDate, i);
                 const dStr = format(d, 'yyyy-MM-dd');
                 const isToday = isSameDay(d, new Date());
-
                 const log = logsByDate.get(dStr);
 
                 let h = 0, cin = '', cout = '', dayExtras = 0;
@@ -147,87 +137,46 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                     if (log.clock_out) { const outD = parseISO(log.clock_out); cout = format(outD, 'HH:mm'); }
 
                     h = log.total_hours ? calculateRoundedHours(log.total_hours) : 0;
-                    weekTotalHours += h;
-
                     const newAccumulated = currentAccumulated + h;
-                    if (newAccumulated > effContract) {
-                        dayExtras = (currentAccumulated >= effContract) ? h : (newAccumulated - effContract);
+                    if (newAccumulated > effContractForGrid) {
+                        dayExtras = (currentAccumulated >= effContractForGrid) ? h : (newAccumulated - effContractForGrid);
                     }
                     currentAccumulated = newAccumulated;
                 }
-
                 weekDays.push({
                     date: d,
                     dayName: format(d, 'EEE', { locale: es }).toUpperCase().slice(0, 3),
                     dayNumber: d.getDate(),
-                    hasLog: !!log,
-                    clockIn: cin,
-                    clockOut: cout,
-                    totalHours: h,
-                    extraHours: dayExtras,
-                    isToday: isToday
+                    hasLog: !!log, clockIn: cin, clockOut: cout,
+                    totalHours: h, extraHours: dayExtras, isToday: isToday
                 });
             }
 
-            // 7. Process Summary
-            let summaryStartBalance = 0;
-            let summaryWeeklyBalance = 0;
-            let summaryTotalHours = 0;
-            let summaryFinalBalance = 0;
-
-            if (snapshot) {
-                summaryStartBalance = snapshot.pending_balance;
-                summaryWeeklyBalance = snapshot.balance_hours;
-                summaryTotalHours = snapshot.total_hours;
-                summaryFinalBalance = snapshot.final_balance ?? (snapshot.pending_balance + snapshot.balance_hours);
-            } else {
-                summaryTotalHours = weekTotalHours;
-                if (isAugust || isManager || isFixedSalary) {
-                    summaryWeeklyBalance = weekTotalHours;
-                } else {
-                    summaryWeeklyBalance = weekTotalHours - (snapshot?.contracted_hours_snapshot ?? contractHours);
-                }
-
-                summaryWeeklyBalance = calculateRoundedHours(summaryWeeklyBalance);
-
-                if (prevSnapshot) {
-                    if (!preferStock && prevSnapshot.final_balance > 0) {
-                        summaryStartBalance = 0;
-                    } else {
-                        summaryStartBalance = prevSnapshot.final_balance;
+            // 6. Set Final State from RPC (SSOT)
+            if (rpcStaff) {
+                setWeekData({
+                    weekNumber: parseInt(format(mondayDate, 'w')),
+                    startDate: mondayDate,
+                    endDate: sundayDate,
+                    days: weekDays,
+                    summary: {
+                        totalHours: rpcStaff.totalHours,
+                        weeklyBalance: rpcStaff.overtimeHours, // En este contexto, lo extra de la semana es el balance semanal
+                        estimatedValue: rpcStaff.totalCost,
+                        // Nota: La RPC devuelve totalCost y overtimeCost pero no el "pending_balance" de los snapshots explícitamente en el retorno de staff?
+                        // Ah, la RPC calcula FinalBalance = Pending + Weekly. El 'totalCost' es FinalBalance * Rate.
+                        // Usaremos los campos de rpcStaff para ser coherentes con el dash.
+                        finalBalance: rpcStaff.overtimeHours,
+                        isPaid: rpcStaff.isPaid,
+                        contractedHours: effContractForGrid,
+                        startBalance: 0
                     }
-                } else {
-                    summaryStartBalance = profile?.hours_balance || 0;
-                }
-
-                summaryFinalBalance = summaryStartBalance + summaryWeeklyBalance;
+                });
+                setTempContractHours(effContractForGrid);
             }
-
-            let estimatedValue = 0;
-            if (summaryFinalBalance > 0 && !preferStock) {
-                estimatedValue = summaryFinalBalance * overtimeRate;
-            }
-
-            // setWeekData call preserved outside the computation logic for clarity
-            setWeekData({
-                weekNumber: parseInt(format(monday, 'w')),
-                startDate: monday,
-                endDate: sunday,
-                days: weekDays,
-                summary: {
-                    totalHours: summaryTotalHours > 0 ? summaryTotalHours : weekTotalHours,
-                    weeklyBalance: summaryWeeklyBalance,
-                    estimatedValue,
-                    startBalance: summaryStartBalance,
-                    finalBalance: summaryFinalBalance,
-                    isPaid: snapshot?.is_paid || false,
-                    contractedHours: snapshot?.contracted_hours_snapshot ?? contractHours
-                }
-            });
-            setTempContractHours(snapshot?.contracted_hours_snapshot ?? contractHours);
-
         } catch (error) {
-            console.error(error);
+            console.error("Error in Modal:", error);
+            toast.error("Error al cargar detalles semanales");
         } finally {
             setLoading(false);
         }

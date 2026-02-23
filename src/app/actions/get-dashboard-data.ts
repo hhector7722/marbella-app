@@ -142,82 +142,41 @@ export async function getDashboardData() {
     }
 
     // --- PROCESS OVERTIME (Last 60 days) ---
-    // Logic copied from AdminDashboardView
+    // Unificación con RPC centralizada (SSOT)
     let overtimeData: any[] = [];
     let initialPaidStatus: Record<string, boolean> = {};
 
-    if (dayLogs && allProfiles) {
-        const profileMap = new Map(allProfiles.map((p: any) => [p.id, p]));
-        const weekUserHoursMap = new Map<string, Map<string, number>>();
+    const sixtyDaysAgo = format(addDays(new Date(), -60), 'yyyy-MM-dd');
+    const todayISO = format(new Date(), 'yyyy-MM-dd');
 
-        dayLogs.forEach((log: any) => {
-            // Ensuring we only process logs within the 60 day window if the query didn't perfectly filter it (it did, but safety first)
-            const date = new Date(log.clock_in);
-            const monday = startOfWeek(date, { weekStartsOn: 1 }); monday.setHours(0, 0, 0, 0);
-            const weekLabelId = format(monday, 'yyyy-MM-dd');
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
+        p_start_date: sixtyDaysAgo,
+        p_end_date: todayISO
+    });
 
-            if (!weekUserHoursMap.has(weekLabelId)) weekUserHoursMap.set(weekLabelId, new Map());
-            const userMap = weekUserHoursMap.get(weekLabelId)!;
-            userMap.set(log.user_id, (userMap.get(log.user_id) || 0) + (log.total_hours || 0));
-        });
+    if (rpcError) {
+        console.error("Error fetching overtime from RPC in dashboard:", rpcError);
+    } else if (rpcData) {
+        // Mapeamos el formato de la RPC al formato que espera el Dashboard
+        // La RPC devuelve { weeksResult: WeeklyStats[], summary: ... }
+        overtimeData = rpcData.weeksResult.map((week: any) => ({
+            weekId: week.weekId,
+            total: week.totalAmount,
+            expanded: false,
+            staff: week.staff.map((s: any) => ({
+                id: s.id,
+                name: s.name.split(' ')[0], // Solo el primer nombre como estaba antes
+                amount: s.totalCost,
+                hours: s.overtimeHours
+            }))
+        }));
 
-        const sortedWeekIds = Array.from(weekUserHoursMap.keys()).sort().filter(id => id < format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'));
-        const userFinalBalances = new Map<string, Map<string, number>>();
-        const weeksMap = new Map<string, any>();
-
-        sortedWeekIds.forEach(weekLabelId => {
-            const userMap = weekUserHoursMap.get(weekLabelId)!;
-            const monday = parseISO(weekLabelId);
-            const prevWeekId = format(addDays(monday, -7), 'yyyy-MM-dd');
-
-            if (!weeksMap.has(weekLabelId)) weeksMap.set(weekLabelId, { weekId: weekLabelId, total: 0, expanded: false, staff: [] });
-            const weekEntry = weeksMap.get(weekLabelId);
-
-            if (!userFinalBalances.has(weekLabelId)) userFinalBalances.set(weekLabelId, new Map());
-
-            userMap.forEach((totalHours, userId) => {
-                const userProfile: any = profileMap.get(userId);
-                if (userProfile) {
-                    const currentSnapshot = snapshots?.find((s: any) => s.user_id === userId && s.week_start === weekLabelId);
-                    const contractedHours = currentSnapshot?.contracted_hours_snapshot ?? (userProfile.contracted_hours_weekly ?? 40);
-                    const isManager = userProfile.role === 'manager';
-                    const isFixedSalary = userProfile.is_fixed_salary || false;
-                    const preferStock = userProfile.prefer_stock_hours || false;
-                    const isAugust = monday.getMonth() === 7;
-
-                    let weeklyBalance = (isAugust || isManager || isFixedSalary) ? totalHours : (totalHours - contractedHours);
-                    // Use utility or duplicate if needed. Importing mostly safe.
-                    weeklyBalance = calculateRoundedHours(weeklyBalance);
-
-                    let pendingBalance = 0;
-                    const prevSnapshot = snapshots?.find((s: any) => s.user_id === userId && s.week_start === prevWeekId);
-
-                    if (prevSnapshot?.final_balance !== null && prevSnapshot?.final_balance !== undefined) {
-                        pendingBalance = (!preferStock && prevSnapshot.final_balance > 0) ? 0 : prevSnapshot.final_balance;
-                    } else {
-                        const prevBalance = userFinalBalances.get(prevWeekId)?.get(userId) ?? (userProfile.hours_balance || 0);
-                        pendingBalance = (!preferStock && prevBalance > 0) ? 0 : prevBalance;
-                    }
-
-                    const finalBalance = pendingBalance + weeklyBalance;
-                    userFinalBalances.get(weekLabelId)!.set(userId, finalBalance);
-
-                    const cost = (finalBalance > 0 && !preferStock) ? finalBalance * (userProfile.overtime_cost_per_hour || 0) : 0;
-                    const isPaid = snapshots?.find((s: any) => s.user_id === userId && s.week_start === weekLabelId)?.is_paid || false;
-
-                    initialPaidStatus[`${weekLabelId}-${userId}`] = isPaid;
-
-                    if (cost > 0) {
-                        weekEntry.staff.push({ id: userId, name: userProfile.first_name, amount: cost, hours: finalBalance });
-                        weekEntry.total += cost;
-                    }
-                }
+        // Poblamos initialPaidStatus
+        rpcData.weeksResult.forEach((week: any) => {
+            week.staff.forEach((s: any) => {
+                initialPaidStatus[`${week.weekId}-${s.id}`] = s.isPaid;
             });
         });
-
-        overtimeData = Array.from(weeksMap.values())
-            .filter((w: any) => w.staff.length > 0)
-            .sort((a: any, b: any) => b.weekId.localeCompare(a.weekId));
     }
 
     return {
