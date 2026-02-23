@@ -6,6 +6,8 @@ import { Mic, Send, Image as ImageIcon, X, Phone, Bot, Loader2 } from 'lucide-re
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 import { useAIStore } from '@/store/aiStore';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
     const supabase = createClient();
@@ -196,10 +198,19 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                 {messages.map((m) => (
                     <div key={m.id} className={cn("flex flex-col gap-1 w-full max-w-[85%]", m.role === 'user' ? "ml-auto items-end" : "mr-auto items-start")}>
                         <div className={cn(
-                            "p-3 rounded-2xl text-sm shadow-sm relative overflow-hidden whitespace-pre-wrap",
+                            "p-3 rounded-2xl text-sm shadow-sm relative overflow-hidden",
                             m.role === 'user' ? "bg-zinc-800 text-white rounded-tr-sm" : "bg-white border border-zinc-100 text-zinc-700 rounded-tl-sm"
                         )}>
-                            {m.content}
+                            <div className={cn(
+                                "prose prose-sm max-w-none break-words",
+                                m.role === 'user' ? "prose-invert text-white" : "text-zinc-700",
+                                // Estilos personalizados para evitar dependencia estricta de tailwind/typography si no está configurado
+                                "[&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:p-2 [&_td]:border [&_td]:p-2"
+                            )}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {m.content}
+                                </ReactMarkdown>
+                            </div>
                         </div>
                     </div>
                 ))}

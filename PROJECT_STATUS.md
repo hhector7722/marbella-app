@@ -92,6 +92,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Integración Modal de Proveedores**: Re-integración del modal de selección de proveedores en 3 puntos clave (Barra Nav, Admin y Staff). Se ha implementado una lógica de carga híbrida (DB + Lista estática) y un diseño Marbella Premium con tarjetas flotantes sin bordes sobre fondo blanco.
 - [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
 - [x] **Seguridad IA (RLS Delegado)**: Implementación de arquitectura de "Rayos X" donde la IA consulta Supabase usando la identidad real del usuario (JWT) en lugar del Service Role, respetando estrictamente los permisos de cada rol.
+- [x] **Renderizado Markdown Nativo**: Integración de `react-markdown` y `remark-gfm` en el widget de chat, permitiendo la visualización de tablas de ingredientes, listas de tareas y negritas de forma elegante.
 - [x] 📄 **Rediseño de Pedido PDF**: Implementación de un diseño minimalista y limpio ("Bento Grid").
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 

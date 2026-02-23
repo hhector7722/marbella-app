@@ -4,87 +4,35 @@ import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { getInventoryTool } from '@/lib/ai/tools/inventory';
-import { getStaffAttendanceTool } from '@/lib/ai/tools/work_hours';
 
 export const maxDuration = 30;
 
+function getBCNTime() {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+}
+
 export async function POST(req: NextRequest) {
     const requestId = Math.random().toString(36).substring(7);
-    console.log(`[CHAT] [${requestId}] Petición recibida`);
+    const todayStr = getBCNTime().toISOString().split('T')[0];
 
-    // Extraer token de Supabase de los headers para delegación RLS
     const authHeader = req.headers.get('Authorization');
-    const supabaseAccessToken = authHeader?.startsWith('Bearer ')
-        ? authHeader.split(' ')[1]
-        : '';
-
-    // INYECCIÓN DE TELEMETRÍA EXACTA:
-    console.log("[AUTH DEBUG] Token extraído en API:", supabaseAccessToken ? "PRESENTE" : "AUSENTE CRÍTICO");
+    const supabaseAccessToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : '';
 
     try {
         const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
-            console.error(`[CHAT] [${requestId}] Error Auth:`, authError);
-            return new Response('Unauthorized', { status: 401 });
-        }
+        if (authError || !user) return new Response('Unauthorized', { status: 401 });
 
         const { messages } = await req.json();
+        const { data: profile } = await supabase.from('profiles').select('first_name, role').eq('id', user.id).single();
 
-        if (!messages || !Array.isArray(messages)) {
-            console.error(`[CHAT] [${requestId}] Mensajes inválidos`);
-            return new Response('Invalid messages', { status: 400 });
-        }
+        const systemPrompt = `Eres el Asistente de Bar La Marbella. Hoy es ${todayStr}.
+REGLA DE ORO: PROHIBIDO INTERPRETAR O CORREGIR LA BD. Si la herramienta dice que un empleado tiene 8h extras, dilo, aunque su balance sea positivo. 
 
-        // Validación de API Key
-        const apiKey = process.env.OPENAI_API_KEY;
-        console.log(`[CHAT] [${requestId}] API Key cargada: ${apiKey ? 'SI (largo: ' + apiKey.length + ')' : 'NO'}`);
-        if (apiKey && apiKey.includes('your_api_key')) {
-            console.error(`[CHAT] [${requestId}] ERROR: La API Key sigue siendo el marcador de posición.`);
-        }
-
-        // Obtener perfil del usuario para personalización
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, role, preferred_language, ai_greeting_style')
-            .eq('id', user.id)
-            .single();
-
-        const userName = profile?.first_name || 'compañero';
-        const userRole = profile?.role || 'staff';
-        const userLang = profile?.preferred_language || 'es';
-        const userStyle = profile?.ai_greeting_style || 'profesional';
-
-        // Mapeo de estilos a instrucciones (Ultra-Directos)
-        const styles: Record<string, string> = {
-            jefe: `Tono: "Hola ${userName}.". Sé extremadamente escueto y directo. Saluda así.`,
-            sarcastico: `Tono: "Dime crack.". Sé irónico pero muy breve. Saluda así. No fuerces bromas largas.`,
-            natural: `Tono: "Dime ${userName}.". Coloquial, directo y muy corto. Saluda así.`
-        };
-
-        const systemPrompt = `Eres el Asistente de Bar La Marbella. 
-Estás hablando con ${userName} (${userRole}). 
-
-REGLA DE ORO: Sé ultra-directo y breve. Máximo 1 o 2 frases por respuesta. No des explicaciones innecesarias ni fuerces la personalidad.
-DIFERENCIACIÓN LABORAL: "Horarios" = los turnos teóricos asignados para trabajar. "Horas trabajadas" = la realidad fichada en la máquina. Nunca los confundas.
-
-REGLA DE IDIOMA: Responde en ${userLang === 'ca' ? 'Catalán (Català)' : 'Español (Castellano)'}.
-
-ESTILO: ${styles[userStyle] || styles.natural}
-
-Herramientas:
-1. get_inventory: Consulta el inventario, costes de compra y stock (respetando tus permisos RLS).
-2. get_menu: Platos y PVP.
-3. get_staff_attendance: Consulta las horas trabajadas y extras de la plantilla (respetando tus permisos RLS). Los managers ven todo, el staff solo lo suyo.
-4. get_staff_work_info: (DEPRECADA por get_staff_attendance para horas reales). 
-4. get_dashboard/get_staff: Módulo Financiero (Solo Managers). Usa esto para consultar VENTAS acumuladas y CIERRES de caja de HOY o de DÍAS ANTERIORES.
-6. get_recipe_details: Obtiene la RECETA EXACTA (Ingredientes y Elaboración) de un plato.
-
-REGLAS:
-- Si te preguntan "qué llevan los calamares" o "cómo se hace X", usa get_recipe_details.
-- PRIVACIDAD: Si al consultar horas el sistema devuelve datos vacíos para otros empleados, informa con rigor que el usuario no tiene nivel de acceso suficiente para ver registros ajenos. No inventes datos.
-- Si no sabes algo, dilo breve.`;
+FUENTES DE DATOS:
+1. VENTAS: Usa EXCLUSIVAMENTE 'cash_closings'. Ignora cualquier otro dato de tickets o facturación externa.
+2. HORAS: Usa SIEMPRE 'horas_extra' y 'deuda_total' crudos de la herramienta. 
+3. FORMATO: NO uses asteriscos (**) en títulos. Tablas Markdown para recetas. Sé contundente y breve.`;
 
         const result = await streamText({
             model: openai('gpt-4o-mini'),
@@ -92,182 +40,68 @@ REGLAS:
             messages,
             tools: {
                 get_inventory: getInventoryTool(supabaseAccessToken),
-                get_staff_attendance: getStaffAttendanceTool(supabaseAccessToken),
-                get_menu: {
-                    description: 'Obtiene la lista de platos del menú con sus categorías y precios de venta al público (PVP).',
-                    parameters: z.object({}),
-                    execute: async () => {
-                        const { data, error } = await supabase.from('recipes').select('name, category, sale_price');
+                get_dashboard: {
+                    description: 'Suma las ventas reales de los cierres de caja (net_sales).',
+                    parameters: z.object({ startDate: z.string(), endDate: z.string() }),
+                    execute: async ({ startDate, endDate }) => {
+                        const { data: cls, error } = await supabase
+                            .from('cash_closings')
+                            .select('net_sales')
+                            .gte('closing_date', startDate)
+                            .lte('closing_date', endDate);
+
                         if (error) throw error;
-                        return data;
+
+                        const totalReal = cls?.reduce((sum, c) => sum + (Number(c.net_sales) || 0), 0) || 0;
+                        return {
+                            periodo: `${startDate} al ${endDate}`,
+                            ventas_reales_cierres: totalReal.toFixed(2),
+                            cierres_contabilizados: cls?.length || 0
+                        };
                     }
                 },
-                get_dashboard: {
-                    description: 'Obtiene un resumen de la FACTURACIÓN (Ventas Totales) y el saldo de CIERRES de cajas para una fecha específica (Solo Managers). Sirve para preguntar cuánto se vendió ayer, hoy o el jueves pasado.',
-                    parameters: z.object({
-                        dateStr: z.string().optional().describe('Fecha específica a consultar en formato YYYY-MM-DD. Si no se provee, asume el día de hoy.')
-                    }),
-                    execute: async ({ dateStr }) => {
-                        const targetDateStr = dateStr || new Date().toISOString().split('T')[0];
-                        const targetDateStart = new Date(targetDateStr);
-                        targetDateStart.setHours(0, 0, 0, 0);
-                        const targetDateEnd = new Date(targetDateStart);
-                        targetDateEnd.setDate(targetDateEnd.getDate() + 1);
+                get_staff_work_info: {
+                    description: 'Consulta deuda y horas crudas de la BD.',
+                    parameters: z.object({ employeeName: z.string().optional(), targetDate: z.string().optional() }),
+                    execute: async ({ employeeName, targetDate }) => {
+                        let tId = user.id;
+                        if (employeeName) {
+                            const { data: p } = await supabase.from('profiles').select('id').ilike('first_name', `%${employeeName}%`).maybeSingle();
+                            if (p) tId = p.id;
+                        }
+                        const d = new Date(targetDate || todayStr);
+                        const mon = new Date(d.setDate(d.getDate() - (d.getDay() || 7) + 1)).toISOString().split('T')[0];
 
-                        const [tickets, boxes, closings] = await Promise.all([
-                            supabase.from('tickets_marbella').select('total_documento').eq('fecha', targetDateStr),
-                            supabase.from('cash_boxes').select('name, current_balance'),
-                            supabase.from('cash_closings').select('tpv_sales, net_sales, tickets_count, difference, cash_counted, cash_expected').eq('closing_date', targetDateStr)
-                        ]);
-
-                        const totalVentas = tickets.data?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-                        const isToday = targetDateStr === new Date().toISOString().split('T')[0];
+                        const { data: snap } = await supabase.from('weekly_snapshots').select('*').eq('user_id', tId).eq('week_start', mon).maybeSingle();
+                        const { data: last } = await supabase.from('weekly_snapshots').select('final_balance').eq('user_id', tId).order('week_start', { ascending: false }).limit(1).maybeSingle();
 
                         return {
-                            fecha_consulta: targetDateStr,
-                            facturacion_total_euros: totalVentas,
-                            estado_cajas_actual: isToday ? boxes.data : 'Solo disponible para el día de hoy',
-                            cierres_de_caja_realizados: closings.data || []
+                            empleado: employeeName || 'Tú',
+                            semana: mon,
+                            horas_extra: snap?.extra_hours || 0,
+                            balance_semanal: snap?.balance_hours || 0,
+                            deuda_final_de_esta_semana: snap?.final_balance || 0,
+                            deuda_total_acumulada: last?.final_balance || 0
                         };
                     }
                 },
                 get_recipe_details: {
-                    description: 'Obtiene los INGREDIENTES EXACTOS y la ELABORACIÓN de un plato del menú.',
-                    parameters: z.object({
-                        recipeName: z.string().describe('El nombre del plato a buscar (ej. "calamares").')
-                    }),
+                    description: 'Receta con quantity_gross.',
+                    parameters: z.object({ recipeName: z.string() }),
                     execute: async ({ recipeName }) => {
-                        const { data: recipe } = await supabase.from('recipes').select('id, name, elaboration, presentation').ilike('name', `%${recipeName}%`).limit(1).maybeSingle();
-                        if (!recipe) return { error: `No se encontró la receta de ${recipeName}.` };
-
-                        const { data: ingredientsData } = await supabase
-                            .from('recipe_ingredients')
-                            .select(`
-                                quantity,
-                                unit,
-                                ingredients ( name )
-                            `)
-                            .eq('recipe_id', recipe.id);
-
-                        const ingredients = ingredientsData?.map((ing: any) => `${ing.quantity} ${ing.unit} de ${ing.ingredients?.name}`) || [];
-
-                        return {
-                            plato: recipe.name,
-                            ingredientes: ingredients.length > 0 ? ingredients : 'No hay ingredientes listados.',
-                            elaboracion: recipe.elaboration || 'Sin instrucciones especificas.',
-                            presentacion: recipe.presentation || 'Sin presentación específica.'
-                        };
-                    }
-                },
-                get_staff: {
-                    description: 'Obtiene la lista de empleados y sus roles (Solo para Managers).',
-                    parameters: z.object({}),
-                    execute: async () => {
-                        const { data, error } = await supabase.from('profiles').select('first_name, last_name, role, phone_number');
-                        if (error) throw error;
-                        return data;
-                    }
-                },
-                get_my_hours: {
-                    description: 'Obtiene el total de horas trabajadas por el usuario actual en la semana en curso.',
-                    status: 'deprecated', // Reemplazado por get_staff_work_info
-                    parameters: z.object({}),
-                    execute: async () => {
-                        return { error: 'Usa get_staff_work_info en su lugar.' };
-                    }
-                },
-                get_staff_work_info: {
-                    description: 'Obtiene las horas reales fichadas y el saldo de horas extra de un empleado. ÚSATE PARA PREGUNTAS SOBRE HORAS TRABAJADAS.',
-                    parameters: z.object({
-                        weekStart: z.string().optional().describe('Fecha del lunes de la semana a consultar (YYYY-MM-DD).'),
-                        employeeNameOrId: z.string().optional().describe('Nombre, apellido o ID del usuario (opcional, por defecto el tuyo propio).')
-                    }),
-                    execute: async ({ weekStart, employeeNameOrId }) => {
-                        let targetUserId = user.id;
-
-                        // Si han enviado un nombre o ID y el que pregunta es manager
-                        if (employeeNameOrId && userRole === 'manager') {
-                            // Detectar si parece un UUID
-                            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(employeeNameOrId);
-
-                            if (isUUID) {
-                                targetUserId = employeeNameOrId;
-                            } else {
-                                // Buscar por nombre real en public.profiles
-                                const { data: profileMatch } = await supabase
-                                    .from('profiles')
-                                    .select('id, first_name')
-                                    .ilike('first_name', `%${employeeNameOrId}%`)
-                                    .limit(1)
-                                    .maybeSingle();
-
-                                if (profileMatch) {
-                                    targetUserId = profileMatch.id;
-                                    console.log(`[AI Chat] Resuelto el nombre '${employeeNameOrId}' al ID: ${targetUserId}`);
-                                } else {
-                                    return { error: `No encontré a ningún empleado llamado "${employeeNameOrId}". Por favor dile al usuario que verifique el nombre.` };
-                                }
-                            }
-                        }
-
-                        // Lógica de fecha (Lunes de la semana)
-                        const date = weekStart ? new Date(weekStart) : new Date();
-                        const day = date.getDay() || 7;
-                        if (day !== 1) date.setHours(-24 * (day - 1));
-                        date.setHours(0, 0, 0, 0);
-                        const mondayStr = date.toISOString().split('T')[0];
-                        const sunday = new Date(date);
-                        sunday.setDate(date.getDate() + 7);
-                        const sundayStr = sunday.toISOString().split('T')[0];
-
-                        const [logs, snapshot] = await Promise.all([
-                            supabase.from('time_logs').select('total_hours, clock_in').eq('user_id', targetUserId).gte('clock_in', mondayStr).lt('clock_in', sundayStr).not('total_hours', 'is', null),
-                            supabase.from('weekly_snapshots').select('*').eq('user_id', targetUserId).eq('week_start', mondayStr).maybeSingle()
-                        ]);
-
-                        const totalHoursReal = logs.data?.reduce((sum, l) => sum + (l.total_hours || 0), 0) || 0;
-                        const weeklySnapshotData = snapshot.data || { total_hours: 0, overtime_hours: 0, pending_debt_hours: 0 };
-
-                        return {
-                            empleado_consultado: targetUserId,
-                            semana_inicio: mondayStr,
-                            horas_reales_trabajadas: totalHoursReal.toFixed(2),
-                            horas_extras_balance: weeklySnapshotData.overtime_hours.toFixed(2),
-                            deuda_horas_pendientes: weeklySnapshotData.pending_debt_hours.toFixed(2)
-                        };
+                        const { data: r } = await supabase.from('recipes').select('*').ilike('name', `%${recipeName}%`).maybeSingle();
+                        if (!r) return { error: "No existe." };
+                        const { data: ing } = await supabase.from('recipe_ingredients').select('*, ingredients(name)').eq('recipe_id', r.id);
+                        return { plato: r.name, ingredientes: ing?.map(i => ({ i: i.ingredients?.name, c: i.quantity_gross || 0, u: i.unit })) || [] };
                     }
                 }
             },
-            maxSteps: 5, // Permite a la IA llamar a herramientas y luego responder
-            onError: ({ error }) => {
-                console.error(`[CHAT][${requestId}] Error en streamText: `, error);
-            },
-            async onFinish({ text }) {
-                console.log(`[CHAT][${requestId}] Generación completada.`);
-                try {
-                    await supabase.from('ai_chat_messages').insert({
-                        user_id: user.id,
-                        role: 'assistant',
-                        content_type: 'text',
-                        text_content: text
-                    });
-                } catch (e: any) {
-                    console.error(`[CHAT][${requestId}] Error BD: `, e.message);
-                }
+            maxSteps: 5,
+            onFinish({ text }) {
+                supabase.from('ai_chat_messages').insert({ user_id: user.id, role: 'assistant', text_content: text }).then();
             }
         });
 
-        // toDataStreamResponse es compatible con @ai-sdk/react@3.0.99
         return result.toDataStreamResponse();
-
-    } catch (error: any) {
-        console.error(`[CHAT][${requestId}] ERROR CRÍTICO: `, error.message);
-        return new Response(JSON.stringify({
-            error: 'Error interno',
-            details: error.message
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
+    } catch (e: any) { return new Response(e.message, { status: 500 }); }
 }
