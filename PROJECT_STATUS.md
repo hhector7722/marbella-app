@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-23
+**Última actualización:** 2026-02-23 (Audit Horas Fix)
 
 ## 📌 ESTADO GENERAL
 El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
@@ -80,6 +80,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Ajuste Altura Contenedor Cajas Cambio (Mobile)**: Eliminación de bordes, fondos y reducción drástica de espaciados (paddings y gaps) en las tarjetas de Cambio 1 y Cambio 2 para que floten sobre el fondo blanco del panel y su altura total se compacte para coincidir con la fila de iconos adyacente.
 - [x] **Corrección de Registro de Movimientos**: Solucionado el bloqueo en salidas por falta de stock teórico y mejorada la validación de montos positivos en entradas/salidas.
 - [x] **Mejoras UI Tesorería**: Implementado pre-llenado de arqueos con valores teóricos y visualización universal de totales en cabeceras de modales (optimizado para móvil).
+- [x] **Corrección Radical Inconsistencia de Horas (SSOT)**: Unificación de agregación y redondeo directamente en PostgreSQL vía RPC `get_weekly_worker_stats`, eliminando discrepancias matemáticas (53h vs 47h) y garantizando consistencia ISO-8601 en UTC.
+- [x] **Optimización Next.js (Overtime)**: Refactorización de `overtime.ts` eliminando cuellos de botella en Node.js y delegando el filtrado por usuario a la base de datos.
+- [x] **Consistencia Temporal UTC**: Implementación de utilidades de fecha en `date-utils.ts` para asegurar que el frontend y el backend operen bajo el mismo estándar de fronteras semanales.
 - [x] **Corrección de Transición Swipe Mobile**: Inversión del orden espacial en `DashboardSwitcher.tsx` (Panel Administrativo a la izquierda, Panel Staff a la derecha). Esto soluciona la resistencia de rebote y permite que deslizar hacia la derecha desde Staff vuelva a Administración de manera 100% fluida, coincidiendo con la heurística nativa de iOS "Atrás".
 
 - [x] **Rediseño Tarjeta Horas Extras**: Eliminación del relleno verde y borde lila, implementando fondos blancos flotantes con sombra y rediseño de marcadores (icono unificado ! rojo/blanco y tick esmeralda) tanto en Dashboard Admin como en /overtime.

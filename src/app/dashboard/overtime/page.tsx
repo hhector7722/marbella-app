@@ -11,6 +11,7 @@ import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSa
 import { es } from 'date-fns/locale';
 import { getOvertimeData, togglePaidStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
+import { toUTCDateString, getISOWeekEndUTC } from '@/lib/date-utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
@@ -130,8 +131,8 @@ export default function OvertimePage() {
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
 
     // Filters
-    const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [endDate, setEndDate] = useState(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [startDate, setStartDate] = useState(() => toUTCDateString(startOfMonth(new Date())));
+    const [endDate, setEndDate] = useState(() => toUTCDateString(endOfMonth(new Date())));
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [showManualDates, setShowManualDates] = useState(false);
 
@@ -254,8 +255,8 @@ export default function OvertimePage() {
                                                             <button
                                                                 key={i}
                                                                 onClick={() => {
-                                                                    setStartDate(format(startOfMonth(d), 'yyyy-MM-dd'));
-                                                                    setEndDate(format(endOfMonth(d), 'yyyy-MM-dd'));
+                                                                    setStartDate(toUTCDateString(startOfMonth(d)));
+                                                                    setEndDate(toUTCDateString(endOfMonth(d)));
                                                                     setShowMonthPicker(false);
                                                                     setShowManualDates(false);
                                                                 }}
