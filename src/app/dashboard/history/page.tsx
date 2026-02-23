@@ -708,57 +708,55 @@ export default function HistoryPage() {
                                                             </div>
 
                                                             <div className="p-1 min-[370px]:p-1.5 md:p-3 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors justify-center items-center flex-1">
-                                                                {/* Main Metric & Comparison Row - Centered for Mobile */}
-                                                                <div className="flex flex-col items-center justify-center text-center">
-                                                                    <span className="text-[7.5px] min-[370px]:text-[8.5px] sm:text-[10px] md:text-[14px] lg:text-[16px] xl:text-[20px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none drop-shadow-sm">
+                                                                {/* Main Metric & Comparison (Row 1) */}
+                                                                <div className="flex items-center justify-center gap-1 md:gap-2 leading-none whitespace-nowrap overflow-hidden">
+                                                                    <span className="text-[7.5px] min-[370px]:text-[8.5px] sm:text-[10px] md:text-[14px] lg:text-[16px] xl:text-[20px] font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
                                                                         {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
                                                                     </span>
-                                                                    <span className="text-[4.5px] min-[370px]:text-[5px] sm:text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 max-w-full truncate">
-                                                                        {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                                    </span>
-                                                                    <div className="hidden sm:flex text-[4.5px] min-[370px]:text-[5px] sm:text-[6px] md:text-[8px] lg:text-[10px] font-black uppercase tracking-tighter leading-none mt-1 text-emerald-500">
+                                                                    <div className={cn(
+                                                                        "text-[5px] min-[370px]:text-[6px] sm:text-[8px] md:text-[10px] lg:text-[12px] font-black uppercase tracking-tighter leading-none flex items-center gap-0.5",
+                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
+                                                                    )}>
                                                                         {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(parseFloat(diffPerc))}%
                                                                     </div>
                                                                 </div>
 
-                                                                {/* 2x2 Grid for the other 4 metrics - Hidden on Mobile */}
-                                                                <div className="hidden sm:grid grid-cols-2 gap-x-0.5 min-[370px]:gap-x-1 gap-y-0 min-[370px]:gap-y-0.5 md:gap-y-1 mt-auto w-full">
+                                                                {/* Main Metric Label (Row 2) */}
+                                                                <div className="mt-0.5 md:mt-1 mb-1 md:mb-3">
+                                                                    <span className="text-[4.5px] min-[370px]:text-[5px] sm:text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                                                        {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* 2x2 Grid for Secondary Metrics */}
+                                                                <div className="hidden sm:grid grid-cols-2 gap-x-2 md:gap-x-4 gap-y-1 md:gap-y-3 mt-auto w-full">
                                                                     {/* Ventas */}
                                                                     <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
-                                                                            {Math.round(closing.tpv_sales)}
+                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                            {Math.round(closing.tpv_sales) || " "}
                                                                         </span>
-                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
-                                                                            Ventas
-                                                                        </span>
+                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">VENTAS</span>
                                                                     </div>
                                                                     {/* Medio */}
                                                                     <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-[#36606F] tabular-nums leading-none tracking-tighter drop-shadow-sm">
-                                                                            {Math.round(closing.tpv_sales / (closing.tickets_count || 1))}
+                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                            {(closing.tickets_count > 0 ? Math.round(closing.tpv_sales / closing.tickets_count) : 0) || " "}
                                                                         </span>
-                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
-                                                                            Medio
-                                                                        </span>
+                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">MEDIO</span>
                                                                     </div>
-
                                                                     {/* Efectivo */}
                                                                     <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-emerald-600 tabular-nums leading-none tracking-tighter drop-shadow-sm">
-                                                                            {Math.round(closing.cash_counted || 0)}
+                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-emerald-600 tabular-nums leading-none">
+                                                                            {Math.round(closing.cash_counted) || " "}
                                                                         </span>
-                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
-                                                                            Efectivo
-                                                                        </span>
+                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">EFECTIVO</span>
                                                                     </div>
                                                                     {/* Tarjeta */}
                                                                     <div className="flex flex-col items-center justify-center">
-                                                                        <span className="text-[5px] min-[370px]:text-[6px] sm:text-[7.5px] md:text-[11px] xl:text-[14px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter drop-shadow-sm">
-                                                                            {Math.round(closing.sales_card || 0)}
+                                                                        <span className="text-[7px] md:text-[12px] lg:text-[14px] font-black text-zinc-900 tabular-nums leading-none">
+                                                                            {Math.round(closing.sales_card) || " "}
                                                                         </span>
-                                                                        <span className="hidden sm:block text-[4.5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest mt-0.5">
-                                                                            Tarjeta
-                                                                        </span>
+                                                                        <span className="text-[4px] md:text-[6px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">TARJETA</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
