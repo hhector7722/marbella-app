@@ -34,9 +34,35 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
     const unitOptions = ['pack', 'caja', 'unidad', 'kg', 'pieza', 'lt', 'otro...'];
 
-    // Debounced draft update
+    // Separate Effect for Unit Persistence (immediately save even if quantity is 0)
     useEffect(() => {
-        if (quantity === initialQuantity && unit === (initialUnit || ingredient.order_unit || 'unidad')) return;
+        const finalUnit = isCustomUnit ? customUnit : unit;
+        if (finalUnit === (initialUnit || ingredient.order_unit || 'unidad')) return;
+
+        const saveUnit = async () => {
+            try {
+                // 1. Update ingredient default unit
+                await supabase.from('ingredients').update({ order_unit: finalUnit }).eq('id', ingredient.id);
+
+                // 2. If there's an active draft, update its unit too
+                if (quantity > 0) {
+                    await supabase.from('order_drafts').update({ unit: finalUnit })
+                        .eq('user_id', userId)
+                        .eq('ingredient_id', ingredient.id);
+                }
+
+                onQuantityChange?.(ingredient.id, quantity, finalUnit);
+            } catch (error) {
+                console.error('Error saving persistent unit:', error);
+            }
+        };
+
+        saveUnit();
+    }, [unit, isCustomUnit, customUnit]);
+
+    // Debounced draft update for QUANTITY changes
+    useEffect(() => {
+        if (quantity === initialQuantity) return;
 
         const timer = setTimeout(async () => {
             setIsUpdating(true);
@@ -50,12 +76,6 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         unit: finalUnit,
                         updated_at: new Date().toISOString()
                     });
-
-                    // Also update the ingredient's default order unit for next time
-                    await supabase.from('ingredients').update({
-                        order_unit: finalUnit
-                    }).eq('id', ingredient.id);
-
                 } else {
                     await supabase.from('order_drafts').delete()
                         .eq('user_id', userId)
@@ -70,7 +90,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [quantity, unit, isCustomUnit, customUnit, userId, ingredient.id, supabase, onQuantityChange, initialQuantity, initialUnit, ingredient.order_unit]);
+    }, [quantity, userId, ingredient.id, supabase, onQuantityChange, initialQuantity]);
 
     const handleIncrement = () => setQuantity(prev => prev + 1);
     const handleDecrement = () => setQuantity(prev => Math.max(0, prev - 1));

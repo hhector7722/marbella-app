@@ -144,6 +144,44 @@ export default function NewOrderPage() {
             unit: drafts[ing.id].unit
         }));
 
+    const handleClearSupplierDrafts = async () => {
+        if (!userId || !selectedSupplier) return;
+
+        const confirms = window.confirm(`¿Estás seguro de que quieres borrar todas las cantidades del proveedor "${selectedSupplier}"?`);
+        if (!confirms) return;
+
+        setIsProcessing(true);
+        try {
+            // Get IDs of all ingredients of this supplier
+            const supplierIngredientIds = ingredients
+                .filter(ing => ing.supplier === selectedSupplier)
+                .map(ing => ing.id);
+
+            if (supplierIngredientIds.length === 0) return;
+
+            // Delete from DB
+            const { error } = await supabase.from('order_drafts').delete()
+                .eq('user_id', userId)
+                .in('ingredient_id', supplierIngredientIds);
+
+            if (error) throw error;
+
+            // Update local state
+            setDrafts(prev => {
+                const newDrafts = { ...prev };
+                supplierIngredientIds.forEach(id => delete newDrafts[id]);
+                return newDrafts;
+            });
+
+            toast.success(`Cantidades de ${selectedSupplier} borradas`);
+        } catch (error) {
+            console.error('Error clearing drafts:', error);
+            toast.error('Error al borrar cantidades');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const handleFinalize = async () => {
         if (selectedItems.length === 0) {
             toast.error('No hay productos seleccionados');
@@ -219,15 +257,18 @@ export default function NewOrderPage() {
             await supabase.from('purchase_orders').update({ pdf_url: publicUrl }).eq('id', order.id);
             setPdfUrl(publicUrl);
 
-            // 7. Clear Drafts ONLY FOR THE ITEMS ORDERED
-            const orderedIds = selectedItems.map(i => i.id);
+            // 7. Clear ALL Drafts FOR THE SELECTED SUPPLIER (as requested)
+            const supplierIngredientIds = ingredients
+                .filter(ing => ing.supplier === selectedSupplier)
+                .map(ing => ing.id);
+
             await supabase.from('order_drafts').delete()
                 .eq('user_id', userId)
-                .in('ingredient_id', orderedIds);
+                .in('ingredient_id', supplierIngredientIds);
 
             setDrafts(prev => {
                 const NewDrafts = { ...prev };
-                orderedIds.forEach(id => delete NewDrafts[id]);
+                supplierIngredientIds.forEach(id => delete NewDrafts[id]);
                 return NewDrafts;
             });
 
@@ -322,6 +363,16 @@ export default function NewOrderPage() {
                             </>
                         )}
                     </div>
+
+                    {/* Borrar Pedido Button */}
+                    {selectedSupplier && ingredients.some(ing => ing.supplier === selectedSupplier && (drafts[ing.id]?.quantity || 0) > 0) && (
+                        <button
+                            onClick={handleClearSupplierDrafts}
+                            className="w-full sm:w-auto px-5 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all border border-rose-200/50 flex items-center justify-center gap-2"
+                        >
+                            Borrar Pedido
+                        </button>
+                    )}
 
                     {/* REPOSITIONED: VER RESUMEN BUTTON AT TOP */}
                     {totalSelected > 0 && (
