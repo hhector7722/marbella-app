@@ -1,32 +1,50 @@
-import { NextRequest } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-    const { toolName, parameters, token } = await req.json();
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-    // Instanciamos Supabase con el token del usuario para respetar RLS
-    const supabase = await createClient();
+export async function POST(req: Request) {
+    const { toolName, parameters } = await req.json();
 
-    try {
-        switch (toolName) {
-            case 'get_dashboard':
-                const { data: cls } = await supabase.from('cash_closings')
-                    .select('net_sales').gte('closing_date', parameters.startDate).lte('closing_date', parameters.endDate);
-                const total = cls?.reduce((sum, c) => sum + (Number(c.net_sales) || 0), 0) || 0;
-                return Response.json({ total: total.toFixed(2) });
+    if (toolName === 'get_staff_work_info') {
+        const { employeeName, targetDate } = parameters;
 
-            case 'get_staff_work_info':
-                const d = new Date(parameters.targetDate || new Date());
-                const mon = new Date(d.setDate(d.getDate() - (d.getDay() || 7) + 1)).toISOString().split('T')[0];
-                const { data: last } = await supabase.from('weekly_snapshots')
-                    .select('final_balance').order('week_start', { ascending: false }).limit(1).maybeSingle();
-                return Response.json({ deuda_total: last?.final_balance || 0 });
+        // Lógica de "Último Estado Conocido" para evitar el error del lunes
+        const { data, error } = await supabase
+            .from('weekly_snapshots')
+            .select('final_balance')
+            .eq('employee_name', employeeName)
+            .lte('week_start', targetDate) // Registros hasta la fecha actual
+            .order('week_start', { ascending: false }) // El más reciente primero
+            .limit(1); // Solo el último consolidado
 
-            default:
-                return Response.json({ error: "Herramienta no soportada" }, { status: 400 });
-        }
-    } catch (e: any) {
-        return Response.json({ error: e.message }, { status: 500 });
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+        const balance = data?.[0]?.final_balance ?? 0;
+
+        return NextResponse.json({
+            deuda_total: balance,
+            status: `Consultado saldo histórico para ${employeeName}.`
+        });
     }
+
+    // Herramienta para Ventas (Dashboard)
+    if (toolName === 'get_dashboard') {
+        const { startDate, endDate } = parameters;
+        const { data, error } = await supabase
+            .from('cash_closings')
+            .select('net_sales')
+            .gte('date', startDate)
+            .lte('date', endDate);
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+        const totalSales = data.reduce((sum, row) => sum + row.net_sales, 0);
+        return NextResponse.json({ ventas_netas: totalSales });
+    }
+
+    return NextResponse.json({ error: 'Herramienta no encontrada' }, { status: 404 });
 }
