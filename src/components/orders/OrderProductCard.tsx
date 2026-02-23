@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Minus, Plus, Trash2, Package } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
@@ -34,17 +34,35 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
     const unitOptions = ['pack', 'caja', 'unidad', 'kg', 'pieza', 'lt', 'otro...'];
 
-    // Separate Effect for Unit Persistence (immediately save even if quantity is 0)
+    // Keep track of the last synced values to avoid circular updates or redundant saves
+    const lastSynced = useRef({ quantity: initialQuantity, unit: initialUnit || ingredient.order_unit || 'unidad' });
+
+    // 1. Sync local STATE with PROPS (Initial load or Realtime updates from parent)
+    useEffect(() => {
+        if (initialQuantity !== lastSynced.current.quantity) {
+            setQuantity(initialQuantity);
+            lastSynced.current.quantity = initialQuantity;
+        }
+        const propUnit = initialUnit || ingredient.order_unit || 'unidad';
+        if (propUnit !== lastSynced.current.unit) {
+            setUnit(propUnit);
+            lastSynced.current.unit = propUnit;
+        }
+    }, [initialQuantity, initialUnit, ingredient.order_unit]);
+
+    // 2. Separate Effect for Unit Persistence (immediately save even if quantity is 0)
     useEffect(() => {
         const finalUnit = isCustomUnit ? customUnit : unit;
-        if (finalUnit === (initialUnit || ingredient.order_unit || 'unidad')) return;
+        // ONLY save if it's different from what we already have in DB/lastSynced
+        if (finalUnit === lastSynced.current.unit) return;
 
         const saveUnit = async () => {
             try {
-                // 1. Update ingredient default unit
+                lastSynced.current.unit = finalUnit;
+                // Update ingredient default unit
                 await supabase.from('ingredients').update({ order_unit: finalUnit }).eq('id', ingredient.id);
 
-                // 2. If there's an active draft, update its unit too
+                // If there's an active draft, update its unit too
                 if (quantity > 0) {
                     await supabase.from('order_drafts').update({ unit: finalUnit })
                         .eq('user_id', userId)
@@ -57,16 +75,19 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
             }
         };
 
-        saveUnit();
+        const timer = setTimeout(saveUnit, 300); // Small debounce for typing custom unit
+        return () => clearTimeout(timer);
     }, [unit, isCustomUnit, customUnit]);
 
-    // Debounced draft update for QUANTITY changes
+    // 3. Debounced draft update for QUANTITY changes
     useEffect(() => {
-        if (quantity === initialQuantity) return;
+        // ONLY save if user actually changed the quantity compared to last known DB state
+        if (quantity === lastSynced.current.quantity) return;
 
         const timer = setTimeout(async () => {
             setIsUpdating(true);
             try {
+                lastSynced.current.quantity = quantity;
                 const finalUnit = isCustomUnit ? customUnit : unit;
                 if (quantity > 0) {
                     await supabase.from('order_drafts').upsert({
@@ -87,10 +108,10 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
             } finally {
                 setIsUpdating(false);
             }
-        }, 500);
+        }, 600);
 
         return () => clearTimeout(timer);
-    }, [quantity, userId, ingredient.id, supabase, onQuantityChange, initialQuantity]);
+    }, [quantity, userId, ingredient.id, supabase]);
 
     const handleIncrement = () => setQuantity(prev => prev + 1);
     const handleDecrement = () => setQuantity(prev => Math.max(0, prev - 1));
