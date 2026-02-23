@@ -88,9 +88,30 @@ BEGIN
     v_prefer_stock := COALESCE(v_prefer_stock, false);
     v_role := COALESCE(v_role, 'staff');
 
+    -- NUEVO: Detectar fecha de incorporación real (primer fichaje)
+    -- Si no hay fichajes, no hay nada que propagar.
+    DECLARE
+        v_first_clock_in date;
+    BEGIN
+        SELECT MIN(clock_in::date) INTO v_first_clock_in
+        FROM public.time_logs WHERE user_id = p_user_id;
+
+        IF v_first_clock_in IS NULL THEN
+            RETURN;
+        END IF;
+
+        -- El inicio efectivo es el máximo entre lo pedido y su primer día
+        v_current_week := public.get_iso_week_start(GREATEST(p_start_date, v_first_clock_in));
+    END;
+
     -- B. Definir rango de fechas
-    v_current_week := public.get_iso_week_start(p_start_date);
     v_end_date := public.get_iso_week_start(current_date) + 7; -- Cubrir semana actual + margen
+
+    -- Limpieza de seguridad: Borrar snapshots huerfanos previos a su primer fichaje
+    -- que podrian contener deudas fantasma de recalculos anteriores fallidos.
+    DELETE FROM public.weekly_snapshots 
+    WHERE user_id = p_user_id 
+      AND week_start < public.get_iso_week_start(v_first_clock_in);
 
     -- C. BUCLE DE PROPAGACIÓN
     WHILE v_current_week <= v_end_date LOOP
