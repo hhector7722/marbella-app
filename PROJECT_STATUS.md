@@ -90,8 +90,9 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **IA Operativa (Chat)**: Restaurada con OpenAI y protocolo de streaming fluido.
 - [x] **Seguridad IA (RLS Delegado)**: Implementación de arquitectura de "Rayos X" donde la IA consulta Supabase usando la identidad real del usuario (JWT) en lugar del Service Role, respetando estrictamente los permisos de cada rol.
 - [x] **Renderizado Markdown Nativo**: Integración de `react-markdown` y `remark-gfm` en el widget de chat, permitiendo la visualización de tablas de ingredientes, listas de tareas y negritas de forma elegante.
-- [x] 📄 **Refinamiento Flujo de Pedidos (FINAL)**: Pulido estético integral. Modal de resumen ultra-limpio (título "Pedido", sin contadores), éxito compacto con miniatura flotante y acciones en una fila (Descargar/Enviar/Proveedor). PDF con cabecera "Slim" y esquinas redondeadas. Solución definitiva al problema de descarga de archivos.
-- [🔘] **Estandarización Modal de Cambio**: Unificación estética de `CashChangeModal` siguiendo el patrón de diseño Marbella Premium. Ahora es un modal flotante con márgenes en móvil (`p-4`) y se ha resuelto el problema de doble overlay en el panel de administración.
+- [x] 📄 **Refinamiento Flujo de Pedidos (FINAL)**: Pulido estético integral. Modal de resumen ultra-limpio, éxito compacto y PDF refinado.
+- [x] 💾 **Persistencia y Control de Pedidos**: Implementación de unidades preferidas autoguardables e independientes de la cantidad. Borradores persistentes por usuario que permiten pausar y reanudar pedidos. Añadido botón "Borrar Pedido" y limpieza automática de borrador por proveedor tras finalizar el pedido.
+- [x] 🔘 **Estandarización Modal de Cambio**: Unificación estética de `CashChangeModal` siguiendo el patrón de diseño Marbella Premium. Ahora es un modal flotante con márgenes en móvil (`p-4`) y se ha resuelto el problema de doble overlay en el panel de administración.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE
