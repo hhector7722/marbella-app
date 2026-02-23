@@ -92,7 +92,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Renderizado Markdown Nativo**: Integración de `react-markdown` y `remark-gfm` en el widget de chat, permitiendo la visualización de tablas de ingredientes, listas de tareas y negritas de forma elegante.
 - [x] 📄 **Refinamiento Flujo de Pedidos (FINAL)**: Pulido estético integral. Modal de resumen ultra-limpio, éxito compacto y PDF refinado.
 - [x] 💾 **Persistencia y Control de Pedidos**: Implementación de unidades preferidas autoguardables e independientes de la cantidad. Borradores persistentes por usuario que permiten pausar y reanudar pedidos. Añadido botón "Borrar Pedido" y limpieza automática de borrador por proveedor tras finalizar el pedido.
-- [x] 🔘 **Estandarización Modal de Cambio**: Unificación estética de `CashChangeModal` siguiendo el patrón de diseño Marbella Premium. Ahora es un modal flotante con márgenes en móvil (`p-4`) y se ha resuelto el problema de doble overlay en el panel de administración.
+- [x] 📦 **Modal de Productos Staff**: Implementación de un modal intermedio en el panel de staff y barra de navegación que unifica el acceso a Pedidos, Inventario, Stock y Proveedores, eliminando opciones irrelevantes (Recetas/Ingredientes) para el perfil operativo.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE

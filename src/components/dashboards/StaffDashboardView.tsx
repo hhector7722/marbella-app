@@ -14,6 +14,7 @@ import {
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
+import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { differenceInMinutes } from 'date-fns';
@@ -96,6 +97,7 @@ export default function StaffDashboardView() {
     const [showSwapModal, setShowSwapModal] = useState(false);
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
     useEffect(() => { initialize(); }, []);
 
@@ -390,7 +392,7 @@ export default function StaffDashboardView() {
         </button>
     );
 
-    const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); };
+    const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); setIsProductModalOpen(false); };
 
     if (loading) return (
         <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center p-4">
@@ -587,7 +589,7 @@ export default function StaffDashboardView() {
                                     label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
                                     onClick={() => setActiveMenu('info')}
                                 />
-                                <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Pedidos" onClick={() => setIsSupplierModalOpen(true)} />
+                                <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Productos" onClick={() => setIsProductModalOpen(true)} />
                                 {userRole === 'supervisor' && (
                                     <IOSIconBoxed
                                         icon={Calculator}
@@ -723,45 +725,17 @@ export default function StaffDashboardView() {
                                     </div>
                                 </>
                             )}
-                            {activeMenu === 'pedidos' && (
-                                <>
-                                    <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                                        <div className="flex flex-col">
-                                            <h3 className="text-lg font-black uppercase tracking-wider leading-none">Gestión Stock</h3>
-                                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Pedidos y Logística</p>
-                                        </div>
-                                        <button onClick={closeMenus} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                            <X size={20} strokeWidth={3} />
-                                        </button>
-                                    </div>
-                                    <div className="p-8 grid grid-cols-2 gap-4 bg-transparent overflow-y-auto">
-                                        {[
-                                            { title: 'Pedidos', img: '/icons/shipment.png', link: '/orders/new' },
-                                            { title: 'Inventario', img: '/icons/inventory.png' },
-                                            { title: 'Proveedores', img: '/icons/suplier.png', link: '/suppliers' },
-                                        ].map((item, i) => (
-                                            <button key={i} onClick={() => {
-                                                if (item.title === 'Pedidos') {
-                                                    setActiveMenu(null);
-                                                    setTimeout(() => setIsSupplierModalOpen(true), 150);
-                                                } else if (item.link) {
-                                                    router.push(item.link);
-                                                } else {
-                                                    toast.info(`${item.title} próximamente`);
-                                                }
-                                            }} className="bg-transparent border-0 flex flex-col items-center gap-3 transition-all active:scale-95 group">
-                                                <div className="w-14 h-14 transition-transform group-hover:scale-110">
-                                                    <Image src={item.img} alt={item.title} width={56} height={56} className="w-full h-full object-contain" />
-                                                </div>
-                                                <span className="font-black text-xs text-zinc-500 uppercase tracking-tight group-hover:text-zinc-900">{item.title}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
                         </div>
                     </div>
                 )}
+
+                <StaffProductModal
+                    isOpen={isProductModalOpen}
+                    onClose={() => setIsProductModalOpen(false)}
+                    onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
+                />
+
+                {/* MODAL: Cambio de Efectivo (Cambio 1) */}
 
                 {/* MODAL: Cambio de Efectivo (Cambio 1) */}
                 {showSwapModal && changeBox && (

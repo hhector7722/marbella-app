@@ -8,6 +8,7 @@ import { createClient } from "@/utils/supabase/client";
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
+import { StaffProductModal } from '@/components/modals/StaffProductModal';
 
 export default function BottomNavStaff() {
     const pathname = usePathname();
@@ -17,6 +18,7 @@ export default function BottomNavStaff() {
     const [userData, setUserData] = useState<{ name: string; role: string; avatar_url: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
     if (pathname === '/login') return null;
 
@@ -99,7 +101,7 @@ export default function BottomNavStaff() {
                     <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`} onClick={(e) => {
                         if (item.name.toLowerCase() === 'pedidos') {
                             e.preventDefault();
-                            setIsSupplierModalOpen(true);
+                            setIsProductModalOpen(true);
                         }
                     }}>
                         {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={20} />}
@@ -120,7 +122,7 @@ export default function BottomNavStaff() {
                             onClick={(e) => {
                                 if (item.name.toLowerCase() === 'pedidos') {
                                     e.preventDefault();
-                                    setIsSupplierModalOpen(true);
+                                    setIsProductModalOpen(true);
                                 }
                             }}
                         >
@@ -144,6 +146,12 @@ export default function BottomNavStaff() {
                     ))}
                 </div>
             </aside>
+
+            <StaffProductModal
+                isOpen={isProductModalOpen}
+                onClose={() => setIsProductModalOpen(false)}
+                onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
+            />
 
             <SupplierSelectionModal
                 isOpen={isSupplierModalOpen}
