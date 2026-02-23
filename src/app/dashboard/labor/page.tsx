@@ -198,7 +198,7 @@ export default function LaborHistoryPage() {
                         // Apply SSOT rounding to the hours before any financial calculation
                         const roundedHours = calculateRoundedHours(hours);
 
-                        const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
+                        const dailyContracted = (profile.contracted_hours_weekly ?? 0) / 5;
                         const regPrice = profile.regular_cost_per_hour || 0;
                         const overPrice = profile.overtime_cost_per_hour || regPrice;
 
@@ -219,7 +219,7 @@ export default function LaborHistoryPage() {
 
                 profiles?.forEach(profile => {
                     if (profile.role === 'manager' && !countedUsers.has(profile.id)) {
-                        const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
+                        const dailyContracted = (profile.contracted_hours_weekly ?? 0) / 5;
                         dailyCost += dailyContracted * (profile.regular_cost_per_hour || 0);
                         totalHours += dailyContracted;
                         countedUsers.add(profile.id);

@@ -176,8 +176,8 @@ export default function StaffDashboard() {
             });
 
             const daysStructure: DailyLog[] = [];
-            const contractHours = profile?.contracted_hours_weekly ?? 40;
-            const DAILY_LIMIT = 8;
+            const contractHours = profile?.contracted_hours_weekly ?? 0;
+            const DAILY_LIMIT = contractHours > 0 ? (contractHours / 5) : 8; // Indicativo
             let totalWeekHoursRaw = 0;
 
             for (let i = 0; i < 7; i++) {

@@ -339,7 +339,7 @@ export default function HistoryPage() {
                 setPreferStock(profile.prefer_stock_hours || false);
             }
 
-            const contractHours = profile?.contracted_hours_weekly ?? 40;
+            const contractHours = profile?.contracted_hours_weekly ?? 0;
             const overtimeRate = profile?.overtime_cost_per_hour || 0;
             const isFixedSalary = profile?.is_fixed_salary || false;
             const isTargetManager = profile?.role === 'manager';
@@ -475,7 +475,7 @@ export default function HistoryPage() {
                     summaryTotalHours = weekTotalHours;
                     if (isAugust || isTargetManager || isFixedSalary) {
                         summaryWeeklyBalance = weekTotalHours;
-                        summaryTotalHours = 40 + weekTotalHours;
+                        summaryTotalHours = contractHours + weekTotalHours;
                     } else {
                         summaryWeeklyBalance = weekTotalHours - contractHours;
                     }
