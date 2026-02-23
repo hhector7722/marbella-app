@@ -82,11 +82,11 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 "bg-white rounded-xl shadow-sm transition-all flex flex-col h-full overflow-hidden",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-md" : "hover:shadow-md hover:-translate-y-0.5"
             )}>
-                <div className="p-1 sm:p-3 flex-1 flex flex-col justify-end">
-                    {/* Product Image Area (Compact Gallery Style) */}
-                    <div className="h-14 sm:h-24 w-full flex items-center justify-center mb-1 sm:mb-3 relative grayscale-[0.1] group-hover:grayscale-0 transition-all overflow-hidden">
+                <div className="p-1 sm:p-3 flex-1 flex flex-col min-h-0">
+                    {/* Product Image Area (Compact Gallery Style) - Centered vertically */}
+                    <div className="flex-1 w-full flex items-center justify-center min-h-0 relative grayscale-[0.1] group-hover:grayscale-0 transition-all overflow-hidden mb-1 sm:mb-2">
                         {ingredient.image_url ? (
-                            <img src={ingredient.image_url} className="w-full h-full object-contain p-0.5 sm:p-2" alt={ingredient.name} />
+                            <img src={ingredient.image_url} className="w-full h-full object-contain p-0.5 sm:p-1" alt={ingredient.name} />
                         ) : (
                             <Package className="text-gray-200 w-6 h-6 sm:w-10 sm:h-10" />
                         )}
@@ -97,16 +97,16 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         )}
                     </div>
 
-                    {/* Product Info */}
-                    <div className="flex flex-col px-0.5 mb-0 sm:mb-1">
-                        <span className="font-bold text-gray-800 text-[8px] sm:text-[11px] leading-[1.1] line-clamp-2 min-h-[1.1rem] sm:min-h-[2.2rem]" title={ingredient.name}>
+                    {/* Product Info - Positioned just above Footer */}
+                    <div className="px-0.5 mb-0 sm:mb-1 shrink-0">
+                        <span className="font-bold text-gray-800 text-[8px] sm:text-[11px] leading-[1.1] line-clamp-2" title={ingredient.name}>
                             {ingredient.name}
                         </span>
                     </div>
                 </div>
 
-                {/* Controls & Unit (Bottom Area) */}
-                <div className="bg-[#36606F] px-1 sm:px-3 py-2 flex flex-row items-center justify-center gap-0.5 sm:gap-1 shrink-0 shadow-inner w-full">
+                {/* Controls & Unit (Bottom Area) - Thinner and centered vertically */}
+                <div className="bg-[#36606F] px-1 sm:px-3 py-1.5 sm:py-2 flex flex-row items-center justify-center gap-0.5 sm:gap-1 shrink-0 shadow-inner w-full">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}

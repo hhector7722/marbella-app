@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, ChevronDown, Check, ArrowRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
@@ -245,10 +246,15 @@ export default function NewOrderPage() {
         if (!generatedBlob) return;
         const url = URL.createObjectURL(generatedBlob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = url;
-        a.download = `Pedido_${Date.now()}.pdf`;
+        a.download = `Pedido_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
     };
 
     const totalSelected = selectedItems.length;

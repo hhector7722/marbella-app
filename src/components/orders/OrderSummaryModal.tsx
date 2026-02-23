@@ -29,7 +29,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
             <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
                 {/* Header */}
                 <div className="bg-[#36606F] py-4 px-8 flex justify-between items-center shrink-0">
-                    <h2 className="text-xl font-black text-white uppercase tracking-widest">Resumen del Pedido</h2>
+                    <h2 className="text-xl font-black text-white uppercase tracking-widest">Pedido</h2>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                         <X className="text-white" size={24} />
                     </button>
@@ -75,11 +75,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                 </div>
 
                 {/* Footer / Totals */}
-                <div className="p-8 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
-                    <div className="flex flex-col items-center sm:items-start">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total de Líneas</span>
-                        <span className="text-3xl font-black text-[#36606F]">{items.length}</span>
-                    </div>
+                <div className="p-8 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-end gap-6 shrink-0">
 
                     <button
                         onClick={onConfirm}

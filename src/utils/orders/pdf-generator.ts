@@ -132,12 +132,12 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         headStyles: {
-            fillColor: [54, 96, 111], // #36606F
+            fillColor: null as any, // We will draw it manually in willDrawCell for rounding
             textColor: [255, 255, 255],
-            fontSize: 11, // Reduced to fit in one row
+            fontSize: 9, // Slimmer font
             fontStyle: 'bold',
             halign: 'center',
-            cellPadding: { top: 3.5, bottom: 3.5, left: 10, right: 10 } // Reduced height
+            cellPadding: { top: 2, bottom: 2, left: 10, right: 10 } // Slimmer height
         },
 
         columnStyles: {
@@ -147,7 +147,30 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         bodyStyles: {
-            fillColor: [255, 255, 255] // Force white background to avoid black rows
+            fillColor: [255, 255, 255]
+        },
+
+        willDrawCell: function (data) {
+            // Round top corners of the header
+            if (data.section === 'head' && data.row.index === 0) {
+                doc.setFillColor(54, 96, 111);
+                const radius = 8;
+                const x = data.cell.x;
+                const y = data.cell.y;
+                const w = data.cell.width;
+                const h = data.cell.height;
+
+                if (data.column.index === 0) {
+                    // Leftmost cell: round top-left
+                    doc.roundedRect(x, y, w, h + radius, radius, radius, 'F');
+                } else if (data.column.index === data.table.columns.length - 1) {
+                    // Rightmost cell: round top-right
+                    doc.roundedRect(x, y, w, h + radius, radius, radius, 'F');
+                } else {
+                    // Middle cells: just fill
+                    doc.rect(x - 0.2, y, w + 0.4, h + radius, 'F');
+                }
+            }
         },
 
         didDrawCell: function (data) {
