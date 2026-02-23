@@ -70,13 +70,9 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     // --------------------------------------------------------------------------
     let currentY = 15;
 
-    // Logo on the left (No more circle background, just the logo with a refined border)
+    // Logo on the left (Floating directly on white)
     if (logoImage) {
-        // Draw a refined blue ring to match the reference style
-        doc.setDrawColor(91, 143, 185); // #5B8FB9
-        doc.setLineWidth(1.5);
-        doc.circle(margin + 12, currentY + 12, 13, 'S');
-        doc.addImage(logoImage, 'PNG', margin + 3, currentY + 3, 18, 18);
+        doc.addImage(logoImage, 'PNG', margin, currentY, 24, 24);
     }
 
     // "Pedido" and Date on the right
@@ -138,10 +134,10 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         headStyles: {
             fillColor: [54, 96, 111], // #36606F
             textColor: [255, 255, 255],
-            fontSize: 14,
+            fontSize: 11, // Reduced to fit in one row
             fontStyle: 'bold',
             halign: 'center',
-            cellPadding: { top: 6, bottom: 6, left: 10, right: 10 }
+            cellPadding: { top: 3.5, bottom: 3.5, left: 10, right: 10 } // Reduced height
         },
 
         columnStyles: {
@@ -185,18 +181,18 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         margin: { left: margin, right: margin },
 
         didDrawPage: function (data_table) {
-            // DRAW THE ROUNDED CONTAINER BEHIND THE TABLE
-            // We use the finalY to know where it ended
             const tableWidth = pageWidth - (margin * 2);
             const tableHeight = data_table.cursor!.y - startTableY;
 
-            // Draw a rounded shadow border for the whole table area
+            // DRAW SHADOWED OUTLINE
+            // We draw multiple layers with increasing thickness and lighter colors to simulate a shadow
+            doc.setDrawColor(240, 240, 240);
+            doc.setLineWidth(1);
+            doc.roundedRect(margin - 0.5, startTableY - 0.5, tableWidth + 1, tableHeight + 1, 8, 8, 'S');
+
             doc.setDrawColor(220, 220, 220);
             doc.setLineWidth(0.4);
             doc.roundedRect(margin, startTableY, tableWidth, tableHeight, 8, 8, 'S');
-
-            // Draw the header rounded background again to overlay corners if needed, 
-            // but the header is already styled.
         }
     });
 
