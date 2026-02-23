@@ -120,7 +120,7 @@ export default function StaffDashboard() {
             setUserId(user.id);
 
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role')
+                .select('first_name, role, contracted_hours_weekly')
                 .eq('id', user.id)
                 .single();
 
@@ -176,8 +176,9 @@ export default function StaffDashboard() {
             });
 
             const daysStructure: DailyLog[] = [];
+            const contractHours = profile?.contracted_hours_weekly ?? 0;
+            const DAILY_LIMIT = contractHours > 0 ? (contractHours / 5) : 8; // Indicativo
             let totalWeekHoursRaw = 0;
-            const DAILY_LIMIT = 8;
 
             for (let i = 0; i < 7; i++) {
                 const currentDay = new Date(mondayDate); currentDay.setDate(mondayDate.getDate() + i);
