@@ -69,6 +69,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     // 1. LOGO & TITLE/DATE (Top Row)
     // --------------------------------------------------------------------------
     let currentY = 15;
+    const SPACING = 5;
 
     // Logo on the left (Floating directly on white)
     if (logoImage) {
@@ -87,34 +88,44 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     doc.setTextColor(100, 100, 100);
     doc.text(formattedDate, pageWidth - margin, currentY + 22, { align: 'right' });
 
+    // Dynamic Y calculation after Title/Date block
+    currentY += 32;
+
     // --------------------------------------------------------------------------
     // 2. COMPANY INFO (Supplier)
     // --------------------------------------------------------------------------
-    currentY = 60;
     const infoX = margin;
 
     doc.setTextColor(54, 96, 111); // Dark Teal
-    doc.setFontSize(20);
+    doc.setFontSize(18); // Slightly smaller for better fit
     doc.setFont('helvetica', 'bold');
-    doc.text(COMPANY_INFO.name, infoX, currentY);
 
-    currentY += 8;
-    doc.setFontSize(10);
+    // Draw Name and get its height
+    doc.text(COMPANY_INFO.name, infoX, currentY);
+    const nameDim = doc.getTextDimensions(COMPANY_INFO.name);
+    currentY += nameDim.h / 2 + 3;
+
+    doc.setFontSize(9); // Leaner fonts
     doc.setTextColor(110, 110, 110);
     doc.setFont('helvetica', 'normal');
-    doc.text(COMPANY_INFO.nif, infoX, currentY);
 
-    currentY += 5;
-    doc.text(COMPANY_INFO.address, infoX, currentY);
-    currentY += 5;
-    doc.text(COMPANY_INFO.phone, infoX, currentY);
-    currentY += 5;
-    doc.text(COMPANY_INFO.email, infoX, currentY);
+    const infoLines = [
+        COMPANY_INFO.nif,
+        COMPANY_INFO.address,
+        COMPANY_INFO.phone,
+        COMPANY_INFO.email
+    ];
+
+    infoLines.forEach(line => {
+        doc.text(line, infoX, currentY);
+        const dim = doc.getTextDimensions(line);
+        currentY += dim.h + 1.2; // Minimal line height
+    });
 
     // --------------------------------------------------------------------------
     // 3. TABLE (Bento Grid Design)
     // --------------------------------------------------------------------------
-    const startTableY = 105;
+    const startTableY = currentY + 6; // Compact gap before table
 
     autoTable(doc, {
         startY: startTableY,

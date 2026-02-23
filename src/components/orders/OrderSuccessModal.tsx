@@ -79,7 +79,7 @@ export function OrderSuccessModal({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[80] p-4 lg:p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-[340px] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col pointer-events-auto max-h-[90vh]">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-[320px] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col pointer-events-auto max-h-[92vh]">
 
                 {/* Header */}
                 <div className="bg-[#36606F] py-5 px-6 flex flex-col items-center justify-center text-center relative shrink-0">
@@ -89,12 +89,12 @@ export function OrderSuccessModal({
                 {/* Body */}
                 <div className="p-5 flex flex-col gap-4 overflow-y-auto">
 
-                    {/* PDF PREVIEW MINIATURE (Floating, White, No Frame) */}
-                    <div className="relative bg-white rounded-2xl overflow-hidden aspect-[3/4.2] group mx-2">
+                    {/* PDF PREVIEW MINIATURE (A4 Aspect Ratio: 1 / 1.414) */}
+                    <div className="relative bg-white rounded-2xl overflow-hidden aspect-[1/1.414] group mx-1 shadow-sm border border-zinc-100">
                         {previewUrl ? (
                             <iframe
                                 src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                                className="w-full h-full pointer-events-none scale-[1.01] origin-top"
+                                className="w-full h-full pointer-events-none origin-top"
                                 title="PREVIEW"
                             />
                         ) : (
@@ -106,8 +106,8 @@ export function OrderSuccessModal({
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none"></div>
                     </div>
 
-                    {/* Actions Row (All 3 in one row) */}
-                    <div className="grid grid-cols-3 gap-2 mt-2 px-1">
+                    {/* Actions Row */}
+                    <div className="grid grid-cols-3 gap-2 mt-1">
                         <button
                             onClick={onDownload}
                             disabled={isUploading || !generatedBlob}
@@ -148,7 +148,7 @@ export function OrderSuccessModal({
                     {/* Main Action */}
                     <button
                         onClick={onClose}
-                        className="w-full h-12 bg-[#5E35B1] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-100 hover:bg-[#4d2c91] active:scale-95 transition-all flex items-center justify-center gap-3 shrink-0 mt-2"
+                        className="w-full h-11 bg-[#5E35B1] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-100 hover:bg-[#4d2c91] active:scale-95 transition-all flex items-center justify-center gap-3 shrink-0"
                     >
                         <span>Volver al Inicio</span>
                         <ArrowRight size={16} />
