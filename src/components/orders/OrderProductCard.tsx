@@ -106,7 +106,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Controls & Unit (Bottom Area) */}
-                <div className="bg-[#36606F] px-2 sm:px-3 py-2 flex flex-row items-center justify-between gap-1 shrink-0 shadow-inner w-full">
+                <div className="bg-[#36606F] px-1 sm:px-3 py-2 flex flex-row items-center justify-center gap-0.5 sm:gap-1 shrink-0 shadow-inner w-full">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
@@ -123,7 +123,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             setQuantity(isNaN(val) ? 0 : Math.max(0, val));
                         }}
                         placeholder="0"
-                        className="w-6 sm:w-10 bg-transparent text-center font-black text-xs sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-5 sm:w-10 bg-transparent text-center font-black text-[11px] sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
 
                     {isCustomUnit ? (
