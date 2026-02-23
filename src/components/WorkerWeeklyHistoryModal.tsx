@@ -169,7 +169,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                         finalBalance: rpcStaff.overtimeHours,
                         isPaid: rpcStaff.isPaid,
                         contractedHours: effContractForGrid,
-                        startBalance: 0
+                        startBalance: rpcStaff.pendingBalance
                     }
                 });
                 setTempContractHours(effContractForGrid);
