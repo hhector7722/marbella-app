@@ -82,9 +82,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 "bg-white rounded-xl shadow-sm transition-all flex flex-col h-full overflow-hidden",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-md" : "hover:shadow-md hover:-translate-y-0.5"
             )}>
-                <div className="p-1 sm:p-3 flex-1 flex flex-col">
+                <div className="p-1 sm:p-3 flex-1 flex flex-col justify-end">
                     {/* Product Image Area (Compact Gallery Style) */}
-                    <div className="h-14 sm:h-24 w-full flex items-center justify-center mb-0.5 sm:mb-3 relative grayscale-[0.1] group-hover:grayscale-0 transition-all overflow-hidden">
+                    <div className="h-14 sm:h-24 w-full flex items-center justify-center mb-1 sm:mb-3 relative grayscale-[0.1] group-hover:grayscale-0 transition-all overflow-hidden">
                         {ingredient.image_url ? (
                             <img src={ingredient.image_url} className="w-full h-full object-contain p-0.5 sm:p-2" alt={ingredient.name} />
                         ) : (
@@ -98,7 +98,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex flex-col px-0.5 mb-0.5 sm:mb-2 mt-auto">
+                    <div className="flex flex-col px-0.5 mb-0 sm:mb-1">
                         <span className="font-bold text-gray-800 text-[8px] sm:text-[11px] leading-[1.1] line-clamp-2 min-h-[1.1rem] sm:min-h-[2.2rem]" title={ingredient.name}>
                             {ingredient.name}
                         </span>
@@ -106,11 +106,11 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Controls & Unit (Bottom Area) */}
-                <div className="bg-[#36606F] p-1.5 sm:p-2 flex flex-row items-center justify-start gap-1 shrink-0 shadow-inner w-full">
+                <div className="bg-[#36606F] px-2 sm:px-3 py-2 flex flex-row items-center justify-between gap-1 shrink-0 shadow-inner w-full">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
-                        className="w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0"
+                        className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0"
                     >
                         <Minus size={14} strokeWidth={3} className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
@@ -123,7 +123,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             setQuantity(isNaN(val) ? 0 : Math.max(0, val));
                         }}
                         placeholder="0"
-                        className="w-5 sm:w-10 bg-transparent text-center font-black text-xs sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-6 sm:w-10 bg-transparent text-center font-black text-xs sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
 
                     {isCustomUnit ? (
@@ -133,12 +133,12 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                                 value={customUnit}
                                 onChange={(e) => setCustomUnit(e.target.value)}
                                 placeholder="?"
-                                className="w-7 sm:w-12 text-[7px] sm:text-[10px] font-bold uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
+                                className="w-8 sm:w-12 text-[7px] sm:text-[10px] font-black uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
                                 autoFocus
                             />
                             <button
                                 onClick={() => setIsCustomUnit(false)}
-                                className="text-[7px] sm:text-[10px] text-white/50 hover:text-white font-bold ml-0.5 sm:ml-1 shrink-0 p-0.5"
+                                className="text-[7px] sm:text-[10px] text-white/50 hover:text-white font-black ml-0.5 sm:ml-1 shrink-0 p-0.5"
                             >
                                 ✕
                             </button>
@@ -153,7 +153,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                                     setUnit(e.target.value);
                                 }
                             }}
-                            className="w-auto text-left text-[7px] sm:text-[10px] font-black uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
+                            className="w-auto text-center text-[7px] sm:text-[10px] font-black uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
                         >
                             {unitOptions.map(opt => (
                                 <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
@@ -161,14 +161,12 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         </select>
                     )}
 
-                    <div className="ml-auto sm:ml-0 flex items-center">
-                        <button
-                            onClick={handleIncrement}
-                            className="w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0"
-                        >
-                            <Plus size={14} strokeWidth={3} className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleIncrement}
+                        className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0"
+                    >
+                        <Plus size={14} strokeWidth={3} className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </button>
                 </div>
 
                 {quantity > 0 && (
