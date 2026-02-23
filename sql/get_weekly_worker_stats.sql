@@ -37,14 +37,14 @@ BEGIN
             p.role,
             p.overtime_cost_per_hour as over_price,
             p.prefer_stock_hours as prefer_stock,
-            COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0) as limit_hours,
+            COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 40) as limit_hours,
             wl.week_logs_sum,
             COALESCE(s.is_paid, false) as is_paid,
             -- Lógica de Balance Semanal (Espejo de fn_recalc_and_propagate_snapshots)
             CASE 
                 WHEN extract(month from wl.week_start) = 8 OR p.role = 'manager' OR p.is_fixed_salary = true 
                 THEN wl.week_logs_sum 
-                ELSE (wl.week_logs_sum - COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0))
+                ELSE (wl.week_logs_sum - COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 40))
             END as weekly_balance,
             COALESCE(s.pending_balance, 0) as pending_balance,
             COALESCE(s.final_balance, 0) as final_balance

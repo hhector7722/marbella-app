@@ -75,7 +75,7 @@ export async function getDashboardData() {
         userDayHours.forEach((hours, userId) => {
             const profile = profileMap.get(userId);
             if (profile) {
-                const dailyContracted = (profile.contracted_hours_weekly ?? 0) / 5;
+                const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
                 const regPrice = profile.regular_cost_per_hour || 0;
                 const overPrice = profile.overtime_cost_per_hour || regPrice;
 
@@ -96,7 +96,7 @@ export async function getDashboardData() {
 
         allProfiles?.forEach((profile: any) => {
             if (profile.role === 'manager' && !countedManagers.has(profile.id)) {
-                const dailyContracted = (profile.contracted_hours_weekly ?? 0) / 5;
+                const dailyContracted = (profile.contracted_hours_weekly ?? 40) / 5;
                 const regPrice = profile.regular_cost_per_hour || 0;
                 laborCost += dailyContracted * regPrice;
             }

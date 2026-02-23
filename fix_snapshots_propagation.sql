@@ -84,7 +84,7 @@ BEGIN
     INTO v_current_contracted_hours, v_prefer_stock, v_is_fixed_salary, v_role
     FROM public.profiles WHERE id = p_user_id;
 
-    v_current_contracted_hours := COALESCE(v_current_contracted_hours, 0);
+    v_current_contracted_hours := COALESCE(v_current_contracted_hours, 40);
     v_prefer_stock := COALESCE(v_prefer_stock, false);
     v_role := COALESCE(v_role, 'staff');
 

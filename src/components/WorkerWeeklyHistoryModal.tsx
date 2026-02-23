@@ -123,7 +123,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             // Note: rpcData has the SSOT contracted hours etc but for the GRID we might need the weekly one
             const rpcWeek = rpcData?.weeksResult?.[0];
             const rpcStaff = rpcWeek?.staff?.[0];
-            const effContractForGrid = rpcStaff?.contracted_hours_weekly ?? 0;
+            const effContractForGrid = rpcStaff?.contracted_hours_weekly ?? 40;
 
             for (let i = 0; i < 7; i++) {
                 const d = addDays(mondayDate, i);
