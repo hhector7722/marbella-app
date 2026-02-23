@@ -308,12 +308,12 @@ export const CashDenominationForm = ({
                 </button>
                 <button
                     onClick={handleConfirm}
-                    disabled={isPurchaseMode ? !canSubmitPurchase : (!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => (qty as number) > (availableStock[Number(denom)] || 0)))}
+                    disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
                     className={cn(
                         "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
                         isPurchaseMode
                             ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                            : ((!isEditing && type === 'out' && Object.entries(counts).some(([denom, qty]) => (qty as number) > (availableStock[Number(denom)] || 0)))
+                            : ((totalGiven <= 0)
                                 ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
                                 : bgClass + " hover:brightness-110 shadow-emerald-200")
                     )}

@@ -181,7 +181,10 @@ export default function MovementsPage() {
 
     const handleCashTransaction = async (total: number, breakdown: any, notes: string, customDate?: string) => {
         try {
-            if (!boxData) return;
+            if (!boxData) {
+                toast.error("Error: Datos de caja no cargados");
+                return;
+            }
 
             const payload: any = {
                 box_id: boxData.id,
@@ -197,7 +200,9 @@ export default function MovementsPage() {
                 payload.created_at = selectedDate;
             }
 
-            await supabase.from('treasury_log').insert(payload);
+            const { error } = await supabase.from('treasury_log').insert(payload);
+
+            if (error) throw error;
 
             setCashModalMode('none');
             fetchMovements();
