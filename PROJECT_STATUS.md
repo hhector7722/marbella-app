@@ -1,9 +1,9 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-23 (Audit Horas SSOT Completo)
+**Última actualización:** 2026-02-23 (Audit Horas SSOT & Defaults 0h Finalizado)
 
 ## 📌 ESTADO GENERAL
-El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se ha integrado un sistema de reglas (`.agent`) para garantizar la calidad arquitectónica y la coherencia en la lógica de negocio (especialmente en nóminas y costes).
+El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el principio de "Single Source of Truth" (SSOT) en PostgreSQL, garantizando que el redondeo (20/50), la agregación semanal y los arrastres asimétricos sean consistentes en todos los dashboards. Además, se han establecido defaults de seguridad (0h de contrato y NO acumulación) para perfiles incompletos.
 
 ---
 
@@ -83,6 +83,7 @@ El proyecto ha evolucionado de una versión inicial a "Bar Marbella Clean". Se h
 - [x] **Corrección Radical Inconsistencia de Horas (SSOT Deep Audit)**: Unificación total de la lógica de horas. Se han refactorizado el Dashboard de Administrador, Dashboard de Staff, Modal de Historial Semanal y página de Costes Laborales para consumir exclusivamente la RPC `get_weekly_worker_stats` o aplicar `fn_round_marbella_hours`. Eliminadas discrepancias matemáticas entre frontend y backend.
 - [x] **ISO-8601 & UTC Compliance**: Estandarización de fronteras semanales en UTC para evitar saltos de día/semana según la zona horaria del servidor/cliente.
 - [x] **Consistencia Temporal UTC**: Implementación de utilidades de fecha en `date-utils.ts` para asegurar que el frontend y el backend operen bajo el mismo estándar de fronteras semanales.
+- [x] **Implementación de Defaults Estrictos**: Configuración del sistema para asumir 0h de contrato y NO acumulación por defecto si no hay datos. Recálculo masivo de la cadena de balances Ene 2024 - Hoy finalizado.
 - [x] **Corrección de Transición Swipe Mobile**: Inversión del orden espacial en `DashboardSwitcher.tsx` (Panel Administrativo a la izquierda, Panel Staff a la derecha). Esto soluciona la resistencia de rebote y permite que deslizar hacia la derecha desde Staff vuelva a Administración de manera 100% fluida, coincidiendo con la heurística nativa de iOS "Atrás".
 
 - [x] **Rediseño Tarjeta Horas Extras**: Eliminación del relleno verde y borde lila, implementando fondos blancos flotantes con sombra y rediseño de marcadores (icono unificado ! rojo/blanco y tick esmeralda) tanto en Dashboard Admin como en /overtime.
