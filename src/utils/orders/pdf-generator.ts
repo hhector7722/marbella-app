@@ -137,13 +137,13 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const tableStartY = Math.max(finalHeaderY, 45) + 15;
 
     // --------------------------------------------------------------------------
-    // 2. TABLE (Clean Native Design)
+    // 2. TABLE (Strict Geometric Design)
     // --------------------------------------------------------------------------
     autoTable(doc, {
         startY: tableStartY,
         head: [['Producto', 'Cantidad', 'Unidad']],
         body: data.items.map(item => [item.name, item.quantity, item.unit]),
-        theme: 'plain',
+        theme: 'plain', // No internal borders
 
         styles: {
             font: 'helvetica',
@@ -155,14 +155,13 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         headStyles: {
-            fillColor: [56, 94, 102], // Petroleum #385E66
-            textColor: [255, 255, 255], // White
+            fillColor: false as any, // Background drawn manually in willDrawCell
+            textColor: [255, 255, 255],
             fontSize: 9,
             fontStyle: 'bold',
             halign: 'center',
             valign: 'middle',
-            minCellHeight: 8, // Ultra-slim
-            cellPadding: { top: 1, bottom: 1, left: 10, right: 10 }
+            minCellHeight: 10
         },
 
         columnStyles: {
@@ -173,6 +172,23 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         bodyStyles: {
             fillColor: [255, 255, 255]
+        },
+
+        willDrawCell: function (data) {
+            // UNIFIED HEADER HACK (v10.0)
+            if (data.section === 'head' && data.row.index === 0 && data.column.index === 0) {
+                const doc = data.doc;
+                const x = data.cell.x;
+                const y = data.cell.y;
+                const w = doc.internal.pageSize.getWidth() - (20 * 2); // pageWidth - margin*2
+                const h = data.cell.height;
+                const r = 4; // Border radius
+
+                doc.setFillColor(56, 94, 102); // Petroleum #385E66
+                // Draw a rounded rect for the whole width. 
+                // Hack: +5mm height to hide bottom rounding under body rows.
+                doc.roundedRect(x, y, w, h + 5, r, r, 'F');
+            }
         },
 
         didDrawCell: function (data) {
@@ -203,7 +219,21 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
             }
         },
 
-        margin: { left: margin, right: margin }
+        margin: { left: margin, right: margin },
+
+        didDrawPage: function (data) {
+            // CONTINUOUS PERIMETER FRAME
+            const startX = data.settings.margin.left;
+            const startY = data.settings.startY;
+            const w = doc.internal.pageSize.getWidth() - (startX * 2);
+            const h = (data.cursor?.y || startY) - startY;
+
+            if (h > 0) {
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.5);
+                doc.roundedRect(startX, startY, w, h, 4, 4, 'D');
+            }
+        }
     });
 
     console.log("PDF GENERATOR V9.0: Cleanup Complete");
