@@ -358,48 +358,53 @@ export default function RegistrosPage() {
 
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-8 overflow-hidden text-gray-800">
-            {/* --- CABECERA SUPERIOR (Navegación Mes / Selector Trabajador) --- */}
-            <div className="mb-6 flex flex-col gap-4">
-                <div className="flex items-center justify-between gap-4">
-                    {/* Navegación Mes */}
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={prevMonth}
-                            className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all active:scale-90 shadow-lg backdrop-blur-sm border border-white/10"
-                        >
-                            <ChevronLeft size={20} strokeWidth={3} />
-                        </button>
+            {/* --- CABECERA SUPERIOR (Navegación Mes / Selector Trabajador / Vistas) --- */}
+            <div className="mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
 
-                        <div className="relative">
-                            <div className="bg-white/20 px-6 py-2 rounded-2xl border border-white/20 backdrop-blur-md">
-                                <h1
-                                    onClick={() => setShowMonthPicker(!showMonthPicker)}
-                                    className="text-[10px] font-black text-white uppercase tracking-[0.2em] min-w-[120px] text-center cursor-pointer hover:text-white/80 transition-colors select-none italic"
-                                >
-                                    {format(currentDate, 'MMMM yyyy', { locale: es })}
-                                </h1>
-                            </div>
-                        </div>
+                {/* 1. Navegación Mes */}
+                <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all active:scale-90 shadow-lg backdrop-blur-sm border border-white/10 shrink-0">
+                        <ChevronLeft size={20} strokeWidth={3} />
+                    </button>
+                    <div className="bg-white/20 px-4 py-2 rounded-2xl border border-white/20 backdrop-blur-md flex-1 text-center md:flex-none">
+                        <h1 onClick={() => setShowMonthPicker(!showMonthPicker)} className="text-[10px] font-black text-white uppercase tracking-[0.2em] min-w-[100px] cursor-pointer hover:text-white/80 transition-colors select-none italic">
+                            {format(currentDate, 'MMMM yyyy', { locale: es })}
+                        </h1>
+                    </div>
+                    <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all active:scale-90 shadow-lg backdrop-blur-sm border border-white/10 shrink-0">
+                        <ChevronRight size={20} strokeWidth={3} />
+                    </button>
+                </div>
 
-                        <button
-                            onClick={nextMonth}
-                            className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all active:scale-90 shadow-lg backdrop-blur-sm border border-white/10"
+                {/* 2. Filtro Empleado + Switch de Vista (Misma Fila en móvil) */}
+                <div className="flex items-center gap-2 w-full md:w-auto">
+
+                    {/* Buscador Trabajador Compacto */}
+                    <div className="flex-1 min-w-0 flex items-center gap-2 bg-white/10 pl-3 pr-2 py-1.5 md:py-2 rounded-xl backdrop-blur-sm border border-white/10 h-10">
+                        <Filter size={14} className="text-white/40 shrink-0" />
+                        <select
+                            value={selectedWorkerId}
+                            onChange={(e) => setSelectedWorkerId(e.target.value)}
+                            className="bg-transparent text-white font-bold text-xs md:text-sm focus:outline-none cursor-pointer w-full truncate [&>option]:text-gray-800"
                         >
-                            <ChevronRight size={20} strokeWidth={3} />
-                        </button>
+                            <option value="">Empleado...</option>
+                            {employees.map(emp => (
+                                <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
+                            ))}
+                        </select>
                     </div>
 
-                    {/* Switch de Modo de Vista */}
-                    <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10 shadow-inner">
+                    {/* Switch Vistas Compacto */}
+                    <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10 shadow-inner h-10 shrink-0">
                         <button
                             onClick={() => setViewMode('calendar')}
                             className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                "flex items-center gap-1.5 px-3 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all",
                                 viewMode === 'calendar' ? "bg-white text-[#5B8FB9] shadow-md" : "text-white/60 hover:text-white"
                             )}
                         >
                             <LayoutGrid size={14} />
-                            Calendario
+                            <span className="hidden sm:inline">Calendario</span>
                         </button>
                         <button
                             onClick={() => {
@@ -407,53 +412,31 @@ export default function RegistrosPage() {
                                 if (!selectedWorkerId && employees.length > 0) setSelectedWorkerId(employees[0].id);
                             }}
                             className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                "flex items-center gap-1.5 px-3 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all",
                                 viewMode === 'agile' ? "bg-white text-[#5B8FB9] shadow-md" : "text-white/60 hover:text-white"
                             )}
                         >
                             <CalendarIcon size={14} />
-                            Gestión Ágil
+                            Editar
                         </button>
                     </div>
                 </div>
-
-                {/* Sub-Header: Selector de Trabajador (Solo visible en Modo Ágil o como filtro) */}
-                <div className="flex items-center gap-4 bg-white/10 p-2 rounded-2xl backdrop-blur-sm border border-white/10">
-                    <div className="flex-1 flex items-center gap-3 px-3">
-                        <Filter size={16} className="text-white/40" />
-                        <select
-                            value={selectedWorkerId}
-                            onChange={(e) => setSelectedWorkerId(e.target.value)}
-                            className="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer w-full [&>option]:text-gray-800"
-                        >
-                            <option value="">Filtrar trabajador...</option>
-                            {employees.map(emp => (
-                                <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {viewMode === 'agile' && selectedWorkerId && (
-                        <div className="flex items-center gap-2 pr-2">
-                            <button
-                                onClick={() => setAgileWeekStart(prev => startOfWeek(subWeeks(prev, 1), { weekStartsOn: 1 }))}
-                                className="p-2 text-white/60 hover:text-white"
-                            >
-                                <ChevronLeft size={18} />
-                            </button>
-                            <span className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full whitespace-nowrap">
-                                Sem. {format(agileWeekStart, 'd MMM', { locale: es })}
-                            </span>
-                            <button
-                                onClick={() => setAgileWeekStart(prev => startOfWeek(addWeeks(prev, 1), { weekStartsOn: 1 }))}
-                                className="p-2 text-white/60 hover:text-white"
-                            >
-                                <ChevronRight size={18} />
-                            </button>
-                        </div>
-                    )}
-                </div>
             </div>
+
+            {/* Sub-Header Paginación Semanal (Solo modo Editar) */}
+            {viewMode === 'agile' && selectedWorkerId && (
+                <div className="mb-4 flex items-center justify-end gap-2 bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10 w-fit ml-auto">
+                    <button onClick={() => setAgileWeekStart(prev => startOfWeek(subWeeks(prev, 1), { weekStartsOn: 1 }))} className="p-1 text-white/60 hover:text-white">
+                        <ChevronLeft size={16} />
+                    </button>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full whitespace-nowrap">
+                        Sem. {format(agileWeekStart, 'd MMM', { locale: es })}
+                    </span>
+                    <button onClick={() => setAgileWeekStart(prev => startOfWeek(addWeeks(prev, 1), { weekStartsOn: 1 }))} className="p-1 text-white/60 hover:text-white">
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            )}
 
             {/* --- CONTENIDO PRINCIPAL --- */}
             <div className={cn(
@@ -727,7 +710,7 @@ export default function RegistrosPage() {
                         </div>
                     </div>
                 )}
-            </div>
+            </div >
 
             {/* MODAL ANTIGUO (Se mantiene solo para cuando haces click en el calendario) */}
             {
