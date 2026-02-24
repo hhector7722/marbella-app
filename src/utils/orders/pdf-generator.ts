@@ -156,12 +156,13 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         headStyles: {
-            fillColor: null as any, // We will draw it manually in willDrawCell for rounding
+            fillColor: false as any, // We draw the background manually
             textColor: [255, 255, 255],
             fontSize: 9,
             fontStyle: 'bold',
             halign: 'center',
-            cellPadding: { top: 2, bottom: 2, left: 10, right: 10 }
+            valign: 'middle',
+            minCellHeight: 12 // Reduced height
         },
 
         columnStyles: {
@@ -175,24 +176,23 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         willDrawCell: function (data) {
-            // Round top corners of the header
+            // UNIFIED BACKGROUND HACK (image_5.png spec)
             if (data.section === 'head' && data.row.index === 0) {
-                doc.setFillColor(54, 96, 111);
-                const radius = 8;
-                const x = data.cell.x;
-                const y = data.cell.y;
-                const w = data.cell.width;
-                const h = data.cell.height;
-
+                // Only draw once in the first column for the entire row width
                 if (data.column.index === 0) {
-                    // Leftmost cell: round top-left
-                    doc.roundedRect(x, y, w, h + radius, radius, radius, 'F');
-                } else if (data.column.index === data.table.columns.length - 1) {
-                    // Rightmost cell: round top-right
-                    doc.roundedRect(x, y, w, h + radius, radius, radius, 'F');
-                } else {
-                    // Middle cells: just fill
-                    doc.rect(x - 0.2, y, w + 0.4, h + radius, 'F');
+                    const doc = data.doc;
+                    const x = data.cell.x;
+                    const y = data.cell.y;
+                    const w = doc.internal.pageSize.getWidth() - (20 * 2); // pageWidth - margin*2
+                    const h = data.cell.height;
+                    const r = 4; // Borde radius
+
+                    doc.setFillColor(56, 94, 102); // #385E66
+
+                    // 1. Rectangle with 4 rounded corners
+                    doc.roundedRect(x, y, w, h, r, r, 'F');
+                    // 2. Square rectangle at bottom half to flatten the bottom curves
+                    doc.rect(x, y + (h / 2), w, h / 2, 'F');
                 }
             }
         },
