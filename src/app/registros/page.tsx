@@ -525,6 +525,7 @@ export default function RegistrosPage() {
                                                 return (
                                                     <div
                                                         key={log.id}
+                                                        title={eventConfig?.label || 'Regular'}
                                                         className={cn(
                                                             "w-full flex items-center justify-between rounded-md border p-0.5 sm:p-1 min-w-0 mb-0.5",
                                                             log.event_type !== 'regular'
@@ -537,7 +538,7 @@ export default function RegistrosPage() {
                                                                 "text-[7px] sm:text-[8px] font-black uppercase truncate",
                                                                 log.event_type !== 'regular' ? "text-gray-500" : (log.clock_out ? "text-emerald-700" : "text-rose-700")
                                                             )}>
-                                                                {log.event_type !== 'regular' ? (eventConfig?.initial || '?') : initials || '?'}
+                                                                {initials || '?'}
                                                             </span>
                                                         </div>
                                                         <div className="flex flex-col items-end shrink-0">
