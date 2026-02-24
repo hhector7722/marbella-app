@@ -47,9 +47,11 @@ interface WorkerWeeklyHistoryModalProps {
 }
 
 // --- VISUAL HELPERS ---
-const formatNumber = (val: number) => {
-    if (Math.abs(val) < 0.1) return ' ';
-    const rounded = Math.round(val * 2) / 2;
+const formatNumber = (val: number | undefined | null) => {
+    if (val === undefined || val === null || isNaN(Number(val))) return ' ';
+    const n = Number(val);
+    if (Math.abs(n) < 0.1) return ' ';
+    const rounded = Math.round(n * 2) / 2;
     return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
 };
 const formatValue = (val: number) => formatNumber(val);
@@ -160,16 +162,13 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                     endDate: sundayDate,
                     days: weekDays,
                     summary: {
-                        totalHours: rpcStaff.totalHours,
-                        weeklyBalance: rpcStaff.overtimeHours, // En este contexto, lo extra de la semana es el balance semanal
-                        estimatedValue: rpcStaff.totalCost,
-                        // Nota: La RPC devuelve totalCost y overtimeCost pero no el "pending_balance" de los snapshots explícitamente en el retorno de staff?
-                        // Ah, la RPC calcula FinalBalance = Pending + Weekly. El 'totalCost' es FinalBalance * Rate.
-                        // Usaremos los campos de rpcStaff para ser coherentes con el dash.
-                        finalBalance: rpcStaff.overtimeHours,
-                        isPaid: rpcStaff.isPaid,
-                        contractedHours: effContractForGrid,
-                        startBalance: rpcStaff.pendingBalance
+                        totalHours: rpcStaff.totalHours ?? 0,
+                        weeklyBalance: rpcStaff.overtimeHours ?? 0,
+                        estimatedValue: rpcStaff.totalCost ?? 0,
+                        finalBalance: rpcStaff.overtimeHours ?? 0,
+                        isPaid: rpcStaff.isPaid ?? false,
+                        contractedHours: effContractForGrid ?? 0,
+                        startBalance: rpcStaff.pendingBalance ?? 0
                     }
                 });
                 setTempContractHours(effContractForGrid);

@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-23 (Audit Horas SSOT & Defaults 0h Finalizado)
+**Última actualización:** 2026-02-24 (Resolución Definitiva: Deudas Fantasma & Tenure-Aware Sync)
 
 ## 📌 ESTADO GENERAL
 El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el principio de "Single Source of Truth" (SSOT) en PostgreSQL, garantizando que el redondeo (20/50), la agregación semanal y los arrastres asimétricos sean consistentes en todos los dashboards. Además, se han establecido defaults de seguridad (0h de contrato y NO acumulación) para perfiles incompletos.
@@ -85,6 +85,8 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] **Consistencia Temporal UTC**: Implementación de utilidades de fecha en `date-utils.ts` para asegurar que el frontend y el backend operen bajo el mismo estándar de fronteras semanales.
 - [x] **Implementación de Defaults Estrictos**: Configuración del sistema para asumir 0h de contrato y NO acumulación por defecto si no hay datos. Recálculo masivo de la cadena de balances Ene 2024 - Hoy finalizado.
 - [x] **Corrección de Transición Swipe Mobile**: Inversión del orden espacial en `DashboardSwitcher.tsx` (Panel Administrativo a la izquierda, Panel Staff a la derecha). Esto soluciona la resistencia de rebote y permite que deslizar hacia la derecha desde Staff vuelva a Administración de manera 100% fluida, coincidiendo con la heurística nativa de iOS "Atrás".
+- [x] **Resolución Definitiva de Deudas Fantasma**: Implementación de lógica Tenure-Aware que detecta automáticamente el primer fichaje del trabajador. Limpieza quirúrgica de snapshots previos y recálculo masivo secuencial de toda la plantilla finalizado.
+- [x] **Hardenización de Historial (No More NaN)**: Implementación de fallbacks numéricos en el frontend para garantizar una UI limpia y libre de errores matemáticos incluso con datos históricos incompletos.
 
 - [x] **Rediseño Tarjeta Horas Extras**: Eliminación del relleno verde y borde lila, implementando fondos blancos flotantes con sombra y rediseño de marcadores (icono unificado ! rojo/blanco y tick esmeralda) tanto en Dashboard Admin como en /overtime.
 - [x] **Igualación Calendario/Escritorio (Historial)**: Adaptación exacta de proporciones en tarjetas de calendario (4 columnas), suprimiendo textos y asegurando legibilidad completa de números en móvil mediante diseño fluido extremo.
