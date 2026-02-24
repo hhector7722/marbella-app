@@ -105,6 +105,7 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] 📄 **Refinamiento Flujo de Pedidos (FINAL)**: Pulido estético integral. Modal de resumen ultra-limpio, éxito compacto y PDF refinado.
 - [x] 💾 **Persistencia y Control de Pedidos**: Implementación de unidades preferidas autoguardables e independientes de la cantidad. Borradores persistentes por usuario que permiten pausar y reanudar pedidos. Añadido botón "Borrar Pedido" y limpieza automática de borrador por proveedor tras finalizar el pedido.
 - [x] 📦 **Modal de Productos Staff**: Implementación de un modal intermedio en el panel de staff y barra de navegación que unifica el acceso a Pedidos, Inventario, Stock y Proveedores, eliminando opciones irrelevantes (Recetas/Ingredientes) para el perfil operativo.
+- [x] 🚀 **Sincronización Git**: Subida de la versión actual a la rama `main` con las últimas mejoras de UI y lógica de pedidos.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE
