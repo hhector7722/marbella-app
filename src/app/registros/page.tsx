@@ -287,8 +287,8 @@ export default function RegistrosPage() {
 
         // Si cambia a un tipo especial, forzamos valores por defecto
         if (field === 'event_type' && value !== 'regular') {
-            newLogs[index].in_time = '';
-            newLogs[index].out_time = '';
+            newLogs[index].in_time = '09:00';
+            newLogs[index].out_time = '17:00';
         }
 
         setModalLogs(newLogs);
@@ -671,7 +671,10 @@ export default function RegistrosPage() {
                                                         type="time"
                                                         value={log.in_time}
                                                         onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
-                                                        className="w-full bg-transparent font-mono text-sm font-black text-emerald-600 focus:outline-none"
+                                                        className={cn(
+                                                            "w-full bg-transparent font-mono text-sm font-black focus:outline-none",
+                                                            isRegular ? "text-emerald-600" : "text-yellow-500"
+                                                        )}
                                                     />
                                                 </div>
                                                 <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
@@ -680,17 +683,24 @@ export default function RegistrosPage() {
                                                         type="time"
                                                         value={log.out_time}
                                                         onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
-                                                        className="w-full bg-transparent font-mono text-sm font-black text-rose-500 focus:outline-none"
+                                                        className={cn(
+                                                            "w-full bg-transparent font-mono text-sm font-black focus:outline-none",
+                                                            isRegular ? "text-rose-500" : "text-yellow-500"
+                                                        )}
                                                     />
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className={cn(
-                                                "w-full py-4 rounded-xl flex flex-col items-center justify-center gap-1",
+                                                "w-full py-2.5 rounded-xl flex flex-col items-center justify-center gap-1",
                                                 eventConfig?.border || 'bg-gray-50'
                                             )}>
                                                 <div className={cn("px-2 py-0.5 rounded-full text-white text-[8px] font-black shadow-sm", eventConfig?.color)}>
                                                     {eventConfig?.label}
+                                                </div>
+                                                <div className="flex gap-2 items-center">
+                                                    <span className="text-[10px] font-black text-yellow-500 font-mono">09:00</span>
+                                                    <span className="text-[10px] font-black text-yellow-500 font-mono">17:00</span>
                                                 </div>
                                                 <span className="text-[7px] font-bold text-gray-400">8H AUTO</span>
                                             </div>

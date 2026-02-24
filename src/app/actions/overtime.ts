@@ -271,7 +271,13 @@ export async function updateWeeklyWorkerConfig(
                 let clockOut = null;
                 let totalHours = 0;
 
-                if (log.out_time) {
+                if (log.event_type !== 'regular') {
+                    // Eventos especiales siempre cuentan como 8h
+                    const dOut = new Date(log.date);
+                    dOut.setHours(17, 0, 0, 0);
+                    clockOut = dOut.toISOString();
+                    totalHours = 8;
+                } else if (log.out_time) {
                     const [outH, outM] = log.out_time.split(':').map(Number);
                     const dOut = new Date(log.date);
                     dOut.setHours(outH, outM, 0, 0);
