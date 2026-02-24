@@ -153,7 +153,7 @@ BEGIN
     WHERE user_id = p_user_id AND week_start = public.get_iso_week_start(current_date - 7);
 
     IF v_final_balance IS NOT NULL THEN
-Updated public.profiles SET hours_balance = v_final_balance WHERE id = p_user_id;
+        UPDATE public.profiles SET hours_balance = v_final_balance WHERE id = p_user_id;
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
