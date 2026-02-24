@@ -30,6 +30,8 @@ import {
     endOfMonth,
     startOfWeek,
     endOfWeek,
+    subWeeks,
+    addWeeks,
     eachDayOfInterval,
     addMonths,
     subMonths,
@@ -425,9 +427,8 @@ export default function RegistrosPage() {
                     {viewMode === 'agile' && selectedWorkerId && (
                         <div className="flex items-center gap-2 pr-2">
                             <button
-                                onClick={() => setAgileWeekStart(subMonths(agileWeekStart, 0.25))} // Retroceder 1 semana (aprox)
+                                onClick={() => setAgileWeekStart(prev => startOfWeek(subWeeks(prev, 1), { weekStartsOn: 1 }))}
                                 className="p-2 text-white/60 hover:text-white"
-                                onClickCapture={() => setAgileWeekStart(prev => new Date(prev.getTime() - 7 * 24 * 60 * 60 * 1000))}
                             >
                                 <ChevronLeft size={18} />
                             </button>
@@ -435,7 +436,7 @@ export default function RegistrosPage() {
                                 Sem. {format(agileWeekStart, 'd MMM', { locale: es })}
                             </span>
                             <button
-                                onClickCapture={() => setAgileWeekStart(prev => new Date(prev.getTime() + 7 * 24 * 60 * 60 * 1000))}
+                                onClick={() => setAgileWeekStart(prev => startOfWeek(addWeeks(prev, 1), { weekStartsOn: 1 }))}
                                 className="p-2 text-white/60 hover:text-white"
                             >
                                 <ChevronRight size={18} />

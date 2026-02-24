@@ -171,12 +171,12 @@ DECLARE
 BEGIN
     WITH weekly_user_logs AS (
         SELECT 
-            date_trunc('week', clock_in AT TIME ZONE 'UTC')::date as week_start,
+            date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date as week_start,
             user_id,
             SUM(public.fn_round_marbella_hours(total_hours)) as week_logs_sum
         FROM public.time_logs
-        WHERE (clock_in AT TIME ZONE 'UTC')::date >= p_start_date 
-          AND (clock_in AT TIME ZONE 'UTC')::date <= p_end_date
+        WHERE (clock_in AT TIME ZONE 'Europe/Madrid')::date >= p_start_date 
+          AND (clock_in AT TIME ZONE 'Europe/Madrid')::date <= p_end_date
           AND total_hours IS NOT NULL
           AND (p_user_id IS NULL OR user_id = p_user_id)
         GROUP BY 1, 2
