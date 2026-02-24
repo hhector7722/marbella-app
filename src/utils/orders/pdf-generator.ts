@@ -34,8 +34,65 @@ const COLORS = {
     tableHeader: [54, 96, 111] as [number, number, number],
 };
 
+/**
+ * Encapsulated Header Drawer
+ * Returns the final Y coordinate after the last line of information.
+ */
+function drawHeader(doc: any, logoImage: string | null): number {
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // --- LEFT BLOCK: Provider Info ---
+    let y = 15;
+
+    // Logo at x: 15, y: 15
+    if (logoImage) {
+        doc.addImage(logoImage, 'PNG', 15, y, 24, 24);
+    }
+
+    // Business Name at y: 35
+    y = 35;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
+    doc.text(COMPANY_INFO.name, 15, y);
+
+    // Business Details (NIF, Address, Phone, Email)
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+
+    const details = [
+        COMPANY_INFO.nif,
+        COMPANY_INFO.address,
+        COMPANY_INFO.phone,
+        COMPANY_INFO.email
+    ];
+
+    details.forEach(line => {
+        y += 5;
+        doc.text(line, 15, y);
+    });
+
+    // --- RIGHT BLOCK: Metadata ---
+    let metaY = 20;
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0);
+    doc.text('Pedido', 195, metaY, { align: 'right' });
+
+    metaY += 10;
+    const today = format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+    const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(formattedDate, 195, metaY, { align: 'right' });
+    doc.setTextColor(0); // Restore to black
+
+    return y; // Returns last Y position (Email)
+}
+
 export async function generateOrderPDF(data: OrderData): Promise<Blob> {
-    console.log("PDF GENERATOR V6.0: Precise visual correction");
+    console.log("PDF GENERATOR V7.0: Encapsulated Architecture");
 
     const doc = new jsPDF({
         orientation: 'p',
@@ -66,69 +123,15 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const logoImage = await logoPromise;
 
     // --------------------------------------------------------------------------
-    // 1. LOGO & TITLE/DATE (Top Row)
+    // 1. HEADER & DYNAMIC SPACING
     // --------------------------------------------------------------------------
-    let currentY = 15;
-    const SPACING = 5;
-
-    // Logo on the left (Floating directly on white)
-    if (logoImage) {
-        doc.addImage(logoImage, 'PNG', margin, currentY, 24, 24);
-    }
-
-    // "Pedido" and Date on the right
-    doc.setTextColor(50, 50, 50);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(28);
-    doc.text('Pedido', pageWidth - margin, currentY + 12, { align: 'right' });
-
-    const today = format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
-    const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
-    doc.setFontSize(14);
-    doc.setTextColor(100, 100, 100);
-    doc.text(formattedDate, pageWidth - margin, currentY + 22, { align: 'right' });
-
-    // Dynamic Y calculation after Title/Date block
-    currentY += 32;
+    const startTableY = drawHeader(doc, logoImage);
 
     // --------------------------------------------------------------------------
-    // 2. COMPANY INFO (Supplier)
+    // 2. TABLE (Bento Grid Design)
     // --------------------------------------------------------------------------
-    const infoX = margin;
-
-    doc.setTextColor(54, 96, 111); // Dark Teal
-    doc.setFontSize(18); // Slightly smaller for better fit
-    doc.setFont('helvetica', 'bold');
-
-    // Draw Name and get its height
-    doc.text(COMPANY_INFO.name, infoX, currentY);
-    const nameDim = doc.getTextDimensions(COMPANY_INFO.name);
-    currentY += nameDim.h / 2 + 3;
-
-    doc.setFontSize(9); // Leaner fonts
-    doc.setTextColor(110, 110, 110);
-    doc.setFont('helvetica', 'normal');
-
-    const infoLines = [
-        COMPANY_INFO.nif,
-        COMPANY_INFO.address,
-        COMPANY_INFO.phone,
-        COMPANY_INFO.email
-    ];
-
-    infoLines.forEach(line => {
-        doc.text(line, infoX, currentY);
-        const dim = doc.getTextDimensions(line);
-        currentY += dim.h + 1.2; // Minimal line height
-    });
-
-    // --------------------------------------------------------------------------
-    // 3. TABLE (Bento Grid Design)
-    // --------------------------------------------------------------------------
-    const startTableY = currentY + 6; // Compact gap before table
-
     autoTable(doc, {
-        startY: startTableY,
+        startY: startTableY + 10,
         head: [['Producto', 'Cantidad', 'Unidad']],
         body: data.items.map(item => [item.name, item.quantity, item.unit]),
         theme: 'plain',
@@ -145,10 +148,10 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         headStyles: {
             fillColor: null as any, // We will draw it manually in willDrawCell for rounding
             textColor: [255, 255, 255],
-            fontSize: 9, // Slimmer font
+            fontSize: 9,
             fontStyle: 'bold',
             halign: 'center',
-            cellPadding: { top: 2, bottom: 2, left: 10, right: 10 } // Slimmer height
+            cellPadding: { top: 2, bottom: 2, left: 10, right: 10 }
         },
 
         columnStyles: {
@@ -216,21 +219,20 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         didDrawPage: function (data_table) {
             const tableWidth = pageWidth - (margin * 2);
-            const tableHeight = data_table.cursor!.y - startTableY;
+            const tableHeight = data_table.cursor!.y - (startTableY + 10);
 
             // DRAW SHADOWED OUTLINE
-            // We draw multiple layers with increasing thickness and lighter colors to simulate a shadow
             doc.setDrawColor(240, 240, 240);
             doc.setLineWidth(1);
-            doc.roundedRect(margin - 0.5, startTableY - 0.5, tableWidth + 1, tableHeight + 1, 8, 8, 'S');
+            doc.roundedRect(margin - 0.5, (startTableY + 10) - 0.5, tableWidth + 1, tableHeight + 1, 8, 8, 'S');
 
             doc.setDrawColor(220, 220, 220);
             doc.setLineWidth(0.4);
-            doc.roundedRect(margin, startTableY, tableWidth, tableHeight, 8, 8, 'S');
+            doc.roundedRect(margin, (startTableY + 10), tableWidth, tableHeight, 8, 8, 'S');
         }
     });
 
-    console.log("PDF GENERATOR V6.0: Design correction complete");
+    console.log("PDF GENERATOR V7.0: Refactor Complete");
     return doc.output('blob');
 }
 
