@@ -144,9 +144,7 @@ export default function RegistrosPage() {
     async function fetchData() {
         setLoading(true);
         try {
-            const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
-            const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
-
+            // 1. Siempre cargar perfiles primero para asegurar enriquecimiento
             const { data: staff } = await supabase
                 .from('profiles')
                 .select('id, first_name, last_name, overtime_cost_per_hour')
@@ -154,14 +152,10 @@ export default function RegistrosPage() {
 
             if (staff) setEmployees(staff);
 
-            const { data: timeLogs } = await supabase
-                .from('time_logs')
-                .select('*')
-                .gte('clock_in', start.toISOString())
-                .lte('clock_in', end.toISOString());
-
-            if (timeLogs && staff) {
-                const enrichedLogs = timeLogs.map(log => {
+            // Helper para enriquecer logs con datos de empleado
+            const enrichLogs = (rawLogs: any[]) => {
+                if (!staff) return rawLogs;
+                return rawLogs.map(log => {
                     const emp = staff.find(e => e.id === log.user_id);
                     return {
                         ...log,
@@ -170,12 +164,27 @@ export default function RegistrosPage() {
                         last_name: emp?.last_name || ''
                     };
                 });
-                setLogs(enrichedLogs);
+            };
+
+            // 2. Cargar logs para el Calendario (Rango del mes visible)
+            const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
+            const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
+
+            const { data: timeLogs } = await supabase
+                .from('time_logs')
+                .select('*')
+                .gte('clock_in', start.toISOString())
+                .lte('clock_in', end.toISOString());
+
+            if (timeLogs) {
+                setLogs(enrichLogs(timeLogs));
             }
 
-            // Si estamos en modo ágil, cargamos la config semanal
+            // 3. Cargar configuración y logs específicos para el Modo Ágil
             if (viewMode === 'agile' && selectedWorkerId) {
                 const ws = format(agileWeekStart, 'yyyy-MM-dd');
+
+                // Configuración semanal (Bolsa/Contrato)
                 const { data: snapshot } = await supabase
                     .from('weekly_snapshots')
                     .select('contracted_hours_snapshot, prefer_stock_hours_override')
@@ -187,14 +196,14 @@ export default function RegistrosPage() {
                     .from('profiles')
                     .select('contracted_hours_weekly, prefer_stock_hours')
                     .eq('id', selectedWorkerId)
-                    .single();
+                    .maybeSingle();
 
                 setWeeklyConfig({
                     contracted: snapshot?.contracted_hours_snapshot ?? profile?.contracted_hours_weekly ?? 40,
                     preferStock: snapshot?.prefer_stock_hours_override ?? profile?.prefer_stock_hours ?? false
                 });
 
-                // Cargar logs de la semana para el modo ágil
+                // Logs de la semana para el editor inline
                 const { data: weekLogs } = await supabase
                     .from('time_logs')
                     .select('*')
@@ -215,7 +224,7 @@ export default function RegistrosPage() {
                             in_time: log ? format(parseISO(log.clock_in), 'HH:mm') : '09:00',
                             out_time: log?.clock_out ? format(parseISO(log.clock_out), 'HH:mm') : '',
                             event_type: log?.event_type || 'regular',
-                            is_deleted: !log // Si no hay log, lo marcamos como "para crear" si se edita
+                            is_deleted: !log
                         };
                     });
                     setModalLogs(agileLogs);

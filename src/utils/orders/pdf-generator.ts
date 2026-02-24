@@ -161,7 +161,8 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
             fontStyle: 'bold',
             halign: 'center',
             valign: 'middle',
-            minCellHeight: 10
+            cellPadding: { top: 2, bottom: 2, left: 5, right: 5 },
+            minCellHeight: 8 // Ultra-slim
         },
 
         columnStyles: {
@@ -175,7 +176,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         willDrawCell: function (data) {
-            // UNIFIED HEADER HACK (v10.0)
+            // UNIFIED HEADER HACK (v11.0) - Ultra compact refinement
             if (data.section === 'head' && data.row.index === 0 && data.column.index === 0) {
                 const doc = data.doc;
                 const x = data.cell.x;
@@ -186,8 +187,8 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
                 doc.setFillColor(56, 94, 102); // Petroleum #385E66
                 // Draw a rounded rect for the whole width. 
-                // Hack: +5mm height to hide bottom rounding under body rows.
-                doc.roundedRect(x, y, w, h + 5, r, r, 'F');
+                // Hack: +2mm height to hide bottom rounding under body rows.
+                doc.roundedRect(x, y, w, h + 2, r, r, 'F');
             }
         },
 
