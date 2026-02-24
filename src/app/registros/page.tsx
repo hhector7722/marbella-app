@@ -139,7 +139,7 @@ export default function RegistrosPage() {
     // --- CARGA ---
     useEffect(() => {
         fetchData();
-    }, [currentDate]);
+    }, [currentDate, viewMode, selectedWorkerId, agileWeekStart]);
 
     async function fetchData() {
         setLoading(true);
@@ -221,7 +221,7 @@ export default function RegistrosPage() {
                             id: log?.id,
                             user_id: selectedWorkerId,
                             date: day,
-                            in_time: log ? format(parseISO(log.clock_in), 'HH:mm') : '09:00',
+                            in_time: log ? format(parseISO(log.clock_in), 'HH:mm') : '',
                             out_time: log?.clock_out ? format(parseISO(log.clock_out), 'HH:mm') : '',
                             event_type: log?.event_type || 'regular',
                             is_deleted: !log
@@ -287,8 +287,8 @@ export default function RegistrosPage() {
 
         // Si cambia a un tipo especial, forzamos valores por defecto
         if (field === 'event_type' && value !== 'regular') {
-            newLogs[index].in_time = '09:00';
-            newLogs[index].out_time = '17:00';
+            newLogs[index].in_time = '';
+            newLogs[index].out_time = '';
         }
 
         setModalLogs(newLogs);
@@ -311,8 +311,8 @@ export default function RegistrosPage() {
         const newLog: EditingLog = {
             user_id: employees[0].id,
             date: selectedDate,
-            in_time: '09:00',
-            out_time: '17:00',
+            in_time: '',
+            out_time: '',
             event_type: 'regular'
         };
         setModalLogs([...modalLogs, newLog]);
@@ -507,7 +507,20 @@ export default function RegistrosPage() {
                                         <div className="flex-1 space-y-1 w-full overflow-hidden">
                                             {dayLogs.slice(0, 4).map((log) => {
                                                 const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
-                                                const initials = `${(log.first_name || '').charAt(0)}${(log.last_name || '').charAt(0)}`.toUpperCase();
+                                                const getInitials = () => {
+                                                    // 1. Prefer components
+                                                    if (log.first_name && log.last_name) return `${log.first_name.charAt(0)}${log.last_name.charAt(0)}`.toUpperCase();
+                                                    if (log.first_name) return log.first_name.charAt(0).toUpperCase();
+
+                                                    // 2. Fallback to employee_name string
+                                                    if (log.employee_name && log.employee_name !== '?') {
+                                                        const parts = log.employee_name.trim().split(/\s+/);
+                                                        if (parts.length >= 2) return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+                                                        return parts[0].charAt(0).toUpperCase();
+                                                    }
+                                                    return '?';
+                                                };
+                                                const initials = getInitials();
 
                                                 return (
                                                     <div
@@ -627,15 +640,18 @@ export default function RegistrosPage() {
                                             log.out_time ? "border-emerald-100 shadow-lg" : "border-white/20 shadow-xl"
                                         )}
                                     >
-                                        <div className="flex justify-between items-center mb-3">
-                                            <div className="flex flex-col">
-                                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                                        <div className="h-6 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10 -mx-3 -mt-3 mb-3 rounded-t-2xl px-3">
+                                            <div className="w-full flex justify-between items-center text-white">
+                                                <span className="text-[9px] font-black uppercase tracking-widest drop-shadow-sm">
                                                     {format(log.date, 'EEEE', { locale: es })}
                                                 </span>
-                                                <span className="text-[11px] font-black text-[#5B8FB9] uppercase">
+                                                <span className="text-[9px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
                                                     {format(log.date, 'd MMM', { locale: es })}
                                                 </span>
                                             </div>
+                                        </div>
+
+                                        <div className="flex justify-end mb-2">
                                             <select
                                                 value={log.event_type}
                                                 onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
@@ -773,6 +789,6 @@ export default function RegistrosPage() {
                     </div>
                 )
             }
-        </div>
+        </div >
     );
 }
