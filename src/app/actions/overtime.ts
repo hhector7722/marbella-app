@@ -149,3 +149,61 @@ export async function updateWeeklyContractHours(userId: string, weekStart: strin
         return { success: false, error: e.message };
     }
 }
+
+export async function togglePreferStockStatus(userId: string, weekStart: string, currentStatus: boolean) {
+    const supabase = await createClient();
+
+    try {
+        // 1. Calcular fin de semana para el insert (si no existe)
+        const startDate = new Date(weekStart);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        const weekEnd = endDate.toISOString().split('T')[0];
+
+        // 2. Invertimos el estado (si era true pasa a false, si era false pasa a true)
+        const newStatus = !currentStatus;
+
+        // 3. Upsert snapshot con el override
+        const { error } = await supabase
+            .from('weekly_snapshots')
+            .upsert({
+                user_id: userId,
+                week_start: weekStart,
+                week_end: weekEnd,
+                prefer_stock_hours_override: newStatus,
+                // Valores mínimos de seguridad para evitar errores de restricción
+                total_hours: 0,
+                balance_hours: 0,
+                pending_balance: 0,
+                final_balance: 0,
+                is_paid: false,
+                contracted_hours_snapshot: 0 // Se corregirá en la propagación
+            }, { onConflict: 'user_id, week_start' });
+
+        if (error) {
+            console.error('Error in togglePreferStockStatus upsert:', error);
+            return { success: false, error: error.message };
+        }
+
+        // 4. Disparar propagación de balances DESDE esa semana
+        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+            p_user_id: userId,
+            p_start_date: weekStart
+        });
+
+        if (rpcError) {
+            console.error('Error in RPC propagation (togglePreferStockStatus):', rpcError);
+            return { success: false, error: rpcError.message };
+        }
+
+        // 5. Revalidar paths
+        revalidatePath('/staff/history');
+        revalidatePath('/dashboard/overtime');
+        revalidatePath('/dashboard');
+
+        return { success: true, newStatus };
+    } catch (e: any) {
+        console.error('Exception in togglePreferStockStatus:', e);
+        return { success: false, error: e.message };
+    }
+}

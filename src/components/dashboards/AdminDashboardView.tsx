@@ -8,7 +8,8 @@ import {
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, X, FileText,
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
-    PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check
+    PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check,
+    Coins, Landmark
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
@@ -19,7 +20,7 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
 import Image from 'next/image';
-import { togglePaidStatus } from '@/app/actions/overtime';
+import { togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -40,12 +41,14 @@ const StaffOvertimeRow = memo(({
     weekId,
     isPaid,
     onTogglePaid,
+    onTogglePreferStock,
     onClick
 }: {
     staff: any,
     weekId: string,
     isPaid: boolean,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
+    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
     onClick: () => void
 }) => (
     <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
@@ -53,21 +56,46 @@ const StaffOvertimeRow = memo(({
             <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
                 {staff.name.charAt(0)}
             </div>
-            <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors">
-                {staff.name}
-            </span>
+            <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
+                    {staff.name}
+                </span>
+                <span className="text-[10px] font-medium text-gray-400">
+                    {staff.preferStock ? 'A Bolsa' : 'A Nómina'}
+                </span>
+            </div>
         </div>
         <div className="flex items-center gap-3">
             <span className="text-xs font-black text-gray-800">{staff.amount.toFixed(0)}€</span>
-            <button
-                onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
-                className={cn(
-                    "flex items-center justify-center transition-all active:scale-90",
-                    isPaid ? "text-emerald-500" : "text-gray-300 hover:text-gray-400"
-                )}
-            >
-                {isPaid ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-            </button>
+
+            <div className="flex items-center bg-gray-100/50 rounded-full h-8 px-1 gap-1">
+                {/* Toggle Prefer Stock (Bank vs Pay) */}
+                <button
+                    onClick={(e) => onTogglePreferStock(e, weekId, staff.id, staff.preferStock)}
+                    title={staff.preferStock ? "Cambiar a Pago en Nómina" : "Cambiar a Bolsa de Horas"}
+                    className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90",
+                        staff.preferStock
+                            ? "bg-purple-100 text-purple-600 shadow-sm"
+                            : "bg-emerald-100 text-emerald-600 shadow-sm"
+                    )}
+                >
+                    {staff.preferStock ? <Landmark className="w-3.5 h-3.5" /> : <Coins className="w-3.5 h-3.5" />}
+                </button>
+
+                <div className="w-px h-4 bg-gray-300 mx-0.5" />
+
+                {/* Toggle Paid Status */}
+                <button
+                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
+                    className={cn(
+                        "flex items-center justify-center transition-all active:scale-90 p-0.5",
+                        isPaid ? "text-emerald-500" : "text-gray-300 hover:text-gray-400"
+                    )}
+                >
+                    {isPaid ? <CheckCircle2 className="w-5 h-5 shadow-sm rounded-full bg-white" /> : <Circle className="w-5 h-5" />}
+                </button>
+            </div>
         </div>
     </div>
 ));
@@ -78,12 +106,14 @@ const WeekOvertimeCard = memo(({
     paidStatus,
     onToggleWeek,
     onTogglePaid,
+    onTogglePreferStock,
     onSelectHistory
 }: {
     week: any,
     paidStatus: Record<string, boolean>,
     onToggleWeek: (weekId: string) => void,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
+    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
     onSelectHistory: (workerId: string, weekId: string) => void
 }) => {
     const isFullyPaid = week.staff?.every((s: any) => s.amount === 0 || paidStatus[`${week.weekId}-${s.id}`]);
@@ -124,6 +154,7 @@ const WeekOvertimeCard = memo(({
                             weekId={week.weekId}
                             isPaid={!!paidStatus[`${week.weekId}-${s.id}`]}
                             onTogglePaid={onTogglePaid}
+                            onTogglePreferStock={onTogglePreferStock}
                             onClick={() => onSelectHistory(s.id, week.weekId)}
                         />
                     ))}
@@ -250,6 +281,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     }, []);
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
+
     const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
@@ -264,6 +296,21 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             console.error(error);
             toast.error("Error al actualizar pago");
             setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
+        }
+    };
+
+    const togglePreferStock = async (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => {
+        e.stopPropagation();
+        try {
+            toast.loading("Actualizando balances...", { id: 'prefer-stock-toggle' });
+            const result = await togglePreferStockStatus(staffId, weekId, currentStatus);
+            if (!result.success) throw new Error(result.error);
+
+            toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
+            fetchData(); // Necesitamos recargar para ver el cambio de amount y el badge
+        } catch (error: any) {
+            console.error(error);
+            toast.error("Error al cambiar modo: " + error.message, { id: 'prefer-stock-toggle' });
         }
     };
 
@@ -398,6 +445,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             paidStatus={paidStatus}
                                             onToggleWeek={toggleWeek}
                                             onTogglePaid={togglePaid}
+                                            onTogglePreferStock={togglePreferStock}
                                             onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
                                         />
                                     ))
@@ -661,6 +709,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         paidStatus={paidStatus}
                                         onToggleWeek={toggleWeek}
                                         onTogglePaid={togglePaid}
+                                        onTogglePreferStock={togglePreferStock}
                                         onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
                                     />
                                 ))

@@ -2,14 +2,15 @@
 
 import { createClient } from "@/utils/supabase/client";
 import {
-    ArrowLeft, Calendar, Filter, ChevronDown, CheckCircle2, Circle, X, AlertCircle, Check
+    ArrowLeft, Calendar, Filter, ChevronDown, CheckCircle2, Circle, X, AlertCircle, Check,
+    Coins, Landmark
 } from 'lucide-react';
 import React, { memo, useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, getISOWeek, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getOvertimeData, togglePaidStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
+import { getOvertimeData, togglePaidStatus, togglePreferStockStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
 import { toUTCDateString, getISOWeekEndUTC } from '@/lib/date-utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
@@ -26,11 +27,13 @@ const StaffOvertimeRow = memo(({
     staff,
     weekId,
     onTogglePaid,
+    onTogglePreferStock,
     onClick
 }: {
     staff: StaffWeeklyStats,
     weekId: string,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean, stats: any) => void,
+    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
     onClick: () => void
 }) => (
     <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
@@ -43,21 +46,40 @@ const StaffOvertimeRow = memo(({
                     {staff.name}
                 </span>
                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
-                    {staff.overtimeHours.toFixed(1)}h extra
+                    {staff.overtimeHours.toFixed(1)}h extra • {staff.preferStock ? 'A Bolsa' : 'A Nómina'}
                 </span>
             </div>
         </div>
         <div className="flex items-center gap-3">
             <span className="text-sm font-black text-gray-800">{formatDisplay(staff.totalCost, '€')}</span>
-            <button
-                onClick={(e) => onTogglePaid(e, weekId, staff.id, !staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
-                className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
-                    staff.isPaid ? "bg-emerald-500 text-white shadow-md" : "bg-white border-2 border-gray-200 text-transparent"
-                )}
-            >
-                <CheckCircle2 className="w-4 h-4" />
-            </button>
+
+            <div className="flex items-center bg-gray-100 rounded-full h-9 px-1 gap-1">
+                {/* Toggle Prefer Stock (Bank vs Pay) */}
+                <button
+                    onClick={(e) => onTogglePreferStock(e, weekId, staff.id, !!staff.preferStock)}
+                    title={staff.preferStock ? "Cambiar a Pago en Nómina" : "Cambiar a Bolsa de Horas"}
+                    className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90",
+                        staff.preferStock
+                            ? "bg-purple-100 text-purple-600 shadow-sm"
+                            : "bg-emerald-100 text-emerald-600 shadow-sm"
+                    )}
+                >
+                    {staff.preferStock ? <Landmark className="w-3.5 h-3.5" /> : <Coins className="w-3.5 h-3.5" />}
+                </button>
+
+                <div className="w-px h-5 bg-gray-300 mx-0.5" />
+
+                <button
+                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
+                    className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 p-0.5",
+                        staff.isPaid ? "bg-emerald-500 text-white shadow-md border-0" : "bg-white border-2 border-gray-200 text-transparent"
+                    )}
+                >
+                    <CheckCircle2 className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     </div>
 ));
@@ -66,10 +88,12 @@ StaffOvertimeRow.displayName = 'StaffOvertimeRow';
 const WeekOvertimeCard = memo(({
     week,
     onTogglePaid,
+    onTogglePreferStock,
     onSelectHistory
 }: {
     week: WeeklyStats,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean, stats: any) => void,
+    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
     onSelectHistory: (workerId: string, weekId: string) => void
 }) => {
     const isFullyPaid = week.staff?.every((s: any) => s.totalCost === 0 || s.isPaid);
@@ -111,6 +135,7 @@ const WeekOvertimeCard = memo(({
                             staff={s}
                             weekId={week.weekId}
                             onTogglePaid={onTogglePaid}
+                            onTogglePreferStock={onTogglePreferStock}
                             onClick={() => onSelectHistory(s.id, week.weekId)}
                         />
                     ))}
@@ -185,6 +210,21 @@ export default function OvertimePage() {
                 }
                 return w;
             }));
+        }
+    };
+
+    const handleTogglePreferStock = async (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => {
+        e.stopPropagation();
+        try {
+            toast.loading("Actualizando balances globales...", { id: 'prefer-stock-toggle' });
+            const result = await togglePreferStockStatus(staffId, weekId, currentStatus);
+            if (!result.success) throw new Error(result.error);
+
+            toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
+            fetchData();
+        } catch (error: any) {
+            console.error(error);
+            toast.error("Error al cambiar modo: " + error.message, { id: 'prefer-stock-toggle' });
         }
     };
 
@@ -333,6 +373,7 @@ export default function OvertimePage() {
                                                 key={week.weekId}
                                                 week={week}
                                                 onTogglePaid={handleTogglePaid}
+                                                onTogglePreferStock={handleTogglePreferStock}
                                                 onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
                                             />
                                         ))}
