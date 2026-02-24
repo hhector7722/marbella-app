@@ -146,8 +146,8 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     </div>
                 </div>
 
-                {/* Controls & Unit (Bottom Area) - Thinner and centered vertically */}
-                <div className="bg-[#36606F] px-1 sm:px-3 py-1.5 flex flex-row items-center justify-center gap-0.5 sm:gap-1 shrink-0 shadow-inner w-full">
+                {/* Controls & Unit (Bottom Area) - Flush bottom and centered vertically */}
+                <div className="bg-[#36606F] px-2 sm:px-3 py-1.5 flex flex-row items-center justify-center gap-0.5 sm:gap-1 shrink-0 shadow-inner w-full mt-auto">
                     <button
                         onClick={handleDecrement}
                         disabled={quantity === 0}
@@ -164,7 +164,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             setQuantity(isNaN(val) ? 0 : Math.max(0, val));
                         }}
                         placeholder="0"
-                        className="w-5 sm:w-10 bg-transparent text-center font-black text-[11px] sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-4 sm:w-10 bg-transparent text-center font-black text-[10px] sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
 
                     {isCustomUnit ? (
@@ -174,7 +174,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                                 value={customUnit}
                                 onChange={(e) => setCustomUnit(e.target.value)}
                                 placeholder="?"
-                                className="w-8 sm:w-12 text-[7px] sm:text-[10px] font-black uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
+                                className="w-7 sm:w-12 text-[7px] sm:text-[10px] font-black uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
                                 autoFocus
                             />
                             <button
