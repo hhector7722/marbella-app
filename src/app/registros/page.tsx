@@ -446,7 +446,10 @@ export default function RegistrosPage() {
             </div>
 
             {/* --- CONTENIDO PRINCIPAL --- */}
-            <div className="flex-1 flex flex-col overflow-hidden rounded-xl shadow-2xl border border-white/10 relative bg-white">
+            <div className={cn(
+                "flex-1 flex flex-col min-h-0",
+                viewMode === 'calendar' ? "bg-white rounded-xl shadow-2xl border border-white/10 overflow-hidden" : ""
+            )}>
 
                 {viewMode === 'calendar' ? (
                     /* --- VISTA CALENDARIO GLOBAL --- */
@@ -539,19 +542,19 @@ export default function RegistrosPage() {
                     </div>
                 ) : (
                     /* --- VISTA GESTIÓN ÁGIL (Semanal) --- */
-                    <div className="flex-1 flex flex-col bg-gray-50/50">
+                    <div className="flex-1 flex flex-col gap-6 overflow-y-auto no-scrollbar">
                         {/* Panel de Configuración Semanal */}
-                        <div className="p-6 border-b border-gray-100 bg-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="flex items-center gap-8">
+                        <div className="p-6 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-8">
                                 {/* Bolsa vs Pago Switch */}
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest pl-1">Modo Overtime</span>
-                                    <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200 shadow-inner">
+                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest pl-1">Modo Overtime</span>
+                                    <div className="flex bg-white/10 p-1 rounded-2xl border border-white/20 shadow-inner">
                                         <button
                                             onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: false }))}
                                             className={cn(
                                                 "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black transition-all",
-                                                !weeklyConfig.preferStock ? "bg-white text-emerald-600 shadow-md ring-1 ring-emerald-100" : "text-gray-400 hover:text-gray-600"
+                                                !weeklyConfig.preferStock ? "bg-white text-[#5B8FB9] shadow-md" : "text-white/60 hover:text-white"
                                             )}
                                         >
                                             <Coins size={14} />
@@ -561,7 +564,7 @@ export default function RegistrosPage() {
                                             onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: true }))}
                                             className={cn(
                                                 "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black transition-all",
-                                                weeklyConfig.preferStock ? "bg-white text-purple-600 shadow-md ring-1 ring-purple-100" : "text-gray-400 hover:text-gray-600"
+                                                weeklyConfig.preferStock ? "bg-white text-[#5B8FB9] shadow-md" : "text-white/60 hover:text-white"
                                             )}
                                         >
                                             <Landmark size={14} />
@@ -572,15 +575,15 @@ export default function RegistrosPage() {
 
                                 {/* Horas Contrato */}
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest pl-1">Horas Contrato</span>
-                                    <div className="flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-2xl border border-gray-200">
+                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest pl-1">Horas Contrato</span>
+                                    <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/20">
                                         <input
                                             type="number"
                                             value={weeklyConfig.contracted}
                                             onChange={(e) => setWeeklyConfig(prev => ({ ...prev, contracted: Number(e.target.value) }))}
-                                            className="w-12 bg-transparent text-center font-black text-gray-800 text-lg focus:outline-none"
+                                            className="w-12 bg-transparent text-center font-black text-white text-lg focus:outline-none"
                                         />
-                                        <span className="text-[10px] font-bold text-gray-400">HORAS</span>
+                                        <span className="text-[10px] font-bold text-white/60">HORAS</span>
                                     </div>
                                 </div>
                             </div>
@@ -589,8 +592,8 @@ export default function RegistrosPage() {
                                 onClick={saveAgileChanges}
                                 disabled={isSavingAgile}
                                 className={cn(
-                                    "flex items-center gap-3 px-8 py-4 rounded-2xl text-sm font-black tracking-widest transition-all",
-                                    "bg-[#5B8FB9] text-white shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:grayscale"
+                                    "w-full md:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-sm font-black tracking-widest transition-all",
+                                    "bg-white text-[#5B8FB9] shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50"
                                 )}
                             >
                                 {isSavingAgile ? <LoadingSpinner size="sm" /> : <Save size={20} />}
@@ -599,163 +602,165 @@ export default function RegistrosPage() {
                         </div>
 
                         {/* Lista de Fichajes de la Semana */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {modalLogs.map((log, idx) => {
-                                    const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
-                                    const isRegular = log.event_type === 'regular';
+                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                            {modalLogs.map((log, idx) => {
+                                const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
+                                const isRegular = log.event_type === 'regular';
 
-                                    return (
-                                        <div
-                                            key={idx}
-                                            className={cn(
-                                                "bg-white p-4 rounded-2xl border transition-all hover:shadow-lg",
-                                                log.out_time ? "border-emerald-100" : "border-gray-100"
-                                            )}
-                                        >
-                                            <div className="flex justify-between items-center mb-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
-                                                        {format(log.date, 'EEEE', { locale: es })}
-                                                    </span>
-                                                    <span className="text-[12px] font-bold text-[#5B8FB9]">
-                                                        {format(log.date, 'd MMMM', { locale: es })}
-                                                    </span>
-                                                </div>
-                                                <select
-                                                    value={log.event_type}
-                                                    onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
-                                                    className="text-[9px] font-black bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 focus:outline-none uppercase"
-                                                >
-                                                    {EVENT_TYPES.map(t => (
-                                                        <option key={t.value} value={t.value}>{t.label}</option>
-                                                    ))}
-                                                </select>
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={cn(
+                                            "bg-white p-3 rounded-2xl border transition-all hover:shadow-2xl hover:-translate-y-1 group",
+                                            log.out_time ? "border-emerald-100 shadow-lg" : "border-white/20 shadow-xl"
+                                        )}
+                                    >
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                                                    {format(log.date, 'EEEE', { locale: es })}
+                                                </span>
+                                                <span className="text-[11px] font-black text-[#5B8FB9] uppercase">
+                                                    {format(log.date, 'd MMM', { locale: es })}
+                                                </span>
                                             </div>
-
-                                            {isRegular ? (
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex-1 bg-gray-50 p-3 rounded-xl border border-gray-100 group focus-within:ring-2 focus-within:ring-emerald-500/20">
-                                                        <span className="text-[8px] font-black text-gray-400 uppercase block mb-1">Entrada</span>
-                                                        <input
-                                                            type="time"
-                                                            value={log.in_time}
-                                                            onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
-                                                            className="w-full bg-transparent font-mono text-lg font-black text-emerald-600 focus:outline-none"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 bg-gray-50 p-3 rounded-xl border border-gray-100 group focus-within:ring-2 focus-within:ring-rose-500/20">
-                                                        <span className="text-[8px] font-black text-gray-400 uppercase block mb-1">Salida</span>
-                                                        <input
-                                                            type="time"
-                                                            value={log.out_time}
-                                                            onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
-                                                            className="w-full bg-transparent font-mono text-lg font-black text-rose-500 focus:outline-none"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className={cn(
-                                                    "w-full py-6 rounded-xl flex flex-col items-center justify-center gap-2",
-                                                    eventConfig?.border || 'bg-gray-50'
-                                                )}>
-                                                    <div className={cn("px-3 py-1 rounded-full text-white text-[10px] font-black shadow-sm", eventConfig?.color)}>
-                                                        {eventConfig?.label}
-                                                    </div>
-                                                    <span className="text-[9px] font-bold text-gray-400">8 HORAS CALCULADAS</span>
-                                                </div>
-                                            )}
-
-                                            <div className="mt-4 flex justify-end">
-                                                <button
-                                                    onClick={() => {
-                                                        const newLogs = [...modalLogs];
-                                                        newLogs[idx].out_time = '';
-                                                        setModalLogs(newLogs);
-                                                        setHasUnsavedChanges(true);
-                                                    }}
-                                                    className="p-2 text-gray-300 hover:text-rose-500 transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
+                                            <select
+                                                value={log.event_type}
+                                                onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
+                                                className="text-[8px] font-black bg-gray-50 px-1.5 py-1 rounded-lg border border-gray-100 focus:outline-none uppercase"
+                                            >
+                                                {EVENT_TYPES.map(t => (
+                                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                                ))}
+                                            </select>
                                         </div>
-                                    );
-                                })}
-                            </div>
+
+                                        {isRegular ? (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                                    <span className="text-[7px] font-black text-gray-400 uppercase block mb-0.5">Entrada</span>
+                                                    <input
+                                                        type="time"
+                                                        value={log.in_time}
+                                                        onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
+                                                        className="w-full bg-transparent font-mono text-sm font-black text-emerald-600 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                                    <span className="text-[7px] font-black text-gray-400 uppercase block mb-0.5">Salida</span>
+                                                    <input
+                                                        type="time"
+                                                        value={log.out_time}
+                                                        onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
+                                                        className="w-full bg-transparent font-mono text-sm font-black text-rose-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className={cn(
+                                                "w-full py-4 rounded-xl flex flex-col items-center justify-center gap-1",
+                                                eventConfig?.border || 'bg-gray-50'
+                                            )}>
+                                                <div className={cn("px-2 py-0.5 rounded-full text-white text-[8px] font-black shadow-sm", eventConfig?.color)}>
+                                                    {eventConfig?.label}
+                                                </div>
+                                                <span className="text-[7px] font-bold text-gray-400">8H AUTO</span>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-[8px] font-bold text-gray-300"># {idx + 1}</span>
+                                            <button
+                                                onClick={() => {
+                                                    const newLogs = [...modalLogs];
+                                                    newLogs[idx].out_time = '';
+                                                    setModalLogs(newLogs);
+                                                    setHasUnsavedChanges(true);
+                                                }}
+                                                className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
             </div>
 
             {/* MODAL ANTIGUO (Se mantiene solo para cuando haces click en el calendario) */}
-            {selectedDate && viewMode === 'calendar' && (
-                <div
-                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-                    onClick={handleCloseModal}
-                >
+            {
+                selectedDate && viewMode === 'calendar' && (
                     <div
-                        className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={handleCloseModal}
                     >
-                        <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
-                            <div>
-                                <h3 className="text-lg font-bold leading-tight">Registros</h3>
-                                <p className="text-blue-100 text-xs capitalize opacity-90">{format(selectedDate, 'EEEE, d MMMM', { locale: es })}</p>
+                        <div
+                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
+                                <div>
+                                    <h3 className="text-lg font-bold leading-tight">Registros</h3>
+                                    <p className="text-blue-100 text-xs capitalize opacity-90">{format(selectedDate, 'EEEE, d MMMM', { locale: es })}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={handleCloseModal} className="text-sm font-medium text-white/90 hover:text-white transition-colors px-2">Cancelar</button>
+                                    <button
+                                        onClick={async () => {
+                                            // Mantenemos compatibilidad con saveAgileChanges pero adaptado para 1 solo día
+                                            setIsSavingAgile(true);
+                                            try {
+                                                if (!selectedDate) return;
+                                                const result = await updateWeeklyWorkerConfig(modalLogs[0]?.user_id, format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'), {
+                                                    logs: modalLogs.map(l => ({ ...l, date: format(l.date, 'yyyy-MM-dd') }))
+                                                });
+                                                if (result.success) {
+                                                    toast.success("Registros guardados");
+                                                    setSelectedDate(null);
+                                                    fetchData();
+                                                } else throw new Error(result.error);
+                                            } catch (e: any) {
+                                                toast.error("Error: " + e.message);
+                                            } finally { setIsSavingAgile(false); }
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#5B8FB9] shadow-sm active:scale-95"
+                                    >
+                                        Confirmar
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <button onClick={handleCloseModal} className="text-sm font-medium text-white/90 hover:text-white transition-colors px-2">Cancelar</button>
-                                <button
-                                    onClick={async () => {
-                                        // Mantenemos compatibilidad con saveAgileChanges pero adaptado para 1 solo día
-                                        setIsSavingAgile(true);
-                                        try {
-                                            const result = await updateWeeklyWorkerConfig(modalLogs[0]?.user_id, format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'), {
-                                                logs: modalLogs.map(l => ({ ...l, date: format(l.date, 'yyyy-MM-dd') }))
-                                            });
-                                            if (result.success) {
-                                                toast.success("Registros guardados");
-                                                setSelectedDate(null);
-                                                fetchData();
-                                            } else throw new Error(result.error);
-                                        } catch (e: any) {
-                                            toast.error("Error: " + e.message);
-                                        } finally { setIsSavingAgile(false); }
-                                    }}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#5B8FB9] shadow-sm active:scale-95"
-                                >
-                                    Confirmar
-                                </button>
-                            </div>
-                        </div>
-                        <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
-                            {/* ... Resto del body del modal original ... */}
-                            <div className="space-y-4">
-                                {modalLogs.map((log, idx) => (
-                                    <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm">
-                                        <select
-                                            value={log.user_id}
-                                            onChange={(e) => updateLogField(idx, 'user_id', e.target.value)}
-                                            className="flex-1 bg-transparent font-black text-xs text-gray-700 focus:outline-none"
-                                        >
-                                            {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name}</option>)}
-                                        </select>
-                                        <input type="time" value={log.in_time} onChange={(e) => updateLogField(idx, 'in_time', e.target.value)} className="w-20 text-center font-mono font-bold text-emerald-600 bg-emerald-50 rounded-lg p-1" />
-                                        <input type="time" value={log.out_time} onChange={(e) => updateLogField(idx, 'out_time', e.target.value)} className="w-20 text-center font-mono font-bold text-rose-500 bg-rose-50 rounded-lg p-1" />
-                                        <button onClick={() => deleteLog(idx)} className="text-gray-300 hover:text-rose-500"><Trash2 size={16} /></button>
-                                    </div>
-                                ))}
-                                <button
-                                    onClick={addNewLog}
-                                    className="w-full py-4 border-2 border-dashed border-gray-300 text-gray-400 font-black rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] flex items-center justify-center gap-2"
-                                >
-                                    <Plus size={20} /> Añadir Fichaje
-                                </button>
+                            <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
+                                {/* ... Resto del body del modal original ... */}
+                                <div className="space-y-4">
+                                    {modalLogs.map((log, idx) => (
+                                        <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm">
+                                            <select
+                                                value={log.user_id}
+                                                onChange={(e) => updateLogField(idx, 'user_id', e.target.value)}
+                                                className="flex-1 bg-transparent font-black text-xs text-gray-700 focus:outline-none"
+                                            >
+                                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name}</option>)}
+                                            </select>
+                                            <input type="time" value={log.in_time} onChange={(e) => updateLogField(idx, 'in_time', e.target.value)} className="w-20 text-center font-mono font-bold text-emerald-600 bg-emerald-50 rounded-lg p-1" />
+                                            <input type="time" value={log.out_time} onChange={(e) => updateLogField(idx, 'out_time', e.target.value)} className="w-20 text-center font-mono font-bold text-rose-500 bg-rose-50 rounded-lg p-1" />
+                                            <button onClick={() => deleteLog(idx)} className="text-gray-300 hover:text-rose-500"><Trash2 size={16} /></button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={addNewLog}
+                                        className="w-full py-4 border-2 border-dashed border-gray-300 text-gray-400 font-black rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={20} /> Añadir Fichaje
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div>
     );
 }

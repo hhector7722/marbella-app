@@ -31,7 +31,7 @@ const COLORS = {
     secondaryLine: [120, 170, 190] as [number, number, number], // Lighter blue for wave line
     text: [30, 41, 59] as [number, number, number],
     white: [255, 255, 255] as [number, number, number],
-    tableHeader: [54, 96, 111] as [number, number, number],
+    tableHeader: [56, 94, 102] as [number, number, number], // Petroleum color
 };
 
 /**
@@ -62,7 +62,6 @@ function drawHeader(doc: any, logoImage: string | null): number {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
 
-    // Split address for better hierarchy as requested (Line 1, Line 2)
     const addressParts = COMPANY_INFO.address.split(',');
     const addressLine1 = addressParts[0].trim();
     const addressLine2 = addressParts.slice(1).join(',').trim();
@@ -101,7 +100,7 @@ function drawHeader(doc: any, logoImage: string | null): number {
 }
 
 export async function generateOrderPDF(data: OrderData): Promise<Blob> {
-    console.log("PDF GENERATOR V8.0: Strict Visual Alignment (image_5.png)");
+    console.log("PDF GENERATOR V9.0: Clean native implementation");
 
     const doc = new jsPDF({
         orientation: 'p',
@@ -138,7 +137,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const tableStartY = Math.max(finalHeaderY, 45) + 15;
 
     // --------------------------------------------------------------------------
-    // 2. TABLE (Bento Grid Design)
+    // 2. TABLE (Clean Native Design)
     // --------------------------------------------------------------------------
     autoTable(doc, {
         startY: tableStartY,
@@ -156,13 +155,14 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         },
 
         headStyles: {
-            fillColor: false as any, // We draw the background manually
-            textColor: [255, 255, 255],
+            fillColor: [56, 94, 102], // Petroleum #385E66
+            textColor: [255, 255, 255], // White
             fontSize: 9,
             fontStyle: 'bold',
             halign: 'center',
             valign: 'middle',
-            minCellHeight: 12 // Reduced height
+            minCellHeight: 8, // Ultra-slim
+            cellPadding: { top: 1, bottom: 1, left: 10, right: 10 }
         },
 
         columnStyles: {
@@ -173,28 +173,6 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         bodyStyles: {
             fillColor: [255, 255, 255]
-        },
-
-        willDrawCell: function (data) {
-            // UNIFIED BACKGROUND HACK (image_5.png spec)
-            if (data.section === 'head' && data.row.index === 0) {
-                // Only draw once in the first column for the entire row width
-                if (data.column.index === 0) {
-                    const doc = data.doc;
-                    const x = data.cell.x;
-                    const y = data.cell.y;
-                    const w = doc.internal.pageSize.getWidth() - (20 * 2); // pageWidth - margin*2
-                    const h = data.cell.height;
-                    const r = 4; // Borde radius
-
-                    doc.setFillColor(56, 94, 102); // #385E66
-
-                    // 1. Rectangle with 4 rounded corners
-                    doc.roundedRect(x, y, w, h, r, r, 'F');
-                    // 2. Square rectangle at bottom half to flatten the bottom curves
-                    doc.rect(x, y + (h / 2), w, h / 2, 'F');
-                }
-            }
         },
 
         didDrawCell: function (data) {
@@ -225,24 +203,10 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
             }
         },
 
-        margin: { left: margin, right: margin },
-
-        didDrawPage: function (data_table) {
-            const tableWidth = pageWidth - (margin * 2);
-            const tableHeight = data_table.cursor!.y - tableStartY;
-
-            // DRAW SHADOWED OUTLINE
-            doc.setDrawColor(240, 240, 240);
-            doc.setLineWidth(1);
-            doc.roundedRect(margin - 0.5, tableStartY - 0.5, tableWidth + 1, tableHeight + 1, 8, 8, 'S');
-
-            doc.setDrawColor(220, 220, 220);
-            doc.setLineWidth(0.4);
-            doc.roundedRect(margin, tableStartY, tableWidth, tableHeight, 8, 8, 'S');
-        }
+        margin: { left: margin, right: margin }
     });
 
-    console.log("PDF GENERATOR V8.0: Correction Complete");
+    console.log("PDF GENERATOR V9.0: Cleanup Complete");
     return doc.output('blob');
 }
 

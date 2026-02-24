@@ -120,10 +120,10 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     return (
         <div className="relative group overflow-hidden h-full">
             <div className={cn(
-                "bg-white rounded-2xl p-1.5 shadow-md transition-all flex flex-col h-full overflow-hidden",
+                "bg-white rounded-2xl shadow-md transition-all flex flex-col h-full overflow-hidden",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer"
             )}>
-                <div className="p-1 sm:p-3 flex-1 flex flex-col min-h-0">
+                <div className="p-2.5 sm:p-4 flex-1 flex flex-col min-h-0">
                     {/* Product Image Area (Compact Gallery Style) - Centered vertically */}
                     <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                         {ingredient.image_url ? (
@@ -213,7 +213,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 {quantity > 0 && (
                     <button
                         onClick={handleTrash}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center bg-white/90 backdrop-blur shadow-sm rounded-full text-rose-500 hover:bg-rose-50 transition-all animate-in zoom-in duration-200"
+                        className="absolute top-1.5 right-1.5 w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center bg-white/90 backdrop-blur shadow-sm rounded-full text-rose-500 hover:bg-rose-50 transition-all animate-in zoom-in duration-200"
                     >
                         <Trash2 size={10} className="sm:w-4 sm:h-4" />
                     </button>
