@@ -207,3 +207,119 @@ export async function togglePreferStockStatus(userId: string, weekStart: string,
         return { success: false, error: e.message };
     }
 }
+
+export async function updateWeeklyWorkerConfig(
+    userId: string,
+    weekStart: string,
+    updates: {
+        contractedHours?: number;
+        preferStock?: boolean;
+        logs?: Array<{ date: string; in_time: string; out_time: string; event_type: string; id?: string; is_deleted?: boolean }>;
+    }
+) {
+    const supabase = await createClient();
+
+    try {
+        // 1. Prepare Snapshot Data
+        const startDate = new Date(weekStart);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        const weekEnd = endDate.toISOString().split('T')[0];
+
+        const snapshotData: any = {
+            user_id: userId,
+            week_start: weekStart,
+            week_end: weekEnd,
+            // Fallbacks for insert
+            total_hours: 0,
+            balance_hours: 0,
+            pending_balance: 0,
+            final_balance: 0,
+            is_paid: false
+        };
+
+        if (updates.contractedHours !== undefined) {
+            snapshotData.contracted_hours_snapshot = updates.contractedHours;
+        }
+        if (updates.preferStock !== undefined) {
+            snapshotData.prefer_stock_hours_override = updates.preferStock;
+        }
+
+        // 2. Perform upsert if there are overrides
+        if (Object.keys(snapshotData).length > 8) { // basic fields count + overrides
+            const { error: snapshotError } = await supabase
+                .from('weekly_snapshots')
+                .upsert(snapshotData, { onConflict: 'user_id, week_start' });
+
+            if (snapshotError) throw snapshotError;
+        }
+
+        // 3. Process logs if provided
+        if (updates.logs && updates.logs.length > 0) {
+            for (const log of updates.logs) {
+                if (log.is_deleted && log.id) {
+                    await supabase.from('time_logs').delete().eq('id', log.id);
+                    continue;
+                }
+                if (log.is_deleted) continue;
+
+                // Parse times
+                const [inH, inM] = log.in_time.split(':').map(Number);
+                const clockIn = new Date(log.date);
+                clockIn.setHours(inH, inM, 0, 0);
+
+                let clockOut = null;
+                let totalHours = 0;
+
+                if (log.out_time) {
+                    const [outH, outM] = log.out_time.split(':').map(Number);
+                    const dOut = new Date(log.date);
+                    dOut.setHours(outH, outM, 0, 0);
+                    clockOut = dOut.toISOString();
+
+                    // Simple rounding for immediate total_hours
+                    const diff = (dOut.getTime() - clockIn.getTime()) / (1000 * 60);
+                    const hTotal = Math.floor(diff / 60);
+                    const mTotal = diff % 60;
+                    let fraction = 0;
+                    if (mTotal > 20) fraction = 0.5;
+                    if (mTotal > 50) fraction = 1.0;
+                    totalHours = Math.max(0, hTotal + fraction);
+                }
+
+                const logPayload = {
+                    user_id: userId,
+                    clock_in: clockIn.toISOString(),
+                    clock_out: clockOut,
+                    total_hours: totalHours || null,
+                    event_type: log.event_type
+                };
+
+                if (log.id) {
+                    const { error: updateErr } = await supabase.from('time_logs').update(logPayload).eq('id', log.id);
+                    if (updateErr) throw updateErr;
+                } else {
+                    const { error: insertErr } = await supabase.from('time_logs').insert([logPayload]);
+                    if (insertErr) throw insertErr;
+                }
+            }
+        }
+
+        // 4. Trigger propagation
+        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+            p_user_id: userId,
+            p_start_date: weekStart
+        });
+
+        if (rpcError) throw rpcError;
+
+        revalidatePath('/registros');
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/overtime');
+
+        return { success: true };
+    } catch (e: any) {
+        console.error('Error in updateWeeklyWorkerConfig:', e);
+        return { success: false, error: e.message };
+    }
+}
