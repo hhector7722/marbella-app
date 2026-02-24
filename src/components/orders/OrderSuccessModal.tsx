@@ -66,14 +66,32 @@ export function OrderSuccessModal({
         }
     };
 
-    const handleWhatsApp = () => {
-        if (!supplierPhone || !pdfUrl) return;
+    const handleWhatsApp = async () => {
+        if (!supplierPhone || !generatedBlob) return;
 
         // Normalize phone: strip non-digits, add country code if missing
         const cleanPhone = supplierPhone.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
 
-        const message = encodeURIComponent(`Hola, te adjunto el nuevo pedido de Bar La Marbella: ${pdfUrl}`);
+        const pdfFile = new File([generatedBlob], 'Pedido_Bar_La_Marbella.pdf', { type: 'application/pdf' });
+
+        // 1. Try native file sharing (works on iOS Safari, Android Chrome)
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            try {
+                await navigator.share({
+                    files: [pdfFile],
+                    title: 'Pedido Bar La Marbella',
+                    text: `Hola, te adjunto el pedido de Bar La Marbella.`,
+                });
+                return;
+            } catch (error) {
+                // User cancelled or error – fall through to WhatsApp web fallback
+                console.warn('Share cancelled or failed, falling back:', error);
+            }
+        }
+
+        // 2. Fallback: open WhatsApp web with phone pre-filled so user can manually attach
+        const message = encodeURIComponent(`Hola, te envío el pedido de Bar La Marbella. Adjunto el PDF.`);
         window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
     };
 
@@ -134,7 +152,7 @@ export function OrderSuccessModal({
 
                         <button
                             onClick={handleWhatsApp}
-                            disabled={isUploading || !pdfUrl || !supplierPhone}
+                            disabled={isUploading || !generatedBlob || !supplierPhone}
                             className={cn(
                                 "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
                                 "bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 shadow-sm"
