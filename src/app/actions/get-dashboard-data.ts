@@ -177,6 +177,10 @@ export async function getDashboardData() {
                 initialPaidStatus[`${week.weekId}-${s.id}`] = s.isPaid;
             });
         });
+
+        // FILTRO DE SEMANA EN CURSO: Solo mostramos semanas finalizadas en el dashboard
+        const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        overtimeData = overtimeData.filter((week: any) => week.weekId < currentWeekStart);
     }
 
     return {

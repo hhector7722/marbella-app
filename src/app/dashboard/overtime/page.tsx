@@ -72,7 +72,7 @@ const WeekOvertimeCard = memo(({
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean, stats: any) => void,
     onSelectHistory: (workerId: string, weekId: string) => void
 }) => {
-    const isFullyPaid = week.staff?.every((s: any) => s.isPaid);
+    const isFullyPaid = week.staff?.every((s: any) => s.totalCost === 0 || s.isPaid);
     const [expanded, setExpanded] = useState(false);
 
     return (
@@ -105,7 +105,7 @@ const WeekOvertimeCard = memo(({
             </button>
             {expanded && (
                 <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                    {week.staff.map((s: any) => (
+                    {week.staff.filter((s: any) => s.totalCost > 0).map((s: any) => (
                         <StaffOvertimeRow
                             key={s.id}
                             staff={s}
