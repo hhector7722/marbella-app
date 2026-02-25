@@ -54,6 +54,7 @@ export default function NewOrderPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         let channel: any;
@@ -221,6 +222,7 @@ export default function NewOrderPage() {
             // 2. Open Success Modal and start background upload
             setIsSummaryOpen(false);
             setIsSuccessOpen(true);
+            setIsGenerating(true);
             setIsUploading(true);
 
             // 3. Save Order Header
@@ -272,6 +274,7 @@ export default function NewOrderPage() {
                 return NewDrafts;
             });
 
+            setIsGenerating(false);
             toast.success('Pedido procesado correctamente');
 
         } catch (error: any) {
@@ -280,6 +283,7 @@ export default function NewOrderPage() {
         } finally {
             setIsProcessing(false);
             setIsUploading(false);
+            setIsGenerating(false);
         }
     };
 
@@ -417,6 +421,7 @@ export default function NewOrderPage() {
                 generatedBlob={generatedBlob}
                 supplierPhone={dbSuppliers.find(s => s.name.toLowerCase() === selectedSupplier?.toLowerCase())?.phone || null}
                 isUploading={isUploading}
+                isGenerating={isGenerating}
                 onDownload={handleDownload}
                 onClose={() => {
                     setIsSuccessOpen(false);

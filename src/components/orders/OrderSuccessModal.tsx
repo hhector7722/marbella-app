@@ -12,6 +12,7 @@ interface OrderSuccessModalProps {
     generatedBlob: Blob | null;
     supplierPhone: string | null;
     isUploading: boolean;
+    isGenerating?: boolean; // New prop
     onClose: () => void;
     onDownload: () => void;
 }
@@ -22,6 +23,7 @@ export function OrderSuccessModal({
     generatedBlob,
     supplierPhone,
     isUploading,
+    isGenerating = false,
     onClose,
     onDownload
 }: OrderSuccessModalProps) {
@@ -105,72 +107,89 @@ export function OrderSuccessModal({
                 </div>
 
                 {/* Body */}
-                <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+                <div className="p-5 flex flex-col gap-4 overflow-y-auto min-h-[300px] justify-center">
 
-                    {/* PDF PREVIEW MINIATURE (A4 Aspect Ratio: 1 / 1.414) */}
-                    <div className="relative bg-white rounded-2xl overflow-hidden aspect-[1/1.414] group mx-1 shadow-sm border border-zinc-100">
-                        {previewUrl ? (
-                            <iframe
-                                src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                                className="w-full h-full pointer-events-none origin-top"
-                                title="PREVIEW"
-                            />
-                        ) : (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                                <LoadingSpinner size="md" className="text-[#36606F]" />
-                                <span className="text-[10px] font-black text-gray-400 uppercase">Cargando...</span>
+                    {isGenerating || !generatedBlob ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4 animate-in fade-in duration-500">
+                            <div className="relative">
+                                <LoadingSpinner size="xl" className="text-[#36606F]" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <FileText size={24} className="text-[#36606F] animate-pulse" />
+                                </div>
                             </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none"></div>
-                    </div>
+                            <div className="text-center">
+                                <h3 className="text-lg font-black text-gray-800 uppercase tracking-tighter">Generando PDF</h3>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Espera un momento...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* PDF PREVIEW MINIATURE (A4 Aspect Ratio: 1 / 1.414) */}
+                            <div className="relative bg-white rounded-2xl overflow-hidden aspect-[1/1.414] group mx-1 shadow-sm border border-zinc-100">
+                                {previewUrl ? (
+                                    <iframe
+                                        src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                                        className="w-full h-full pointer-events-none origin-top"
+                                        title="PREVIEW"
+                                    />
+                                ) : (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                        <LoadingSpinner size="md" className="text-[#36606F]" />
+                                        <span className="text-[10px] font-black text-gray-400 uppercase">Cargando...</span>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none"></div>
+                            </div>
 
-                    {/* Actions Row */}
-                    <div className="grid grid-cols-3 gap-2 mt-1">
-                        <button
-                            onClick={onDownload}
-                            disabled={isUploading || !generatedBlob}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm"
-                            )}
-                        >
-                            <Download size={18} className="text-[#36606F]" />
-                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Descargar</span>
-                        </button>
+                            {/* Actions Row */}
+                            <div className="grid grid-cols-3 gap-2 mt-1">
+                                <button
+                                    onClick={onDownload}
+                                    disabled={isUploading || !generatedBlob}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
+                                        "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm"
+                                    )}
+                                >
+                                    <Download size={18} className="text-[#36606F]" />
+                                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Descargar</span>
+                                </button>
 
-                        <button
-                            onClick={handleShare}
-                            disabled={isUploading || !generatedBlob}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm"
-                            )}
-                        >
-                            <Share2 size={18} className="text-[#36606F]" />
-                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Enviar</span>
-                        </button>
+                                <button
+                                    onClick={handleShare}
+                                    disabled={isUploading || !generatedBlob}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
+                                        "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm"
+                                    )}
+                                >
+                                    <Share2 size={18} className="text-[#36606F]" />
+                                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Enviar</span>
+                                </button>
 
-                        <button
-                            onClick={handleWhatsApp}
-                            disabled={isUploading || !generatedBlob || !supplierPhone}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                "bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 shadow-sm"
-                            )}
-                        >
-                            <Send size={18} className="text-[#25D366]" />
-                            <span className="text-[8px] font-black text-[#1C9B4C] uppercase tracking-widest">Proveedor</span>
-                        </button>
-                    </div>
+                                <button
+                                    onClick={handleWhatsApp}
+                                    disabled={isUploading || !generatedBlob || !supplierPhone}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
+                                        "bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 shadow-sm"
+                                    )}
+                                >
+                                    <Send size={18} className="text-[#25D366]" />
+                                    <span className="text-[8px] font-black text-[#1C9B4C] uppercase tracking-widest">Proveedor</span>
+                                </button>
+                            </div>
 
-                    {/* Main Action */}
-                    <button
-                        onClick={onClose}
-                        className="w-full h-11 bg-[#5E35B1] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-100 hover:bg-[#4d2c91] active:scale-95 transition-all flex items-center justify-center gap-3 shrink-0"
-                    >
-                        <span>Volver al Inicio</span>
-                        <ArrowRight size={16} />
-                    </button>
+                            {/* Main Action */}
+                            <button
+                                onClick={onClose}
+                                className="w-full h-11 bg-[#5E35B1] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-100 hover:bg-[#4d2c91] active:scale-95 transition-all flex items-center justify-center gap-3 shrink-0"
+                            >
+                                <span>Volver al Inicio</span>
+                                <ArrowRight size={16} />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
