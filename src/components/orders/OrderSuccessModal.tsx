@@ -28,6 +28,7 @@ export function OrderSuccessModal({
     onDownload
 }: OrderSuccessModalProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isSearching, setIsSearching] = useState(false); // New state for WhatsApp transition
 
     useEffect(() => {
         if (generatedBlob) {
@@ -71,30 +72,22 @@ export function OrderSuccessModal({
     const handleWhatsApp = async () => {
         if (!supplierPhone || !generatedBlob) return;
 
+        setIsSearching(true);
+
+        // Simulamos una pequeña búsqueda/procesamiento para el efecto visual
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         // Normalize phone: strip non-digits, add country code if missing
         const cleanPhone = supplierPhone.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
 
-        const pdfFile = new File([generatedBlob], 'Pedido_Bar_La_Marbella.pdf', { type: 'application/pdf' });
-
-        // 1. Try native file sharing (works on iOS Safari, Android Chrome)
-        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-            try {
-                await navigator.share({
-                    files: [pdfFile],
-                    title: 'Pedido Bar La Marbella',
-                    text: `Hola, te adjunto el pedido de Bar La Marbella.`,
-                });
-                return;
-            } catch (error) {
-                // User cancelled or error – fall through to WhatsApp web fallback
-                console.warn('Share cancelled or failed, falling back:', error);
-            }
-        }
-
-        // 2. Fallback: open WhatsApp web with phone pre-filled so user can manually attach
-        const message = encodeURIComponent(`Hola, te envío el pedido de Bar La Marbella. Adjunto el PDF.`);
+        // Abrir directamente la conversación con el mensaje solicitado
+        // IMPORTANTE: El PDF se debe adjuntar manualmente en la conversación abierta 
+        // ya que los navegadores no permiten inyectar archivos directamente en conversaciones específicas.
+        const message = encodeURIComponent(`Adjunto pedido. Gracias.`);
         window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+
+        setIsSearching(false);
     };
 
     return (
@@ -109,17 +102,25 @@ export function OrderSuccessModal({
                 {/* Body */}
                 <div className="p-5 flex flex-col gap-4 overflow-y-auto min-h-[300px] justify-center">
 
-                    {isGenerating || !generatedBlob ? (
+                    {isGenerating || isSearching || !generatedBlob ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-4 animate-in fade-in duration-500">
                             <div className="relative">
                                 <LoadingSpinner size="xl" className="text-[#36606F]" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <FileText size={24} className="text-[#36606F] animate-pulse" />
+                                    {isSearching ? (
+                                        <Send size={24} className="text-[#25D366] animate-pulse" />
+                                    ) : (
+                                        <FileText size={24} className="text-[#36606F] animate-pulse" />
+                                    )}
                                 </div>
                             </div>
                             <div className="text-center">
-                                <h3 className="text-lg font-black text-gray-800 uppercase tracking-tighter">Generando PDF</h3>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Espera un momento...</p>
+                                <h3 className="text-lg font-black text-gray-800 uppercase tracking-tighter">
+                                    {isSearching ? "Buscando proveedor" : "Generando PDF"}
+                                </h3>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                    {isSearching ? "Abriendo WhatsApp..." : "Espera un momento..."}
+                                </p>
                             </div>
                         </div>
                     ) : (
