@@ -120,6 +120,16 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 "bg-white rounded-2xl shadow-md transition-all flex flex-col h-full overflow-hidden",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer"
             )}>
+                {/* Recommended Stock Badge - Positioned Top-Right of Card */}
+                {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
+                    <div className={cn(
+                        "absolute top-2 text-zinc-400 text-[9px] font-black flex items-center gap-0.5 transition-all z-30",
+                        quantity > 0 ? "right-9" : "right-2" // Space for trash button or margin
+                    )} title="Stock Recomendado">
+                        <Package size={10} strokeWidth={2.5} />
+                        <span>{ingredient.recommended_stock}</span>
+                    </div>
+                )}
                 <div className="p-2.5 sm:p-4 flex-1 flex flex-col min-h-0">
                     {/* Product Image Area (Compact Gallery Style) - Centered vertically */}
                     <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
@@ -127,17 +137,6 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             <img src={ingredient.image_url} className="h-full w-full object-contain" alt={ingredient.name} />
                         ) : (
                             <Package className="text-gray-200 w-5 h-5" />
-                        )}
-
-                        {/* Recommended Stock Badge */}
-                        {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
-                            <div className={cn(
-                                "absolute top-1 bg-zinc-100/90 backdrop-blur-sm border border-zinc-200 text-zinc-500 text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm transition-all z-10",
-                                quantity > 0 ? "right-8" : "right-1" // Shift left if trash button is active
-                            )} title="Stock Recomendado">
-                                <Package size={10} strokeWidth={2.5} />
-                                <span>{ingredient.recommended_stock}</span>
-                            </div>
                         )}
 
                         {isUpdating && (
