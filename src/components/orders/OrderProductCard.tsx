@@ -120,12 +120,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 "bg-white rounded-2xl shadow-md transition-all flex flex-col h-full overflow-hidden",
                 quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer"
             )}>
-                {/* Recommended Stock Badge - Positioned Top-Right of Card */}
+                {/* Recommended Stock Badge - Positioned Top-Left of Card */}
                 {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
-                    <div className={cn(
-                        "absolute top-2 text-zinc-400 text-[9px] font-black flex items-center gap-0.5 transition-all z-30",
-                        quantity > 0 ? "right-9" : "right-2" // Space for trash button or margin
-                    )} title="Stock Recomendado">
+                    <div className="absolute top-2 left-2 text-zinc-400 text-[9px] font-black flex items-center gap-0.5 transition-all z-30" title="Stock Recomendado">
                         <Package size={10} strokeWidth={2.5} />
                         <span>{ingredient.recommended_stock}</span>
                     </div>
