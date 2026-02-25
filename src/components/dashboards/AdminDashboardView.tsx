@@ -467,19 +467,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
                                                 <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
                                             </div>
-                                            <div className="flex items-center justify-center">
-                                                {Math.abs(box.difference || 0) < 0.01 ? (
-                                                    <Check className="w-5 h-5 text-white" strokeWidth={4} />
-                                                ) : (
-                                                    <span className={cn(
-                                                        "text-lg font-black",
-                                                        (box.difference || 0) < 0 ? "text-rose-400" : "text-white"
-                                                    )}>
-                                                        {(box.difference || 0) > 0 ? '+' : ''}
-                                                        {(box.difference || 0).toFixed(2)}€
-                                                    </span>
-                                                )}
-                                            </div>
                                         </button>
 
                                         <div className="flex-[2] basis-0 grid grid-cols-3 gap-2">
@@ -513,6 +500,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         </div>
                                     </div>
                                     <div className="flex flex-col flex-1 min-h-0">
+                                        <div className="flex items-center px-2 mb-1">
+                                            {Math.abs(box.difference || 0) < 0.01 ? (
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-3.5 h-3.5" /> 0.00€</span>
+                                            ) : (
+                                                <span className={cn(
+                                                    "text-[10px] font-black uppercase tracking-widest",
+                                                    (box.difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
+                                                )}>
+                                                    {(box.difference || 0) > 0 ? '+' : ''}
+                                                    {(box.difference || 0).toFixed(2)}€
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="flex justify-between items-center px-2 mb-3">
                                             <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
                                             <Link href="/dashboard/movements" className="text-[10px] font-black text-[#5B8FB9] bg-gray-50 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2.5 h-2.5" /></Link>
@@ -659,8 +659,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col flex-1 min-h-0">
-                                    <div className="flex justify-between items-center px-1 mb-2">
-                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Diferencia Arqueo</span>
+                                    <div className="flex items-center px-1 mb-1">
                                         {Math.abs(box.difference || 0) < 0.01 ? (
                                             <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> 0.00€</span>
                                         ) : (

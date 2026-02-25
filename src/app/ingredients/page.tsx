@@ -100,12 +100,13 @@ export default function IngredientsPage() {
     }
 
     async function handleCreate() {
-        if (!newIngredient.name || !newIngredient.current_price) return toast.error('Faltan datos');
+        if (!newIngredient.name) return toast.error('El nombre es obligatorio');
         setIsCreating(true);
         const unit = newIngredient.purchase_unit || 'kg';
         try {
             const { error } = await supabase.from('ingredients').insert({
                 ...newIngredient,
+                current_price: newIngredient.current_price || 0,
                 purchase_unit: unit,
                 unit_type: unit, // Provide missing unit_type
                 category: newIngredient.category || 'Alimentos',

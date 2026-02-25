@@ -14,7 +14,7 @@ interface Props {
 export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Props) {
     const supabase = createClient();
     const [name, setName] = useState('');
-    const [price, setPrice] = useState(0);
+    const [price, setPrice] = useState<number | ''>('');
     const [category, setCategory] = useState('Alimentos');
     const [loading, setLoading] = useState(false);
 
@@ -25,7 +25,7 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
         setLoading(true);
         const { error } = await supabase.from('ingredients').insert({
             name,
-            current_price: price,
+            current_price: typeof price === 'number' ? price : (parseFloat(price) || 0),
             purchase_unit: 'kg', // Standardize on purchase_unit
             unit_type: 'kg',      // Satisfy NOT NULL constraint
             category: category || 'Alimentos',
@@ -40,7 +40,7 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
             onSuccess();
             onClose();
             setName('');
-            setPrice(0);
+            setPrice('');
             setCategory('Alimentos');
         }
     };
@@ -70,7 +70,7 @@ export default function CreateIngredientModal({ isOpen, onClose, onSuccess }: Pr
                                 type="number"
                                 step="0.01"
                                 value={price}
-                                onChange={e => setPrice(parseFloat(e.target.value))}
+                                onChange={e => setPrice(e.target.value === '' ? '' : parseFloat(e.target.value))}
                                 className="w-full border-2 border-gray-200 rounded-xl p-2 font-bold text-gray-800 focus:border-[#36606F] outline-none"
                             />
                         </div>

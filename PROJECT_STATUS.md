@@ -122,6 +122,7 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] 📱 **Vista Táctil Edición Ágil (Registros)**: Transformación del panel de edición semanal a un grid estricto de 7 columnas (una por día), permitiendo ver la semana completa de fichajes en una sola fila en dispositivos móviles con extrema densidad de información. Se ha unificado la estética de la cabecera insertando el mismo diseño de cabecera en rojo Marbella con letra blanca usado en el calendario del Historial.
 - [x] 📱 **Refinamiento UI Caja Inicial (Mobile)**: Cambiados los textos explicativos de botones de acción de negrita a texto regular atenuado para función descriptiva. Movida la métrica de Diferencia de Arqueo fuera del botón principal hacia un bloque propio justo encima de Movimientos, aplicando tamaño de texto unificado.
 - [x] **Refinamiento Historial Staff (Eventos Especiales)**: Ocultación de horas por defecto para eventos no regulares (Baja, Festivo, Enfermedad, Personal), mostrando únicamente el texto identificativo centrado y con el color correspondiente para un diseño más limpio ("Zero-Display").
+- [x] **Creación Simplificada de Ingredientes**: Modificación en `/ingredients` y `CreateIngredientModal` para que solo el nombre sea el campo estrictamente requerido. Resolviendo el fallo bloqueante `NaN` al mandar un precio vacío.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
