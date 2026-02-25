@@ -647,9 +647,9 @@ export default function HistoryPage() {
                                                             <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
                                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-0 md:gap-1 mb-0.5 px-0.5 h-full">
                                                                     <div className="flex flex-col h-full w-full justify-center md:block">
-                                                                        <div className="text-[7.5px] min-[370px]:text-[8.5px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter md:tracking-normal md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
+                                                                        <div className="text-[8.5px] min-[370px]:text-[10px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter md:tracking-normal md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
                                                                             {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                            {selectedMetric !== 'tickets_count' && <span className="text-[5px] md:text-[12px] ml-[1px] md:ml-0.5 font-black">€</span>}
+                                                                            {selectedMetric !== 'tickets_count' && <span className="text-[6px] md:text-[12px] ml-[1px] md:ml-0.5 font-black">€</span>}
                                                                         </div>
 
                                                                         <div className="text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-auto md:mt-0 mb-0.5 md:mb-2 leading-tight text-center md:text-left">
