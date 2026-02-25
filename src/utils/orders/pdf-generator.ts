@@ -41,9 +41,9 @@ const COLORS = {
 function drawHeader(doc: any, logoImage: string | null): number {
     // --- LEFT BLOCK: Provider Info ---
 
-    // 1. Logo at x: 15, y: 15. Height: 20mm
+    // 1. Logo at x: 15, y: 15. Height: 14mm
     if (logoImage) {
-        doc.addImage(logoImage, 'PNG', 15, 15, 20, 20);
+        doc.addImage(logoImage, 'PNG', 15, 15, 14, 14);
     }
 
     // 2. Cursor starts at 40
@@ -186,9 +186,11 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
                 const r = 4; // Border radius
 
                 doc.setFillColor(56, 94, 102); // Petroleum #385E66
-                // Draw a rounded rect for the whole width. 
-                // Hack: +2mm height to hide bottom rounding under body rows.
-                doc.roundedRect(x, y, w, h + 2, r, r, 'F');
+
+                // Draw a rounded rect for the top corners, and a sharp rect for the bottom
+                // We do this by drawing a rounded rect, and then drawing a normal rect over the bottom half
+                doc.roundedRect(x, y, w, h, r, r, 'F');
+                doc.rect(x, y + (h / 2), w, h / 2, 'F');
             }
         },
 
