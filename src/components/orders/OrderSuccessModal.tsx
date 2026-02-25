@@ -4,8 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, Download, Share2, ArrowRight, FileText, Send, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from "@/lib/utils";
-import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configurar el worker explícitamente usando CDNJS para evitar problemas de empaquetado Next.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -16,7 +19,6 @@ interface OrderSuccessModalProps {
     isGenerating?: boolean; // New prop
     onClose: () => void;
     onDownload: () => void;
-    items?: any[]; // For screenshot
 }
 
 export function OrderSuccessModal({
@@ -27,12 +29,10 @@ export function OrderSuccessModal({
     isUploading,
     isGenerating = false,
     onClose,
-    onDownload,
-    items = []
+    onDownload
 }: OrderSuccessModalProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
-    const ticketRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (generatedBlob) {
@@ -74,20 +74,53 @@ export function OrderSuccessModal({
     };
 
     const handleWhatsApp = async () => {
-        if (!supplierPhone || !generatedBlob || !ticketRef.current) return;
+        if (!supplierPhone || !generatedBlob) return;
 
         setIsCapturing(true);
 
         try {
-            const getBlob = async () => {
-                const dataUrl = await toPng(ticketRef.current!, {
-                    quality: 0.95,
-                    backgroundColor: '#ffffff',
-                    cacheBust: true,
-                    pixelRatio: 2,
+            const getBlob = async (): Promise<Blob> => {
+                // Leer el PDF real generado
+                const arrayBuffer = await generatedBlob.arrayBuffer();
+
+                // Cargar el documento PDF
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+
+                // Obtener solo la primera página
+                const page = await pdf.getPage(1);
+
+                // Escala para alta resolución
+                const scale = 2.5;
+                const viewport = page.getViewport({ scale });
+
+                // Crear un canvas en memoria
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                if (!context) throw new Error("No 2d context");
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // Rellenar fondo blanco
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Renderizar la página PDF
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport,
+                    canvas: canvas // Requerido en versiones recientes de pdfjs
+                };
+                await page.render(renderContext).promise;
+
+                // Convertir Canvas a Blob (PNG)
+                return new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Canvas to Blob falló"));
+                    }, 'image/png');
                 });
-                const response = await fetch(dataUrl);
-                return await response.blob();
             };
 
             let isCopied = false;
@@ -148,36 +181,6 @@ export function OrderSuccessModal({
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[80] p-4 lg:p-8 animate-in fade-in duration-300">
             <div className="bg-white rounded-[2.5rem] w-full max-w-[320px] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col pointer-events-auto max-h-[92vh]">
-
-                {/* HIDDEN TICKET FOR CAPTURE */}
-                <div className="fixed -left-[9999px] top-0">
-                    <div ref={ticketRef} className="bg-white p-8 w-[400px] flex flex-col gap-6 border border-zinc-100 shadow-sm text-zinc-900">
-                        <div className="flex flex-col items-center gap-2 border-b border-zinc-100 pb-4">
-                            <h1 className="text-xl font-black uppercase tracking-tighter">Bar La Marbella</h1>
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Pedido de Productos</p>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-50 pb-2">
-                                <span>Producto</span>
-                                <span>Cantidad</span>
-                            </div>
-                            {items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center py-1">
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-sm leading-tight">{item.name}</span>
-                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{item.unit || item.purchase_unit}</span>
-                                    </div>
-                                    <span className="font-black text-lg text-[#36606F] pr-2">{item.quantity}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-4 border-t-2 border-dashed border-zinc-100 pt-4 text-center">
-                            <p className="text-[9px] font-black text-zinc-300 uppercase tracking-[0.2em] italic">Muchas gracias por el servicio</p>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Header */}
                 <div className="bg-[#36606F] py-5 px-6 flex flex-col items-center justify-center text-center relative shrink-0">
