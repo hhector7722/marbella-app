@@ -256,34 +256,49 @@ export async function updateWeeklyWorkerConfig(
 
         // 3. Process logs if provided
         if (updates.logs && updates.logs.length > 0) {
-            for (const log of updates.logs) {
+            for (const log of updates.logs as any[]) {
                 if (log.is_deleted && log.id) {
                     await supabase.from('time_logs').delete().eq('id', log.id);
                     continue;
                 }
                 if (log.is_deleted) continue;
 
-                // Parse times
-                const [inH, inM] = log.in_time.split(':').map(Number);
-                const clockIn = new Date(log.date);
-                clockIn.setHours(inH, inM, 0, 0);
-
-                let clockOut = null;
+                let clockInStr = '';
+                let clockOutStr = null;
                 let totalHours = 0;
 
+                // Preferir las fechas procesadas en cliente que ya traen corrección de TimeZone
+                if (log.inTimeIso) {
+                    clockInStr = log.inTimeIso;
+                } else {
+                    // Fallback de retrocompatibilidad
+                    const [inH, inM] = (log.in_time || "09:00").split(':').map(Number);
+                    const clockInFallback = new Date(log.date + "T00:00:00");
+                    clockInFallback.setHours(inH, inM, 0, 0);
+                    clockInStr = clockInFallback.toISOString();
+                }
+
                 if (log.event_type !== 'regular') {
-                    // Eventos especiales siempre cuentan como 8h
-                    const dOut = new Date(log.date);
-                    dOut.setHours(17, 0, 0, 0);
-                    clockOut = dOut.toISOString();
                     totalHours = 8;
-                } else if (log.out_time) {
-                    const [outH, outM] = log.out_time.split(':').map(Number);
-                    const dOut = new Date(log.date);
-                    dOut.setHours(outH, outM, 0, 0);
-                    clockOut = dOut.toISOString();
+                    if (log.outTimeIso) clockOutStr = log.outTimeIso;
+                    else {
+                        const dOutFallback = new Date(clockInStr);
+                        dOutFallback.setHours(dOutFallback.getHours() + 8);
+                        clockOutStr = dOutFallback.toISOString();
+                    }
+                } else if (log.outTimeIso || log.out_time) {
+                    if (log.outTimeIso) {
+                        clockOutStr = log.outTimeIso;
+                    } else {
+                        const [outH, outM] = log.out_time.split(':').map(Number);
+                        const dOutFallback = new Date(log.date + "T00:00:00");
+                        dOutFallback.setHours(outH, outM, 0, 0);
+                        clockOutStr = dOutFallback.toISOString();
+                    }
 
                     // Simple rounding for immediate total_hours
+                    const clockIn = new Date(clockInStr);
+                    const dOut = new Date(clockOutStr);
                     const diff = (dOut.getTime() - clockIn.getTime()) / (1000 * 60);
                     const hTotal = Math.floor(diff / 60);
                     const mTotal = diff % 60;
@@ -295,8 +310,8 @@ export async function updateWeeklyWorkerConfig(
 
                 const logPayload = {
                     user_id: userId,
-                    clock_in: clockIn.toISOString(),
-                    clock_out: clockOut,
+                    clock_in: clockInStr,
+                    clock_out: clockOutStr,
                     total_hours: totalHours || null,
                     event_type: log.event_type
                 };

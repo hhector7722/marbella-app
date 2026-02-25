@@ -285,6 +285,9 @@ export default function RegistrosPage() {
         const newLogs = [...modalLogs];
         newLogs[index] = { ...newLogs[index], [field]: value };
 
+        // Al editar cualquier campo, si el log estaba marcado para borrar o era un placeholder, lo revive
+        newLogs[index].is_deleted = false;
+
         // Si cambia a un tipo especial, forzamos valores por defecto
         if (field === 'event_type' && value !== 'regular') {
             newLogs[index].in_time = '09:00';
@@ -313,7 +316,8 @@ export default function RegistrosPage() {
             date: selectedDate,
             in_time: '',
             out_time: '',
-            event_type: 'regular'
+            event_type: 'regular',
+            is_deleted: false
         };
         setModalLogs([...modalLogs, newLog]);
         setHasUnsavedChanges(true);
@@ -325,15 +329,45 @@ export default function RegistrosPage() {
         const ws = format(agileWeekStart, 'yyyy-MM-dd');
 
         try {
-            // Filtramos logs que realmente han sido editados (tienen out_time o no son los default si eran nuevos)
+            // Filtramos logs que realmente han sido editados o son placeholders válidos
             const logsToUpdate = modalLogs.filter(l => {
-                const original = logs.find(old => old.id === l.id);
-                if (!l.id && !l.out_time) return false; // No crear vacíos
+                // Ignore empty new entries
+                if (!l.id && !l.in_time && l.event_type === 'regular' && !l.is_deleted) return false;
+                // Ignore completely deleted new entries
+                if (!l.id && l.is_deleted) return false;
                 return true;
-            }).map(l => ({
-                ...l,
-                date: format(l.date, 'yyyy-MM-dd')
-            }));
+            }).map(l => {
+                // Ensure proper valid date strings for server parsing passing local client offset
+                let inTimeIso = '';
+                let outTimeIso = '';
+
+                if (l.in_time) {
+                    const [inH, inM] = l.in_time.split(':').map(Number);
+                    const cd = new Date(l.date);
+                    cd.setHours(inH, inM, 0, 0);
+                    inTimeIso = cd.toISOString();
+                }
+
+                if (l.out_time) {
+                    const [outH, outM] = l.out_time.split(':').map(Number);
+                    const cdo = new Date(l.date);
+                    cdo.setHours(outH, outM, 0, 0);
+
+                    // Si la hora de salida es estrictamente menor, probablemente cruzó medianoche (Ej: 20:00 -> 02:00)
+                    if (l.in_time) {
+                        const [inH] = l.in_time.split(':').map(Number);
+                        if (outH < inH) cdo.setDate(cdo.getDate() + 1);
+                    }
+                    outTimeIso = cdo.toISOString();
+                }
+
+                return {
+                    ...l,
+                    date: format(l.date, 'yyyy-MM-dd'),
+                    inTimeIso,
+                    outTimeIso
+                };
+            });
 
             const result = await updateWeeklyWorkerConfig(selectedWorkerId, ws, {
                 contractedHours: weeklyConfig.contracted,
@@ -733,8 +767,43 @@ export default function RegistrosPage() {
                                             setIsSavingAgile(true);
                                             try {
                                                 if (!selectedDate) return;
+
+                                                const logsToUpdate = modalLogs.filter(l => {
+                                                    if (!l.id && !l.in_time && l.event_type === 'regular' && !l.is_deleted) return false;
+                                                    if (!l.id && l.is_deleted) return false;
+                                                    return true;
+                                                }).map(l => {
+                                                    let inTimeIso = '';
+                                                    let outTimeIso = '';
+
+                                                    if (l.in_time) {
+                                                        const [inH, inM] = l.in_time.split(':').map(Number);
+                                                        const cd = new Date(l.date);
+                                                        cd.setHours(inH, inM, 0, 0);
+                                                        inTimeIso = cd.toISOString();
+                                                    }
+
+                                                    if (l.out_time) {
+                                                        const [outH, outM] = l.out_time.split(':').map(Number);
+                                                        const cdo = new Date(l.date);
+                                                        cdo.setHours(outH, outM, 0, 0);
+                                                        if (l.in_time) {
+                                                            const [inH] = l.in_time.split(':').map(Number);
+                                                            if (outH < inH) cdo.setDate(cdo.getDate() + 1);
+                                                        }
+                                                        outTimeIso = cdo.toISOString();
+                                                    }
+
+                                                    return {
+                                                        ...l,
+                                                        date: format(l.date, 'yyyy-MM-dd'),
+                                                        inTimeIso,
+                                                        outTimeIso
+                                                    };
+                                                });
+
                                                 const result = await updateWeeklyWorkerConfig(modalLogs[0]?.user_id, format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'), {
-                                                    logs: modalLogs.map(l => ({ ...l, date: format(l.date, 'yyyy-MM-dd') }))
+                                                    logs: logsToUpdate
                                                 });
                                                 if (result.success) {
                                                     toast.success("Registros guardados");
