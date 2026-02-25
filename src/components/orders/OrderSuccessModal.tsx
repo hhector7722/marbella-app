@@ -74,18 +74,23 @@ export function OrderSuccessModal({
 
         setIsSearching(true);
 
-        // 1. Descargar el archivo automáticamente para que esté en "Recientes" (sin confirmar)
-        onDownload();
+        // 1. Esperar a que la URL del PDF esté lista (subida a Supabase)
+        // La URL es necesaria para que WhatsApp genere la previsualización del archivo
+        let attempts = 0;
+        while (!pdfUrl && attempts < 8) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            attempts++;
+        }
 
-        // 2. Pequeña pausa para asegurar que la descarga inicie y se vea el feedback
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Normalize phone: strip non-digits, add country code if missing
+        // Normalize phone
         const cleanPhone = supplierPhone.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
 
-        // 3. Abrir directamente la conversación con el mensaje exacto
-        const message = encodeURIComponent(`Adjunto pedido. Gracias.`);
+        // 2. Construir el mensaje con el enlace público para previsualización
+        // WhatsApp detecta el enlace al final y muestra el PDF como un adjunto visual
+        const messageText = `Adjunto pedido. Gracias.\n\n${pdfUrl || ''}`;
+        const message = encodeURIComponent(messageText);
+
         window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
 
         setIsSearching(false);
