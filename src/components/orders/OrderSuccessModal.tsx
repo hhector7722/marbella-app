@@ -74,16 +74,17 @@ export function OrderSuccessModal({
 
         setIsSearching(true);
 
-        // Simulamos una pequeña búsqueda/procesamiento para el efecto visual
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // 1. Descargar el archivo automáticamente para que esté en "Recientes" (sin confirmar)
+        onDownload();
+
+        // 2. Pequeña pausa para asegurar que la descarga inicie y se vea el feedback
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Normalize phone: strip non-digits, add country code if missing
         const cleanPhone = supplierPhone.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
 
-        // Abrir directamente la conversación con el mensaje solicitado
-        // IMPORTANTE: El PDF se debe adjuntar manualmente en la conversación abierta 
-        // ya que los navegadores no permiten inyectar archivos directamente en conversaciones específicas.
+        // 3. Abrir directamente la conversación con el mensaje exacto
         const message = encodeURIComponent(`Adjunto pedido. Gracias.`);
         window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
 
