@@ -75,13 +75,13 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                 </div>
 
                 {/* Footer / Totals */}
-                <div className="p-8 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-end gap-6 shrink-0">
+                <div className="p-3 sm:p-8 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-end gap-6 shrink-0">
 
                     <button
                         onClick={onConfirm}
                         disabled={isProcessing}
                         className={cn(
-                            "w-full sm:w-auto px-10 py-5 bg-[#5E35B1] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-100 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50",
+                            "w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-5 bg-[#5E35B1] text-white rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest shadow-lg sm:shadow-xl shadow-purple-100 flex items-center justify-center gap-2 sm:gap-3 transition-all active:scale-95 disabled:opacity-50",
                             isProcessing && "animate-pulse"
                         )}
                     >
@@ -92,8 +92,8 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                             </>
                         ) : (
                             <>
-                                <CheckCircle2 size={20} />
-                                <span>Finalizar y Generar PDF</span>
+                                <ArrowRight size={18} />
+                                <span>Continuar</span>
                             </>
                         )}
                     </button>
