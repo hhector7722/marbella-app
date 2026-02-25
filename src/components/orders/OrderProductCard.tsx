@@ -26,69 +26,60 @@ interface OrderProductCardProps {
 
 export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit, userId, onQuantityChange }: OrderProductCardProps) {
     const supabase = createClient();
-    const [quantity, setQuantity] = useState(initialQuantity);
-    const [unit, setUnit] = useState(initialUnit || ingredient.order_unit || 'unidad');
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isCustomUnit, setIsCustomUnit] = useState(false);
-    const [customUnit, setCustomUnit] = useState('');
-
     const unitOptions = ['pack', 'caja', 'unidad', 'kg', 'pieza', 'lt', 'otro...'];
 
-    // Keep track of the last synced values to avoid circular updates or redundant saves
-    const lastSynced = useRef({ quantity: initialQuantity, unit: initialUnit || ingredient.order_unit || 'unidad' });
+    // Initial validation to ensure custom units from DB show correctly
+    const startUnit = initialUnit || ingredient.order_unit || 'unidad';
+    const isStartCustom = !unitOptions.includes(startUnit) && startUnit !== '';
 
-    // 1. Sync local STATE with PROPS (Initial load or Realtime updates from parent)
+    const [quantity, setQuantity] = useState(initialQuantity);
+    const [unit, setUnit] = useState(isStartCustom ? 'unidad' : startUnit);
+    const [isCustomUnit, setIsCustomUnit] = useState(isStartCustom);
+    const [customUnit, setCustomUnit] = useState(isStartCustom ? startUnit : '');
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    // This ref tells us if the user is currently interacting and hasn't saved yet
+    const isDirtyRef = useRef(false);
+
+    // 1. Sync from Props (External changes, e.g. from Realtime AI voice or initial load)
     useEffect(() => {
-        if (initialQuantity !== lastSynced.current.quantity) {
+        if (!isDirtyRef.current) {
             setQuantity(initialQuantity);
-            lastSynced.current.quantity = initialQuantity;
-        }
-        const propUnit = initialUnit || ingredient.order_unit || 'unidad';
-        if (propUnit !== lastSynced.current.unit) {
-            setUnit(propUnit);
-            lastSynced.current.unit = propUnit;
+
+            const propUnit = initialUnit || ingredient.order_unit || 'unidad';
+            const isPropCustom = !unitOptions.includes(propUnit) && propUnit !== '';
+
+            if (isPropCustom) {
+                setIsCustomUnit(true);
+                setCustomUnit(propUnit);
+            } else {
+                setIsCustomUnit(false);
+                setUnit(propUnit);
+            }
         }
     }, [initialQuantity, initialUnit, ingredient.order_unit]);
 
-    // 2. Separate Effect for Unit Persistence (immediately save even if quantity is 0)
+    // 2. Helper to apply local changes INSTANTLY to parent UI
+    const updateLocal = (newQ: number, newU: string, isCust: boolean, custU: string) => {
+        isDirtyRef.current = true;
+        setQuantity(newQ);
+        setUnit(newU);
+        setIsCustomUnit(isCust);
+        setCustomUnit(custU);
+
+        const fUnit = isCust ? (custU || 'unidad') : (newU || 'unidad');
+        onQuantityChange?.(ingredient.id, newQ, fUnit);
+    };
+
+    // 3. DB Syncer (Debounced for Server writes)
     useEffect(() => {
-        const finalUnit = isCustomUnit ? customUnit : unit;
-        // ONLY save if it's different from what we already have in DB/lastSynced
-        if (finalUnit === lastSynced.current.unit) return;
-
-        const saveUnit = async () => {
-            try {
-                lastSynced.current.unit = finalUnit;
-                // Update ingredient default unit
-                await supabase.from('ingredients').update({ order_unit: finalUnit }).eq('id', ingredient.id);
-
-                // If there's an active draft, update its unit too
-                if (quantity > 0) {
-                    await supabase.from('order_drafts').update({ unit: finalUnit })
-                        .eq('user_id', userId)
-                        .eq('ingredient_id', ingredient.id);
-                }
-
-                onQuantityChange?.(ingredient.id, quantity, finalUnit);
-            } catch (error) {
-                console.error('Error saving persistent unit:', error);
-            }
-        };
-
-        const timer = setTimeout(saveUnit, 300); // Small debounce for typing custom unit
-        return () => clearTimeout(timer);
-    }, [unit, isCustomUnit, customUnit]);
-
-    // 3. Debounced draft update for QUANTITY changes
-    useEffect(() => {
-        // ONLY save if user actually changed the quantity compared to last known DB state
-        if (quantity === lastSynced.current.quantity) return;
+        if (!isDirtyRef.current) return;
 
         const timer = setTimeout(async () => {
             setIsUpdating(true);
             try {
-                lastSynced.current.quantity = quantity;
-                const finalUnit = isCustomUnit ? customUnit : unit;
+                const finalUnit = isCustomUnit ? (customUnit || 'unidad') : (unit || 'unidad');
+
                 if (quantity > 0) {
                     await supabase.from('order_drafts').upsert({
                         user_id: userId,
@@ -97,12 +88,17 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         unit: finalUnit,
                         updated_at: new Date().toISOString()
                     });
+
+                    // Also update preferred unit in ingredients
+                    await supabase.from('ingredients').update({ order_unit: finalUnit }).eq('id', ingredient.id);
                 } else {
                     await supabase.from('order_drafts').delete()
                         .eq('user_id', userId)
                         .eq('ingredient_id', ingredient.id);
                 }
-                onQuantityChange?.(ingredient.id, quantity, finalUnit);
+
+                // Mark clean after DB sync is initiated
+                isDirtyRef.current = false;
             } catch (error) {
                 console.error('Error updating draft:', error);
             } finally {
@@ -111,11 +107,11 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         }, 600);
 
         return () => clearTimeout(timer);
-    }, [quantity, userId, ingredient.id, supabase]);
+    }, [quantity, unit, isCustomUnit, customUnit, userId, ingredient.id, supabase]);
 
-    const handleIncrement = () => setQuantity(prev => prev + 1);
-    const handleDecrement = () => setQuantity(prev => Math.max(0, prev - 1));
-    const handleTrash = () => setQuantity(0);
+    const handleIncrement = () => updateLocal(quantity + 1, unit, isCustomUnit, customUnit);
+    const handleDecrement = () => updateLocal(Math.max(0, quantity - 1), unit, isCustomUnit, customUnit);
+    const handleTrash = () => updateLocal(0, unit, isCustomUnit, customUnit);
 
     return (
         <div className="relative group overflow-hidden h-full">
@@ -161,7 +157,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         value={quantity === 0 ? "" : quantity}
                         onChange={(e) => {
                             const val = parseFloat(e.target.value);
-                            setQuantity(isNaN(val) ? 0 : Math.max(0, val));
+                            updateLocal(isNaN(val) ? 0 : Math.max(0, val), unit, isCustomUnit, customUnit);
                         }}
                         placeholder="0"
                         className="w-4 sm:w-10 bg-transparent text-center font-black text-[10px] sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -172,13 +168,13 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             <input
                                 type="text"
                                 value={customUnit}
-                                onChange={(e) => setCustomUnit(e.target.value)}
+                                onChange={(e) => updateLocal(quantity, unit, isCustomUnit, e.target.value)}
                                 placeholder="?"
                                 className="w-7 sm:w-12 text-[7px] sm:text-[10px] font-black uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
                                 autoFocus
                             />
                             <button
-                                onClick={() => setIsCustomUnit(false)}
+                                onClick={() => updateLocal(quantity, unit, false, customUnit)}
                                 className="text-[7px] sm:text-[10px] text-white/50 hover:text-white font-black ml-0.5 sm:ml-1 shrink-0 p-0.5"
                             >
                                 ✕
@@ -189,9 +185,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             value={unit}
                             onChange={(e) => {
                                 if (e.target.value === 'otro...') {
-                                    setIsCustomUnit(true);
+                                    updateLocal(quantity, unit, true, customUnit);
                                 } else {
-                                    setUnit(e.target.value);
+                                    updateLocal(quantity, e.target.value, false, customUnit);
                                 }
                             }}
                             className="w-auto text-center text-[7px] sm:text-[10px] font-black uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
