@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { CheckCircle2, Download, Share2, ArrowRight, FileText, Send } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { CheckCircle2, Download, Share2, ArrowRight, FileText, Send, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from "@/lib/utils";
-import Image from 'next/image';
+import { toPng } from 'html-to-image';
+import { toast } from 'sonner';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ interface OrderSuccessModalProps {
     isGenerating?: boolean; // New prop
     onClose: () => void;
     onDownload: () => void;
+    items?: any[]; // For screenshot
 }
 
 export function OrderSuccessModal({
@@ -25,10 +27,12 @@ export function OrderSuccessModal({
     isUploading,
     isGenerating = false,
     onClose,
-    onDownload
+    onDownload,
+    items = []
 }: OrderSuccessModalProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [isSearching, setIsSearching] = useState(false); // New state for WhatsApp transition
+    const [isCapturing, setIsCapturing] = useState(false);
+    const ticketRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (generatedBlob) {
@@ -70,35 +74,89 @@ export function OrderSuccessModal({
     };
 
     const handleWhatsApp = async () => {
-        if (!supplierPhone || !generatedBlob) return;
+        if (!supplierPhone || !generatedBlob || !ticketRef.current) return;
 
-        setIsSearching(true);
+        setIsCapturing(true);
 
-        // 1. Esperar a que la URL del PDF esté lista (subida a Supabase)
-        // La URL es necesaria para que WhatsApp genere la previsualización del archivo
-        let attempts = 0;
-        while (!pdfUrl && attempts < 8) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            attempts++;
+        try {
+            // 1. Generar captura del ticket
+            const dataUrl = await toPng(ticketRef.current, {
+                quality: 0.95,
+                backgroundColor: '#ffffff',
+                cacheBust: true,
+            });
+
+            // 2. Convertir a Blob para el portapapeles
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+
+            // 3. Copiar al portapapeles
+            if (navigator.clipboard && window.ClipboardItem) {
+                const item = new ClipboardItem({ [blob.type]: blob });
+                await navigator.clipboard.write([item]);
+                toast.success('¡Imagen copiada! Pégala en WhatsApp');
+            } else {
+                // Fallback: descargar si el portapapeles no soporta imágenes (PC antiguos)
+                const link = document.createElement('a');
+                link.download = 'Pedido_Marbella.png';
+                link.href = dataUrl;
+                link.click();
+                toast.info('Imagen descargada. Adjúntala en WhatsApp');
+            }
+
+            // 4. Pausa estética
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            // Normalize phone
+            const cleanPhone = supplierPhone.replace(/\D/g, '');
+            const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
+
+            // 5. Abrir directamente la conversación
+            const messageText = `Adjunto pedido. Gracias.`;
+            const message = encodeURIComponent(messageText);
+            window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+
+        } catch (error) {
+            console.error('Error sharing image:', error);
+            toast.error('Error al generar la imagen');
+        } finally {
+            setIsCapturing(false);
         }
-
-        // Normalize phone
-        const cleanPhone = supplierPhone.replace(/\D/g, '');
-        const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
-
-        // 2. Construir el mensaje con el enlace público para previsualización
-        // WhatsApp detecta el enlace al final y muestra el PDF como un adjunto visual
-        const messageText = `Adjunto pedido. Gracias.\n\n${pdfUrl || ''}`;
-        const message = encodeURIComponent(messageText);
-
-        window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
-
-        setIsSearching(false);
     };
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[80] p-4 lg:p-8 animate-in fade-in duration-300">
             <div className="bg-white rounded-[2.5rem] w-full max-w-[320px] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col pointer-events-auto max-h-[92vh]">
+
+                {/* HIDDEN TICKET FOR CAPTURE */}
+                <div className="fixed -left-[9999px] top-0">
+                    <div ref={ticketRef} className="bg-white p-8 w-[400px] flex flex-col gap-6 border border-zinc-100 shadow-sm text-zinc-900">
+                        <div className="flex flex-col items-center gap-2 border-b border-zinc-100 pb-4">
+                            <h1 className="text-xl font-black uppercase tracking-tighter">Bar La Marbella</h1>
+                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Pedido de Productos</p>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-50 pb-2">
+                                <span>Producto</span>
+                                <span>Cantidad</span>
+                            </div>
+                            {items.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center py-1">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-sm leading-tight">{item.name}</span>
+                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{item.unit || item.purchase_unit}</span>
+                                    </div>
+                                    <span className="font-black text-lg text-[#36606F] pr-2">{item.quantity}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 border-t-2 border-dashed border-zinc-100 pt-4 text-center">
+                            <p className="text-[9px] font-black text-zinc-300 uppercase tracking-[0.2em] italic">Muchas gracias por el servicio</p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Header */}
                 <div className="bg-[#36606F] py-5 px-6 flex flex-col items-center justify-center text-center relative shrink-0">
@@ -106,15 +164,15 @@ export function OrderSuccessModal({
                 </div>
 
                 {/* Body */}
-                <div className="p-5 flex flex-col gap-4 overflow-y-auto min-h-[300px] justify-center">
+                <div className="p-5 flex flex-col gap-4 overflow-y-auto min-h-[300px] justify-center text-zinc-900">
 
-                    {isGenerating || isSearching || !generatedBlob ? (
+                    {isGenerating || isCapturing || !generatedBlob ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-4 animate-in fade-in duration-500">
                             <div className="relative">
                                 <LoadingSpinner size="xl" className="text-[#36606F]" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    {isSearching ? (
-                                        <Send size={24} className="text-[#25D366] animate-pulse" />
+                                    {isCapturing ? (
+                                        <ImageIcon size={24} className="text-[#36606F] animate-pulse" />
                                     ) : (
                                         <FileText size={24} className="text-[#36606F] animate-pulse" />
                                     )}
@@ -122,10 +180,10 @@ export function OrderSuccessModal({
                             </div>
                             <div className="text-center">
                                 <h3 className="text-lg font-black text-gray-800 uppercase tracking-tighter">
-                                    {isSearching ? "Buscando proveedor" : "Generando PDF"}
+                                    {isCapturing ? "Generando Captura" : "Generando PDF"}
                                 </h3>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                    {isSearching ? "Abriendo WhatsApp..." : "Espera un momento..."}
+                                    {isCapturing ? "Copiando al portapapeles..." : "Espera un momento..."}
                                 </p>
                             </div>
                         </div>
@@ -152,7 +210,7 @@ export function OrderSuccessModal({
                             <div className="grid grid-cols-3 gap-2 mt-1">
                                 <button
                                     onClick={onDownload}
-                                    disabled={isUploading || !generatedBlob}
+                                    disabled={isCapturing || !generatedBlob}
                                     className={cn(
                                         "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
                                         "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm"
@@ -164,7 +222,7 @@ export function OrderSuccessModal({
 
                                 <button
                                     onClick={handleShare}
-                                    disabled={isUploading || !generatedBlob}
+                                    disabled={isCapturing || !generatedBlob}
                                     className={cn(
                                         "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
                                         "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm"
@@ -176,7 +234,7 @@ export function OrderSuccessModal({
 
                                 <button
                                     onClick={handleWhatsApp}
-                                    disabled={isUploading || !generatedBlob || !supplierPhone}
+                                    disabled={isCapturing || !generatedBlob || !supplierPhone}
                                     className={cn(
                                         "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
                                         "bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 shadow-sm"

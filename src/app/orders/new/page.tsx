@@ -422,6 +422,7 @@ export default function NewOrderPage() {
                 supplierPhone={dbSuppliers.find(s => s.name.toLowerCase() === selectedSupplier?.toLowerCase())?.phone || null}
                 isUploading={isUploading}
                 isGenerating={isGenerating}
+                items={selectedItems}
                 onDownload={handleDownload}
                 onClose={() => {
                     setIsSuccessOpen(false);
