@@ -79,46 +79,67 @@ export function OrderSuccessModal({
         setIsCapturing(true);
 
         try {
-            // 1. Generar captura del ticket
-            const dataUrl = await toPng(ticketRef.current, {
-                quality: 0.95,
-                backgroundColor: '#ffffff',
-                cacheBust: true,
-            });
+            const getBlob = async () => {
+                const dataUrl = await toPng(ticketRef.current!, {
+                    quality: 0.95,
+                    backgroundColor: '#ffffff',
+                    cacheBust: true,
+                    pixelRatio: 2,
+                });
+                const response = await fetch(dataUrl);
+                return await response.blob();
+            };
 
-            // 2. Convertir a Blob para el portapapeles
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
+            let isCopied = false;
 
-            // 3. Copiar al portapapeles
             if (navigator.clipboard && window.ClipboardItem) {
-                const item = new ClipboardItem({ [blob.type]: blob });
-                await navigator.clipboard.write([item]);
-                toast.success('¡Imagen copiada! Pégala en WhatsApp');
-            } else {
-                // Fallback: descargar si el portapapeles no soporta imágenes (PC antiguos)
-                const link = document.createElement('a');
-                link.download = 'Pedido_Marbella.png';
-                link.href = dataUrl;
-                link.click();
-                toast.info('Imagen descargada. Adjúntala en WhatsApp');
+                try {
+                    // Workaround for Safari iOS: pass Promise directly to ClipboardItem
+                    const item = new ClipboardItem({
+                        'image/png': getBlob()
+                    });
+                    await navigator.clipboard.write([item]);
+                    isCopied = true;
+                } catch (err1) {
+                    try {
+                        // Workaround for Chrome/Android
+                        const blob = await getBlob();
+                        const item = new ClipboardItem({ [blob.type]: blob });
+                        await navigator.clipboard.write([item]);
+                        isCopied = true;
+                    } catch (err2) {
+                        console.error('Clipboard write failed on both modes:', err2);
+                    }
+                }
             }
 
-            // 4. Pausa estética
-            await new Promise(resolve => setTimeout(resolve, 800));
+            if (isCopied) {
+                toast.success('¡LISTO! Ahora pega la imagen en el chat.', { duration: 4000 });
+            } else {
+                // Fallback: Download to gallery if clipboard API completely blocks it
+                const blob = await getBlob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'Pedido_Marbella.png';
+                link.href = url;
+                link.click();
+                toast.info('Tu móvil bloquea el portapapeles. Imagen guardada en tu galería.', { duration: 5000 });
+            }
 
-            // Normalize phone
+            // Normalizar teléfono
             const cleanPhone = supplierPhone.replace(/\D/g, '');
             const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
 
-            // 5. Abrir directamente la conversación
-            const messageText = `Adjunto pedido. Gracias.`;
-            const message = encodeURIComponent(messageText);
-            window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+            // Abrir WhatsApp con el texto tras una pequeña pausa para asegurar que el toast se lea
+            const message = encodeURIComponent(`Adjunto pedido. Gracias.`);
+
+            setTimeout(() => {
+                window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+            }, 1000);
 
         } catch (error) {
             console.error('Error sharing image:', error);
-            toast.error('Error al generar la imagen');
+            toast.error('Error al generar la captura. Inténtalo de nuevo.');
         } finally {
             setIsCapturing(false);
         }
