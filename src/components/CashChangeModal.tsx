@@ -31,7 +31,7 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
         const fetchStock = async () => {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxId).gt('quantity', 0);
             const stock: Record<number, number> = {};
-            data?.forEach((d: any) => stock[d.denomination] = d.quantity);
+            data?.forEach((d: any) => stock[Number(d.denomination)] = d.quantity);
             setAvailableStock(stock);
             setLoadingStock(false);
         };

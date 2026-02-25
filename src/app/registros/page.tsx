@@ -331,10 +331,10 @@ export default function RegistrosPage() {
         try {
             // Filtramos logs que realmente han sido editados o son placeholders válidos
             const logsToUpdate = modalLogs.filter(l => {
-                // Ignore empty new entries
-                if (!l.id && !l.in_time && l.event_type === 'regular' && !l.is_deleted) return false;
                 // Ignore completely deleted new entries
                 if (!l.id && l.is_deleted) return false;
+                // Ignore empty regular entries
+                if (!l.id && !l.in_time && l.event_type === 'regular') return false;
                 return true;
             }).map(l => {
                 // Ensure proper valid date strings for server parsing passing local client offset

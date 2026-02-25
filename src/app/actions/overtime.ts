@@ -270,18 +270,30 @@ export async function updateWeeklyWorkerConfig(
                 // Preferir las fechas procesadas en cliente que ya traen corrección de TimeZone
                 if (log.inTimeIso) {
                     clockInStr = log.inTimeIso;
-                } else {
+                } else if (log.in_time) {
                     // Fallback de retrocompatibilidad
-                    const [inH, inM] = (log.in_time || "09:00").split(':').map(Number);
+                    const [inH, inM] = log.in_time.split(':').map(Number);
                     const clockInFallback = new Date(log.date + "T00:00:00");
                     clockInFallback.setHours(inH, inM, 0, 0);
+                    clockInStr = clockInFallback.toISOString();
+                } else if (log.event_type !== 'regular') {
+                    // Si no hay hora de entrada pero es un evento especial, asignamos 09:00 por defecto
+                    const clockInFallback = new Date(log.date + "T00:00:00");
+                    clockInFallback.setHours(9, 0, 0, 0);
                     clockInStr = clockInFallback.toISOString();
                 }
 
                 if (log.event_type !== 'regular') {
                     totalHours = 8;
-                    if (log.outTimeIso) clockOutStr = log.outTimeIso;
-                    else {
+                    if (log.outTimeIso) {
+                        clockOutStr = log.outTimeIso;
+                    } else if (log.out_time) {
+                        const [outH, outM] = log.out_time.split(':').map(Number);
+                        const dOutFallback = new Date(log.date + "T00:00:00");
+                        dOutFallback.setHours(outH, outM, 0, 0);
+                        clockOutStr = dOutFallback.toISOString();
+                    } else {
+                        // Si no hay hora de salida pero es un evento especial, asignamos 8 horas después (17:00)
                         const dOutFallback = new Date(clockInStr);
                         dOutFallback.setHours(dOutFallback.getHours() + 8);
                         clockOutStr = dOutFallback.toISOString();

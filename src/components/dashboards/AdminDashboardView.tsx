@@ -381,8 +381,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         setSelectedBox(box);
         if (mode === 'out' || mode === 'audit' || mode === 'inventory') {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
-            const initial: any = {};
-            data?.forEach(d => initial[d.denomination] = d.quantity);
+            const initial: Record<number, number> = {};
+            data?.forEach(d => initial[Number(d.denomination)] = d.quantity);
             setBoxInventoryMap(initial);
             setBoxInventory(data || []);
         }
