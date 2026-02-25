@@ -118,7 +118,7 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] 📱 **Vista Calendario Mobile Refinada (Historial)**: Adaptación extema a 7 columnas en smartphone sin scroll. Diseño fluido compactado ocultando la cuadrícula 2x2 para destacar exclusivamente la métrica activa en cada día. Corrección en márgenes y padding para un grid sin solapamientos.
 - [x] 📱 **Refinamiento Mobile Historial (v2)**: Eliminado fondo en botón de retroceso (solo icono), marcador de texto blanco (sin fondo) para métricas activas y reducción de fuente en la vista calendario para ajustar contenido en 7 columnas sin truncado.
 - [x] 📅 **Persistencia Eventos Especiales (Registros)**: Solucionado error donde "Festivo", "Enfermedad" y "Personal" fallaban al guardar. Ahora el frontend asume turnos `09:00 - 17:00` por defecto y el backend recibe e inserta correctamente los eventos `event_type` sin necesidad de input manual de hora.
-- [x] 📱 **Vista Táctil Edición Ágil (Registros)**: Transformación del panel de edición semanal a un grid estricto de 7 columnas (una por día), permitiendo ver la semana completa de fichajes en una sola fila en dispositivos móviles con extrema densidad de información.
+- [x] 📱 **Vista Táctil Edición Ágil (Registros)**: Transformación del panel de edición semanal a un grid estricto de 7 columnas (una por día), permitiendo ver la semana completa de fichajes en una sola fila en dispositivos móviles con extrema densidad de información. Se ha unificado la estética de la cabecera insertando el mismo diseño de cabecera en rojo Marbella con letra blanca usado en el calendario del Historial.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 
 ## 📅 PENDIENTE

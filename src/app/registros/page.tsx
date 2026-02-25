@@ -657,13 +657,15 @@ export default function RegistrosPage() {
 
                                     if (log.is_deleted) {
                                         return (
-                                            <div key={idx} className="flex flex-col items-center p-1 sm:p-2 bg-gray-50/30 min-h-[160px]">
-                                                <span className="text-[9px] sm:text-[10px] font-black uppercase text-gray-400 mb-0.5">{dayName}</span>
-                                                <span className="text-[10px] sm:text-[11px] font-black text-gray-800 mb-auto">{format(log.date, 'd')}</span>
+                                            <div key={idx} className="flex flex-col items-center bg-gray-50/30 min-h-[160px]">
+                                                <div className="w-full bg-[#D64D5D] py-1 flex flex-col items-center justify-center shadow-sm mb-auto">
+                                                    <span className="text-[7.5px] sm:text-[9px] font-black uppercase text-white tracking-widest leading-none mb-0.5">{dayName}</span>
+                                                    <span className="text-[10px] sm:text-[11px] font-black text-white leading-none">{format(log.date, 'd')}</span>
+                                                </div>
 
                                                 <button
                                                     onClick={() => updateLogField(idx, 'is_deleted', false)}
-                                                    className="mt-auto mb-2 p-2 bg-white border border-gray-200 shadow-sm rounded-full text-[#5B8FB9] hover:bg-gray-50 active:scale-95 transition-transform"
+                                                    className="mt-auto mb-3 p-2 bg-white border border-gray-200 shadow-sm rounded-full text-[#5B8FB9] hover:bg-gray-50 active:scale-95 transition-transform"
                                                 >
                                                     <Plus size={14} />
                                                 </button>
@@ -675,18 +677,16 @@ export default function RegistrosPage() {
                                         <div
                                             key={idx}
                                             className={cn(
-                                                "flex flex-col items-center p-1 sm:p-2 transition-colors relative group min-h-[160px]",
+                                                "flex flex-col items-center transition-colors relative group min-h-[160px]",
                                                 log.out_time ? "bg-emerald-50/10" : "bg-white"
                                             )}
                                         >
-                                            <span className="text-[9px] sm:text-[10px] font-black uppercase text-gray-500 tracking-widest mb-0.5">
-                                                {dayName}
-                                            </span>
-                                            <span className="text-[10px] sm:text-[11px] font-black text-gray-900 mb-1.5">
-                                                {format(log.date, 'd')}
-                                            </span>
+                                            <div className="w-full bg-[#D64D5D] py-1 flex flex-col items-center justify-center shadow-sm mb-1.5">
+                                                <span className="text-[7.5px] sm:text-[9px] font-black uppercase text-white tracking-widest leading-none mb-0.5">{dayName}</span>
+                                                <span className="text-[10px] sm:text-[11px] font-black text-white leading-none">{format(log.date, 'd')}</span>
+                                            </div>
 
-                                            <div className="w-full relative flex items-center justify-center mb-1.5 px-0.5">
+                                            <div className="w-full relative flex items-center justify-center mb-1.5 px-1 sm:px-1.5">
                                                 <select
                                                     value={log.event_type}
                                                     onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
@@ -711,7 +711,7 @@ export default function RegistrosPage() {
                                             </div>
 
                                             {isRegular ? (
-                                                <div className="flex flex-col gap-1 w-full px-0.5 mb-2">
+                                                <div className="flex flex-col gap-1 w-full px-1 sm:px-1.5 mb-2">
                                                     <input
                                                         type="time"
                                                         value={log.in_time}
@@ -727,7 +727,7 @@ export default function RegistrosPage() {
                                                 </div>
                                             ) : (
                                                 <div className={cn(
-                                                    "w-full py-1.5 rounded-md flex flex-col items-center justify-center gap-0.5 mb-2 px-0.5 mt-1",
+                                                    "w-full py-1.5 rounded-md flex flex-col items-center justify-center gap-0.5 mb-2 px-1 sm:px-1.5 mt-1",
                                                     eventConfig?.border || 'bg-gray-50'
                                                 )}>
                                                     <span className="text-[9.5px] sm:text-[11px] font-black text-yellow-600 font-mono">09:00</span>
@@ -737,7 +737,7 @@ export default function RegistrosPage() {
 
                                             <button
                                                 onClick={() => deleteLog(idx)}
-                                                className="mt-auto p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors active:scale-95"
+                                                className="mt-auto mb-2 p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors active:scale-95"
                                                 title="Eliminar Registro"
                                             >
                                                 <Trash2 size={13} strokeWidth={2.5} />
