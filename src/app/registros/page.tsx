@@ -423,17 +423,31 @@ export default function RegistrosPage() {
                 </div>
             </div>
 
-            {/* Sub-Header Paginación Semanal (Solo modo Editar) */}
+            {/* Sub-Header Paginación Semanal y Guardar (Solo modo Editar) */}
             {viewMode === 'agile' && selectedWorkerId && (
-                <div className="mb-4 flex items-center justify-end gap-2 bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10 w-fit ml-auto">
-                    <button onClick={() => setAgileWeekStart(prev => startOfWeek(subWeeks(prev, 1), { weekStartsOn: 1 }))} className="p-1 text-white/60 hover:text-white">
-                        <ChevronLeft size={16} />
-                    </button>
-                    <span className="text-[9px] font-bold text-white uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full whitespace-nowrap">
-                        Sem. {format(agileWeekStart, 'd MMM', { locale: es })}
-                    </span>
-                    <button onClick={() => setAgileWeekStart(prev => startOfWeek(addWeeks(prev, 1), { weekStartsOn: 1 }))} className="p-1 text-white/60 hover:text-white">
-                        <ChevronRight size={16} />
+                <div className="mb-4 flex items-center justify-between bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10 w-full md:w-fit md:ml-auto gap-2">
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => setAgileWeekStart(prev => startOfWeek(subWeeks(prev, 1), { weekStartsOn: 1 }))} className="p-1 text-white/60 hover:text-white">
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-[9px] font-bold text-white uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full whitespace-nowrap">
+                            Sem. {format(agileWeekStart, 'd MMM', { locale: es })}
+                        </span>
+                        <button onClick={() => setAgileWeekStart(prev => startOfWeek(addWeeks(prev, 1), { weekStartsOn: 1 }))} className="p-1 text-white/60 hover:text-white">
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={saveAgileChanges}
+                        disabled={isSavingAgile}
+                        className={cn(
+                            "flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] sm:text-xs font-black tracking-widest transition-all",
+                            "bg-white text-[#5B8FB9] shadow-md hover:scale-105 active:scale-95 disabled:opacity-50"
+                        )}
+                    >
+                        {isSavingAgile ? <LoadingSpinner size="sm" /> : <Save size={14} />}
+                        GUARDAR
                     </button>
                 </div>
             )}
@@ -551,67 +565,56 @@ export default function RegistrosPage() {
                     </div>
                 ) : (
                     /* --- VISTA GESTIÓN ÁGIL (Semanal) --- */
-                    <div className="flex-1 flex flex-col gap-6 overflow-y-auto no-scrollbar">
-                        {/* Panel de Configuración Semanal */}
-                        <div className="p-6 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-8">
+                    <div className="flex-1 flex flex-col gap-4 sm:gap-6 overflow-y-auto no-scrollbar">
+                        {/* Panel de Configuración Semanal (Compacto) */}
+                        <div className="p-3 sm:p-5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl w-full">
+                            <div className="flex flex-row items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full">
+
                                 {/* Bolsa vs Pago Switch */}
-                                <div className="flex flex-col gap-2">
-                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest pl-1">Modo Overtime</span>
-                                    <div className="flex bg-white/10 p-1 rounded-2xl border border-white/20 shadow-inner">
+                                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest pl-1">Overtime</span>
+                                    <div className="flex bg-white/10 p-1 rounded-2xl border border-white/20 shadow-inner max-w-[140px]">
                                         <button
                                             onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: false }))}
                                             className={cn(
-                                                "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black transition-all",
+                                                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black transition-all",
                                                 !weeklyConfig.preferStock ? "bg-white text-[#5B8FB9] shadow-md" : "text-white/60 hover:text-white"
                                             )}
                                         >
-                                            <Coins size={14} />
-                                            NÓMINA
+                                            <Coins size={12} className="hidden sm:inline-block" />
+                                            PAGO
                                         </button>
                                         <button
                                             onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: true }))}
                                             className={cn(
-                                                "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black transition-all",
+                                                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black transition-all",
                                                 weeklyConfig.preferStock ? "bg-white text-[#5B8FB9] shadow-md" : "text-white/60 hover:text-white"
                                             )}
                                         >
-                                            <Landmark size={14} />
+                                            <Landmark size={12} className="hidden sm:inline-block" />
                                             BOLSA
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* Horas Contrato */}
-                                <div className="flex flex-col gap-2">
-                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest pl-1">Horas Contrato</span>
-                                    <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/20">
+                                <div className="flex flex-col gap-1.5 shrink-0">
+                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest pl-1 text-right sm:text-left">Contrato</span>
+                                    <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-2xl border border-white/20">
                                         <input
                                             type="number"
                                             value={weeklyConfig.contracted}
                                             onChange={(e) => setWeeklyConfig(prev => ({ ...prev, contracted: Number(e.target.value) }))}
-                                            className="w-12 bg-transparent text-center font-black text-white text-lg focus:outline-none"
+                                            className="w-10 sm:w-12 bg-transparent text-center font-black text-white text-base focus:outline-none"
                                         />
-                                        <span className="text-[10px] font-bold text-white/60">HORAS</span>
+                                        <span className="text-[9px] font-bold text-white/60">H</span>
                                     </div>
                                 </div>
                             </div>
-
-                            <button
-                                onClick={saveAgileChanges}
-                                disabled={isSavingAgile}
-                                className={cn(
-                                    "w-full md:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-sm font-black tracking-widest transition-all",
-                                    "bg-white text-[#5B8FB9] shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50"
-                                )}
-                            >
-                                {isSavingAgile ? <LoadingSpinner size="sm" /> : <Save size={20} />}
-                                GUARDAR SEMANA
-                            </button>
                         </div>
 
-                        {/* Lista de Fichajes de la Semana */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                        {/* Lista de Fichajes de la Semana (7 Columnas en todas las pantallas) */}
+                        <div className="grid grid-cols-7 gap-1 sm:gap-3 w-full pb-10">
                             {modalLogs.map((log, idx) => {
                                 const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
                                 const isRegular = log.event_type === 'regular';
@@ -620,55 +623,58 @@ export default function RegistrosPage() {
                                     <div
                                         key={idx}
                                         className={cn(
-                                            "bg-white p-3 rounded-2xl border transition-all hover:shadow-2xl hover:-translate-y-1 group",
-                                            log.out_time ? "border-emerald-100 shadow-lg" : "border-white/20 shadow-xl"
+                                            "bg-white p-1 sm:p-3 rounded-xl sm:rounded-2xl border transition-all flex flex-col items-center group relative",
+                                            log.out_time ? "border-emerald-100 shadow-sm sm:shadow-lg" : "border-white/20 shadow-sm sm:shadow-xl"
                                         )}
                                     >
-                                        <div className="h-6 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10 -mx-3 -mt-3 mb-3 rounded-t-2xl px-3">
-                                            <div className="w-full flex justify-between items-center text-white">
-                                                <span className="text-[9px] font-black uppercase tracking-widest drop-shadow-sm">
-                                                    {format(log.date, 'EEEE', { locale: es })}
-                                                </span>
-                                                <span className="text-[9px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
-                                                    {format(log.date, 'd MMM', { locale: es })}
-                                                </span>
-                                            </div>
+                                        <div className="h-4 sm:h-6 w-full bg-gradient-to-b from-red-500 to-red-600 flex flex-col sm:flex-row items-center justify-center sm:justify-between shadow-sm relative z-10 -mt-1 sm:-mt-3 mb-1 sm:mb-3 rounded-t-xl sm:rounded-t-2xl sm:px-3">
+                                            <span className="text-[7px] sm:text-[9px] font-black uppercase text-white tracking-wider drop-shadow-sm truncate">
+                                                {format(log.date, 'EE', { locale: es }).replace('.', '')}
+                                            </span>
+                                            <span className="hidden sm:inline-block text-[8px] sm:text-[9px] font-black uppercase text-white/90">
+                                                {format(log.date, 'd')}
+                                            </span>
                                         </div>
 
-                                        <div className="flex justify-end mb-2">
+                                        <span className="sm:hidden text-[9px] font-bold text-gray-500 mb-1 leading-none">{format(log.date, 'd')}</span>
+
+                                        <div className="flex w-full justify-center mb-1 sm:mb-2">
                                             <select
                                                 value={log.event_type}
                                                 onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
-                                                className="text-[8px] font-black bg-gray-50 px-1.5 py-1 rounded-lg border border-gray-100 focus:outline-none uppercase"
+                                                className={cn(
+                                                    "text-[7px] sm:text-[8px] font-black px-1 py-0.5 sm:py-1 rounded border focus:outline-none uppercase text-center w-full appearance-none",
+                                                    isRegular ? "bg-gray-50 border-gray-100 text-gray-700" : (eventConfig?.color + " border-transparent")
+                                                )}
                                             >
                                                 {EVENT_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                                    <option key={t.value} value={t.value}>{t.initial}</option>
                                                 ))}
                                             </select>
                                         </div>
 
                                         {isRegular ? (
-                                            <div className="flex flex-col gap-2">
-                                                <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
-                                                    <span className="text-[7px] font-black text-gray-400 uppercase block mb-0.5">Entrada</span>
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <div className="bg-gray-50/50 p-0.5 sm:p-2 rounded sm:rounded-xl border border-gray-100/50 flex flex-col items-center">
+                                                    <span className="hidden sm:block text-[7px] font-black text-gray-400 uppercase mb-0.5">Entrada</span>
                                                     <input
                                                         type="time"
                                                         value={log.in_time}
                                                         onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
                                                         className={cn(
-                                                            "w-full bg-transparent font-mono text-sm font-black focus:outline-none",
+                                                            "w-full bg-transparent font-mono text-[9px] sm:text-sm font-black focus:outline-none text-center p-0 appearance-none",
                                                             isRegular ? "text-emerald-600" : "text-yellow-500"
                                                         )}
                                                     />
                                                 </div>
-                                                <div className="bg-gray-50 p-2 rounded-xl border border-gray-100">
-                                                    <span className="text-[7px] font-black text-gray-400 uppercase block mb-0.5">Salida</span>
+                                                <div className="bg-gray-50/50 p-0.5 sm:p-2 rounded sm:rounded-xl border border-gray-100/50 flex flex-col items-center">
+                                                    <span className="hidden sm:block text-[7px] font-black text-gray-400 uppercase mb-0.5">Salida</span>
                                                     <input
                                                         type="time"
                                                         value={log.out_time}
                                                         onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
                                                         className={cn(
-                                                            "w-full bg-transparent font-mono text-sm font-black focus:outline-none",
+                                                            "w-full bg-transparent font-mono text-[9px] sm:text-sm font-black focus:outline-none text-center p-0 appearance-none",
                                                             isRegular ? "text-rose-500" : "text-yellow-500"
                                                         )}
                                                     />
@@ -676,34 +682,25 @@ export default function RegistrosPage() {
                                             </div>
                                         ) : (
                                             <div className={cn(
-                                                "w-full py-2.5 rounded-xl flex flex-col items-center justify-center gap-1",
+                                                "w-full flex-1 flex flex-col items-center justify-center p-0.5 rounded gap-0.5 sm:gap-1",
                                                 eventConfig?.border || 'bg-gray-50'
                                             )}>
-                                                <div className={cn("px-2 py-0.5 rounded-full text-white text-[8px] font-black shadow-sm", eventConfig?.color)}>
-                                                    {eventConfig?.label}
-                                                </div>
-                                                <div className="flex gap-2 items-center">
-                                                    <span className="text-[10px] font-black text-yellow-500 font-mono">09:00</span>
-                                                    <span className="text-[10px] font-black text-yellow-500 font-mono">17:00</span>
-                                                </div>
-                                                <span className="text-[7px] font-bold text-gray-400">8H AUTO</span>
+                                                <span className="text-[8px] sm:text-[10px] font-black text-yellow-500 font-mono hidden sm:block">09-17</span>
+                                                <span className="text-[7px] font-bold text-gray-400">8H</span>
                                             </div>
                                         )}
 
-                                        <div className="mt-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <span className="text-[8px] font-bold text-gray-300"># {idx + 1}</span>
-                                            <button
-                                                onClick={() => {
-                                                    const newLogs = [...modalLogs];
-                                                    newLogs[idx].out_time = '';
-                                                    setModalLogs(newLogs);
-                                                    setHasUnsavedChanges(true);
-                                                }}
-                                                className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors"
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const newLogs = [...modalLogs];
+                                                newLogs[idx].out_time = '';
+                                                setModalLogs(newLogs);
+                                                setHasUnsavedChanges(true);
+                                            }}
+                                            className="absolute -top-1.5 -right-1.5 p-1 bg-white border border-gray-100 rounded-full shadow-sm text-gray-300 hover:text-rose-500 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X size={8} className="sm:w-3 sm:h-3" />
+                                        </button>
                                     </div>
                                 );
                             })}
