@@ -76,11 +76,14 @@ type EditingLog = {
 };
 
 // --- CONSTANTES ---
+// NOTA: Los `value` han sido ajustados para cumplir con el CHECK CONSTRAINT de la BBDD
+// (regular, overtime, weekend, holiday, personal, adjustment) y evitar que Postgres
+// rechace subrepticiamente las inserciones. Las labels sí están en castellano.
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
-    { value: 'festivo', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
-    { value: 'enfermedad', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
-    { value: 'baja', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
+    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
 ];
 
