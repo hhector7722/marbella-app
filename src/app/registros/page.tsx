@@ -647,9 +647,11 @@ export default function RegistrosPage() {
                             </div>
                         </div>
 
-                        {/* Lista de Fichajes de la Semana (7 Columnas en todas las pantallas) */}
-                        <div className="grid grid-cols-7 gap-1 sm:gap-3 w-full pb-10">
+                        {/* Lista de Fichajes de la Semana (En una sola tarjeta) */}
+                        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col divide-y divide-gray-100 w-full mb-10 overflow-hidden">
                             {modalLogs.map((log, idx) => {
+                                if (log.is_deleted) return null;
+
                                 const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
                                 const isRegular = log.event_type === 'regular';
 
@@ -657,83 +659,89 @@ export default function RegistrosPage() {
                                     <div
                                         key={idx}
                                         className={cn(
-                                            "bg-white p-1 sm:p-3 rounded-xl sm:rounded-2xl border transition-all flex flex-col items-center group relative",
-                                            log.out_time ? "border-emerald-100 shadow-sm sm:shadow-lg" : "border-white/20 shadow-sm sm:shadow-xl"
+                                            "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:px-5 sm:py-4 transition-colors hover:bg-gray-50",
+                                            log.out_time ? "bg-emerald-50/20" : ""
                                         )}
                                     >
-                                        <div className="h-4 sm:h-6 w-full bg-gradient-to-b from-red-500 to-red-600 flex flex-col sm:flex-row items-center justify-center sm:justify-between shadow-sm relative z-10 -mt-1 sm:-mt-3 mb-1 sm:mb-3 rounded-t-xl sm:rounded-t-2xl sm:px-3">
-                                            <span className="text-[7px] sm:text-[9px] font-black uppercase text-white tracking-wider drop-shadow-sm truncate">
-                                                {format(log.date, 'EE', { locale: es }).replace('.', '')}
-                                            </span>
-                                            <span className="hidden sm:inline-block text-[8px] sm:text-[9px] font-black uppercase text-white/90">
-                                                {format(log.date, 'd')}
-                                            </span>
-                                        </div>
-
-                                        <span className="sm:hidden text-[9px] font-bold text-gray-500 mb-1 leading-none">{format(log.date, 'd')}</span>
-
-                                        <div className="flex w-full justify-center mb-1 sm:mb-2">
-                                            <select
-                                                value={log.event_type}
-                                                onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
-                                                className={cn(
-                                                    "text-[7px] sm:text-[8px] font-black px-1 py-0.5 sm:py-1 rounded border focus:outline-none uppercase text-center w-full appearance-none",
-                                                    isRegular ? "bg-gray-50 border-gray-100 text-gray-700" : (eventConfig?.color + " border-transparent")
-                                                )}
+                                        <div className="flex items-center justify-between sm:w-28 shrink-0">
+                                            <div className="flex items-baseline gap-2 sm:flex-col sm:gap-0 sm:items-start">
+                                                <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">
+                                                    {format(log.date, 'EEEE', { locale: es })}
+                                                </span>
+                                                <span className="text-sm font-black text-gray-800">
+                                                    {format(log.date, 'd MMM', { locale: es })}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => deleteLog(idx)}
+                                                className="sm:hidden p-1.5 text-gray-300 hover:text-rose-500 bg-gray-50 rounded-full active:scale-95"
                                             >
-                                                {EVENT_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value}>{t.initial}</option>
-                                                ))}
-                                            </select>
+                                                <Trash2 size={14} />
+                                            </button>
                                         </div>
 
-                                        {isRegular ? (
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <div className="bg-gray-50/50 p-0.5 sm:p-2 rounded sm:rounded-xl border border-gray-100/50 flex flex-col items-center">
-                                                    <span className="hidden sm:block text-[7px] font-black text-gray-400 uppercase mb-0.5">Entrada</span>
-                                                    <input
-                                                        type="time"
-                                                        value={log.in_time}
-                                                        onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
-                                                        className={cn(
-                                                            "w-full bg-transparent font-mono text-[9px] sm:text-sm font-black focus:outline-none text-center p-0 appearance-none",
-                                                            isRegular ? "text-emerald-600" : "text-yellow-500"
-                                                        )}
-                                                    />
-                                                </div>
-                                                <div className="bg-gray-50/50 p-0.5 sm:p-2 rounded sm:rounded-xl border border-gray-100/50 flex flex-col items-center">
-                                                    <span className="hidden sm:block text-[7px] font-black text-gray-400 uppercase mb-0.5">Salida</span>
-                                                    <input
-                                                        type="time"
-                                                        value={log.out_time}
-                                                        onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
-                                                        className={cn(
-                                                            "w-full bg-transparent font-mono text-[9px] sm:text-sm font-black focus:outline-none text-center p-0 appearance-none",
-                                                            isRegular ? "text-rose-500" : "text-yellow-500"
-                                                        )}
-                                                    />
-                                                </div>
+                                        <div className="flex-1 flex flex-row items-center gap-2 sm:gap-4 h-full">
+                                            <div className="flex-1 sm:w-36 sm:flex-none h-full">
+                                                <select
+                                                    value={log.event_type}
+                                                    onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
+                                                    className={cn(
+                                                        "text-[10px] sm:text-xs font-black px-2 py-2 sm:py-2.5 rounded-lg border focus:outline-none uppercase w-full appearance-none",
+                                                        isRegular ? "bg-gray-50 border-gray-200 text-gray-700" : (eventConfig?.color + " border-transparent")
+                                                    )}
+                                                >
+                                                    {EVENT_TYPES.map(t => (
+                                                        <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                            {t.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                        ) : (
-                                            <div className={cn(
-                                                "w-full flex-1 flex flex-col items-center justify-center p-0.5 rounded gap-0.5 sm:gap-1",
-                                                eventConfig?.border || 'bg-gray-50'
-                                            )}>
-                                                <span className="text-[8px] sm:text-[10px] font-black text-yellow-500 font-mono hidden sm:block">09-17</span>
-                                                <span className="text-[7px] font-bold text-gray-400">8H</span>
-                                            </div>
-                                        )}
+
+                                            {isRegular ? (
+                                                <div className="flex-[2] flex gap-2">
+                                                    <div className="flex-1 bg-gray-50 px-2 py-2 sm:py-2.5 rounded-lg border border-gray-100 flex items-center justify-between gap-1">
+                                                        <span className="text-[9px] font-black text-gray-400 uppercase hidden sm:inline-block">In</span>
+                                                        <input
+                                                            type="time"
+                                                            value={log.in_time}
+                                                            onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
+                                                            className={cn(
+                                                                "w-full bg-transparent font-mono text-xs sm:text-sm font-black focus:outline-none text-center p-0",
+                                                                isRegular ? "text-emerald-600" : "text-yellow-500"
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 bg-gray-50 px-2 py-2 sm:py-2.5 rounded-lg border border-gray-100 flex items-center justify-between gap-1">
+                                                        <span className="text-[9px] font-black text-gray-400 uppercase hidden sm:inline-block">Out</span>
+                                                        <input
+                                                            type="time"
+                                                            value={log.out_time}
+                                                            onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
+                                                            className={cn(
+                                                                "w-full bg-transparent font-mono text-xs sm:text-sm font-black focus:outline-none text-center p-0",
+                                                                isRegular ? "text-rose-500" : "text-yellow-500"
+                                                            )}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className={cn(
+                                                    "flex-[2] py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2",
+                                                    eventConfig?.border || 'bg-gray-50'
+                                                )}>
+                                                    <span className="text-[11px] sm:text-sm font-black text-yellow-500 font-mono">09:00 - 17:00</span>
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase hidden sm:inline-block">Auto</span>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <button
-                                            onClick={() => {
-                                                const newLogs = [...modalLogs];
-                                                newLogs[idx].out_time = '';
-                                                setModalLogs(newLogs);
-                                                setHasUnsavedChanges(true);
-                                            }}
-                                            className="absolute -top-1.5 -right-1.5 p-1 bg-white border border-gray-100 rounded-full shadow-sm text-gray-300 hover:text-rose-500 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => deleteLog(idx)}
+                                            className="hidden sm:flex p-2.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors shrink-0"
+                                            title="Eliminar Registro"
                                         >
-                                            <X size={8} className="sm:w-3 sm:h-3" />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 );
