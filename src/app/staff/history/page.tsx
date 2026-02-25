@@ -82,49 +82,53 @@ const WeeklyCard = React.memo(({
                                     </div>
                                     <div className="flex-1 p-1 flex flex-col items-center relative z-0">
                                         <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                        <div className="flex-1 flex items-center justify-center w-full mt-4">
-                                            {isSpecial ? (
+                                        {isSpecial ? (
+                                            <div className="flex-1 flex items-center justify-center w-full">
                                                 <div className={cn(
-                                                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg mb-2",
+                                                    "px-1.5 py-0.5 rounded shadow-sm text-center flex items-center justify-center min-w-[36px]",
                                                     eventConfig.color
                                                 )}>
-                                                    {eventConfig.initial}
+                                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none" style={{ marginTop: '1px' }}>{eventConfig.label}</span>
                                                 </div>
-                                            ) : (
-                                                <div className="flex flex-col justify-center gap-0.5 w-full pb-1">
-                                                    <div className="h-3 flex items-center justify-center gap-1">
-                                                        {day.hasLog ? (
-                                                            <>
-                                                                <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                            </>
-                                                        ) : null}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex-1 flex items-center justify-center w-full mt-4">
+                                                    <div className="flex flex-col justify-center gap-0.5 w-full pb-1">
+                                                        <div className="h-3 flex items-center justify-center gap-1">
+                                                            {day.hasLog ? (
+                                                                <>
+                                                                    <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
+                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                </>
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="h-3 flex items-center justify-center gap-1">
+                                                            {day.hasLog && day.clockOut ? (
+                                                                <>
+                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
+                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                </>
+                                                            ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                        </div>
                                                     </div>
-                                                    <div className="h-3 flex items-center justify-center gap-1">
-                                                        {day.hasLog && day.clockOut ? (
-                                                            <>
-                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                            </>
-                                                        ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
-                                                    </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                            {day.hasLog && day.totalHours > 0 ? (
-                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                    <span className="ml-0.5">H</span>
-                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
+                                                <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                    {day.hasLog && day.totalHours > 0 ? (
+                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                            <span className="ml-0.5">H</span>
+                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
+                                                        </div>
+                                                    ) : <div className="h-3" />}
+                                                    {day.extraHours > 0.1 ? (
+                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                            <span className="ml-0.5">Ex</span>
+                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
+                                                        </div>
+                                                    ) : <div className="h-3" />}
                                                 </div>
-                                            ) : <div className="h-3" />}
-                                            {day.extraHours > 0.1 ? (
-                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                    <span className="ml-0.5">Ex</span>
-                                                    <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
-                                                </div>
-                                            ) : <div className="h-3" />}
-                                        </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             );

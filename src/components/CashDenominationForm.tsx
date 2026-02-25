@@ -263,7 +263,7 @@ export const CashDenominationForm = ({
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                     {DENOMINATIONS.map(denom => (
                         <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                            <div className={cn("w-full flex items-center justify-center transition-transform group-hover:scale-110", denom >= 5 ? "h-14" : "h-10")}>
+                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
                                 <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
                             </div>
                             <div className="text-center w-full">
@@ -305,9 +305,34 @@ export const CashDenominationForm = ({
                             </div>
                         </div>
                     ))}
+                    {/* MOBILE IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c) */}
+                    <div className="sm:hidden col-span-3 flex items-end justify-end gap-1.5 pb-1 h-full pt-4">
+                        <button
+                            onClick={onCancel}
+                            className="flex-1 h-10 bg-gray-100 text-gray-500 font-black uppercase tracking-widest text-[9px] active:bg-gray-200 rounded-xl transition-all active:scale-95 flex items-center justify-center"
+                        >
+                            <X size={14} strokeWidth={3} />
+                        </button>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
+                            className={cn(
+                                "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95",
+                                isPurchaseMode
+                                    ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                                    : ((totalGiven <= 0)
+                                        ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
+                                        : bgClass + " shadow-emerald-200")
+                            )}
+                        >
+                            <Save size={16} strokeWidth={3} />
+                            Guardar
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div className="p-3 bg-white border-t flex gap-2 shrink-0">
+            {/* DESKTOP FOOTER */}
+            <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
                 <button
                     onClick={onCancel}
                     className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95"

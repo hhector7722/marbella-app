@@ -14,6 +14,7 @@ interface Ingredient {
     purchase_unit: string;
     image_url: string | null;
     order_unit?: string | null;
+    recommended_stock?: number | null;
 }
 
 interface OrderProductCardProps {
@@ -127,8 +128,20 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         ) : (
                             <Package className="text-gray-200 w-5 h-5" />
                         )}
+
+                        {/* Recommended Stock Badge */}
+                        {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
+                            <div className={cn(
+                                "absolute top-1 bg-zinc-100/90 backdrop-blur-sm border border-zinc-200 text-zinc-500 text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm transition-all z-10",
+                                quantity > 0 ? "right-8" : "right-1" // Shift left if trash button is active
+                            )} title="Stock Recomendado">
+                                <Package size={10} strokeWidth={2.5} />
+                                <span>{ingredient.recommended_stock}</span>
+                            </div>
+                        )}
+
                         {isUpdating && (
-                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-xl">
+                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-xl z-20">
                                 <LoadingSpinner size="sm" className="text-[#5E35B1]" />
                             </div>
                         )}

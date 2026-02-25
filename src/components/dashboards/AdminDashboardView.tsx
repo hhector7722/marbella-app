@@ -626,19 +626,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
                                             <span className="text-lg font-black">{box.current_balance.toFixed(2)}€</span>
                                         </div>
-                                        <div className="flex items-center justify-center">
-                                            {Math.abs(box.difference || 0) < 0.01 ? (
-                                                <Check className="w-4 h-4 text-white" strokeWidth={4} />
-                                            ) : (
-                                                <span className={cn(
-                                                    "text-sm font-black",
-                                                    (box.difference || 0) < 0 ? "text-rose-400" : "text-white"
-                                                )}>
-                                                    {(box.difference || 0) > 0 ? '+' : ''}
-                                                    {(box.difference || 0).toFixed(2)}€
-                                                </span>
-                                            )}
-                                        </div>
                                     </button>
 
                                     <div className="flex-[2] basis-0 grid grid-cols-3 gap-1.5">
@@ -649,7 +636,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div className="w-7 h-7 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <Plus size={14} strokeWidth={4} className="text-white" />
                                             </div>
-                                            <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Entrada</span>
+                                            <span className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'out')}
@@ -658,7 +645,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div className="w-7 h-7 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <Minus size={14} strokeWidth={4} className="text-white" />
                                             </div>
-                                            <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Salida</span>
+                                            <span className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'audit')}
@@ -667,11 +654,25 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div className="w-7 h-7 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <RefreshCw size={12} strokeWidth={4} className="text-white" />
                                             </div>
-                                            <span className="text-[9px] font-black text-zinc-900 uppercase tracking-widest leading-none">Arqueo</span>
+                                            <span className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                         </button>
                                     </div>
                                 </div>
                                 <div className="flex flex-col flex-1 min-h-0">
+                                    <div className="flex justify-between items-center px-1 mb-2">
+                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Diferencia Arqueo</span>
+                                        {Math.abs(box.difference || 0) < 0.01 ? (
+                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> 0.00€</span>
+                                        ) : (
+                                            <span className={cn(
+                                                "text-[8px] font-black uppercase tracking-widest",
+                                                (box.difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
+                                            )}>
+                                                {(box.difference || 0) > 0 ? '+' : ''}
+                                                {(box.difference || 0).toFixed(2)}€
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className={cn("flex justify-between items-center px-1", isMovementsExpanded ? "mb-2" : "mb-0")}>
                                         <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Movimientos<ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} /></button>
                                         <Link href="/dashboard/movements" className="text-[8px] font-black text-[#5B8FB9] bg-gray-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-1 uppercase">Ver más <ArrowRight className="w-2 h-2" /></Link>

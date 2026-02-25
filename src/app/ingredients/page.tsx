@@ -18,6 +18,7 @@ interface Ingredient {
     image_url: string | null;
     allergens: string[];
     order_unit?: string | null;
+    recommended_stock?: number | null;
 }
 
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'cl', 'u'];
@@ -90,7 +91,8 @@ export default function IngredientsPage() {
                 category: editForm.category,
                 waste_percentage: editForm.waste_percentage || 0,
                 image_url: editForm.image_url,
-                order_unit: editForm.order_unit || 'unidad'
+                order_unit: editForm.order_unit || 'unidad',
+                recommended_stock: editForm.recommended_stock || null
             }).eq('id', editingIngredient.id);
             if (error) throw error;
             toast.success('Guardado'); setEditingIngredient(null); fetchIngredients();
@@ -108,7 +110,8 @@ export default function IngredientsPage() {
                 unit_type: unit, // Provide missing unit_type
                 category: newIngredient.category || 'Alimentos',
                 waste_percentage: newIngredient.waste_percentage || 0,
-                order_unit: newIngredient.order_unit || 'unidad'
+                order_unit: newIngredient.order_unit || 'unidad',
+                recommended_stock: newIngredient.recommended_stock || null
             });
             if (error) throw error;
             toast.success('Creado'); setShowCreateModal(false); setNewIngredient({ category: 'Alimentos' }); fetchIngredients();
@@ -260,13 +263,17 @@ export default function IngredientsPage() {
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
                                     <select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
                                 </div>
-                                <div className="w-1/3">
+                                <div className="w-1/4">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
                                     <input type="number" step="0.01" value={editForm.waste_percentage} onChange={e => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
                                 </div>
-                                <div className="w-1/3">
+                                <div className="w-1/4">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">U. Pedido</label>
                                     <select value={editForm.order_unit || 'unidad'} onChange={e => setEditForm({ ...editForm, order_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{ORDER_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                </div>
+                                <div className="w-1/4">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2" title="Stock Recomendado">Stock Rec.</label>
+                                    <input type="number" step="1" value={editForm.recommended_stock || ''} onChange={e => setEditForm({ ...editForm, recommended_stock: parseFloat(e.target.value) || null })} className="w-full p-3 border rounded-2xl font-bold" placeholder="0" />
                                 </div>
                             </div>
                             {!isCustomSupplier ? (
@@ -323,13 +330,17 @@ export default function IngredientsPage() {
                                 <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
                             </div>
                             <div className="flex gap-2">
-                                <div className="w-1/2">
+                                <div className="w-1/3">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
                                     <input type="number" step="0.01" value={newIngredient.waste_percentage} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Merma" />
                                 </div>
-                                <div className="w-1/2">
+                                <div className="w-1/3">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">U. Pedido</label>
                                     <select value={newIngredient.order_unit || 'unidad'} onChange={e => setNewIngredient({ ...newIngredient, order_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{ORDER_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
+                                </div>
+                                <div className="w-1/3">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2" title="Stock Recomendado">Stock</label>
+                                    <input type="number" step="1" value={newIngredient.recommended_stock || ''} onChange={e => setNewIngredient({ ...newIngredient, recommended_stock: parseFloat(e.target.value) || null })} className="w-full p-3 border rounded-2xl font-bold" placeholder="0" />
                                 </div>
                             </div>
                             <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Crear</button>
