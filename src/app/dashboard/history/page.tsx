@@ -410,8 +410,8 @@ export default function HistoryPage() {
                     <div className="bg-[#36606F] p-2 md:p-4 space-y-3 relative">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 md:gap-4">
-                                <button onClick={() => router.back()} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
-                                    <ArrowLeft className="w-4 md:w-5 h-4 md:h-5" strokeWidth={3} />
+                                <button onClick={() => router.back()} className="flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95 md:w-10 md:h-10 md:bg-white/10 md:rounded-full md:border md:border-white/10">
+                                    <ArrowLeft className="w-5 md:w-5 h-5 md:h-5" strokeWidth={3} />
                                 </button>
                                 <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
                             </div>
@@ -518,13 +518,13 @@ export default function HistoryPage() {
                                                 key={m.value}
                                                 onClick={() => setSelectedMetric(m.value)}
                                                 className={cn(
-                                                    "flex-1 h-8 md:h-10 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 whitespace-nowrap",
+                                                    "flex-1 h-8 md:h-10 md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 whitespace-nowrap",
                                                     selectedMetric === m.value
-                                                        ? "bg-white text-[#36606F] shadow-lg"
-                                                        : "text-white/60 hover:text-white hover:bg-white/5"
+                                                        ? "text-white md:bg-white md:text-[#36606F] md:shadow-lg"
+                                                        : "text-white/40 md:text-white/60 hover:text-white hover:bg-white/5"
                                                 )}
                                             >
-                                                <m.icon size={12} className={cn("hidden sm:block", selectedMetric === m.value ? "text-[#36606F]" : "text-white/40")} />
+                                                <m.icon size={12} className={cn("hidden sm:block", selectedMetric === m.value ? "md:text-[#36606F] text-white" : "text-white/40")} />
                                                 {m.label}
                                             </button>
                                         ))}
@@ -647,12 +647,12 @@ export default function HistoryPage() {
                                                             <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
                                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-0 md:gap-1 mb-0.5 px-0.5 h-full">
                                                                     <div className="flex flex-col h-full w-full justify-center md:block">
-                                                                        <div className="text-[9px] min-[380px]:text-[11px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none truncate md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
+                                                                        <div className="text-[7.5px] min-[370px]:text-[8.5px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter md:tracking-normal md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
                                                                             {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                            {selectedMetric !== 'tickets_count' && <span className="text-[6px] md:text-[12px] ml-0.5 font-black">€</span>}
+                                                                            {selectedMetric !== 'tickets_count' && <span className="text-[5px] md:text-[12px] ml-[1px] md:ml-0.5 font-black">€</span>}
                                                                         </div>
 
-                                                                        <div className="text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-auto md:mt-0 mb-0.5 md:mb-2 truncate leading-tight text-center md:text-left">
+                                                                        <div className="text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-auto md:mt-0 mb-0.5 md:mb-2 leading-tight text-center md:text-left">
                                                                             {METRICS.find(m => m.value === selectedMetric)?.label}
                                                                         </div>
                                                                     </div>
