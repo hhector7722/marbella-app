@@ -403,7 +403,7 @@ export default function HistoryPage() {
 
 
                 {/* ── CONTENIDO PRINCIPAL DEL CALENDARIO UNIFICADO ── */}
-                <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto border border-zinc-100">
+                <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
                     <div className="bg-[#36606F] px-4 py-4 flex items-center justify-center relative">
@@ -432,7 +432,7 @@ export default function HistoryPage() {
                     ) : (
                         <div className="flex flex-col gap-6 p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
-                                <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col border border-gray-100">
+                                <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col">
 
                                     {/* FILA 1: Cabecera de Días (Roja) */}
                                     <div className="grid grid-cols-7 border-b border-gray-100 relative z-10 rounded-t-2xl overflow-hidden">
