@@ -129,7 +129,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
             >
                 {isManager ? (
                     <>
-                        <div className="w-1/2 h-full flex-shrink-0 -mt-3.5 md:mt-0">
+                        <div className="w-1/2 h-full flex-shrink-0 -mt-0.5 md:mt-0">
                             {(view === 'admin' || isDragging) && <AdminDashboardView initialData={initialData} />}
                         </div>
                         <div className="w-1/2 h-full flex-shrink-0 mt-4 md:mt-0">

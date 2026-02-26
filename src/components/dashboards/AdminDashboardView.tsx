@@ -400,7 +400,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     return (
         <div className="pb-[120px] pt-0 md:pt-1 animate-in fade-in duration-500">
-            <div className="px-3 md:p-6 w-full max-w-6xl mx-auto space-y-1.5 md:space-y-6 md:mt-0">
+            <div className="px-3 md:p-6 w-full max-w-6xl mx-auto space-y-2.5 md:space-y-6 md:mt-0">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
                     {/* Desktop Col 1: Ventas + Horas Extras */}
