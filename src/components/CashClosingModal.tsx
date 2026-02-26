@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    X, Save, Banknote, Coins, Calculator,
+    X, Save, Banknote, Coins, Calculator, Calendar,
     CreditCard, UserMinus, ArchiveRestore, Store,
     AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
     CheckCircle2, TrendingUp, RefreshCw, Minus, Plus
@@ -272,11 +272,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
                     <div className="flex flex-col">
                         <div
-                            className="flex items-center gap-2 opacity-60 mb-1 cursor-pointer hover:opacity-100 transition-opacity"
+                            className="flex items-center gap-2 bg-[#487B8F] px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer hover:bg-[#548ea5] transition-all shadow-sm"
                             onClick={() => datePickerRef.current?.showPicker()}
                         >
-                            <Calculator size={14} />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                            <Calendar size={14} className="text-white/60" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-white">
                                 {format(new Date(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
                             </span>
                             <input

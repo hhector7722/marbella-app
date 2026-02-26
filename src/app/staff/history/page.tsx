@@ -533,7 +533,7 @@ export default function HistoryPage() {
                                         {/* ZONA DERECHA (Grid de valores desplazado a la izquierda para el sello) */}
                                         <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
                                             {/* COL 1: HORAS */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-1.5 pb-1">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
                                                 <span className="text-[9px] font-black leading-none text-white block">
                                                     {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -541,7 +541,7 @@ export default function HistoryPage() {
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-1.5 pb-1">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
                                                 <span className={cn(
                                                     "text-[9px] font-black leading-none block",
                                                     (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
@@ -552,7 +552,7 @@ export default function HistoryPage() {
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-1.5 pb-1">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -560,7 +560,7 @@ export default function HistoryPage() {
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-1.5 pb-1">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
@@ -631,12 +631,14 @@ export default function HistoryPage() {
                                                         <option key={type.value} value={type.value}>{type.label}</option>
                                                     ))}
                                                 </select>
-                                                <input
-                                                    type="date"
-                                                    value={entry.date}
-                                                    onChange={(e) => updateEntry(idx, 'date', e.target.value)}
-                                                    className="flex-1 h-8 px-2 rounded-lg border border-zinc-200 text-xs font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                                                />
+                                                <div className="flex-1 bg-[#36606F] rounded-lg border border-white/10 flex items-center px-2">
+                                                    <input
+                                                        type="date"
+                                                        value={entry.date}
+                                                        onChange={(e) => updateEntry(idx, 'date', e.target.value)}
+                                                        className="w-full bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:ring-0 cursor-pointer"
+                                                    />
+                                                </div>
                                                 <button
                                                     onClick={() => removeEntry(idx)}
                                                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-90 shrink-0"
@@ -672,7 +674,8 @@ export default function HistoryPage() {
                                                         8 Horas - {eventConfig?.label || 'Evento'}
                                                     </span>
                                                 </div>
-                                            )}
+                                            )
+                                            }
                                         </div>
                                     );
                                 })}
@@ -698,6 +701,6 @@ export default function HistoryPage() {
                 )}
 
             </div>
-        </div>
+        </div >
     );
 }

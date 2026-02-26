@@ -169,16 +169,12 @@ export const CashDenominationForm = ({
                     <div className="flex flex-col gap-2 px-1">
                         {/* ROW 1: Fecha y Concepto */}
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
-                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
-                                    <Calendar size={8} />
-                                    Fecha
-                                </label>
+                            <div className="flex flex-col justify-center bg-[#36606F] p-2 rounded-xl border border-white/10 shadow-sm transition-all">
                                 <input
                                     type="datetime-local"
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="w-full bg-transparent border-none p-0 text-zinc-600 text-[9px] font-black uppercase tracking-tighter outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
+                                    className="w-full bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer text-center"
                                 />
                             </div>
                             <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
@@ -255,18 +251,14 @@ export const CashDenominationForm = ({
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
                         <div className={cn(
-                            "flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm",
+                            "flex flex-col justify-center bg-[#36606F] p-2 rounded-xl border border-white/10 shadow-sm transition-all",
                             isAudit && "col-span-full"
                         )}>
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
-                                <Calendar size={8} />
-                                Fecha
-                            </label>
                             <input
                                 type="datetime-local"
                                 value={selectedDate}
                                 onChange={(e) => setSelectedDate(e.target.value)}
-                                className="w-full bg-transparent border-none p-0 text-zinc-600 text-[9px] font-black uppercase tracking-tighter outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
+                                className="w-full bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer text-center"
                             />
                         </div>
 
