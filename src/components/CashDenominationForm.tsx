@@ -161,101 +161,120 @@ export const CashDenominationForm = ({
                 )}
 
                 {/* DATE & NOTES & PRICE ROW */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
-                    <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
-                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
-                            <Calendar size={8} />
-                            Fecha
-                        </label>
-                        <input
-                            type="datetime-local"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full bg-transparent border-none p-0 text-zinc-600 text-[9px] font-black uppercase tracking-tighter outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
-                        />
-                    </div>
-
-                    {isPurchaseMode ? (
-                        <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm">
-                            <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio de la Compra</label>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => handleAdjustPrice(-1)}
-                                    className="w-8 h-8 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
-                                >
-                                    <Minus size={16} strokeWidth={3} />
-                                </button>
-                                <div className="flex-1 flex items-center relative">
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={purchasePrice || ''}
-                                        onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
-                                        placeholder="0.00"
-                                        className="w-full bg-transparent border-none p-0 text-orange-600 text-xl font-black outline-none focus:ring-0 text-center"
-                                    />
-                                    <span className="text-orange-400 font-black absolute right-0">€</span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleAdjustPrice(1)}
-                                    className="w-8 h-8 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
-                                >
-                                    <Plus size={16} strokeWidth={3} />
-                                </button>
+                {isPurchaseMode ? (
+                    <div className="flex flex-col gap-2 px-1">
+                        {/* ROW 1: Fecha y Concepto */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
+                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
+                                    <Calendar size={8} />
+                                    Fecha
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="w-full bg-transparent border-none p-0 text-zinc-600 text-[9px] font-black uppercase tracking-tighter outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
+                                />
+                            </div>
+                            <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
+                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
+                                <input
+                                    type="text"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    placeholder="Motivo..."
+                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
+                                />
                             </div>
                         </div>
-                    ) : !isAudit && (
-                        <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto / Motivo</label>
+
+                        {/* ROW 2: Precio, Entregado, Cambio */}
+                        <div className="grid grid-cols-3 gap-2">
+                            {/* PRECIO */}
+                            <div className="flex flex-col p-1.5 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm justify-center">
+                                <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 text-center">Precio</label>
+                                <div className="flex items-center justify-center gap-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAdjustPrice(-1)}
+                                        className="w-6 h-6 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Minus size={14} strokeWidth={3} />
+                                    </button>
+                                    <div className="flex items-center relative flex-1 max-w-[48px] justify-center">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={purchasePrice || ''}
+                                            onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
+                                            placeholder="0.00"
+                                            className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none focus:ring-0 text-center flex-1 min-w-0"
+                                        />
+                                        <span className="text-orange-400 font-black absolute right-0 text-[10px] pointer-events-none opacity-50">€</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAdjustPrice(1)}
+                                        className="w-6 h-6 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
+                                    >
+                                        <Plus size={14} strokeWidth={3} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* LO QUE DAS / ENTREGADO */}
+                            <button
+                                onClick={() => setPurchaseTab('given')}
+                                className={cn(
+                                    "flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
+                                    purchaseTab === 'given' ? "bg-white text-rose-500 shadow-md border border-rose-100 scale-[1.02]" : "bg-zinc-100 text-zinc-400 hover:text-zinc-600 border border-transparent"
+                                )}
+                            >
+                                <span className="text-[8px] opacity-80 uppercase tracking-widest">Entregado</span>
+                                <span className="text-xs mt-0.5">{totalGiven.toFixed(2)}€</span>
+                            </button>
+
+                            {/* TU CAMBIO / CAMBIO */}
+                            <button
+                                onClick={() => setPurchaseTab('received')}
+                                className={cn(
+                                    "flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
+                                    purchaseTab === 'received' ? "bg-white text-emerald-500 shadow-md border border-emerald-100 scale-[1.02]" : "bg-zinc-100 text-zinc-400 hover:text-zinc-600 border border-transparent"
+                                )}
+                            >
+                                <span className="text-[8px] opacity-80 uppercase tracking-widest">Cambio</span>
+                                <span className="text-xs mt-0.5">{totalReceived.toFixed(2)}€</span>
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
+                        <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
+                                <Calendar size={8} />
+                                Fecha
+                            </label>
                             <input
-                                type="text"
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Ej. Cambio banco, Pago proveedor..."
-                                className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
+                                type="datetime-local"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                className="w-full bg-transparent border-none p-0 text-zinc-600 text-[9px] font-black uppercase tracking-tighter outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
                             />
                         </div>
-                    )}
 
-                    {isPurchaseMode && (
-                        <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm sm:col-span-2 lg:col-span-1">
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
-                            <input
-                                type="text"
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Nombre del proveedor o artículo..."
-                                className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* PURCHASE TABS */}
-                {isPurchaseMode && (
-                    <div className="flex gap-2 bg-zinc-100 p-1.5 rounded-2xl">
-                        <button
-                            onClick={() => setPurchaseTab('given')}
-                            className={cn(
-                                "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
-                                purchaseTab === 'given' ? "bg-white text-rose-500 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
-                            )}
-                        >
-                            <span>Lo que das</span>
-                            <span className="text-[14px] mt-0.5">{totalGiven.toFixed(2)}€</span>
-                        </button>
-                        <button
-                            onClick={() => setPurchaseTab('received')}
-                            className={cn(
-                                "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
-                                purchaseTab === 'received' ? "bg-white text-emerald-500 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
-                            )}
-                        >
-                            <span>Tu cambio</span>
-                            <span className="text-[14px] mt-0.5">{totalReceived.toFixed(2)}€</span>
-                        </button>
+                        {!isAudit && (
+                            <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
+                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto / Motivo</label>
+                                <input
+                                    type="text"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    placeholder="Ej. Cambio banco, Pago proveedor..."
+                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 

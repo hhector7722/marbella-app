@@ -818,8 +818,8 @@ export default function StaffDashboardView() {
                                     }}
                                     className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
                                 >
-                                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                        <ArrowRightLeft size={24} strokeWidth={2.5} />
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                        <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
                                     </div>
                                     <div className="flex flex-col text-left">
                                         <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
@@ -834,8 +834,8 @@ export default function StaffDashboardView() {
                                     }}
                                     className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
                                 >
-                                    <div className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                        <ShoppingCart size={24} strokeWidth={2.5} />
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                        <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="w-full h-full object-contain" />
                                     </div>
                                     <div className="flex flex-col text-left">
                                         <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
