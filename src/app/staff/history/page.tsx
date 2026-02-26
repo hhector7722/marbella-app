@@ -522,7 +522,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-[#487B8F] text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
+                                    <div className="bg-blue-600 text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
                                         <div className="w-16 pl-3 shrink-0 flex items-center h-full">
                                             <span className="font-black text-[7px] uppercase leading-none">
