@@ -435,10 +435,10 @@ export default function HistoryPage() {
                                 <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden border border-zinc-100/80">
 
                                     {/* FILA 1: Cabecera de Días (Roja) */}
-                                    <div className="grid grid-cols-7 bg-red-600 border-b border-red-700/50">
+                                    <div className="grid grid-cols-7 border-b border-gray-100 relative z-10">
                                         {DAY_HEADERS.map(d => (
-                                            <div key={d} className="flex items-center justify-center py-2 border-r border-white/20 last:border-r-0">
-                                                <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-wider drop-shadow-sm">{d}</span>
+                                            <div key={d} className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md border-r border-red-700/30 last:border-r-0">
+                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{d}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -520,57 +520,57 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-slate-800 text-white flex items-center h-14 relative z-10">
+                                    <div className="bg-[#1A1F3C] text-white flex items-center h-8 relative z-10">
                                         {/* ZONA IZQUIERDA (Fija) */}
-                                        <div className="w-24 pl-4 shrink-0">
-                                            <span className="font-black text-[10px] uppercase leading-none">
+                                        <div className="w-24 pl-3 shrink-0">
+                                            <span className="font-black text-[9px] uppercase leading-none">
                                                 SEMANA {week.weekNumber}
                                             </span>
                                         </div>
 
                                         {/* ZONA DERECHA (Grid de valores) */}
-                                        <div className="flex-1 grid grid-cols-4 h-full relative z-20">
+                                        <div className="flex-1 grid grid-cols-4 h-full relative z-20 pb-0.5">
                                             {/* COL 1: HORAS */}
-                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end">
-                                                    <span className="text-xs font-black leading-none text-white">
+                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                                <div className="h-3 flex items-end">
+                                                    <span className="text-[10px] md:text-[11px] font-black leading-none text-white">
                                                         {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[7px] text-white/60 font-bold leading-none uppercase">HORAS</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">HORAS</span>
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
-                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end">
+                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                                <div className="h-3 flex items-end">
                                                     <span className={cn(
-                                                        "text-xs font-black leading-none",
+                                                        "text-[10px] md:text-[11px] font-black leading-none",
                                                         (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
                                                     )}>
                                                         {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[7px] text-white/60 font-bold leading-none uppercase">PENDIENTES</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">PENDIENTES</span>
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
-                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end">
-                                                    <span className="text-xs font-black leading-none text-green-400">
+                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                                <div className="h-3 flex items-end">
+                                                    <span className="text-[10px] md:text-[11px] font-black leading-none text-green-400">
                                                         {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[7px] text-white/60 font-bold leading-none uppercase">EXTRAS</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">EXTRAS</span>
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
-                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end">
-                                                    <span className="text-xs font-black leading-none text-green-400">
+                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                                <div className="h-3 flex items-end">
+                                                    <span className="text-[10px] md:text-[11px] font-black leading-none text-green-400">
                                                         {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[7px] text-white/60 font-bold leading-none uppercase">IMPORTE</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">IMPORTE</span>
                                             </div>
                                         </div>
                                     </div>
