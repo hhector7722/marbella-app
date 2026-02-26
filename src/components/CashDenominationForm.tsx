@@ -132,37 +132,37 @@ export const CashDenominationForm = ({
                         <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
                     <div className="text-right">
-                        <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black">
+                        <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black leading-none mb-0.5">
                             {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
                         </span>
-                        <span className="text-xl font-black">{total.toFixed(2)}€</span>
+                        <div className="flex items-baseline justify-end gap-0.5">
+                            <span className="text-xl font-black tabular-nums">{total.toFixed(2)}</span>
+                            <span className="text-xs font-black opacity-50">€</span>
+                        </div>
                     </div>
+
+                    {type === 'out' && !isEditing && !forcePurchaseMode && (
+                        <div className="flex flex-col items-center gap-1 pr-1 border-l border-white/10 pl-4 h-10 justify-center">
+                            <span className="text-[7px] font-black uppercase opacity-50 tracking-widest">Compra</span>
+                            <button
+                                onClick={() => setIsPurchaseMode(!isPurchaseMode)}
+                                className={cn(
+                                    "w-10 h-5 rounded-full transition-all relative outline-none",
+                                    isPurchaseMode ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]" : "bg-white/20"
+                                )}
+                            >
+                                <div className={cn(
+                                    "absolute w-3 h-3 bg-white rounded-full top-1 transition-all shadow-sm",
+                                    isPurchaseMode ? "left-6" : "left-1"
+                                )} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-                {/* PURCHASE MODE TOGGLE */}
-                {type === 'out' && !isEditing && !forcePurchaseMode && (
-                    <div className="flex items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-zinc-100">
-                        <div className="flex-1">
-                            <h4 className="text-[10px] font-black text-[#36606F] uppercase tracking-widest leading-none">Modo Compra</h4>
-                            <p className="text-[8px] text-zinc-400 font-bold uppercase mt-1">Actívalo para pagar y recibir cambio</p>
-                        </div>
-                        <button
-                            onClick={() => setIsPurchaseMode(!isPurchaseMode)}
-                            className={cn(
-                                "w-12 h-6 rounded-full transition-all relative outline-none",
-                                isPurchaseMode ? "bg-orange-500" : "bg-zinc-200"
-                            )}
-                        >
-                            <div className={cn(
-                                "absolute w-4 h-4 bg-white rounded-full top-1 transition-all shadow-md",
-                                isPurchaseMode ? "left-7" : "left-1"
-                            )} />
-                        </button>
-                    </div>
-                )}
 
                 {/* DATE & NOTES & PRICE ROW */}
                 {isPurchaseMode ? (
