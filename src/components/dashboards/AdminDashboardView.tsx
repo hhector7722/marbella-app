@@ -400,7 +400,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     return (
         <div className="pb-[120px] pt-0 md:pt-1 animate-in fade-in duration-500">
-            <div className="px-3 md:p-6 w-full max-w-6xl mx-auto space-y-2.5 md:space-y-6 md:mt-0">
+            <div className="px-3 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 md:mt-0">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
                     {/* Desktop Col 1: Ventas + Horas Extras */}
@@ -598,7 +598,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </div>
 
                 {/* ============ MOBILE LAYOUT ============ */}
-                <div className="md:hidden flex flex-col gap-1.5">
+                <div className="md:hidden flex flex-col gap-4">
                     {/* 1. VENTAS */}
                     <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                         <div className="bg-[#36606F] px-6 py-2 flex justify-between items-center text-white shrink-0 relative">
@@ -718,7 +718,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 4. FILA INFERIOR: Cajas de Cambio (izq) + Iconos (dcha) */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-4">
                         {/* Columna izquierda: Cajas de cambio */}
                         <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                             <div className="bg-[#36606F] px-4 py-2 flex items-center text-white shrink-0">
