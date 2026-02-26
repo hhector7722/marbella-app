@@ -88,29 +88,20 @@ export function OrderSuccessModal({
                 const pdf = await loadingTask.promise;
                 const numPages = pdf.numPages;
 
-                // 1. Determinar escala segura. 
-                // iOS safari limita severamente el alto del canvas (aprox 4096px - 8192px)
-                // Si hay muchas páginas, bajamos la resolución base.
-                let scale = 2.5;
-                if (numPages > 2) scale = 2.0;
-                if (numPages > 4) scale = 1.5;
-                if (numPages > 8) scale = 1.0;
+                // 1. Determinar escala súper conservadora para iOS
+                // iOS tiene problemas de memoria enormes con canvases grandes.
+                let scale = 2.0;
+                if (numPages > 1) scale = 1.25;
+                if (numPages > 3) scale = 0.8;
 
-                // Pre-calcular dimensiones para evitar pasarnos del límite del canvas
+                // Pre-calcular dimensiones
                 let totalHeight = 0;
                 let maxWidth = 0;
                 const pagesData = [];
 
                 for (let i = 1; i <= numPages; i++) {
                     const page = await pdf.getPage(i);
-                    let viewport = page.getViewport({ scale });
-
-                    // Límite de seguridad estricto para móviles (Max height ~8000px)
-                    if (totalHeight + viewport.height > 8000) {
-                        // Forzar una escala menor sobre la marcha si el pedido es gigantesco
-                        scale = scale * 0.75;
-                        viewport = page.getViewport({ scale });
-                    }
+                    const viewport = page.getViewport({ scale });
 
                     totalHeight += viewport.height;
                     if (viewport.width > maxWidth) {
@@ -128,41 +119,40 @@ export function OrderSuccessModal({
                 mainCanvas.width = maxWidth;
                 mainCanvas.height = totalHeight;
 
-                // Rellenar fondo blanco
+                // Rellenar fondo blanco global
                 mainContext.fillStyle = '#ffffff';
                 mainContext.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 
-                // 3. Renderizar cada página
+                // 3. Renderizar cada página reciclando UN SOLO canvas temporal para no saturar la RAM del iPhone
                 let currentYOffset = 0;
+                const recycleCanvas = document.createElement('canvas');
+                const recycleContext = recycleCanvas.getContext('2d');
 
                 for (const { page, viewport } of pagesData) {
-                    const pageCanvas = document.createElement('canvas');
-                    const pageContext = pageCanvas.getContext('2d');
-                    if (!pageContext) continue;
+                    if (!recycleContext) continue;
 
-                    pageCanvas.width = viewport.width;
-                    pageCanvas.height = viewport.height;
+                    // Ajustar tamaño del canvas reciclable (limpia automáticamente el contenido)
+                    recycleCanvas.width = viewport.width;
+                    recycleCanvas.height = viewport.height;
+                    // Asegurar limpieza extra
+                    recycleContext.clearRect(0, 0, viewport.width, viewport.height);
 
                     await page.render({
-                        canvasContext: pageContext,
+                        canvasContext: recycleContext,
                         viewport: viewport
                     }).promise;
 
-                    mainContext.drawImage(pageCanvas, 0, currentYOffset);
+                    // Dibujar al lienzo principal
+                    mainContext.drawImage(recycleCanvas, 0, currentYOffset);
                     currentYOffset += viewport.height;
                 }
 
-                // 4. Convertir a Blob JPEG para menor peso en memoria/portapapeles si es muy grande
+                // 4. Convertir a Blob image/png (Obligatorio para iOS Safari ClipboardItem)
                 return new Promise((resolve, reject) => {
-                    // Si el archivo es muy masivo, usar JPEG al 90% para evitar crash al copiar al portapapeles
-                    const isHuge = numPages > 3;
-                    const mimeType = isHuge ? 'image/jpeg' : 'image/png';
-                    const quality = isHuge ? 0.9 : undefined;
-
                     mainCanvas.toBlob((blob) => {
                         if (blob) resolve(blob);
                         else reject(new Error("Canvas to Blob falló"));
-                    }, mimeType, quality);
+                    }, 'image/png');
                 });
             };
 
