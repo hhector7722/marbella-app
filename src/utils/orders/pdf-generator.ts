@@ -139,6 +139,8 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     // --------------------------------------------------------------------------
     // 2. TABLE (Strict Geometric Design)
     // --------------------------------------------------------------------------
+    let currentPageStartY = tableStartY;
+
     autoTable(doc, {
         startY: tableStartY,
         head: [['Producto', 'Cantidad', 'Unidad']],
@@ -181,6 +183,10 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
                 const doc = data.doc;
                 const x = data.cell.x;
                 const y = data.cell.y;
+
+                // Track start Y for the frame
+                currentPageStartY = y;
+
                 const w = doc.internal.pageSize.getWidth() - (20 * 2); // pageWidth - margin*2
                 const h = data.cell.height;
                 const r = 4; // Border radius
@@ -227,7 +233,11 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         didDrawPage: function (data) {
             // CONTINUOUS PERIMETER FRAME
             const startX = data.settings.margin.left;
-            const startY = data.settings.startY;
+
+            // If it's the first page, the frame starts at the custom tableStartY (below the header).
+            // On subsequent pages, autoTable draws the header at margin.top.
+            const startY = data.pageNumber === 1 ? currentPageStartY : data.settings.margin.top;
+
             const w = doc.internal.pageSize.getWidth() - (startX * 2);
             const h = (data.cursor?.y || startY) - startY;
 

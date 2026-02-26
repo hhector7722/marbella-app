@@ -79,101 +79,110 @@ export function OrderSuccessModal({
         setIsCapturing(true);
 
         try {
-            const getBlobs = async (): Promise<Blob[]> => {
+            const getSingleBlob = async (): Promise<Blob> => {
                 const arrayBuffer = await generatedBlob.arrayBuffer();
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
                 const numPages = pdf.numPages;
 
-                const scale = 2.0;
-                const blobs: Blob[] = [];
+                // iOS Canvas Limit: ~4096px height max safely.
+                // We aggressively scale down to keep the stitched image under the limit.
+                let scale = 2.0;
+                if (numPages > 1) scale = 1.0;
+                if (numPages > 3) scale = 0.6;
+                if (numPages > 5) scale = 0.4;
 
-                const recycleCanvas = document.createElement('canvas');
-                const recycleContext = recycleCanvas.getContext('2d');
-                if (!recycleContext) throw new Error("No 2d context for recycle canvas");
+                let totalHeight = 0;
+                let maxWidth = 0;
+                const pagesData = [];
 
                 for (let i = 1; i <= numPages; i++) {
                     const page = await pdf.getPage(i);
                     const viewport = page.getViewport({ scale });
 
+                    totalHeight += viewport.height;
+                    if (viewport.width > maxWidth) {
+                        maxWidth = viewport.width;
+                    }
+
+                    pagesData.push({ page, viewport });
+                }
+
+                const mainCanvas = document.createElement('canvas');
+                const mainContext = mainCanvas.getContext('2d');
+                if (!mainContext) throw new Error("No 2d context for main canvas");
+
+                mainCanvas.width = maxWidth;
+                mainCanvas.height = totalHeight;
+
+                mainContext.fillStyle = '#ffffff';
+                mainContext.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+
+                let currentYOffset = 0;
+                const recycleCanvas = document.createElement('canvas');
+                const recycleContext = recycleCanvas.getContext('2d');
+
+                for (const { page, viewport } of pagesData) {
+                    if (!recycleContext) continue;
+
                     recycleCanvas.width = viewport.width;
                     recycleCanvas.height = viewport.height;
-
-                    recycleContext.fillStyle = '#ffffff';
-                    recycleContext.fillRect(0, 0, recycleCanvas.width, recycleCanvas.height);
+                    recycleContext.clearRect(0, 0, viewport.width, viewport.height);
 
                     await page.render({
                         canvasContext: recycleContext,
                         viewport: viewport
                     }).promise;
 
-                    const blob = await new Promise<Blob>((resolve, reject) => {
-                        recycleCanvas.toBlob((b) => {
-                            if (b) resolve(b);
-                            else reject(new Error(`Canvas to Blob falló en página ${i}`));
-                        }, 'image/png');
-                    });
-
-                    blobs.push(blob);
+                    mainContext.drawImage(recycleCanvas, 0, currentYOffset);
+                    currentYOffset += viewport.height;
                 }
 
-                return blobs;
+                return new Promise((resolve, reject) => {
+                    mainCanvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Canvas to Blob falló"));
+                    }, 'image/png');
+                });
             };
 
             let isCopied = false;
-            let generatedBlobs: Blob[] = [];
 
-            try {
-                // Generar todas las páginas independientes
-                generatedBlobs = await getBlobs();
-
-                if (navigator.clipboard && window.ClipboardItem) {
-                    // Crear un array de ClipboardItems (uno por página)
-                    const clipboardItems = generatedBlobs.map(blob => new ClipboardItem({ 'image/png': blob }));
-
-                    // Intentar escribir el array completo en el portapapeles
-                    await navigator.clipboard.write(clipboardItems);
+            if (navigator.clipboard && window.ClipboardItem) {
+                try {
+                    // Safari iOS strict requirement: ClipboardItem must be instantiated synchronously 
+                    // with a Promise passed to it, rather than awaiting the blob first.
+                    const promise = getSingleBlob();
+                    const item = new ClipboardItem({
+                        'image/png': promise
+                    });
+                    await navigator.clipboard.write([item]);
                     isCopied = true;
+                } catch (err1) {
+                    try {
+                        // Fallback for Chrome/Android
+                        const blob = await getSingleBlob();
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        isCopied = true;
+                    } catch (err2) {
+                        console.error('Clipboard write failed on both modes:', err2);
+                    }
                 }
-            } catch (err) {
-                console.error('Falló la copia múltiple en el portapapeles:', err);
             }
 
             if (isCopied) {
-                toast.success('¡LISTO! Ahora pega las imágenes en el chat.', { duration: 4000 });
+                toast.success('¡LISTO! Ahora pega la imagen en el chat.', { duration: 4000 });
             } else {
-                // Fallback: Si el portapapeles bloquea el array múltiple, compartimos o descargamos nativo
-                if (navigator.canShare) {
-                    try {
-                        const files = generatedBlobs.map((blob, index) =>
-                            new File([blob], `Pedido_Pagina_${index + 1}.png`, { type: 'image/png' })
-                        );
-
-                        if (navigator.canShare({ files })) {
-                            await navigator.share({
-                                files,
-                                title: 'Pedido Bar La Marbella',
-                                text: 'Adjunto imágenes del pedido.'
-                            });
-                            isCopied = true;
-                        }
-                    } catch (shareErr) {
-                        console.error('Native share falla también', shareErr);
-                    }
-                }
-
-                // Si Share también falla, forzamos descarga de todas las imágenes
-                if (!isCopied) {
-                    generatedBlobs.forEach((blob, index) => {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = `Pedido_Pagina_${index + 1}.png`;
-                        link.href = url;
-                        link.click();
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    });
-                    toast.info('Tu móvil bloquea el portapapeles múltiple. Imágenes descargadas.', { duration: 5000 });
-                }
+                // Descarga de emergencia si falla portapapeles
+                const blob = await getSingleBlob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'Pedido_Bar_La_Marbella.png';
+                link.href = url;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                toast.info('Tu móvil bloquea el portapapeles. Se ha guardado en la galería.', { duration: 5000 });
             }
 
             // Normalizar teléfono
