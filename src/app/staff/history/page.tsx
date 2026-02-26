@@ -511,7 +511,7 @@ export default function HistoryPage() {
                                 </div>
 
                                 {/* Resumen semanal */}
-                                <div className="col-span-full bg-[#36606F] px-3 py-2 flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
+                                <div className="col-span-full relative bg-[#36606F] px-3 py-2 flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
                                     <div className="flex items-center gap-1">
                                         <span className="text-[9px] font-black text-white/60 uppercase tracking-wider">S-{week.weekNumber}</span>
                                         {week.isCurrentWeek && (
@@ -552,7 +552,7 @@ export default function HistoryPage() {
 
                                         {/* Sello PAGADO */}
                                         {week.summary.isPaid && (
-                                            <img src="/sello/pagado.png" alt="PAGADO" className="w-8 h-8 object-contain opacity-90 rotate-[-12deg] drop-shadow-md" />
+                                            <img src="/sello/pagado.png" alt="PAGADO" className="absolute -top-4 right-2 w-16 h-16 rotate-[-12deg] opacity-90 pointer-events-none z-10 drop-shadow-xl" />
                                         )}
                                     </div>
                                 </div>
