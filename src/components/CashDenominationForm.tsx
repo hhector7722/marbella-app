@@ -329,7 +329,12 @@ export const CashDenominationForm = ({
                     ))}
 
                     {/* IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c on small screens, or wraps on larger depending on cols) */}
-                    <div className="col-span-3 sm:hidden flex items-end justify-end gap-1.5 pb-[2px] h-full pt-4">
+                    <div className={cn(
+                        "col-span-3 sm:hidden flex items-end justify-end gap-1.5 h-full pt-4",
+                        (((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[0.01] || 0) > 0)
+                            ? "pb-[18px]"
+                            : "pb-[2px]"
+                    )}>
                         <button
                             onClick={handleConfirm}
                             disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
