@@ -435,7 +435,7 @@ export default function HistoryPage() {
                                 <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col border border-gray-100">
 
                                     {/* FILA 1: Cabecera de Días (Roja) */}
-                                    <div className="grid grid-cols-7 border-b border-gray-100 relative z-10">
+                                    <div className="grid grid-cols-7 border-b border-gray-100 relative z-10 rounded-t-2xl overflow-hidden">
                                         {DAY_HEADERS.map(d => (
                                             <div key={d} className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md border-r border-red-700/30 last:border-r-0">
                                                 <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{d}</span>
@@ -522,7 +522,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-[#1A1F3C] text-white flex items-center h-10 relative z-10 rounded-b-2xl">
+                                    <div className="bg-[#487B8F] text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
                                         <div className="w-16 pl-3 shrink-0">
                                             <span className="font-black text-[9px] uppercase leading-none">
