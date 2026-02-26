@@ -254,7 +254,10 @@ export const CashDenominationForm = ({
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
-                        <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
+                        <div className={cn(
+                            "flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm",
+                            isAudit && "col-span-full"
+                        )}>
                             <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
                                 <Calendar size={8} />
                                 Fecha
@@ -332,14 +335,14 @@ export const CashDenominationForm = ({
                     <div className={cn(
                         "col-span-3 sm:hidden flex items-end justify-end gap-1.5 h-full pt-4",
                         (((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[0.01] || 0) > 0)
-                            ? "pb-[18px]"
-                            : "pb-[2px]"
+                            ? "pb-[16px]" // Offset to align with h-10 input instead of the Disp: label
+                            : "pb-1"
                     )}>
                         <button
                             onClick={handleConfirm}
                             disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
                             className={cn(
-                                "flex-[2] h-[42px] text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
+                                "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
                                 isPurchaseMode
                                     ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                                     : ((totalGiven <= 0)
@@ -352,14 +355,14 @@ export const CashDenominationForm = ({
                                 {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
                             </div>
                             {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
-                                <span className="text-[7px] leading-none mt-0.5 font-bold tracking-tight">
+                                <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
                                     {totalGiven < purchasePrice ? `Falta ${(purchasePrice - totalGiven).toFixed(2)}€` : `Da cambio: ${(totalGiven - purchasePrice - totalReceived).toFixed(2)}€`}
                                 </span>
                             )}
                         </button>
                         <button
                             onClick={onCancel}
-                            className="flex-1 h-[42px] bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
                         >
                             <X size={14} strokeWidth={3} />
                             Salir
