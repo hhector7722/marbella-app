@@ -269,10 +269,10 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
 
                 {/* Header (Detail View Style) */}
-                <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
+                <div className="bg-blue-600 px-8 py-4 flex items-center justify-between text-white relative shrink-0">
                     <div className="flex flex-col">
                         <div
-                            className="flex items-center gap-2 bg-[#487B8F] px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer hover:bg-[#548ea5] transition-all shadow-sm"
+                            className="flex items-center gap-2 bg-blue-600 px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer hover:bg-blue-700 transition-all shadow-sm"
                             onClick={() => datePickerRef.current?.showPicker()}
                         >
                             <Calendar size={14} className="text-white/60" />

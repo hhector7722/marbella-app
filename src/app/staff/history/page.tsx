@@ -522,7 +522,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-[#487B8F] text-white flex items-center h-8 relative z-10 rounded-b-2xl overflow-hidden">
+                                    <div className="bg-[#487B8F] text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
                                         <div className="w-16 pl-3 shrink-0 flex items-center h-full">
                                             <span className="font-black text-[7px] uppercase leading-none">
@@ -533,7 +533,7 @@ export default function HistoryPage() {
                                         {/* ZONA DERECHA (Grid de valores desplazado a la izquierda para el sello) */}
                                         <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
                                             {/* COL 1: HORAS */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span className="text-[9px] font-black leading-none text-white block">
                                                     {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -541,7 +541,7 @@ export default function HistoryPage() {
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span className={cn(
                                                     "text-[9px] font-black leading-none block",
                                                     (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
@@ -552,7 +552,7 @@ export default function HistoryPage() {
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -560,7 +560,7 @@ export default function HistoryPage() {
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2 pb-1.5">
+                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
@@ -594,7 +594,7 @@ export default function HistoryPage() {
                             className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                            <div className="bg-blue-600 px-6 py-4 flex justify-between items-center text-white">
                                 <div className="flex flex-col">
                                     <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
                                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
@@ -631,7 +631,7 @@ export default function HistoryPage() {
                                                         <option key={type.value} value={type.value}>{type.label}</option>
                                                     ))}
                                                 </select>
-                                                <div className="flex-1 bg-[#36606F] rounded-lg border border-white/10 flex items-center px-2">
+                                                <div className="flex-1 bg-blue-600 rounded-lg border border-white/10 flex items-center px-2">
                                                     <input
                                                         type="date"
                                                         value={entry.date}
