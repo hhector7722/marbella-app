@@ -15,6 +15,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
+import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { differenceInMinutes } from 'date-fns';
@@ -98,6 +99,14 @@ export default function StaffDashboardView() {
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+
+    // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
+    const [operationalBox, setOperationalBox] = useState<any>(null);
+    const [isCashOptionsModalOpen, setIsCashOptionsModalOpen] = useState(false);
+    const [selectedBox, setSelectedBox] = useState<any>(null);
+    const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
+    const [boxInventory, setBoxInventory] = useState<any[]>([]);
+    const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
 
     useEffect(() => { initialize(); }, []);
 
@@ -260,6 +269,12 @@ export default function StaffDashboardView() {
                 setChangeBox(changeBoxes[0]);
             }
 
+            // Cargar caja operacional para acceso a "Compra"
+            const { data: opBoxes } = await supabase.from('cash_boxes').select('*').eq('type', 'operational').order('name').limit(1);
+            if (opBoxes && opBoxes.length > 0) {
+                setOperationalBox(opBoxes[0]);
+            }
+
             const { data: realShifts } = await supabase
                 .from('shifts')
                 .select('start_time, end_time, activity')
@@ -302,6 +317,43 @@ export default function StaffDashboardView() {
         } catch (error) { console.error(error); }
         finally { setLoading(false); }
     }
+
+    const openTreasuryModal = async (box: any, mode: 'out') => {
+        setSelectedBox(box);
+        if (mode === 'out') {
+            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const initial: Record<number, number> = {};
+            data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
+            setBoxInventoryMap(initial);
+            setBoxInventory(data || []);
+        }
+        setCashModalMode(mode);
+    };
+
+    const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any, customDate?: string) => {
+        try {
+            if (!selectedBox) return;
+            const payload: any = {
+                box_id: selectedBox.id,
+                type: 'OUT',
+                amount: total,
+                breakdown: breakdown,
+                notes: notesOrOutBreakdown as string
+            };
+
+            if (customDate) {
+                payload.created_at = customDate;
+            }
+
+            await supabase.from('treasury_log').insert(payload);
+            setCashModalMode('none');
+            setSelectedBox(null);
+            initialize();
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al registrar movimiento");
+        }
+    };
 
     const handleClockAction = async () => {
         if (!userId) return;
@@ -574,8 +626,8 @@ export default function StaffDashboardView() {
                             {/* Iconos Flotantes - Ahora fuera de Horarios */}
                             <div className="grid grid-cols-2 gap-2">
                                 <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
-                                    if (!changeBox) { toast.error('No hay caja de cambio configurada'); return; }
-                                    setShowSwapModal(true);
+                                    if (!changeBox || !operationalBox) { toast.error('Cajas no configuradas completamente'); return; }
+                                    setIsCashOptionsModalOpen(true);
                                 }} />
                                 <IOSIconBoxed
                                     img="/icons/recipes.png"
@@ -745,6 +797,71 @@ export default function StaffDashboardView() {
                         onClose={() => setShowSwapModal(false)}
                         onSuccess={() => { initialize(); setShowSwapModal(false); }}
                     />
+                )}
+
+                {/* MODAL: Opciones de Caja */}
+                {isCashOptionsModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4" onClick={() => setIsCashOptionsModalOpen(false)}>
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="bg-red-600 px-6 py-4 flex justify-between items-center text-white">
+                                <div>
+                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
+                                    <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Selecciona una operación</p>
+                                </div>
+                                <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
+                            </div>
+                            <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
+                                <button
+                                    onClick={() => {
+                                        setIsCashOptionsModalOpen(false);
+                                        setShowSwapModal(true);
+                                    }}
+                                    className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                >
+                                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                        <ArrowRightLeft size={24} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="flex flex-col text-left">
+                                        <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
+                                        <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas</span>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setIsCashOptionsModalOpen(false);
+                                        openTreasuryModal(operationalBox, 'out');
+                                    }}
+                                    className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                >
+                                    <div className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                        <ShoppingCart size={24} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="flex flex-col text-left">
+                                        <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
+                                        <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL: Salida (Compra) de Caja */}
+                {cashModalMode === 'out' && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+                        <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                            <CashDenominationForm
+                                key={'out' + (selectedBox?.id || '')}
+                                type={'out'}
+                                boxName={selectedBox?.name || 'Caja Inicial'}
+                                initialCounts={{}}
+                                availableStock={boxInventoryMap}
+                                onCancel={() => setCashModalMode('none')}
+                                onSubmit={handleCashTransaction}
+                            />
+                        </div>
+                    </div>
                 )}
 
                 <CashClosingModal

@@ -125,6 +125,7 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] **Creación Simplificada de Ingredientes**: Modificación en `/ingredients` y `CreateIngredientModal` para que solo el nombre sea el campo estrictamente requerido. Resolviendo el fallo bloqueante `NaN` al mandar un precio vacío.
 - [x] 🔄 **Navegación Rápida en Ingredientes**: Incorporadas flechas de navegación laterales flotantes en el modal de edición (`/ingredients`), permitiendo cambiar de producto sin cerrar la vista modal.
 - [x] 📅 **Rediseño Calendario Mensual Unificado (/staff/history)**: Refactorización radical con arquitectura "Frontend Tonto". Eliminada toda lógica de negocio del cliente (redondeo, bucles while, snapshots, `WeeklyCard`, paginación). El frontend ahora consume exclusivamente la RPC `get_monthly_timesheet(p_user_id, p_year, p_month)`. Nueva UI: calendario grid mensual (grid-cols-7) con header rojo LUN-DOM, celdas de día con puntos verde/rojo de fichaje y métricas H/Ex, y banda de resumen semanal `bg-[#36606F]` con 4 KPIs.
+- [x] 💸 **Modal de Opciones de Caja (Staff)**: Añadido un modal intermedio al pulsar el botón "Caja" en el dashboard de staff que permite elegir entre "Cambio" y "Compra".
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
