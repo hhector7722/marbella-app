@@ -90,9 +90,12 @@ export const CashDenominationForm = ({
     const totalReceived = calculateTotal(receivedCounts);
     const total = isPurchaseMode ? purchasePrice : totalGiven;
 
-    const netDifference = Math.abs((totalGiven - totalReceived) - purchasePrice);
-    const isMathCorrect = netDifference < 0.01;
-    const canSubmitPurchase = isMathCorrect && purchasePrice > 0;
+    const netDifference = totalGiven - totalReceived;
+    const isMathCorrect = Math.abs(netDifference - purchasePrice) < 0.01;
+    // check stock issue for OUTs
+    const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && DENOMINATIONS.some(d => (counts[d] || 0) > (availableStock[d] || 0));
+    // canSubmitPurchase allows submission if Math is Correct, OR if they are just doing a simple exit of money (given = price) without expecting change
+    const canSubmitPurchase = isMathCorrect && purchasePrice > 0 && totalGiven >= purchasePrice && !hasStockIssue;
 
     const handleConfirm = () => {
         if (isPurchaseMode) {
@@ -102,6 +105,7 @@ export const CashDenominationForm = ({
                 const net = (counts[d] || 0) - (receivedCounts[d] || 0);
                 if (net !== 0) netBreakdown[d] = net;
             });
+            // Total cost is purchasePrice, passing netBreakdown to deduct precise stock
             onSubmit(purchasePrice, netBreakdown, notes || 'Compra', selectedDate ? new Date(selectedDate).toISOString() : undefined);
         } else {
             onSubmit(totalGiven, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined);
@@ -290,9 +294,9 @@ export const CashDenominationForm = ({
                                 </span>
                                 <div className={cn(
                                     "flex items-center justify-between w-full h-10 bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
-                                    (type === 'out' && !isPurchaseMode) && (counts[denom] || 0) > (availableStock[denom] || 0) ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200" :
-                                        (isPurchaseMode && purchaseTab === 'given' && (counts[denom] || 0) > (availableStock[denom] || 0)) ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200" :
-                                            "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
+                                    hasStockIssue
+                                        ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
+                                        : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
                                 )}>
                                     <button
                                         type="button"
@@ -330,7 +334,7 @@ export const CashDenominationForm = ({
                             onClick={handleConfirm}
                             disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
                             className={cn(
-                                "flex-[2] h-[42px] text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95",
+                                "flex-[2] h-[42px] text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
                                 isPurchaseMode
                                     ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                                     : ((totalGiven <= 0)
@@ -338,8 +342,15 @@ export const CashDenominationForm = ({
                                         : "bg-emerald-500 shadow-emerald-200")
                             )}
                         >
-                            <Save size={16} strokeWidth={3} />
-                            Guardar
+                            <div className="flex items-center gap-1.5">
+                                <Save size={16} strokeWidth={3} />
+                                {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
+                            </div>
+                            {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
+                                <span className="text-[7px] leading-none mt-0.5 font-bold tracking-tight">
+                                    {totalGiven < purchasePrice ? `Falta ${(purchasePrice - totalGiven).toFixed(2)}€` : `Da cambio: ${(totalGiven - purchasePrice - totalReceived).toFixed(2)}€`}
+                                </span>
+                            )}
                         </button>
                         <button
                             onClick={onCancel}
@@ -359,7 +370,7 @@ export const CashDenominationForm = ({
                     className={cn(
                         "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
                         isPurchaseMode
-                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
+                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                             : ((totalGiven <= 0)
                                 ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
                                 : "bg-emerald-500 hover:brightness-110 shadow-emerald-200")
@@ -371,7 +382,7 @@ export const CashDenominationForm = ({
                     </div>
                     {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
                         <span className="text-[7px] opacity-80">
-                            {totalGiven - totalReceived > purchasePrice ? `Sobra ${(totalGiven - totalReceived - purchasePrice).toFixed(2)}€` : `Falta ${(purchasePrice - (totalGiven - totalReceived)).toFixed(2)}€`}
+                            {totalGiven < purchasePrice ? `Falta ${(purchasePrice - totalGiven).toFixed(2)}€` : `Da cambio: ${(totalGiven - purchasePrice - totalReceived).toFixed(2)}€`}
                         </span>
                     )}
                 </button>
