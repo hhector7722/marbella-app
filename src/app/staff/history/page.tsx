@@ -430,7 +430,7 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-6 p-4 bg-zinc-50/50">
+                        <div className="flex flex-col gap-3 p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
                                 <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col">
 
@@ -537,7 +537,7 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-white block">
                                                     {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[6px] text-white/70 font-bold leading-none uppercase tracking-tighter">HORAS</span>
+                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter">HORAS</span>
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
@@ -548,7 +548,7 @@ export default function HistoryPage() {
                                                 )}>
                                                     {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[6px] text-white/70 font-bold leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
@@ -556,7 +556,7 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[6px] text-white/70 font-bold leading-none uppercase tracking-tighter">EXTRAS</span>
+                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter">EXTRAS</span>
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
@@ -564,7 +564,7 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
-                                                <span className="text-[6px] text-white/70 font-bold leading-none uppercase tracking-tighter">IMPORTE</span>
+                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter">IMPORTE</span>
                                             </div>
                                         </div>
                                     </div>

@@ -453,7 +453,7 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="pb-4 pt-0 md:pt-1 animate-in fade-in duration-500">
+        <div className="pt-0 md:pt-1 animate-in fade-in duration-500">
             <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 items-start">
                     <div className="lg:col-span-2 space-y-4 md:space-y-6">

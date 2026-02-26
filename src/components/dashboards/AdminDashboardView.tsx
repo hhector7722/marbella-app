@@ -399,7 +399,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const isMobileExpanded = isMovementsExpanded || overtimeData.some(w => w.expanded);
 
     return (
-        <div className="pb-4 pt-0 md:pt-1 animate-in fade-in duration-500">
+        <div className="pt-0 md:pt-1 animate-in fade-in duration-500">
             <div className="px-3 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 md:mt-0">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
