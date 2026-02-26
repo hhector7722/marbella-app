@@ -134,7 +134,7 @@ export const CashDenominationForm = ({
                         <span className="text-xl font-black">{total.toFixed(2)}€</span>
                     </div>
                 </div>
-                <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
                     <X size={20} strokeWidth={3} />
                 </button>
             </div>
@@ -162,17 +162,17 @@ export const CashDenominationForm = ({
                 )}
 
                 {/* DATE & NOTES & PRICE ROW */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 px-1">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
                     <div className="flex flex-col justify-end bg-white/50 p-2 rounded-xl border border-zinc-200/50 shadow-sm">
                         <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-1">
                             <Calendar size={8} />
-                            Fecha y Hora
+                            Fecha
                         </label>
                         <input
                             type="datetime-local"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full bg-transparent border-none p-0 text-zinc-600 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
+                            className="w-full bg-transparent border-none p-0 text-zinc-600 text-[9px] font-black uppercase tracking-tighter outline-none focus:ring-0 cursor-pointer hover:text-[#5B8FB9] transition-colors"
                         />
                     </div>
 
@@ -309,7 +309,7 @@ export const CashDenominationForm = ({
                     <div className="sm:hidden col-span-3 flex items-end justify-end gap-1.5 pb-1 h-full pt-4">
                         <button
                             onClick={onCancel}
-                            className="flex-1 h-10 bg-gray-100 text-gray-500 font-black uppercase tracking-widest text-[9px] active:bg-gray-200 rounded-xl transition-all active:scale-95 flex items-center justify-center"
+                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[9px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center shadow-md shadow-rose-200"
                         >
                             <X size={14} strokeWidth={3} />
                         </button>
@@ -322,7 +322,7 @@ export const CashDenominationForm = ({
                                     ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                                     : ((totalGiven <= 0)
                                         ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
-                                        : bgClass + " shadow-emerald-200")
+                                        : "bg-emerald-500 shadow-emerald-200")
                             )}
                         >
                             <Save size={16} strokeWidth={3} />
@@ -335,7 +335,7 @@ export const CashDenominationForm = ({
             <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
                 <button
                     onClick={onCancel}
-                    className="flex-1 py-3 text-gray-500 font-black uppercase tracking-widest text-[9px] hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 shadow-md shadow-rose-200"
                 >
                     Cancelar
                 </button>
@@ -348,7 +348,7 @@ export const CashDenominationForm = ({
                             ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                             : ((totalGiven <= 0)
                                 ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
-                                : bgClass + " hover:brightness-110 shadow-emerald-200")
+                                : "bg-emerald-500 hover:brightness-110 shadow-emerald-200")
                     )}
                 >
                     <div className="flex items-center gap-2">

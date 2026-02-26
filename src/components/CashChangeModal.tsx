@@ -124,7 +124,7 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                                 <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Cambio Efectivo</h2>
                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] mt-1 truncate">Caja {boxName}</p>
                             </div>
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 border border-white/10">
+                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
                                 <X size={20} strokeWidth={3} />
                             </button>
                         </div>

@@ -87,6 +87,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             } else {
                 fetchTodayVentas();
             }
+            fetchCurrentInventory();
         } else {
             // Reset state on close
             setStep('tpv_data');
@@ -105,6 +106,22 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             fetchTodayVentas();
         }
     }, [selectedDateTime]);
+
+    async function fetchCurrentInventory() {
+        try {
+            const { data: box } = await supabase.from('cash_boxes').select('id').eq('type', 'operational').maybeSingle();
+            if (box) {
+                const { data: inventory } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+                if (inventory) {
+                    const initial: any = {};
+                    inventory.forEach((d: any) => initial[d.denomination] = d.quantity);
+                    setCounts(initial);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching inventory:", error);
+        }
+    }
 
     async function fetchTodayVentas() {
         setLoading(true);
@@ -276,7 +293,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
                         <X size={20} strokeWidth={3} />
                     </button>
                 </div>
