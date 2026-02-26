@@ -399,8 +399,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const isMobileExpanded = isMovementsExpanded || overtimeData.some(w => w.expanded);
 
     return (
-        <div className="pb-28 pt-0 md:pt-1 animate-in fade-in duration-500">
-            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
+        <div className="pb-[120px] pt-0 md:pt-1 animate-in fade-in duration-500">
+            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-3 md:space-y-6 md:mt-0">
                 {/* DESKTOP: 2-column grid | MOBILE: stacking vertical */}
                 <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
                     {/* Desktop Col 1: Ventas + Horas Extras */}
@@ -598,7 +598,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </div>
 
                 {/* ============ MOBILE LAYOUT ============ */}
-                <div className="md:hidden space-y-4">
+                <div className="md:hidden flex flex-col gap-1.5">
                     {/* 1. VENTAS */}
                     <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                         <div className="bg-[#36606F] px-6 py-2 flex justify-between items-center text-white shrink-0 relative">
@@ -606,21 +606,21 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <div className="absolute left-1/2 -translate-x-1/2"><LiveClock /></div>
                             <div className="flex items-center gap-3"><Link href="/dashboard/history" className="text-[10px] font-black pointer-events-auto hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link></div>
                         </div>
-                        <div className="p-3 grid grid-cols-3 gap-y-3 gap-x-2 flex-1 items-center">
-                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg font-black text-black leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span></div>
-                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg font-black text-emerald-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span></div>
-                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg font-black text-blue-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span></div>
+                        <div className="p-2.5 grid grid-cols-3 gap-y-2 gap-x-2 flex-1 items-center">
+                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total} suffix="€" decimals={2} className="text-lg font-black text-black leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Ventas</span></div>
+                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0} suffix="€" decimals={2} className="text-lg font-black text-emerald-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Venta Neta</span></div>
+                            <div className="flex flex-col items-center justify-center text-center"><PremiumCountUp value={liveTickets.count > 0 ? liveTickets.total / liveTickets.count : 0} suffix="€" decimals={2} className="text-lg font-black text-blue-600 leading-none" /><span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Ticket Medio</span></div>
                         </div>
                     </div>
 
                     {/* 2. CAJA INICIAL + MOVIMIENTOS */}
-                    <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-4" : "p-4 pb-2")}>
+                    <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-3 pb-1.5")}>
                         {boxes.filter(b => b.type === 'operational').map(box => (
                             <div key={box.id} className="flex flex-col h-full">
-                                <div className="flex flex-row gap-2 mb-3">
+                                <div className="flex flex-row gap-1.5 mb-2">
                                     <button
                                         onClick={() => router.push('/dashboard/movements')}
-                                        className="flex-[1.2] basis-0 px-4 py-3 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
+                                        className="flex-[1.2] basis-0 px-3 py-2 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95"
                                     >
                                         <div className="flex flex-col items-start leading-none gap-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
@@ -693,12 +693,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
 
                     {/* 3. HORAS EXTRAS */}
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden mb-1">
                         <div className="bg-purple-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             <Link href="/dashboard/overtime" className="text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                         </div>
-                        <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
+                        <div className="p-3 space-y-2.5 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                             {overtimeData.length === 0 ? (
                                 <div className="py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest italic">No hay registros</div>
                             ) : (
