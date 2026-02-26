@@ -522,15 +522,15 @@ export default function HistoryPage() {
                                     {/* Resumen semanal al pie de la semana (DISEÑO BLINDADO) */}
                                     <div className="col-span-full relative bg-[#36606F] text-white flex items-center h-12 border-t border-white/10 overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
-                                        <div className="w-24 pl-3 shrink-0 flex items-center gap-1.5">
-                                            <span className="font-black text-[10px] uppercase tracking-wider leading-none">
+                                        <div className="w-[110px] pl-3 shrink-0 flex items-center gap-1.5">
+                                            <span className="font-black text-[8px] md:text-[9px] uppercase tracking-wider leading-none whitespace-nowrap">
                                                 SEMANA {week.weekNumber}
                                             </span>
                                             {week.summary.isPaid && (
                                                 <img
                                                     src="/sello/pagado.png"
                                                     alt="PAGADO"
-                                                    className="h-3.5 w-auto object-contain opacity-90 pointer-events-none"
+                                                    className="h-7 w-auto object-contain opacity-90 pointer-events-none"
                                                 />
                                             )}
                                         </div>
