@@ -102,10 +102,14 @@ function drawHeader(doc: any, logoImage: string | null): number {
 export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     console.log("PDF GENERATOR V9.0: Clean native implementation");
 
+    // Calculate dynamic "receipt" height based on item count to avoid pagination breaks
+    // Header (~80) + TableHead (~15) + (Rows * 28) + Margin Bottom (~20)
+    const estimatedHeight = 80 + 15 + (data.items.length * 30) + 20;
+
     const doc = new jsPDF({
         orientation: 'p',
         unit: 'mm',
-        format: 'a4'
+        format: [210, Math.max(297, estimatedHeight)] // At least A4 height
     }) as any;
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -233,11 +237,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         didDrawPage: function (data) {
             // CONTINUOUS PERIMETER FRAME
             const startX = data.settings.margin.left;
-
-            // If it's the first page, the frame starts at the custom tableStartY (below the header).
-            // On subsequent pages, autoTable draws the header at margin.top.
-            const startY = data.pageNumber === 1 ? currentPageStartY : data.settings.margin.top;
-
+            const startY = currentPageStartY;
             const w = doc.internal.pageSize.getWidth() - (startX * 2);
             const h = (data.cursor?.y || startY) - startY;
 

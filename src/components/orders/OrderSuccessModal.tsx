@@ -83,63 +83,37 @@ export function OrderSuccessModal({
                 const arrayBuffer = await generatedBlob.arrayBuffer();
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
-                const numPages = pdf.numPages;
 
-                // iOS Canvas Limit: ~4096px height max safely.
-                // We aggressively scale down to keep the stitched image under the limit.
-                let scale = 2.0;
-                if (numPages > 1) scale = 1.0;
-                if (numPages > 3) scale = 0.6;
-                if (numPages > 5) scale = 0.4;
+                // El PDF ahora es de 1 sola página infinita (Ticket)
+                const page = await pdf.getPage(1);
 
-                let totalHeight = 0;
-                let maxWidth = 0;
-                const pagesData = [];
+                // Obtain base viewport to calculate physical height
+                const baseViewport = page.getViewport({ scale: 1.0 });
 
-                for (let i = 1; i <= numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const viewport = page.getViewport({ scale });
+                // iOS Canvas Limit: ~4000px height max safely.
+                // We aggressively scale down ONLY IF the ticket is extremely long
+                const MAX_HEIGHT_PX = 4000;
+                const calculatedScale = Math.min(2.0, MAX_HEIGHT_PX / baseViewport.height);
 
-                    totalHeight += viewport.height;
-                    if (viewport.width > maxWidth) {
-                        maxWidth = viewport.width;
-                    }
+                const viewport = page.getViewport({ scale: calculatedScale });
 
-                    pagesData.push({ page, viewport });
-                }
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                if (!context) throw new Error("No 2d context for canvas");
 
-                const mainCanvas = document.createElement('canvas');
-                const mainContext = mainCanvas.getContext('2d');
-                if (!mainContext) throw new Error("No 2d context for main canvas");
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
 
-                mainCanvas.width = maxWidth;
-                mainCanvas.height = totalHeight;
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
 
-                mainContext.fillStyle = '#ffffff';
-                mainContext.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
-
-                let currentYOffset = 0;
-                const recycleCanvas = document.createElement('canvas');
-                const recycleContext = recycleCanvas.getContext('2d');
-
-                for (const { page, viewport } of pagesData) {
-                    if (!recycleContext) continue;
-
-                    recycleCanvas.width = viewport.width;
-                    recycleCanvas.height = viewport.height;
-                    recycleContext.clearRect(0, 0, viewport.width, viewport.height);
-
-                    await page.render({
-                        canvasContext: recycleContext,
-                        viewport: viewport
-                    }).promise;
-
-                    mainContext.drawImage(recycleCanvas, 0, currentYOffset);
-                    currentYOffset += viewport.height;
-                }
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
 
                 return new Promise((resolve, reject) => {
-                    mainCanvas.toBlob((blob) => {
+                    canvas.toBlob((blob) => {
                         if (blob) resolve(blob);
                         else reject(new Error("Canvas to Blob falló"));
                     }, 'image/png');
