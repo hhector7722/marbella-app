@@ -420,15 +420,6 @@ export default function HistoryPage() {
                         </button>
                     </div>
 
-                    {/* CABECERA ROJA DÍAS SEMANA */}
-                    <div className="grid grid-cols-7 bg-[#D64D5D] border-b border-zinc-200">
-                        {DAY_HEADERS.map(d => (
-                            <div key={d} className="flex items-center justify-center py-2 border-r border-white/20 last:border-r-0">
-                                <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-wider drop-shadow-sm">{d}</span>
-                            </div>
-                        ))}
-                    </div>
-
                     {loading ? (
                         <div className="py-20 flex justify-center">
                             <LoadingSpinner size="md" className="text-[#36606F]" />
@@ -439,11 +430,20 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="bg-white flex flex-col">
+                        <div className="flex flex-col gap-6 p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
-                                <div key={week.weekNumber} className="border-b-4 border-zinc-100 last:border-b-0">
+                                <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden border border-zinc-100/80">
 
-                                    {/* Fila de 7 días */}
+                                    {/* FILA 1: Cabecera de Días (Roja) */}
+                                    <div className="grid grid-cols-7 bg-red-600 border-b border-red-700/50">
+                                        {DAY_HEADERS.map(d => (
+                                            <div key={d} className="flex items-center justify-center py-2 border-r border-white/20 last:border-r-0">
+                                                <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-wider drop-shadow-sm">{d}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* FILA 2: Días */}
                                     <div className="grid grid-cols-7 border-b border-zinc-100">
                                         {week.days.map((day, di) => {
                                             const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
@@ -519,29 +519,21 @@ export default function HistoryPage() {
                                         })}
                                     </div>
 
-                                    {/* Resumen semanal al pie de la semana (DISEÑO BLINDADO) */}
-                                    <div className="col-span-full relative bg-[#36606F] text-white flex items-center h-12 border-t border-white/10 overflow-hidden">
+                                    {/* FILA 3: Resumen Semanal */}
+                                    <div className="bg-slate-800 text-white flex items-center h-14 relative z-10">
                                         {/* ZONA IZQUIERDA (Fija) */}
-                                        <div className="w-[110px] pl-3 shrink-0 flex items-center gap-1.5">
-                                            <span className="font-black text-[8px] md:text-[9px] uppercase tracking-wider leading-none whitespace-nowrap">
+                                        <div className="w-24 pl-4 shrink-0">
+                                            <span className="font-black text-[10px] uppercase leading-none">
                                                 SEMANA {week.weekNumber}
                                             </span>
-                                            {week.summary.isPaid && (
-                                                <img
-                                                    src="/sello/pagado.png"
-                                                    alt="PAGADO"
-                                                    className="h-7 w-auto object-contain opacity-90 pointer-events-none"
-                                                />
-                                            )}
                                         </div>
 
-                                        {/* ZONA DERECHA (Grid de valores sin bordes interiores) */}
+                                        {/* ZONA DERECHA (Grid de valores) */}
                                         <div className="flex-1 grid grid-cols-4 h-full relative z-20">
-
                                             {/* COL 1: HORAS */}
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end justify-center">
-                                                    <span className="text-[12px] font-black leading-none text-white">
+                                                <div className="min-h-[14px] flex items-end">
+                                                    <span className="text-xs font-black leading-none text-white">
                                                         {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
@@ -550,9 +542,9 @@ export default function HistoryPage() {
 
                                             {/* COL 2: PENDIENTE */}
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end justify-center">
+                                                <div className="min-h-[14px] flex items-end">
                                                     <span className={cn(
-                                                        "text-[12px] font-black leading-none",
+                                                        "text-xs font-black leading-none",
                                                         (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
                                                     )}>
                                                         {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
@@ -563,8 +555,8 @@ export default function HistoryPage() {
 
                                             {/* COL 3: EXTRAS */}
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end justify-center">
-                                                    <span className="text-[12px] font-black leading-none text-green-400">
+                                                <div className="min-h-[14px] flex items-end">
+                                                    <span className="text-xs font-black leading-none text-green-400">
                                                         {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
@@ -573,8 +565,8 @@ export default function HistoryPage() {
 
                                             {/* COL 4: IMPORTE */}
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
-                                                <div className="min-h-[14px] flex items-end justify-center">
-                                                    <span className="text-[12px] font-black leading-none text-green-400">
+                                                <div className="min-h-[14px] flex items-end">
+                                                    <span className="text-xs font-black leading-none text-green-400">
                                                         {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                     </span>
                                                 </div>
@@ -582,6 +574,15 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Sello PAGADO dinámico anclado al contenedor semanal */}
+                                    {week.summary.isPaid && (
+                                        <img
+                                            src="/sello/pagado.png"
+                                            alt="PAGADO"
+                                            className="absolute -bottom-2 -right-2 w-20 h-auto rotate-[-15deg] z-20 pointer-events-none drop-shadow-xl"
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
