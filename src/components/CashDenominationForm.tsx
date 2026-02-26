@@ -17,6 +17,7 @@ interface CashDenominationFormProps {
     initialDate?: string; // New prop
     submitLabel?: string;
     isEditing?: boolean; // New prop
+    forcePurchaseMode?: boolean; // New prop
 }
 
 export const CashDenominationForm = ({
@@ -29,7 +30,8 @@ export const CashDenominationForm = ({
     initialNotes = '',
     initialDate,
     submitLabel,
-    isEditing = false
+    isEditing = false,
+    forcePurchaseMode = false
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
 
@@ -56,7 +58,7 @@ export const CashDenominationForm = ({
     const [selectedDate, setSelectedDate] = useState(initialDate ? formatForInput(initialDate) : nowStr);
 
     // 5. PURCHASE MODE STATES
-    const [isPurchaseMode, setIsPurchaseMode] = useState(false);
+    const [isPurchaseMode, setIsPurchaseMode] = useState(forcePurchaseMode || false);
     const [purchasePrice, setPurchasePrice] = useState<number>(0);
     const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
     const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
@@ -137,7 +139,7 @@ export const CashDenominationForm = ({
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {/* PURCHASE MODE TOGGLE */}
-                {type === 'out' && !isEditing && (
+                {type === 'out' && !isEditing && !forcePurchaseMode && (
                     <div className="flex items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-zinc-100">
                         <div className="flex-1">
                             <h4 className="text-[10px] font-black text-[#36606F] uppercase tracking-widest leading-none">Modo Compra</h4>

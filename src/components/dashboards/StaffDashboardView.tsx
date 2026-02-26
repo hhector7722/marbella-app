@@ -803,7 +803,7 @@ export default function StaffDashboardView() {
                 {isCashOptionsModalOpen && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4" onClick={() => setIsCashOptionsModalOpen(false)}>
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="bg-red-600 px-6 py-4 flex justify-between items-center text-white">
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <div>
                                     <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
                                     <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Selecciona una operación</p>
@@ -859,6 +859,7 @@ export default function StaffDashboardView() {
                                 availableStock={boxInventoryMap}
                                 onCancel={() => setCashModalMode('none')}
                                 onSubmit={handleCashTransaction}
+                                forcePurchaseMode={true}
                             />
                         </div>
                     </div>
