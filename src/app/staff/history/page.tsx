@@ -522,7 +522,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-blue-600 text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
+                                    <div className="bg-[#487B8F] text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
                                         <div className="w-16 pl-3 shrink-0 flex items-center h-full">
                                             <span className="font-black text-[7px] uppercase leading-none">
@@ -594,7 +594,7 @@ export default function HistoryPage() {
                             className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="bg-blue-600 px-6 py-4 flex justify-between items-center text-white">
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <div className="flex flex-col">
                                     <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
                                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
