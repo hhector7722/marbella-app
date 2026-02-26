@@ -182,6 +182,24 @@ export default function HistoryPage() {
         setIsFilterActive(false);
     };
 
+    const nextMonth = () => {
+        if (filterMonth === 11) {
+            setFilterMonth(0);
+            setFilterYear(prev => prev + 1);
+        } else {
+            setFilterMonth(prev => prev + 1);
+        }
+    };
+
+    const prevMonth = () => {
+        if (filterMonth === 0) {
+            setFilterMonth(11);
+            setFilterYear(prev => prev - 1);
+        } else {
+            setFilterMonth(prev => prev - 1);
+        }
+    };
+
     // --- EDICIÓN: Manager ---
     const openEdit = async (week: WeekData) => {
         const targetUserId = selectedEmployeeId || currentUserId;
@@ -316,330 +334,259 @@ export default function HistoryPage() {
         <div className="pb-10">
             <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
 
-                {/* ── PANEL DE FILTROS ── */}
-                <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-700">
-
-                    {/* Selector Empleado (Manager) */}
-                    {isManager && (
-                        <>
-                            <div className="relative z-20">
-                                <button
-                                    onClick={() => setShowEmployeeDropdown(true)}
-                                    className={cn(
-                                        "px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 active:scale-95",
-                                        viewingOther ? "text-blue-600 ring-2 ring-blue-100" : "text-zinc-800"
-                                    )}
-                                >
-                                    <span>{viewingOther ? selectedEmployeeName : "Seleccionar Empleado"}</span>
-                                </button>
-                                {viewingOther && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
-                                    >
-                                        <X size={12} strokeWidth={3} />
-                                    </button>
-                                )}
-                            </div>
-
-                            {showEmployeeDropdown && (
-                                <div
-                                    className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
-                                    onClick={() => setShowEmployeeDropdown(false)}
-                                >
-                                    <div
-                                        className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[80vh]"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100 shrink-0">
-                                            <div className="flex flex-col">
-                                                <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
-                                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
-                                            </div>
-                                            <button onClick={() => setShowEmployeeDropdown(false)} className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90">
-                                                <X size={20} />
-                                            </button>
-                                        </div>
-                                        <div className="p-4 overflow-y-auto">
-                                            <button
-                                                onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
-                                                className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
-                                            >
-                                                <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
-                                                Mi Historial
-                                            </button>
-                                            <div className="h-px bg-zinc-100 my-4" />
-                                            {employees.filter(e => e.id !== currentUserId).map(emp => (
-                                                <button
-                                                    key={emp.id}
-                                                    onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
-                                                    className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
-                                                >
-                                                    <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
-                                                    {emp.first_name} {emp.last_name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                    {/* Selector Mes/Año */}
-                    {!loading && (
-                        <div className="relative z-10">
+                {/* FILTRO EMPLEADOS (MANUAL MANAGER) */}
+                {isManager && (
+                    <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-700">
+                        <div className="relative z-20">
                             <button
-                                onClick={() => setShowFilter(true)}
+                                onClick={() => setShowEmployeeDropdown(true)}
                                 className={cn(
-                                    "flex items-center gap-3 px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100",
-                                    "text-[10px] font-black uppercase tracking-[0.2em]",
-                                    isFilterActive ? "text-blue-600 ring-2 ring-blue-100" : "text-zinc-800",
-                                    "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl"
+                                    "px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 active:scale-95",
+                                    viewingOther ? "text-blue-600 ring-2 ring-blue-100" : "text-zinc-800"
                                 )}
                             >
-                                <span>{getMonthLabel(filterYear, filterMonth)}</span>
+                                <span>{viewingOther ? selectedEmployeeName : "Seleccionar Empleado"}</span>
                             </button>
-                            {isFilterActive && (
+                            {viewingOther && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); clearFilter(); }}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
                                     className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
                                 >
                                     <X size={12} strokeWidth={3} />
                                 </button>
                             )}
                         </div>
-                    )}
-                </div>
 
-                {/* ── CONTENIDO PRINCIPAL ── */}
-                {loading ? (
-                    <div className="py-10 flex justify-center">
-                        <LoadingSpinner size="md" className="text-white" />
-                    </div>
-                ) : weeksData.length === 0 ? (
-                    <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto">
-                        <Calendar size={40} fill="currentColor" className="mx-auto mb-2 opacity-50" />
-                        <p>No hay registros este mes</p>
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-                        {/* Header días de semana */}
-                        <div className="grid grid-cols-7 bg-gradient-to-b from-red-500 to-red-600">
-                            {DAY_HEADERS.map(d => (
-                                <div key={d} className="flex items-center justify-center py-2">
-                                    <span className="text-[9px] font-black text-white uppercase tracking-wider">{d}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Semanas */}
-                        {weeksData.map((week) => (
-                            <div key={week.weekNumber} className="border-t border-gray-100 first:border-t-0">
-
-                                {/* Fila de 7 días */}
-                                <div className="grid grid-cols-7">
-                                    {week.days.map((day, di) => {
-                                        const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
-                                        const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
-
-                                        return (
-                                            <div
-                                                key={di}
-                                                onClick={() => isManager ? openEdit(week) : undefined}
-                                                className={cn(
-                                                    "relative border-r border-gray-100 last:border-r-0 min-h-[100px] flex flex-col p-1",
-                                                    day.isToday && "bg-blue-50/40",
-                                                    isManager && "cursor-pointer hover:bg-zinc-50 transition-colors"
-                                                )}
+                        {showEmployeeDropdown && (
+                            <div
+                                className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
+                                onClick={() => setShowEmployeeDropdown(false)}
+                            >
+                                <div
+                                    className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[80vh]"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100 shrink-0">
+                                        <div className="flex flex-col">
+                                            <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
+                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
+                                        </div>
+                                        <button onClick={() => setShowEmployeeDropdown(false)} className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="p-4 overflow-y-auto">
+                                        <button
+                                            onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
+                                            className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
+                                        >
+                                            <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
+                                            Mi Historial
+                                        </button>
+                                        <div className="h-px bg-zinc-100 my-4" />
+                                        {employees.filter(e => e.id !== currentUserId).map(emp => (
+                                            <button
+                                                key={emp.id}
+                                                onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
+                                                className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
                                             >
-                                                {/* Número de día */}
-                                                <span className={cn(
-                                                    "self-end text-[9px] font-bold leading-none mb-1",
-                                                    day.isToday ? "text-blue-600" : "text-gray-400"
-                                                )}>
-                                                    {day.dayNumber}
-                                                </span>
-
-                                                {/* Centro: evento especial o fichajes */}
-                                                <div className="flex-1 flex flex-col items-center justify-center">
-                                                    {isSpecial ? (
-                                                        <div className={cn("px-1.5 py-0.5 rounded shadow-sm text-center", eventConfig.color)}>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest leading-none">{eventConfig.label}</span>
-                                                        </div>
-                                                    ) : day.hasLog ? (
-                                                        <div className="flex flex-col items-center gap-0.5 w-full">
-                                                            {/* Entrada */}
-                                                            <div className="flex items-center justify-center gap-0.5">
-                                                                <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
-                                                                <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                            </div>
-                                                            {/* Salida */}
-                                                            {day.clockOut ? (
-                                                                <div className="flex items-center justify-center gap-0.5">
-                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                                                                    <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                </div>
-                                                            ) : day.isToday ? (
-                                                                <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
-                                                            ) : null}
-                                                        </div>
-                                                    ) : null}
-                                                </div>
-
-                                                {/* Pie: H y Ex */}
-                                                {!isSpecial && (
-                                                    <div className="w-full space-y-0 min-h-[24px]">
-                                                        {day.hasLog && day.totalHours > 0 ? (
-                                                            <div className="flex justify-between items-center text-[7px] h-3">
-                                                                <span className="text-gray-400 font-bold">H</span>
-                                                                <span className="font-black text-gray-800">{fmtHours(day.totalHours)}</span>
-                                                            </div>
-                                                        ) : <div className="h-3" />}
-                                                        {day.extraHours > 0.05 ? (
-                                                            <div className="flex justify-between items-center text-[7px] h-3">
-                                                                <span className="text-gray-400 font-bold">Ex</span>
-                                                                <span className="font-black text-emerald-600">{fmtHours(day.extraHours)}</span>
-                                                            </div>
-                                                        ) : <div className="h-3" />}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Resumen semanal */}
-                                <div className="col-span-full relative bg-[#36606F] px-3 py-2 flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[9px] font-black text-white/60 uppercase tracking-wider">S-{week.weekNumber}</span>
-                                        {week.isCurrentWeek && (
-                                            <span className="text-[7px] font-black bg-blue-400 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">En curso</span>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-3 ml-auto">
-                                        {/* Horas */}
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-[10px] font-black text-white">{fmtHours(week.summary.totalHours) || '0'}</span>
-                                            <span className="text-[7px] font-bold text-white/50 uppercase">Horas</span>
-                                        </div>
-
-                                        {/* Pendiente */}
-                                        <div className="flex flex-col items-center">
-                                            <span className={cn("text-[10px] font-black", (week.summary.startBalance ?? 0) >= 0 ? "text-emerald-300" : "text-red-300")}>
-                                                {fmtBalance(week.summary.startBalance) || '0'}
-                                            </span>
-                                            <span className="text-[7px] font-bold text-white/50 uppercase">Pendiente</span>
-                                        </div>
-
-                                        {/* Extras */}
-                                        <div className="flex flex-col items-center">
-                                            <span className={cn("text-[10px] font-black", (week.summary.weeklyBalance ?? 0) >= 0 ? "text-white" : "text-red-300")}>
-                                                {fmtBalance(week.summary.weeklyBalance) || '0'}
-                                            </span>
-                                            <span className="text-[7px] font-bold text-white/50 uppercase">Extras</span>
-                                        </div>
-
-                                        {/* Importe */}
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-[10px] font-black text-emerald-300">
-                                                {fmtMoney(week.summary.estimatedValue) || '—'}
-                                            </span>
-                                            <span className="text-[7px] font-bold text-white/50 uppercase">Importe</span>
-                                        </div>
-
-                                        {/* Sello PAGADO */}
-                                        {week.summary.isPaid && (
-                                            <img src="/sello/pagado.png" alt="PAGADO" className="absolute -top-4 right-2 w-16 h-16 rotate-[-12deg] opacity-90 pointer-events-none z-10 drop-shadow-xl" />
-                                        )}
+                                                <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
+                                                {emp.first_name} {emp.last_name}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+
+                {/* ── CONTENIDO PRINCIPAL DEL CALENDARIO UNIFICADO ── */}
+                <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto border border-zinc-100">
+
+                    {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
+                    <div className="bg-[#36606F] px-4 py-4 flex items-center justify-center relative">
+                        <button onClick={prevMonth} className="absolute left-6 text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
+                            <span className="text-xl font-bold font-mono">{'<'}</span>
+                        </button>
+
+                        <h2 className="text-[14px] md:text-base font-black text-white uppercase tracking-widest">
+                            {getMonthLabel(filterYear, filterMonth)}
+                        </h2>
+
+                        <button onClick={nextMonth} className="absolute right-6 text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
+                            <span className="text-xl font-bold font-mono">{'>'}</span>
+                        </button>
+                    </div>
+
+                    {/* CABECERA ROJA DÍAS SEMANA */}
+                    <div className="grid grid-cols-7 bg-[#D64D5D] border-b border-zinc-200">
+                        {DAY_HEADERS.map(d => (
+                            <div key={d} className="flex items-center justify-center py-2 border-r border-white/20 last:border-r-0">
+                                <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-wider drop-shadow-sm">{d}</span>
                             </div>
                         ))}
                     </div>
-                )}
 
-                {/* ── MODAL: Filtro de Fecha ── */}
-                {showFilter && (
-                    <div
-                        className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
-                        onClick={() => setShowFilter(false)}
-                    >
-                        <div
-                            className="bg-zinc-50/90 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100">
-                                <div className="flex flex-col">
-                                    <h3 className="text-xl font-black text-zinc-900 leading-tight">Calendario</h3>
-                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona periodo</p>
-                                </div>
-                                <button onClick={() => setShowFilter(false)} className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90">
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <div className="p-8 space-y-8">
-                                {/* Año */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-2 px-1">
-                                        <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Año</span>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {[2024, 2025, 2026, 2027].map(year => (
-                                            <button
-                                                key={year}
-                                                onClick={() => setFilterYear(year)}
-                                                className={cn("h-12 rounded-2xl text-[13px] font-black transition-all active:scale-95 border-2", filterYear === year ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-zinc-500 border-transparent hover:border-zinc-200')}
-                                            >
-                                                {year}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Mes */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-2 px-1">
-                                        <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Mes</span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {Array.from({ length: 12 }).map((_, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => setFilterMonth(i)}
-                                                className={cn("h-14 rounded-2xl text-[11px] font-bold transition-all active:scale-95 capitalize border-2", filterMonth === i ? 'bg-blue-50 text-blue-700 border-blue-500 shadow-sm' : 'bg-white text-zinc-400 border-transparent hover:bg-white hover:border-zinc-100')}
-                                            >
-                                                {new Date(0, i).toLocaleDateString('es-ES', { month: 'long' })}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Acciones */}
-                                <div className="pt-2 space-y-3">
-                                    <button
-                                        onClick={applyFilter}
-                                        className="w-full h-16 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
-                                    >
-                                        <Check size={20} strokeWidth={3} /> Aplicar Filtro
-                                    </button>
-                                    {isFilterActive && (
-                                        <button
-                                            onClick={() => { clearFilter(); setShowFilter(false); }}
-                                            className="w-full h-14 bg-white text-zinc-400 font-bold rounded-2xl hover:bg-zinc-100 active:scale-95 transition-all text-xs uppercase tracking-widest"
-                                        >
-                                            Limpiar Filtro
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                    {loading ? (
+                        <div className="py-20 flex justify-center">
+                            <LoadingSpinner size="md" className="text-[#36606F]" />
                         </div>
-                    </div>
-                )}
+                    ) : weeksData.length === 0 ? (
+                        <div className="py-20 text-center text-zinc-400">
+                            <Calendar size={40} className="mx-auto mb-3 opacity-30" />
+                            <p className="text-sm font-bold">No hay registros este mes</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white flex flex-col">
+                            {weeksData.map((week, idx) => (
+                                <div key={week.weekNumber} className="border-b-4 border-zinc-100 last:border-b-0">
+
+                                    {/* Fila de 7 días */}
+                                    <div className="grid grid-cols-7 border-b border-zinc-100">
+                                        {week.days.map((day, di) => {
+                                            const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
+                                            const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
+
+                                            // Lógica Zero-Display
+                                            const hFormatted = fmtHours(day.totalHours);
+                                            const exFormatted = fmtHours(day.extraHours);
+
+                                            return (
+                                                <div
+                                                    key={di}
+                                                    onClick={() => isManager ? openEdit(week) : undefined}
+                                                    className={cn(
+                                                        "relative border-r border-zinc-100 last:border-r-0 min-h-[110px] md:min-h-[120px] flex flex-col p-1.5 md:p-2",
+                                                        day.isToday && "bg-blue-50/40",
+                                                        isManager && "cursor-pointer hover:bg-zinc-50 transition-colors"
+                                                    )}
+                                                >
+                                                    {/* Número de día superior derecha/izquierda */}
+                                                    <span className={cn(
+                                                        "self-end text-[10px] md:text-xs font-black leading-none mb-1 opacity-80",
+                                                        day.isToday ? "text-blue-600" : "text-zinc-400"
+                                                    )}>
+                                                        {day.dayNumber}
+                                                    </span>
+
+                                                    {/* Centro: evento especial o fichajes */}
+                                                    <div className="flex-1 flex flex-col items-center justify-center mt-1">
+                                                        {isSpecial ? (
+                                                            <div className={cn("px-2 py-1 rounded shadow-sm text-center", eventConfig.color)}>
+                                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none block pt-0.5">{eventConfig.label}</span>
+                                                            </div>
+                                                        ) : day.hasLog ? (
+                                                            <div className="flex flex-col items-center gap-1 w-full">
+                                                                {/* Entrada */}
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                                                    <span className="text-[9px] md:text-[10px] font-mono font-bold text-zinc-600 leading-none pt-0.5">{day.clockIn}</span>
+                                                                </div>
+                                                                {/* Salida */}
+                                                                {day.clockOut ? (
+                                                                    <div className="flex items-center justify-center gap-1 mt-0.5">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                                                                        <span className="text-[9px] md:text-[10px] font-mono font-bold text-zinc-600 leading-none pt-0.5">{day.clockOut}</span>
+                                                                    </div>
+                                                                ) : day.isToday ? (
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse mt-0.5" />
+                                                                ) : null}
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+
+                                                    {/* Pie: H y Ex en miniatura, Zero-Display */}
+                                                    {!isSpecial && (
+                                                        <div className="w-full space-y-[2px] min-h-[28px] mt-2">
+                                                            {day.hasLog && hFormatted ? (
+                                                                <div className="flex justify-between items-center text-[8px] md:text-[9px] h-3.5">
+                                                                    <span className="text-zinc-400 font-bold tracking-wider">H</span>
+                                                                    <span className="font-black text-zinc-800">{hFormatted}</span>
+                                                                </div>
+                                                            ) : <div className="h-3.5" />}
+                                                            {exFormatted ? (
+                                                                <div className="flex justify-between items-center text-[8px] md:text-[9px] h-3.5">
+                                                                    <span className="text-zinc-400 font-bold tracking-wider">EX</span>
+                                                                    <span className="font-black text-emerald-600">{exFormatted}</span>
+                                                                </div>
+                                                            ) : <div className="h-3.5" />}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Resumen semanal al pie de la semana */}
+                                    <div className="col-span-full relative bg-[#36606F] px-4 md:px-6 py-3 flex items-center justify-between shadow-inner">
+                                        {/* Izquierda: SEMANA X */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] md:text-xs font-extrabold text-white uppercase tracking-widest drop-shadow-sm">
+                                                SEMANA {week.weekNumber}
+                                            </span>
+                                            {week.isCurrentWeek && (
+                                                <span className="text-[7px] md:text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse ml-1 border border-blue-400">En curso</span>
+                                            )}
+                                        </div>
+
+                                        {/* Derecha/Centro: KPIs Horas | Pendiente | Extras | Importe */}
+                                        <div className="flex items-center gap-6 md:gap-8 ml-auto">
+
+                                            {/* Horas */}
+                                            {fmtHours(week.summary.totalHours) && (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[11px] md:text-xs font-black text-white">{fmtHours(week.summary.totalHours)}</span>
+                                                    <span className="text-[7px] md:text-[8px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Horas</span>
+                                                </div>
+                                            )}
+
+                                            {/* Pendiente */}
+                                            {fmtBalance(week.summary.startBalance) && (
+                                                <div className="flex flex-col items-center">
+                                                    <span className={cn("text-[11px] md:text-xs font-black", (week.summary.startBalance ?? 0) >= 0 ? "text-emerald-300" : "text-rose-300")}>
+                                                        {fmtBalance(week.summary.startBalance)}
+                                                    </span>
+                                                    <span className="text-[7px] md:text-[8px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Pendiente</span>
+                                                </div>
+                                            )}
+
+                                            {/* Extras */}
+                                            {fmtBalance(week.summary.weeklyBalance) && (
+                                                <div className="flex flex-col items-center">
+                                                    <span className={cn("text-[11px] md:text-xs font-black", (week.summary.weeklyBalance ?? 0) >= 0 ? "text-white" : "text-rose-300")}>
+                                                        {fmtBalance(week.summary.weeklyBalance)}
+                                                    </span>
+                                                    <span className="text-[7px] md:text-[8px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Extras</span>
+                                                </div>
+                                            )}
+
+                                            {/* Importe */}
+                                            {fmtMoney(week.summary.estimatedValue) && (
+                                                <div className="flex flex-col items-center pl-2">
+                                                    <span className="text-[11px] md:text-xs font-black text-emerald-300">
+                                                        {fmtMoney(week.summary.estimatedValue)}
+                                                    </span>
+                                                    <span className="text-[7px] md:text-[8px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Importe</span>
+                                                </div>
+                                            )}
+
+                                            {/* Sello PAGADO - Estilo imagen requerida */}
+                                            {week.summary.isPaid && (
+                                                <img
+                                                    src="/sello/pagado.png"
+                                                    alt="PAGADO"
+                                                    className="absolute -bottom-6 -right-2 w-20 h-auto rotate-[15deg] opacity-90 pointer-events-none z-10 drop-shadow-xl"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 {/* ── MODAL: Editar Registros (Manager) ── */}
                 {editingWeek !== null && (
