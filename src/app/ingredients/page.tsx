@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown } from 'lucide-react';
+import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 
@@ -127,6 +127,20 @@ export default function IngredientsPage() {
         return matchesSearch && matchesSupplier;
     });
 
+    const navigateIngredient = (direction: -1 | 1) => {
+        if (!editingIngredient) return;
+        const currentIndex = filteredIngredients.findIndex(ing => ing.id === editingIngredient.id);
+        if (currentIndex === -1) return;
+
+        let newIndex = currentIndex + direction;
+        if (newIndex < 0) newIndex = filteredIngredients.length - 1;
+        if (newIndex >= filteredIngredients.length) newIndex = 0;
+
+        const nextIng = filteredIngredients[newIndex];
+        setEditingIngredient(nextIng);
+        setEditForm({ ...nextIng });
+    };
+
     return (
         // ELIMINADO EL WRAPPER DEL SIDEBAR Y EL FONDO AZUL
         <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
@@ -241,12 +255,26 @@ export default function IngredientsPage() {
                             <button onClick={() => setEditingIngredient(null)}><X className="text-gray-400" /></button>
                         </div>
                         <div className="space-y-4">
-                            <div className="flex justify-center">
-                                <div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden group cursor-pointer border-2 border-dashed border-gray-300 hover:border-[#5E35B1]">
+                            <div className="flex justify-center items-center gap-8">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); navigateIngredient(-1); }}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-100 transition-colors text-zinc-400 hover:text-[#5E35B1] shrink-0 shadow-sm"
+                                >
+                                    <ChevronLeft size={24} />
+                                </button>
+
+                                <div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden group cursor-pointer border-2 border-dashed border-gray-300 hover:border-[#5E35B1] shrink-0">
                                     {editForm.image_url ? <img src={editForm.image_url} className="w-full h-full object-contain" /> : <div className="text-center text-gray-400"><Camera className="w-8 h-8 mx-auto mb-1" /><span className="text-xs">Subir</span></div>}
                                     <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-bold text-xs transition cursor-pointer">CAMBIAR<input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'edit')} disabled={uploadingImage} /></label>
                                     {uploadingImage && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="md" className="text-[#5E35B1]" /></div>}
                                 </div>
+
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); navigateIngredient(1); }}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-50 hover:bg-zinc-100 border border-zinc-100 transition-colors text-zinc-400 hover:text-[#5E35B1] shrink-0 shadow-sm"
+                                >
+                                    <ChevronRight size={24} />
+                                </button>
                             </div>
                             <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 border rounded-2xl font-bold" />
                             <div className="flex gap-2">

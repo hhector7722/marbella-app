@@ -3,213 +3,41 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, ChevronDown, Filter, X, Check, Pencil, Plus, Trash2, Save
+    Calendar, X, Check, Plus, Trash2, Save
 } from 'lucide-react';
-import { isSameWeek, format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// [ARCHITECT_ULTRAFLUIDITY] Memoized Sub-components
-const WeeklyCard = React.memo(({
-    week,
-    idx,
-    isManager,
-    openEdit
-}: {
-    week: WeeklyData,
-    idx: number,
-    isManager: boolean,
-    openEdit: (idx: number) => void
-}) => {
-
-    const formatNumber = (val: number) => {
-        if (Math.abs(val) < 0.1) return ' ';
-        const rounded = Math.round(val * 2) / 2;
-        return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
-    };
-
-    const formatValue = (val: number) => formatNumber(val);
-    const formatBalance = (val: number) => formatNumber(val);
-
-    const formatMoney = (val: number) => {
-        if (Math.abs(val) < 0.1) return " ";
-        return `${val.toFixed(0)}€`;
-    };
-
-    const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-
-    return (
-        <div className={cn(
-            "bg-white rounded-2xl shadow-xl",
-            "transition-all duration-300 animate-in slide-in-from-bottom-4 relative mb-4"
-        )} style={{ animationDelay: `${idx * 50}ms` }}>
-
-            {/* Header Sólido Azul Marbella */}
-            <div className="bg-[#36606F] rounded-t-2xl px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">
-                        {getMonthLabel(week.startDate)} - SEM {week.weekNumber}
-                    </span>
-                    {week.isCurrentWeek && (
-                        <span className="text-[8px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse leading-none">
-                            En Curso
-                        </span>
-                    )}
-                </div>
-                {isManager && (
-                    <button
-                        onClick={() => openEdit(idx)}
-                        className="text-[10px] font-black text-white/70 hover:text-white transition-all active:scale-90 uppercase tracking-widest"
-                    >
-                        EDITAR
-                    </button>
-                )}
-            </div>
-
-            <div className="p-2 relative">
-                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                    <div className="grid grid-cols-7 border-b border-gray-100">
-                        {week.days.map((day, i) => {
-                            const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
-                            const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
-
-                            return (
-                                <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                    <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                        <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                    </div>
-                                    <div className="flex-1 p-1 flex flex-col items-center relative z-0">
-                                        <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                        {isSpecial ? (
-                                            <div className="flex-1 flex items-center justify-center w-full">
-                                                <div className={cn(
-                                                    "px-1.5 py-0.5 rounded shadow-sm text-center flex items-center justify-center min-w-[36px]",
-                                                    eventConfig.color
-                                                )}>
-                                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none" style={{ marginTop: '1px' }}>{eventConfig.label}</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex-1 flex items-center justify-center w-full mt-4">
-                                                    <div className="flex flex-col justify-center gap-0.5 w-full pb-1">
-                                                        <div className="h-3 flex items-center justify-center gap-1">
-                                                            {day.hasLog ? (
-                                                                <>
-                                                                    <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                </>
-                                                            ) : null}
-                                                        </div>
-                                                        <div className="h-3 flex items-center justify-center gap-1">
-                                                            {day.hasLog && day.clockOut ? (
-                                                                <>
-                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                </>
-                                                            ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                    {day.hasLog && day.totalHours > 0 ? (
-                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                            <span className="ml-0.5">H</span>
-                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
-                                                        </div>
-                                                    ) : <div className="h-3" />}
-                                                    {day.extraHours > 0.1 ? (
-                                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                            <span className="ml-0.5">Ex</span>
-                                                            <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
-                                                        </div>
-                                                    ) : <div className="h-3" />}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                    <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                        <div className="h-4 flex items-center">
-                            <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatValue(week.summary.totalHours)}</span>
-                        </div>
-                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                    </div>
-
-                    <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                        <div className="h-4 flex items-center">
-                            <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                {formatBalance(week.summary.startBalance)}
-                            </span>
-                        </div>
-                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                    </div>
-
-                    <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
-                        <div className="h-4 flex items-center">
-                            <span className={`font-black text-[11px] md:text-xs leading-none ${week.summary.finalBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                                {week.summary.finalBalance > 0 ? formatBalance(week.summary.finalBalance) : " "}
-                            </span>
-                        </div>
-                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap px-1">H Extras</span>
-                    </div>
-
-                    <div className="flex flex-col items-center flex-1 shrink-0">
-                        <div className="h-4 flex items-center">
-                            <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                {formatMoney(week.summary.estimatedValue)}
-                            </span>
-                        </div>
-                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
-                    </div>
-                </div>
-            </div>
-            {week.summary.isPaid && (
-                <div className="absolute -bottom-8 -right-6 w-24 h-24 rotate-[-12deg] opacity-90 pointer-events-none z-30 drop-shadow-xl">
-                    <img src="/sello/pagado.png" alt="PAGADO" className="w-full h-full object-contain" />
-                </div>
-            )}
-        </div>
-    );
-});
-WeeklyCard.displayName = 'WeeklyCard';
-
 // --- TIPOS ---
-interface DailyLog {
-    date: Date;
+interface DayData {
+    date: string;
     dayName: string;
     dayNumber: number;
     hasLog: boolean;
-    clockIn: string;
-    clockOut: string;
+    clockIn: string | null;
+    clockOut: string | null;
     totalHours: number;
     extraHours: number;
+    eventType: string;
     isToday: boolean;
-    eventType?: string; // Add eventType
 }
 
-interface WeeklyData {
+interface WeekSummary {
+    totalHours: number;
+    startBalance: number;
+    weeklyBalance: number;
+    finalBalance: number;
+    estimatedValue: number;
+    isPaid: boolean;
+}
+
+interface WeekData {
     weekNumber: number;
-    startDate: Date;
-    endDate: Date;
-    days: DailyLog[];
+    startDate: string;
     isCurrentWeek: boolean;
-    summary: {
-        totalHours: number;
-        weeklyBalance: number;
-        estimatedValue: number;
-        startBalance: number;
-        finalBalance: number;
-        isPaid: boolean;
-    };
+    days: DayData[];
+    summary: WeekSummary;
 }
 
 interface TimeLogEntry {
@@ -217,7 +45,7 @@ interface TimeLogEntry {
     date: string;
     clock_in: string;
     clock_out: string;
-    event_type: string; // Add event_type
+    event_type: string;
     isNew?: boolean;
     toDelete?: boolean;
 }
@@ -231,7 +59,31 @@ const EVENT_TYPES = [
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
 ];
 
-// --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
+const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+
+// --- HELPERS VISUALES ---
+const fmtHours = (val: number): string => {
+    if (!val || Math.abs(val) < 0.05) return '';
+    const rounded = Math.round(val * 2) / 2;
+    return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+};
+
+const fmtMoney = (val: number): string => {
+    if (!val || Math.abs(val) < 0.05) return '';
+    return `${val.toFixed(0)}€`;
+};
+
+const fmtBalance = (val: number): string => {
+    if (!val || Math.abs(val) < 0.05) return '';
+    const rounded = Math.round(val * 2) / 2;
+    const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    return val > 0 ? `+${str}` : str;
+};
+
+const getMonthLabel = (year: number, month: number) =>
+    new Date(year, month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+// --- LÓGICA ROUNDING (solo usada en saveEdits del modal de edición) ---
 const applyRoundingRule = (totalMinutes: number): number => {
     if (totalMinutes <= 0) return 0;
     const h = Math.floor(totalMinutes / 60);
@@ -241,68 +93,34 @@ const applyRoundingRule = (totalMinutes: number): number => {
     return h + 1;
 };
 
-const roundHoursValue = (hours: number): number => {
-    const minutes = Math.round(hours * 60);
-    return applyRoundingRule(minutes);
-};
-
-// --- HELPERS VISUALES ---
-const formatNumber = (val: number) => {
-    if (Math.abs(val) < 0.1) return ' ';
-    const rounded = Math.round(val * 2) / 2;
-    return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
-};
-
-const formatValue = (val: number) => formatNumber(val);
-const formatBalance = (val: number) => formatNumber(val);
-
-const formatMoney = (val: number) => {
-    if (Math.abs(val) < 0.1) return " ";
-    return `${val.toFixed(0)}€`;
-};
-
-const getMonthLabel = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-
-function getWeekNumber(d: Date) {
-    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
-
 export default function HistoryPage() {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [weeksData, setWeeksData] = useState<WeeklyData[]>([]);
-    const [userName, setUserName] = useState('');
+    const [weeksData, setWeeksData] = useState<WeekData[]>([]);
 
-    // Preferencia Stock
-    const [preferStock, setPreferStock] = useState(false);
-
-    // Rol y empleados
+    // Auth & Rol
     const [userRole, setUserRole] = useState<string>('staff');
     const [currentUserId, setCurrentUserId] = useState<string>('');
     const [employees, setEmployees] = useState<{ id: string; first_name: string; last_name: string }[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
 
-    // Filtros
+    // Filtros de mes
     const [showFilter, setShowFilter] = useState(false);
     const [isFilterActive, setIsFilterActive] = useState(false);
     const [filterYear, setFilterYear] = useState(new Date().getFullYear());
-    const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
+    const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); // 0-indexed
 
     // Edición (Manager)
-    const [editingWeekIdx, setEditingWeekIdx] = useState<number | null>(null);
+    const [editingWeek, setEditingWeek] = useState<WeekData | null>(null);
     const [editEntries, setEditEntries] = useState<TimeLogEntry[]>([]);
     const [savingEdit, setSavingEdit] = useState(false);
 
-    // [ARCHITECT_ULTRAFLUIDITY] Incremental rendering
-    const [displayLimit, setDisplayLimit] = useState(6);
-
     useEffect(() => { initUser(); }, []);
-    useEffect(() => { if (currentUserId) fetchHistory(); }, [currentDate, selectedEmployeeId, currentUserId]);
+    useEffect(() => {
+        if (currentUserId) fetchCalendar();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth]);
 
     async function initUser() {
         const { data: { user } } = await supabase.auth.getUser();
@@ -311,16 +129,13 @@ export default function HistoryPage() {
         setSelectedEmployeeId(user.id);
 
         const { data: profile } = await supabase.from('profiles')
-            .select('first_name, role, prefer_stock_hours')
+            .select('role')
             .eq('id', user.id).single();
 
         if (profile) {
-            setUserName(profile.first_name);
             setUserRole(profile.role);
-            setPreferStock(profile.prefer_stock_hours || false);
         }
 
-        // Si es manager, cargar lista de empleados
         if (profile?.role === 'manager') {
             const { data: emps } = await supabase.from('profiles')
                 .select('id, first_name, last_name')
@@ -329,223 +144,49 @@ export default function HistoryPage() {
         }
     }
 
-    async function fetchHistory() {
+    async function fetchCalendar() {
         setLoading(true);
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
-
-            const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, contracted_hours_weekly, overtime_cost_per_hour, is_fixed_salary, prefer_stock_hours, hours_balance')
-                .eq('id', targetUserId).single();
-
-            if (profile && targetUserId === currentUserId) {
-                setUserName(profile.first_name);
-                setPreferStock(profile.prefer_stock_hours || false);
-            }
-
-            const contractHours = profile?.contracted_hours_weekly ?? 0;
-            const overtimeRate = profile?.overtime_cost_per_hour || 0;
-            const isFixedSalary = profile?.is_fixed_salary || false;
-            const isTargetManager = profile?.role === 'manager';
-            const userPreferStock = profile?.prefer_stock_hours || false;
-            const historicalBalance = profile?.hours_balance || 0;
-
-            // RANGO DE FECHAS
-            const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-
-            const today = new Date(); today.setHours(23, 59, 59, 999);
-
-            const startView = new Date(startOfMonth);
-            const dayOfWeek = startView.getDay();
-            const diffToMonday = startView.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            startView.setDate(diffToMonday); startView.setHours(0, 0, 0, 0);
-
-            // 1. FETCH LOGS — extender al domingo de la última semana visible
-            const endView = new Date(endOfMonth);
-            const endDayOfWeek = endView.getDay();
-            if (endDayOfWeek !== 0) {
-                endView.setDate(endView.getDate() + (7 - endDayOfWeek));
-            }
-            endView.setHours(23, 59, 59, 999);
-
-            // effectiveEndDate: usa endView (no endOfMonth) para cubrir semanas completas
-            const effectiveEndDate = endView > today ? today : endView;
-
-            const { data: logs } = await supabase.from('time_logs')
-                .select('*')
-                .eq('user_id', targetUserId)
-                .gte('clock_in', startView.toISOString())
-                .lte('clock_in', endView.toISOString())
-                .order('clock_in', { ascending: true });
-
-            // [ARCHITECT_ULTRAFLUIDITY] Normalize logs into a Hash Map for O(1) lookups
-            const logsMap = new Map<string, any>();
-            logs?.forEach(l => {
-                const dateKey = format(new Date(l.clock_in), 'yyyy-MM-dd');
-                logsMap.set(dateKey, l);
+            // p_month es 1-indexed en PostgreSQL
+            const { data, error } = await supabase.rpc('get_monthly_timesheet', {
+                p_user_id: targetUserId,
+                p_year: filterYear,
+                p_month: filterMonth + 1,
             });
 
-            // 2. FETCH SNAPSHOTS
-            const searchSnapshotStart = new Date(startView);
-            searchSnapshotStart.setDate(searchSnapshotStart.getDate() - 7);
-
-            const { data: snapshots } = await supabase.from('weekly_snapshots')
-                .select('week_start, total_hours, balance_hours, pending_balance, final_balance, is_paid')
-                .eq('user_id', targetUserId)
-                .gte('week_start', searchSnapshotStart.toISOString().split('T')[0])
-                .lte('week_start', endView.toISOString().split('T')[0])
-                .order('week_start', { ascending: true });
-
-            // [ARCHITECT_ULTRAFLUIDITY] Normalize snapshots into a Hash Map for O(1) lookups
-            const snapshotsMap = new Map<string, any>();
-            snapshots?.forEach(s => {
-                snapshotsMap.set(s.week_start, s);
-            });
-
-            // 3. GENERAR SEMANAS
-            const weeks: WeeklyData[] = [];
-            let currentWeekStart = new Date(startView);
-
-            while (currentWeekStart <= effectiveEndDate) {
-                const isCurrentWeek = isSameWeek(currentWeekStart, new Date(), { weekStartsOn: 1 });
-
-                const weekDays: DailyLog[] = [];
-                let weekTotalHours = 0;
-                let currentAccumulated = 0;
-                const isAugust = currentWeekStart.getMonth() === 7;
-                const effContract = (isAugust || isTargetManager || isFixedSalary) ? 0 : contractHours;
-
-                for (let i = 0; i < 7; i++) {
-                    const d = new Date(currentWeekStart); d.setDate(currentWeekStart.getDate() + i);
-                    const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-                    const dateKey = format(d, 'yyyy-MM-dd');
-
-                    const log = logsMap.get(dateKey);
-
-                    let h = 0, cin = '', cout = '', dayExtras = 0;
-                    let eventType = undefined;
-
-                    if (log) {
-                        const inD = new Date(log.clock_in); cin = inD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                        if (log.clock_out) { const outD = new Date(log.clock_out); cout = outD.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
-                        h = log.total_hours ? roundHoursValue(log.total_hours) : 0;
-                        weekTotalHours += h;
-                        eventType = log.event_type;
-
-                        const newAccumulated = currentAccumulated + h;
-                        if (newAccumulated > effContract) {
-                            dayExtras = (currentAccumulated >= effContract) ? h : (newAccumulated - effContract);
-                        }
-                        currentAccumulated = newAccumulated;
-                    }
-
-                    weekDays.push({
-                        date: d, dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i], dayNumber: d.getDate(),
-                        hasLog: !!log, clockIn: cin, clockOut: cout, totalHours: h, extraHours: dayExtras, isToday: isToday, eventType: eventType
-                    });
-                }
-
-                // Para semana en curso: si todos los días son futuros, no mostrar
-                const hasPastDays = weekDays.some(d => d.date <= today);
-                if (!hasPastDays) break;
-
-                // --- LÓGICA DE RESUMEN ---
-                const weekStartISO = format(currentWeekStart, 'yyyy-MM-dd');
-                const snapshot = snapshotsMap.get(weekStartISO);
-
-                let summaryStartBalance = 0;
-                let summaryWeeklyBalance = 0;
-                let summaryTotalHours = 0;
-                let summaryFinalBalance = 0;
-
-                if (isCurrentWeek) {
-                    // Semana en curso: cálculo dinámico como el dashboard
-                    summaryTotalHours = weekTotalHours;
-                    if (isAugust || isTargetManager || isFixedSalary) {
-                        summaryWeeklyBalance = weekTotalHours;
-                    } else {
-                        summaryWeeklyBalance = weekTotalHours - contractHours;
-                    }
-                    const effectivePivot = (!userPreferStock && historicalBalance > 0) ? 0 : historicalBalance;
-                    summaryStartBalance = effectivePivot;
-                    summaryFinalBalance = summaryStartBalance + summaryWeeklyBalance;
-                } else if (snapshot) {
-                    summaryStartBalance = snapshot.pending_balance;
-                    summaryWeeklyBalance = snapshot.balance_hours;
-                    summaryTotalHours = snapshot.total_hours;
-                    summaryFinalBalance = snapshot.final_balance ?? (snapshot.pending_balance + snapshot.balance_hours);
-                } else {
-                    summaryTotalHours = weekTotalHours;
-                    if (isAugust || isTargetManager || isFixedSalary) {
-                        summaryWeeklyBalance = weekTotalHours;
-                        summaryTotalHours = contractHours + weekTotalHours;
-                    } else {
-                        summaryWeeklyBalance = weekTotalHours - contractHours;
-                    }
-
-                    const prevWeekDate = new Date(currentWeekStart);
-                    prevWeekDate.setDate(prevWeekDate.getDate() - 7);
-                    const prevWeekISO = format(prevWeekDate, 'yyyy-MM-dd');
-                    const prevSnapshot = snapshotsMap.get(prevWeekISO);
-
-                    if (prevSnapshot) {
-                        if (!userPreferStock && prevSnapshot.final_balance > 0) {
-                            summaryStartBalance = 0;
-                        } else {
-                            summaryStartBalance = prevSnapshot.final_balance;
-                        }
-                    }
-                    summaryFinalBalance = summaryStartBalance + summaryWeeklyBalance;
-                }
-
-                let estimatedValue = 0;
-                if (summaryFinalBalance > 0 && !userPreferStock) {
-                    estimatedValue = summaryFinalBalance * overtimeRate;
-                }
-
-                weeks.push({
-                    weekNumber: getWeekNumber(currentWeekStart),
-                    startDate: new Date(currentWeekStart),
-                    endDate: new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate() + 6),
-                    days: weekDays,
-                    isCurrentWeek,
-                    summary: {
-                        totalHours: summaryTotalHours > 0 ? summaryTotalHours : weekTotalHours,
-                        weeklyBalance: summaryWeeklyBalance,
-                        estimatedValue,
-                        startBalance: summaryStartBalance,
-                        finalBalance: summaryFinalBalance,
-                        isPaid: snapshot?.is_paid || false
-                    }
-                });
-                currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            if (error) {
+                console.error('Error fetching calendar:', error);
+                setWeeksData([]);
+                return;
             }
 
-            // --- ORDENACIÓN CONDICIONAL ---
-            // Por defecto (sin filtro): Más reciente arriba (reverse)
-            // Con filtro activo: Más antiguo arriba (natural order) para lectura cronológica
-            if (isFilterActive) {
-                setWeeksData(weeks);
-            } else {
-                setWeeksData(weeks.reverse());
-            }
-
-        } catch (error) { console.error(error); }
-        finally { setLoading(false); }
+            setWeeksData((data as WeekData[]) || []);
+        } catch (err) {
+            console.error('fetchCalendar error:', err);
+        } finally {
+            setLoading(false);
+        }
     }
 
-    const changeMonth = (d: number) => { const n = new Date(currentDate); n.setMonth(n.getMonth() + d); setCurrentDate(n); };
-    const applyFilter = () => { setCurrentDate(new Date(filterYear, filterMonth, 1)); setIsFilterActive(true); setShowFilter(false); };
-    const clearFilter = () => { setCurrentDate(new Date()); setIsFilterActive(false); };
+    const applyFilter = () => {
+        setIsFilterActive(true);
+        setShowFilter(false);
+        // El useEffect ya disparará fetchCalendar con los nuevos valores
+    };
+
+    const clearFilter = () => {
+        const now = new Date();
+        setFilterYear(now.getFullYear());
+        setFilterMonth(now.getMonth());
+        setIsFilterActive(false);
+    };
 
     // --- EDICIÓN: Manager ---
-    const openEdit = async (weekIdx: number) => {
-        const week = weeksData[weekIdx];
+    const openEdit = async (week: WeekData) => {
         const targetUserId = selectedEmployeeId || currentUserId;
-
-        const mondayISO = format(week.startDate, 'yyyy-MM-dd');
-        const sundayDate = new Date(week.startDate);
+        const mondayISO = week.startDate;
+        const sundayDate = new Date(mondayISO);
         sundayDate.setDate(sundayDate.getDate() + 6);
         const sundayISO = format(sundayDate, 'yyyy-MM-dd');
 
@@ -565,14 +206,12 @@ export default function HistoryPage() {
         }));
 
         setEditEntries(entries);
-        setEditingWeekIdx(weekIdx);
+        setEditingWeek(week);
     };
 
     const addEntry = () => {
-        if (editingWeekIdx === null) return;
-        const week = weeksData[editingWeekIdx];
-        const dateStr = format(week.startDate, 'yyyy-MM-dd');
-        setEditEntries([...editEntries, { date: dateStr, clock_in: '09:00', clock_out: '17:00', event_type: 'regular', isNew: true }]);
+        if (!editingWeek) return;
+        setEditEntries([...editEntries, { date: editingWeek.startDate, clock_in: '09:00', clock_out: '17:00', event_type: 'regular', isNew: true }]);
     };
 
     const removeEntry = (idx: number) => {
@@ -589,35 +228,29 @@ export default function HistoryPage() {
     const updateEntry = (idx: number, field: keyof TimeLogEntry, value: string) => {
         const updated = [...editEntries];
         updated[idx] = { ...updated[idx], [field]: value };
-
-        // Si cambia el tipo a uno especial, forzar 8h
         if (field === 'event_type' && value !== 'regular') {
             updated[idx].clock_in = '09:00';
             updated[idx].clock_out = '17:00';
         }
-
         setEditEntries(updated);
     };
 
     const saveEdits = async () => {
-        if (editingWeekIdx === null) return;
+        if (!editingWeek) return;
         setSavingEdit(true);
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
 
-            // 1. Delete entries marked for deletion
             const toDelete = editEntries.filter(e => e.toDelete && e.id);
             for (const entry of toDelete) {
                 await supabase.from('time_logs').delete().eq('id', entry.id!);
             }
 
-            // 2. Update existing entries
             const toUpdate = editEntries.filter(e => !e.isNew && !e.toDelete && e.id);
             for (const entry of toUpdate) {
                 let clockInDT: Date;
                 let clockOutDT: Date | null = null;
                 let totalHours: number | null = null;
-
                 if (entry.event_type !== 'regular') {
                     clockInDT = new Date(`${entry.date}T09:00:00`);
                     clockOutDT = new Date(`${entry.date}T17:00:00`);
@@ -626,26 +259,22 @@ export default function HistoryPage() {
                     clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
                     clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
                     if (clockOutDT) {
-                        const diffMinutes = (clockOutDT.getTime() - clockInDT.getTime()) / 60000;
-                        totalHours = applyRoundingRule(diffMinutes);
+                        totalHours = applyRoundingRule((clockOutDT.getTime() - clockInDT.getTime()) / 60000);
                     }
                 }
-
                 await supabase.from('time_logs').update({
                     clock_in: clockInDT.toISOString(),
-                    clock_out: clockOutDT ? clockOutDT.toISOString() : null,
+                    clock_out: clockOutDT?.toISOString() ?? null,
                     total_hours: totalHours,
                     event_type: entry.event_type
                 }).eq('id', entry.id!);
             }
 
-            // 3. Insert new entries
             const toInsert = editEntries.filter(e => e.isNew && !e.toDelete);
             for (const entry of toInsert) {
                 let clockInDT: Date;
                 let clockOutDT: Date | null = null;
                 let totalHours: number | null = null;
-
                 if (entry.event_type !== 'regular') {
                     clockInDT = new Date(`${entry.date}T09:00:00`);
                     clockOutDT = new Date(`${entry.date}T17:00:00`);
@@ -654,26 +283,24 @@ export default function HistoryPage() {
                     clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
                     clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
                     if (clockOutDT) {
-                        const diffMinutes = (clockOutDT.getTime() - clockInDT.getTime()) / 60000;
-                        totalHours = applyRoundingRule(diffMinutes);
+                        totalHours = applyRoundingRule((clockOutDT.getTime() - clockInDT.getTime()) / 60000);
                     }
                 }
-
                 await supabase.from('time_logs').insert({
                     user_id: targetUserId,
                     clock_in: clockInDT.toISOString(),
-                    clock_out: clockOutDT ? clockOutDT.toISOString() : null,
+                    clock_out: clockOutDT?.toISOString() ?? null,
                     total_hours: totalHours,
                     is_manual_entry: true,
                     event_type: entry.event_type
                 });
             }
 
-            setEditingWeekIdx(null);
+            setEditingWeek(null);
             setEditEntries([]);
-            fetchHistory();
-        } catch (error) {
-            console.error('Error saving edits:', error);
+            fetchCalendar();
+        } catch (err) {
+            console.error('Error saving edits:', err);
         } finally {
             setSavingEdit(false);
         }
@@ -687,13 +314,12 @@ export default function HistoryPage() {
 
     return (
         <div className="pb-10">
+            <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
 
-            <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-3">
+                {/* ── PANEL DE FILTROS ── */}
+                <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-700">
 
-                {/* PANEL DE FILTROS UNIFICADO (MANAGER + FECHA) */}
-                <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
-
-                    {/* 1. FILTRO EMPLEADO (SOLO MANAGER) */}
+                    {/* Selector Empleado (Manager) */}
                     {isManager && (
                         <>
                             <div className="relative z-20">
@@ -706,13 +332,9 @@ export default function HistoryPage() {
                                 >
                                     <span>{viewingOther ? selectedEmployeeName : "Seleccionar Empleado"}</span>
                                 </button>
-
                                 {viewingOther && (
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedEmployeeId(currentUserId);
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
                                         className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
                                     >
                                         <X size={12} strokeWidth={3} />
@@ -720,7 +342,6 @@ export default function HistoryPage() {
                                 )}
                             </div>
 
-                            {/* DROPDOWN PORTAL */}
                             {showEmployeeDropdown && (
                                 <div
                                     className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
@@ -735,36 +356,24 @@ export default function HistoryPage() {
                                                 <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
                                                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
                                             </div>
-                                            <button
-                                                onClick={() => setShowEmployeeDropdown(false)}
-                                                className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
-                                            >
+                                            <button onClick={() => setShowEmployeeDropdown(false)} className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90">
                                                 <X size={20} />
                                             </button>
                                         </div>
-
-                                        <div className="p-4 overflow-y-auto custom-scrollbar">
+                                        <div className="p-4 overflow-y-auto">
                                             <button
                                                 onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
-                                                className={cn(
-                                                    "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
-                                                    selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
-                                                )}
+                                                className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
                                             >
                                                 <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
                                                 Mi Historial
                                             </button>
-
                                             <div className="h-px bg-zinc-100 my-4" />
-
                                             {employees.filter(e => e.id !== currentUserId).map(emp => (
                                                 <button
                                                     key={emp.id}
                                                     onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
-                                                    className={cn(
-                                                        "w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2",
-                                                        selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50"
-                                                    )}
+                                                    className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
                                                 >
                                                     <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
                                                     {emp.first_name} {emp.last_name}
@@ -777,7 +386,7 @@ export default function HistoryPage() {
                         </>
                     )}
 
-                    {/* 2. FILTRO FECHA */}
+                    {/* Selector Mes/Año */}
                     {!loading && (
                         <div className="relative z-10">
                             <button
@@ -789,15 +398,11 @@ export default function HistoryPage() {
                                     "active:scale-95 transition-all duration-300 hover:bg-zinc-50 hover:shadow-2xl"
                                 )}
                             >
-                                <span>{getMonthLabel(currentDate)}</span>
+                                <span>{getMonthLabel(filterYear, filterMonth)}</span>
                             </button>
-
                             {isFilterActive && (
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        clearFilter();
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); clearFilter(); }}
                                     className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
                                 >
                                     <X size={12} strokeWidth={3} />
@@ -807,47 +412,156 @@ export default function HistoryPage() {
                     )}
                 </div>
 
+                {/* ── CONTENIDO PRINCIPAL ── */}
                 {loading ? (
                     <div className="py-10 flex justify-center">
                         <LoadingSpinner size="md" className="text-white" />
                     </div>
                 ) : weeksData.length === 0 ? (
-                    <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto"><Calendar size={40} fill="currentColor" className="mx-auto mb-2 opacity-50" /><p>No hay registros este mes</p></div>
+                    <div className="py-10 text-center text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/10 max-w-xl mx-auto">
+                        <Calendar size={40} fill="currentColor" className="mx-auto mb-2 opacity-50" />
+                        <p>No hay registros este mes</p>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
-                        {weeksData.slice(0, displayLimit).map((week, idx) => (
-                            <WeeklyCard
-                                key={idx}
-                                week={week}
-                                idx={idx}
-                                isManager={isManager}
-                                openEdit={openEdit}
-                            />
-                        ))}
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-                        {weeksData.length > displayLimit && (
-                            <div
-                                className="col-span-full py-10 flex justify-center"
-                                ref={(el) => {
-                                    if (!el) return;
-                                    const observer = new IntersectionObserver((entries) => {
-                                        if (entries[0].isIntersecting) {
-                                            setDisplayLimit(prev => prev + 6);
-                                        }
-                                    });
-                                    observer.observe(el);
-                                }}
-                            >
-                                <div className="text-[10px] font-black text-white/30 uppercase tracking-widest animate-pulse">
-                                    Cargando historial...
+                        {/* Header días de semana */}
+                        <div className="grid grid-cols-7 bg-gradient-to-b from-red-500 to-red-600">
+                            {DAY_HEADERS.map(d => (
+                                <div key={d} className="flex items-center justify-center py-2">
+                                    <span className="text-[9px] font-black text-white uppercase tracking-wider">{d}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Semanas */}
+                        {weeksData.map((week) => (
+                            <div key={week.weekNumber} className="border-t border-gray-100 first:border-t-0">
+
+                                {/* Fila de 7 días */}
+                                <div className="grid grid-cols-7">
+                                    {week.days.map((day, di) => {
+                                        const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
+                                        const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
+
+                                        return (
+                                            <div
+                                                key={di}
+                                                onClick={() => isManager ? openEdit(week) : undefined}
+                                                className={cn(
+                                                    "relative border-r border-gray-100 last:border-r-0 min-h-[100px] flex flex-col p-1",
+                                                    day.isToday && "bg-blue-50/40",
+                                                    isManager && "cursor-pointer hover:bg-zinc-50 transition-colors"
+                                                )}
+                                            >
+                                                {/* Número de día */}
+                                                <span className={cn(
+                                                    "self-end text-[9px] font-bold leading-none mb-1",
+                                                    day.isToday ? "text-blue-600" : "text-gray-400"
+                                                )}>
+                                                    {day.dayNumber}
+                                                </span>
+
+                                                {/* Centro: evento especial o fichajes */}
+                                                <div className="flex-1 flex flex-col items-center justify-center">
+                                                    {isSpecial ? (
+                                                        <div className={cn("px-1.5 py-0.5 rounded shadow-sm text-center", eventConfig.color)}>
+                                                            <span className="text-[8px] font-black uppercase tracking-widest leading-none">{eventConfig.label}</span>
+                                                        </div>
+                                                    ) : day.hasLog ? (
+                                                        <div className="flex flex-col items-center gap-0.5 w-full">
+                                                            {/* Entrada */}
+                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
+                                                                <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                            </div>
+                                                            {/* Salida */}
+                                                            {day.clockOut ? (
+                                                                <div className="flex items-center justify-center gap-0.5">
+                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                                                                    <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                </div>
+                                                            ) : day.isToday ? (
+                                                                <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
+                                                            ) : null}
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+
+                                                {/* Pie: H y Ex */}
+                                                {!isSpecial && (
+                                                    <div className="w-full space-y-0 min-h-[24px]">
+                                                        {day.hasLog && day.totalHours > 0 ? (
+                                                            <div className="flex justify-between items-center text-[7px] h-3">
+                                                                <span className="text-gray-400 font-bold">H</span>
+                                                                <span className="font-black text-gray-800">{fmtHours(day.totalHours)}</span>
+                                                            </div>
+                                                        ) : <div className="h-3" />}
+                                                        {day.extraHours > 0.05 ? (
+                                                            <div className="flex justify-between items-center text-[7px] h-3">
+                                                                <span className="text-gray-400 font-bold">Ex</span>
+                                                                <span className="font-black text-emerald-600">{fmtHours(day.extraHours)}</span>
+                                                            </div>
+                                                        ) : <div className="h-3" />}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Resumen semanal */}
+                                <div className="col-span-full bg-[#36606F] px-3 py-2 flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[9px] font-black text-white/60 uppercase tracking-wider">S-{week.weekNumber}</span>
+                                        {week.isCurrentWeek && (
+                                            <span className="text-[7px] font-black bg-blue-400 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">En curso</span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 ml-auto">
+                                        {/* Horas */}
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[10px] font-black text-white">{fmtHours(week.summary.totalHours) || '0'}</span>
+                                            <span className="text-[7px] font-bold text-white/50 uppercase">Horas</span>
+                                        </div>
+
+                                        {/* Pendiente */}
+                                        <div className="flex flex-col items-center">
+                                            <span className={cn("text-[10px] font-black", (week.summary.startBalance ?? 0) >= 0 ? "text-emerald-300" : "text-red-300")}>
+                                                {fmtBalance(week.summary.startBalance) || '0'}
+                                            </span>
+                                            <span className="text-[7px] font-bold text-white/50 uppercase">Pendiente</span>
+                                        </div>
+
+                                        {/* Extras */}
+                                        <div className="flex flex-col items-center">
+                                            <span className={cn("text-[10px] font-black", (week.summary.weeklyBalance ?? 0) >= 0 ? "text-white" : "text-red-300")}>
+                                                {fmtBalance(week.summary.weeklyBalance) || '0'}
+                                            </span>
+                                            <span className="text-[7px] font-bold text-white/50 uppercase">Extras</span>
+                                        </div>
+
+                                        {/* Importe */}
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[10px] font-black text-emerald-300">
+                                                {fmtMoney(week.summary.estimatedValue) || '—'}
+                                            </span>
+                                            <span className="text-[7px] font-bold text-white/50 uppercase">Importe</span>
+                                        </div>
+
+                                        {/* Sello PAGADO */}
+                                        {week.summary.isPaid && (
+                                            <img src="/sello/pagado.png" alt="PAGADO" className="w-8 h-8 object-contain opacity-90 rotate-[-12deg] drop-shadow-md" />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                        ))}
                     </div>
                 )}
 
-                {/* MODAL: Filtro de Fecha */}
-                {/* MODAL: Filtro de Fecha (Rediseño Bento) */}
+                {/* ── MODAL: Filtro de Fecha ── */}
                 {showFilter && (
                     <div
                         className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
@@ -857,22 +571,17 @@ export default function HistoryPage() {
                             className="bg-zinc-50/90 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Header Modal */}
                             <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100">
                                 <div className="flex flex-col">
                                     <h3 className="text-xl font-black text-zinc-900 leading-tight">Calendario</h3>
                                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona periodo</p>
                                 </div>
-                                <button
-                                    onClick={() => setShowFilter(false)}
-                                    className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90"
-                                >
+                                <button onClick={() => setShowFilter(false)} className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90">
                                     <X size={20} />
                                 </button>
                             </div>
-
                             <div className="p-8 space-y-8">
-                                {/* Selector de Año */}
+                                {/* Año */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 px-1">
                                         <div className="w-1 h-3 bg-blue-600 rounded-full" />
@@ -883,12 +592,7 @@ export default function HistoryPage() {
                                             <button
                                                 key={year}
                                                 onClick={() => setFilterYear(year)}
-                                                className={cn(
-                                                    "h-12 rounded-2xl text-[13px] font-black transition-all active:scale-95 border-2",
-                                                    filterYear === year
-                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
-                                                        : 'bg-white text-zinc-500 border-transparent hover:border-zinc-200'
-                                                )}
+                                                className={cn("h-12 rounded-2xl text-[13px] font-black transition-all active:scale-95 border-2", filterYear === year ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-zinc-500 border-transparent hover:border-zinc-200')}
                                             >
                                                 {year}
                                             </button>
@@ -896,34 +600,26 @@ export default function HistoryPage() {
                                     </div>
                                 </div>
 
-                                {/* Selector de Mes */}
+                                {/* Mes */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 px-1">
                                         <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Meses</span>
+                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-wider">Mes</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
-                                        {Array.from({ length: 12 }).map((_, i) => {
-                                            const isSelected = filterMonth === i;
-                                            return (
-                                                <button
-                                                    key={i}
-                                                    onClick={() => setFilterMonth(i)}
-                                                    className={cn(
-                                                        "h-14 rounded-2xl text-[11px] font-bold transition-all active:scale-95 capitalize border-2",
-                                                        isSelected
-                                                            ? 'bg-blue-50 text-blue-700 border-blue-500 shadow-sm'
-                                                            : 'bg-white text-zinc-400 border-transparent hover:bg-white hover:border-zinc-100'
-                                                    )}
-                                                >
-                                                    {new Date(0, i).toLocaleDateString('es-ES', { month: 'long' })}
-                                                </button>
-                                            );
-                                        })}
+                                        {Array.from({ length: 12 }).map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setFilterMonth(i)}
+                                                className={cn("h-14 rounded-2xl text-[11px] font-bold transition-all active:scale-95 capitalize border-2", filterMonth === i ? 'bg-blue-50 text-blue-700 border-blue-500 shadow-sm' : 'bg-white text-zinc-400 border-transparent hover:bg-white hover:border-zinc-100')}
+                                            >
+                                                {new Date(0, i).toLocaleDateString('es-ES', { month: 'long' })}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {/* Botones de Acción */}
+                                {/* Acciones */}
                                 <div className="pt-2 space-y-3">
                                     <button
                                         onClick={applyFilter}
@@ -931,7 +627,6 @@ export default function HistoryPage() {
                                     >
                                         <Check size={20} strokeWidth={3} /> Aplicar Filtro
                                     </button>
-
                                     {isFilterActive && (
                                         <button
                                             onClick={() => { clearFilter(); setShowFilter(false); }}
@@ -946,33 +641,31 @@ export default function HistoryPage() {
                     </div>
                 )}
 
-                {/* MODAL: Editar Registros de Semana (Manager) */}
-                {editingWeekIdx !== null && (
+                {/* ── MODAL: Editar Registros (Manager) ── */}
+                {editingWeek !== null && (
                     <div
                         className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
-                        onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
+                        onClick={() => { setEditingWeek(null); setEditEntries([]); }}
                     >
                         <div
                             className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Header */}
                             <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <div className="flex flex-col">
                                     <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
                                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                        Semana {weeksData[editingWeekIdx]?.weekNumber}
+                                        Semana {editingWeek.weekNumber}
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => { setEditingWeekIdx(null); setEditEntries([]); }}
+                                    onClick={() => { setEditingWeek(null); setEditEntries([]); }}
                                     className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
                                 >
                                     <X size={20} strokeWidth={3} />
                                 </button>
                             </div>
 
-                            {/* Entries */}
                             <div className="max-h-[50vh] overflow-y-auto p-4 space-y-3">
                                 {editEntries.filter(e => !e.toDelete).length === 0 && (
                                     <div className="py-6 text-center text-zinc-400 text-sm font-medium italic">
@@ -983,7 +676,6 @@ export default function HistoryPage() {
                                     if (entry.toDelete) return null;
                                     const isRegular = entry.event_type === 'regular';
                                     const eventConfig = EVENT_TYPES.find(t => t.value === entry.event_type);
-
                                     return (
                                         <div key={idx} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 space-y-2">
                                             <div className="flex items-center gap-2">
@@ -1009,7 +701,6 @@ export default function HistoryPage() {
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
-
                                             {isRegular ? (
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex-1 flex items-center gap-1.5">
@@ -1044,7 +735,6 @@ export default function HistoryPage() {
                                 })}
                             </div>
 
-                            {/* Footer */}
                             <div className="p-4 border-t border-zinc-100 flex gap-3">
                                 <button
                                     onClick={addEntry}
@@ -1057,16 +747,13 @@ export default function HistoryPage() {
                                     disabled={savingEdit}
                                     className="flex-1 h-12 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
                                 >
-                                    {savingEdit ? (
-                                        <LoadingSpinner size="sm" className="text-white" />
-                                    ) : (
-                                        <><Save size={18} /> Guardar</>
-                                    )}
+                                    {savingEdit ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );
