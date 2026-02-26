@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-24 (Resolución Definitiva: Deudas Fantasma & Tenure-Aware Sync)
+**Última actualización:** 2026-02-26 (Refinamiento Estético /staff/history v2 & Estilos Dashboard)
 
 ## 📌 ESTADO GENERAL
 El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el principio de "Single Source of Truth" (SSOT) en PostgreSQL, garantizando que el redondeo (20/50), la agregación semanal y los arrastres asimétricos sean consistentes en todos los dashboards. Además, se han establecido defaults de seguridad (0h de contrato y NO acumulación) para perfiles incompletos.
@@ -8,6 +8,7 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refinamiento Estético /staff/history (v2)**: Bordes blancos en cabeceras de días, reducción de altura de resumen a h-6 y fuentes optimizadas. Sello "PAGADO" reposicionado para sobresalir de la tarjeta.
 - [x] **Infraestructura Base:** Next.js + Supabase Auth / SSR configurado.
 - [x] **Redirección por Rol:** Implementación de lógica en `/` para dirigir a Managers a `/dashboard` y Staff a `/staff/dashboard`.
 - [x] **Panel Admin:** Dashboard principal y navegación básica.
@@ -84,19 +85,6 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] **Mejoras UI Tesorería**: Implementado pre-llenado de arqueos con valores teóricos y visualización universal de totales en cabeceras de modales (optimizado para móvil).
 - [x] **Corrección Radical Inconsistencia de Horas (SSOT Deep Audit)**: Unificación total de la lógica de horas. Se han refactorizado el Dashboard de Administrador, Dashboard de Staff, Modal de Historial Semanal y página de Costes Laborales para consumir exclusivamente la RPC `get_weekly_worker_stats` o aplicar `fn_round_marbella_hours`. Eliminadas discrepancias matemáticas entre frontend y backend.
 - [x] **ISO-8601 & UTC Compliance**: Estandarización de fronteras semanales en UTC para evitar saltos de día/semana según la zona horaria del servidor/cliente.
-- [x] **Consistencia Temporal UTC**: Implementación de utilidades de fecha en `date-utils.ts` para asegurar que el frontend y el backend operen bajo el mismo estándar de fronteras semanales.
-- [x] **Implementación de Defaults Estrictos**: Configuración del sistema para asumir 0h de contrato y NO acumulación por defecto si no hay datos. Recálculo masivo de la cadena de balances Ene 2024 - Hoy finalizado.
-- [x] **Corrección de Transición Swipe Mobile**: Inversión del orden espacial en `DashboardSwitcher.tsx` (Panel Administrativo a la izquierda, Panel Staff a la derecha). Esto soluciona la resistencia de rebote y permite que deslizar hacia la derecha desde Staff vuelva a Administración de manera 100% fluida, coincidiendo con la heurística nativa de iOS "Atrás".
-- [x] **Resolución Definitiva de Deudas Fantasma**: Implementación de lógica Tenure-Aware que detecta automáticamente el primer fichaje del trabajador. Limpieza quirúrgica de snapshots previos y recálculo masivo secuencial de toda la plantilla finalizado.
-- [x] **Hardenización de Historial (No More NaN)**: Implementación de fallbacks numéricos en el frontend para garantizar una UI limpia y libre de errores matemáticos incluso con datos históricos incompletos.
-- [x] **Lógica de Eventos Especiales (Baja, Festivo, etc.)**: Los eventos no-regulares ahora cuentan automáticamente como 8 horas trabajadas tanto en frontend como en el backend (`updateWeeklyWorkerConfig`). Se ha implementado un estilo visual obligatorio en amarillo (`text-yellow-500`) para las horas de entrada (09:00) y salida (17:00) en estos casos.
-- [x] **Refinamiento de Gestión Ágil (Layout & UX)**: Eliminación de contenedores para tarjetas flotantes "premium", implementación de grid de 7 columnas en escritorio para visualización semanal completa y vista responsiva de 1 columna en móvil.
-- [x] **Estética de Calendario Consistente**: Restauración de iniciales y doble marcaje (Entrada/Salida) con código de colores estricto (Verde: Completo, Rojo: Incompleto) e impulsado por un sistema de enriquecimiento de datos robusto que elimina los placeholders "?".
-- [x] **Resolución del Bug de Rango Semanal (Tuesday-Start)**: Refactorización integral de la lógica de truncado semanal en SQL (Europe/Madrid) y navegación en frontend (`addWeeks`/`subWeeks`), garantizando que las semanas comiencen estrictamente los lunes sin desfases por UTC.
-- [x] **Filtrado de Semanas en Curso**: La tarjeta de "Horas Extras" del dashboard ahora solo muestra semanas cerradas (finalizadas el domingo). Esto evita confusiones con datos parciales de la semana actual.
-- [x] **Refinamiento de Tarjeta Extras (Filtro 0€)**: Se ocultan los trabajadores con importe 0€ en la vista desplegable. Además, el estado de la semana como "Pagada" ya no depende de confirmar a estos trabajadores, agilizando la gestión.
-
-- [x] **Rediseño Tarjeta Horas Extras**: Eliminación del relleno verde y borde lila, implementando fondos blancos flotantes con sombra y rediseño de marcadores (icono unificado ! rojo/blanco y tick esmeralda) tanto en Dashboard Admin como en /overtime.
 - [x] **Igualación Calendario/Escritorio (Historial)**: Adaptación exacta de proporciones en tarjetas de calendario (4 columnas), suprimiendo textos y asegurando legibilidad completa de números en móvil mediante diseño fluido extremo.
 - [x] **Rediseño Pixel-Perfect Tarjetas Calendario (Historial)**: Implementación total del diseño de referencia con cabecera roja (#D64D5D), métrica principal con porcentaje integrado y grid 2x2 para métricas secundarias (Ventas, Medio, Efectivo, Tarjeta). Optimización de espaciados para evitar solapamientos y cumplimiento estricto de la regla "Zero-Display".
 - [x] **Arquitectura Backend para Desglose de Caja (Smart Inventory Trigger)**: Implementada tabla global `cash_box_inventory` manejada íntegramente por un Trigger Automático en PostgreSQL. Cada "Arqueo", "Entrada", "Salida" o "Cambio", sin excepción, actualiza instantáneamente el recuento de los billetes y monedas disponibles en base de datos.
@@ -125,7 +113,10 @@ El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el pr
 - [x] **Creación Simplificada de Ingredientes**: Modificación en `/ingredients` y `CreateIngredientModal` para que solo el nombre sea el campo estrictamente requerido. Resolviendo el fallo bloqueante `NaN` al mandar un precio vacío.
 - [x] 🔄 **Navegación Rápida en Ingredientes**: Incorporadas flechas de navegación laterales flotantes en el modal de edición (`/ingredients`), permitiendo cambiar de producto sin cerrar la vista modal.
 - [x] 📅 **Rediseño Calendario Mensual Unificado (/staff/history)**: Refactorización radical con arquitectura "Frontend Tonto". Eliminada toda lógica de negocio del cliente (redondeo, bucles while, snapshots, `WeeklyCard`, paginación). El frontend ahora consume exclusivamente la RPC `get_monthly_timesheet(p_user_id, p_year, p_month)`. Nueva UI: calendario grid mensual (grid-cols-7) con header rojo LUN-DOM, celdas de día con puntos verde/rojo de fichaje y métricas H/Ex, y banda de resumen semanal `bg-[#36606F]` con 4 KPIs.
-- [x] 💸 **Modal de Opciones de Caja (Staff)**: Añadido un modal intermedio al pulsar el botón "Caja" en el dashboard de staff que permite elegir entre "Cambio" y "Compra".
+- [x] **💸 Modal de Opciones de Caja (Staff)**: Añadido un modal intermedio al pulsar el botón "Caja" en el dashboard de staff que permite elegir entre "Cambio" y "Compra". Incluye iconos de marca (`change.png`, `shipment.png`) y títulos simplificados.
+- [x] **🛒 Refactorización Modo Compra**: Redistribución total de campos. Fecha y Concepto comparten fila superior; Precio, Entregado y Cambio comparten fila inferior. Lógica matemática de cuadre corregida para permitir el guardado solo con balance exacto.
+- [x] **📱 Alineación Mobile de Botones Monetarios**: Los botones de acción en los formularios de denominación ahora suben a la fila del céntimo, con ajuste dinámico de padding para compensar el marcador de stock y mantener la alineación visual con los inputs.
+- [x] **🗓️ Refinamiento Historial Staff (Premium UI)**: Actualización a color azul petróleo (#487B8F) en las bandas de resumen, compactación de alturas, sombras proyectadas más profundas y bordes redondeados consistentes.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
