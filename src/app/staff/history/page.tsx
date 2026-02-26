@@ -432,7 +432,7 @@ export default function HistoryPage() {
                     ) : (
                         <div className="flex flex-col gap-6 p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
-                                <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden border border-zinc-100/80">
+                                <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col border border-gray-100">
 
                                     {/* FILA 1: Cabecera de Días (Roja) */}
                                     <div className="grid grid-cols-7 border-b border-gray-100 relative z-10">
@@ -444,7 +444,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 2: Días */}
-                                    <div className="grid grid-cols-7 border-b border-zinc-100">
+                                    <div className="grid grid-cols-7 border-b border-gray-100">
                                         {week.days.map((day, di) => {
                                             const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
                                             const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
@@ -458,60 +458,62 @@ export default function HistoryPage() {
                                                     key={di}
                                                     onClick={() => isManager ? openEdit(week) : undefined}
                                                     className={cn(
-                                                        "relative border-r border-zinc-100 last:border-r-0 min-h-[110px] md:min-h-[120px] flex flex-col p-1.5 md:p-2",
-                                                        day.isToday && "bg-blue-50/40",
+                                                        "relative border-r border-gray-100 last:border-r-0 min-h-[108px] flex flex-col items-center bg-white p-1 pb-2",
+                                                        day.isToday && "bg-blue-50/10",
                                                         isManager && "cursor-pointer hover:bg-zinc-50 transition-colors"
                                                     )}
                                                 >
-                                                    {/* Número de día superior derecha/izquierda */}
+                                                    {/* Número de día superior derecha */}
                                                     <span className={cn(
-                                                        "self-end text-[10px] md:text-xs font-black leading-none mb-1 opacity-80",
-                                                        day.isToday ? "text-blue-600" : "text-zinc-400"
+                                                        "absolute top-1 right-1 text-[9px] font-bold",
+                                                        day.isToday ? "text-blue-600" : "text-gray-400"
                                                     )}>
                                                         {day.dayNumber}
                                                     </span>
 
                                                     {/* Centro: evento especial o fichajes */}
-                                                    <div className="flex-1 flex flex-col items-center justify-center mt-1">
+                                                    <div className="flex-1 flex flex-col items-center justify-center mt-4 w-full">
                                                         {isSpecial ? (
                                                             <div className={cn("px-2 py-1 rounded shadow-sm text-center", eventConfig.color)}>
                                                                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none block pt-0.5">{eventConfig.label}</span>
                                                             </div>
                                                         ) : day.hasLog ? (
-                                                            <div className="flex flex-col items-center gap-1 w-full">
+                                                            <div className="flex flex-col items-center gap-0.5 w-full">
                                                                 {/* Entrada */}
-                                                                <div className="flex items-center justify-center gap-1">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                                                                    <span className="text-[9px] md:text-[10px] font-mono font-bold text-zinc-600 leading-none pt-0.5">{day.clockIn}</span>
+                                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                                    <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
+                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
                                                                 </div>
                                                                 {/* Salida */}
-                                                                {day.clockOut ? (
-                                                                    <div className="flex items-center justify-center gap-1 mt-0.5">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                                                                        <span className="text-[9px] md:text-[10px] font-mono font-bold text-zinc-600 leading-none pt-0.5">{day.clockOut}</span>
-                                                                    </div>
-                                                                ) : day.isToday ? (
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse mt-0.5" />
-                                                                ) : null}
+                                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                                    {day.clockOut ? (
+                                                                        <>
+                                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                        </>
+                                                                    ) : day.isToday ? (
+                                                                        <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
+                                                                    ) : null}
+                                                                </div>
                                                             </div>
                                                         ) : null}
                                                     </div>
 
                                                     {/* Pie: H y Ex en miniatura, Zero-Display */}
                                                     {!isSpecial && (
-                                                        <div className="w-full space-y-[2px] min-h-[28px] mt-2">
+                                                        <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
                                                             {day.hasLog && hFormatted ? (
-                                                                <div className="flex justify-between items-center text-[8px] md:text-[9px] h-3.5">
-                                                                    <span className="text-zinc-400 font-bold tracking-wider">H</span>
-                                                                    <span className="font-black text-zinc-800">{hFormatted}</span>
+                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                    <span className="ml-0.5">H</span>
+                                                                    <span className="font-bold text-gray-800 pr-1">{hFormatted}</span>
                                                                 </div>
-                                                            ) : <div className="h-3.5" />}
+                                                            ) : <div className="h-3" />}
                                                             {exFormatted ? (
-                                                                <div className="flex justify-between items-center text-[8px] md:text-[9px] h-3.5">
-                                                                    <span className="text-zinc-400 font-bold tracking-wider">Ex</span>
-                                                                    <span className="font-black text-zinc-800">{exFormatted}</span>
+                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                    <span className="ml-0.5">Ex</span>
+                                                                    <span className="font-bold text-gray-800 pr-1">{exFormatted}</span>
                                                                 </div>
-                                                            ) : <div className="h-3.5" />}
+                                                            ) : <div className="h-3" />}
                                                         </div>
                                                     )}
                                                 </div>
@@ -520,28 +522,28 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-[#1A1F3C] text-white flex items-center h-8 relative z-10">
+                                    <div className="bg-[#1A1F3C] text-white flex items-center h-10 relative z-10 rounded-b-2xl">
                                         {/* ZONA IZQUIERDA (Fija) */}
-                                        <div className="w-24 pl-3 shrink-0">
+                                        <div className="w-16 pl-3 shrink-0">
                                             <span className="font-black text-[9px] uppercase leading-none">
                                                 SEMANA {week.weekNumber}
                                             </span>
                                         </div>
 
-                                        {/* ZONA DERECHA (Grid de valores) */}
-                                        <div className="flex-1 grid grid-cols-4 h-full relative z-20 pb-0.5">
+                                        {/* ZONA DERECHA (Grid de valores desplazado a la izquierda para el sello) */}
+                                        <div className="flex-1 grid grid-cols-4 h-full relative z-20 pb-1 pr-16 md:pr-24">
                                             {/* COL 1: HORAS */}
-                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="h-3 flex items-end">
                                                     <span className="text-[10px] md:text-[11px] font-black leading-none text-white">
                                                         {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">HORAS</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase">HORAS</span>
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
-                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="h-3 flex items-end">
                                                     <span className={cn(
                                                         "text-[10px] md:text-[11px] font-black leading-none",
@@ -550,27 +552,27 @@ export default function HistoryPage() {
                                                         {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">PENDIENTES</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase">PENDIENTES</span>
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
-                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="h-3 flex items-end">
                                                     <span className="text-[10px] md:text-[11px] font-black leading-none text-green-400">
                                                         {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">EXTRAS</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase">EXTRAS</span>
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
-                                            <div className="flex flex-col items-center justify-center -space-y-0.5 h-full">
+                                            <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="h-3 flex items-end">
                                                     <span className="text-[10px] md:text-[11px] font-black leading-none text-green-400">
                                                         {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                     </span>
                                                 </div>
-                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase mt-0.5">IMPORTE</span>
+                                                <span className="text-[6px] text-white/60 font-bold leading-none uppercase">IMPORTE</span>
                                             </div>
                                         </div>
                                     </div>
@@ -580,7 +582,8 @@ export default function HistoryPage() {
                                         <img
                                             src="/sello/pagado.png"
                                             alt="PAGADO"
-                                            className="absolute -bottom-2 -right-2 w-20 h-auto rotate-[-15deg] z-20 pointer-events-none drop-shadow-xl"
+                                            className="absolute bottom-0 right-0 w-[72px] h-auto rotate-[0deg] z-30 pointer-events-none drop-shadow-xl -mt-1 md:w-20"
+                                            style={{ transform: 'translate(10%, 15%) rotate(-15deg)' }}
                                         />
                                     )}
                                 </div>
