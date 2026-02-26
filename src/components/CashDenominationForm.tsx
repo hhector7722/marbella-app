@@ -304,13 +304,14 @@ export const CashDenominationForm = ({
                             </div>
                         </div>
                     ))}
-                    {/* MOBILE IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c) */}
-                    <div className="sm:hidden col-span-3 flex items-end justify-end gap-1.5 pb-1 h-full pt-4">
+
+                    {/* IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c on small screens, or wraps on larger depending on cols) */}
+                    <div className="col-span-3 sm:hidden flex items-end justify-end gap-1.5 pb-[2px] h-full pt-4">
                         <button
                             onClick={handleConfirm}
                             disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
                             className={cn(
-                                "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95",
+                                "flex-[2] h-[42px] text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95",
                                 isPurchaseMode
                                     ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
                                     : ((totalGiven <= 0)
@@ -323,7 +324,7 @@ export const CashDenominationForm = ({
                         </button>
                         <button
                             onClick={onCancel}
-                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[9px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                            className="flex-1 h-[42px] bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
                         >
                             <X size={14} strokeWidth={3} />
                             Salir
