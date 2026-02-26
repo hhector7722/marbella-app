@@ -508,8 +508,8 @@ export default function HistoryPage() {
                                                             ) : <div className="h-3.5" />}
                                                             {exFormatted ? (
                                                                 <div className="flex justify-between items-center text-[8px] md:text-[9px] h-3.5">
-                                                                    <span className="text-zinc-400 font-bold tracking-wider">EX</span>
-                                                                    <span className="font-black text-emerald-600">{exFormatted}</span>
+                                                                    <span className="text-zinc-400 font-bold tracking-wider">Ex</span>
+                                                                    <span className="font-black text-zinc-800">{exFormatted}</span>
                                                                 </div>
                                                             ) : <div className="h-3.5" />}
                                                         </div>
@@ -535,8 +535,8 @@ export default function HistoryPage() {
                                             )}
                                         </div>
 
-                                        {/* ZONA DERECHA (Grid de valores) */}
-                                        <div className="flex-1 grid grid-cols-4 h-full divide-x divide-white/10 relative z-20">
+                                        {/* ZONA DERECHA (Grid de valores sin bordes interiores) */}
+                                        <div className="flex-1 grid grid-cols-4 h-full relative z-20">
 
                                             {/* COL 1: HORAS */}
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
