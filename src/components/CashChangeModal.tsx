@@ -117,12 +117,12 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 {/* STICKY HEADER - MATCHING REFERENCE */}
-                <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative pt-safe">
-                    <div className="px-4 py-3 pb-4">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex flex-col min-w-0">
-                                <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Cambio Efectivo</h2>
-                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] mt-1 truncate">Caja {boxName}</p>
+                <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
+                    <div className="px-4 py-2.5 pb-3">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-end gap-2 pr-4">
+                                <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
+                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] border-l border-white/20 pl-2 leading-none mb-[1px]">Caja {boxName}</p>
                             </div>
                         </div>
 
@@ -189,25 +189,25 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                 </div>
 
                 {/* STICKY FOOTER */}
-                <div className="p-4 bg-white border-t border-zinc-100 shrink-0 pb-safe">
+                <div className="p-3 bg-white border-t border-zinc-100 shrink-0">
                     <div className="flex gap-2 w-full">
                         <button
                             onClick={handleSubmit}
                             disabled={!isBalanced || (totalIn === 0 && totalOut === 0) || hasStockIssue}
                             className={cn(
-                                "flex-[2] h-14 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3",
+                                "flex-[2] h-10 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
                                 (isBalanced && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
                                     ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
                                     : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
                             )}
                         >
-                            {hasStockIssue ? 'STOCK INSUFICIENTE' : 'CONFIRMAR CAMBIO'}
+                            {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex-1 h-14 bg-rose-500 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-rose-200 text-sm"
+                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px]"
                         >
-                            <X size={18} strokeWidth={3} />
+                            <X size={14} strokeWidth={3} />
                             SALIR
                         </button>
                     </div>
