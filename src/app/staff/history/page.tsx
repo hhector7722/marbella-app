@@ -522,7 +522,7 @@ export default function HistoryPage() {
                                     {/* Resumen semanal al pie de la semana (DISEÑO BLINDADO) */}
                                     <div className="col-span-full relative bg-[#36606F] text-white flex items-center h-12 border-t border-white/10 overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
-                                        <div className="w-24 pl-3 shrink-0 flex flex-col justify-center items-start gap-0.5">
+                                        <div className="w-24 pl-3 shrink-0 flex items-center gap-1.5">
                                             <span className="font-black text-[10px] uppercase tracking-wider leading-none">
                                                 SEMANA {week.weekNumber}
                                             </span>
@@ -542,7 +542,7 @@ export default function HistoryPage() {
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="min-h-[14px] flex items-end justify-center">
                                                     <span className="text-[12px] font-black leading-none text-white">
-                                                        {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') + "h" : " "}
+                                                        {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
                                                 <span className="text-[7px] text-white/60 font-bold leading-none uppercase">HORAS</span>
@@ -555,7 +555,7 @@ export default function HistoryPage() {
                                                         "text-[12px] font-black leading-none",
                                                         (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
                                                     )}>
-                                                        {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') + "h" : " "}
+                                                        {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
                                                 <span className="text-[7px] text-white/60 font-bold leading-none uppercase">PENDIENTES</span>
@@ -565,7 +565,7 @@ export default function HistoryPage() {
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="min-h-[14px] flex items-end justify-center">
                                                     <span className="text-[12px] font-black leading-none text-green-400">
-                                                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') + "h" : " "}
+                                                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                     </span>
                                                 </div>
                                                 <span className="text-[7px] text-white/60 font-bold leading-none uppercase">EXTRAS</span>
@@ -575,7 +575,7 @@ export default function HistoryPage() {
                                             <div className="flex flex-col items-center justify-center gap-1 h-full">
                                                 <div className="min-h-[14px] flex items-end justify-center">
                                                     <span className="text-[12px] font-black leading-none text-green-400">
-                                                        {(week.summary.estimatedValue ?? 0) > 0.05 ? `${fmtMoney(week.summary.estimatedValue)}€` : " "}
+                                                        {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                     </span>
                                                 </div>
                                                 <span className="text-[7px] text-white/60 font-bold leading-none uppercase">IMPORTE</span>
