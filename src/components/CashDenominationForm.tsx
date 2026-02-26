@@ -134,9 +134,6 @@ export const CashDenominationForm = ({
                         <span className="text-xl font-black">{total.toFixed(2)}€</span>
                     </div>
                 </div>
-                <button onClick={onCancel} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
-                    <X size={20} strokeWidth={3} />
-                </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                 {/* PURCHASE MODE TOGGLE */}
@@ -308,12 +305,6 @@ export const CashDenominationForm = ({
                     {/* MOBILE IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c) */}
                     <div className="sm:hidden col-span-3 flex items-end justify-end gap-1.5 pb-1 h-full pt-4">
                         <button
-                            onClick={onCancel}
-                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[9px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center shadow-md shadow-rose-200"
-                        >
-                            <X size={14} strokeWidth={3} />
-                        </button>
-                        <button
                             onClick={handleConfirm}
                             disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
                             className={cn(
@@ -328,17 +319,18 @@ export const CashDenominationForm = ({
                             <Save size={16} strokeWidth={3} />
                             Guardar
                         </button>
+                        <button
+                            onClick={onCancel}
+                            className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[9px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                        >
+                            <X size={14} strokeWidth={3} />
+                            Salir
+                        </button>
                     </div>
                 </div>
             </div>
             {/* DESKTOP FOOTER */}
             <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
-                <button
-                    onClick={onCancel}
-                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 shadow-md shadow-rose-200"
-                >
-                    Cancelar
-                </button>
                 <button
                     onClick={handleConfirm}
                     disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven <= 0)}
@@ -361,7 +353,14 @@ export const CashDenominationForm = ({
                         </span>
                     )}
                 </button>
+                <button
+                    onClick={onCancel}
+                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                >
+                    <X size={14} strokeWidth={3} />
+                    Salir
+                </button>
             </div>
-        </div>
+        </div >
     );
 };

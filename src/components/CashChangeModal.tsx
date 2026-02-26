@@ -124,9 +124,6 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
                                 <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Cambio Efectivo</h2>
                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] mt-1 truncate">Caja {boxName}</p>
                             </div>
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
-                                <X size={20} strokeWidth={3} />
-                            </button>
                         </div>
 
                         <div className="flex items-center justify-between gap-1.5 px-0.5">
@@ -193,18 +190,27 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
 
                 {/* STICKY FOOTER */}
                 <div className="p-4 bg-white border-t border-zinc-100 shrink-0 pb-safe">
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!isBalanced || (totalIn === 0 && totalOut === 0) || hasStockIssue}
-                        className={cn(
-                            "w-full h-14 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3",
-                            (isBalanced && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
-                                ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
-                                : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
-                        )}
-                    >
-                        {hasStockIssue ? 'STOCK INSUFICIENTE' : 'CONFIRMAR CAMBIO'}
-                    </button>
+                    <div className="flex gap-2 w-full">
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!isBalanced || (totalIn === 0 && totalOut === 0) || hasStockIssue}
+                            className={cn(
+                                "flex-[2] h-14 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3",
+                                (isBalanced && (totalIn > 0 || totalOut > 0) && !hasStockIssue)
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
+                                    : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
+                            )}
+                        >
+                            {hasStockIssue ? 'STOCK INSUFICIENTE' : 'CONFIRMAR CAMBIO'}
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="flex-1 h-14 bg-rose-500 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-rose-200 text-sm"
+                        >
+                            <X size={18} strokeWidth={3} />
+                            SALIR
+                        </button>
+                    </div>
                     {hasStockIssue && (
                         <p className="text-center text-[10px] font-bold text-rose-500 mt-2 uppercase tracking-tight italic">
                             No hay suficiente stock en caja para realizar este cambio
