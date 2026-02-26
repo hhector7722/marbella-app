@@ -86,18 +86,31 @@ export function OrderSuccessModal({
                 // Cargar el documento PDF
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
-
                 const numPages = pdf.numPages;
-                const scale = 2.5; // Escala para alta resolución
 
-                // 1. Calcular dimensiones totales y pre-cargar páginas
+                // 1. Determinar escala segura. 
+                // iOS safari limita severamente el alto del canvas (aprox 4096px - 8192px)
+                // Si hay muchas páginas, bajamos la resolución base.
+                let scale = 2.5;
+                if (numPages > 2) scale = 2.0;
+                if (numPages > 4) scale = 1.5;
+                if (numPages > 8) scale = 1.0;
+
+                // Pre-calcular dimensiones para evitar pasarnos del límite del canvas
                 let totalHeight = 0;
                 let maxWidth = 0;
                 const pagesData = [];
 
                 for (let i = 1; i <= numPages; i++) {
                     const page = await pdf.getPage(i);
-                    const viewport = page.getViewport({ scale });
+                    let viewport = page.getViewport({ scale });
+
+                    // Límite de seguridad estricto para móviles (Max height ~8000px)
+                    if (totalHeight + viewport.height > 8000) {
+                        // Forzar una escala menor sobre la marcha si el pedido es gigantesco
+                        scale = scale * 0.75;
+                        viewport = page.getViewport({ scale });
+                    }
 
                     totalHeight += viewport.height;
                     if (viewport.width > maxWidth) {
@@ -107,7 +120,7 @@ export function OrderSuccessModal({
                     pagesData.push({ page, viewport });
                 }
 
-                // 2. Crear el Canvas Principal (El "pergamino")
+                // 2. Crear el Canvas Principal
                 const mainCanvas = document.createElement('canvas');
                 const mainContext = mainCanvas.getContext('2d');
                 if (!mainContext) throw new Error("No 2d context for main canvas");
@@ -115,15 +128,14 @@ export function OrderSuccessModal({
                 mainCanvas.width = maxWidth;
                 mainCanvas.height = totalHeight;
 
-                // Rellenar fondo blanco global
+                // Rellenar fondo blanco
                 mainContext.fillStyle = '#ffffff';
                 mainContext.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 
-                // 3. Renderizar y coser cada página verticalmente
+                // 3. Renderizar cada página
                 let currentYOffset = 0;
 
                 for (const { page, viewport } of pagesData) {
-                    // Crear un canvas temporal para esta página
                     const pageCanvas = document.createElement('canvas');
                     const pageContext = pageCanvas.getContext('2d');
                     if (!pageContext) continue;
@@ -131,26 +143,26 @@ export function OrderSuccessModal({
                     pageCanvas.width = viewport.width;
                     pageCanvas.height = viewport.height;
 
-                    const renderContext = {
+                    await page.render({
                         canvasContext: pageContext,
-                        viewport: viewport,
-                        canvas: pageCanvas
-                    };
-                    await page.render(renderContext).promise;
+                        viewport: viewport
+                    }).promise;
 
-                    // Dibujar el canvas de la página en el canvas principal
                     mainContext.drawImage(pageCanvas, 0, currentYOffset);
-
-                    // Actualizar el offset Y
                     currentYOffset += viewport.height;
                 }
 
-                // 4. Convertir Canvas Principal a Blob (PNG)
+                // 4. Convertir a Blob JPEG para menor peso en memoria/portapapeles si es muy grande
                 return new Promise((resolve, reject) => {
+                    // Si el archivo es muy masivo, usar JPEG al 90% para evitar crash al copiar al portapapeles
+                    const isHuge = numPages > 3;
+                    const mimeType = isHuge ? 'image/jpeg' : 'image/png';
+                    const quality = isHuge ? 0.9 : undefined;
+
                     mainCanvas.toBlob((blob) => {
                         if (blob) resolve(blob);
                         else reject(new Error("Canvas to Blob falló"));
-                    }, 'image/png');
+                    }, mimeType, quality);
                 });
             };
 
