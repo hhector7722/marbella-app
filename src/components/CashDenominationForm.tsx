@@ -117,7 +117,7 @@ export const CashDenominationForm = ({
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl">
-            <div className="bg-blue-600 px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg",
