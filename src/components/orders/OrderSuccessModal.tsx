@@ -87,36 +87,67 @@ export function OrderSuccessModal({
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
 
-                // Obtener solo la primera página
-                const page = await pdf.getPage(1);
+                const numPages = pdf.numPages;
+                const scale = 2.5; // Escala para alta resolución
 
-                // Escala para alta resolución
-                const scale = 2.5;
-                const viewport = page.getViewport({ scale });
+                // 1. Calcular dimensiones totales y pre-cargar páginas
+                let totalHeight = 0;
+                let maxWidth = 0;
+                const pagesData = [];
 
-                // Crear un canvas en memoria
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                if (!context) throw new Error("No 2d context");
+                for (let i = 1; i <= numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale });
 
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                    totalHeight += viewport.height;
+                    if (viewport.width > maxWidth) {
+                        maxWidth = viewport.width;
+                    }
 
-                // Rellenar fondo blanco
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, canvas.width, canvas.height);
+                    pagesData.push({ page, viewport });
+                }
 
-                // Renderizar la página PDF
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport,
-                    canvas: canvas // Requerido en versiones recientes de pdfjs
-                };
-                await page.render(renderContext).promise;
+                // 2. Crear el Canvas Principal (El "pergamino")
+                const mainCanvas = document.createElement('canvas');
+                const mainContext = mainCanvas.getContext('2d');
+                if (!mainContext) throw new Error("No 2d context for main canvas");
 
-                // Convertir Canvas a Blob (PNG)
+                mainCanvas.width = maxWidth;
+                mainCanvas.height = totalHeight;
+
+                // Rellenar fondo blanco global
+                mainContext.fillStyle = '#ffffff';
+                mainContext.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+
+                // 3. Renderizar y coser cada página verticalmente
+                let currentYOffset = 0;
+
+                for (const { page, viewport } of pagesData) {
+                    // Crear un canvas temporal para esta página
+                    const pageCanvas = document.createElement('canvas');
+                    const pageContext = pageCanvas.getContext('2d');
+                    if (!pageContext) continue;
+
+                    pageCanvas.width = viewport.width;
+                    pageCanvas.height = viewport.height;
+
+                    const renderContext = {
+                        canvasContext: pageContext,
+                        viewport: viewport,
+                        canvas: pageCanvas
+                    };
+                    await page.render(renderContext).promise;
+
+                    // Dibujar el canvas de la página en el canvas principal
+                    mainContext.drawImage(pageCanvas, 0, currentYOffset);
+
+                    // Actualizar el offset Y
+                    currentYOffset += viewport.height;
+                }
+
+                // 4. Convertir Canvas Principal a Blob (PNG)
                 return new Promise((resolve, reject) => {
-                    canvas.toBlob((blob) => {
+                    mainCanvas.toBlob((blob) => {
                         if (blob) resolve(blob);
                         else reject(new Error("Canvas to Blob falló"));
                     }, 'image/png');
