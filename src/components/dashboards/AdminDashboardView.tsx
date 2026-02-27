@@ -15,6 +15,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import Link from 'next/link';
+import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -165,20 +166,7 @@ const WeekOvertimeCard = memo(({
 });
 WeekOvertimeCard.displayName = 'WeekOvertimeCard';
 
-const StaffGridItem = memo(({ emp, onClick }: { emp: any, onClick: () => void }) => (
-    <button
-        onClick={onClick}
-        className="bg-transparent p-2 rounded-2xl border-0 hover:bg-blue-50/50 transition-all active:scale-95 flex flex-col items-center gap-1.5 group"
-    >
-        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-sm font-black text-[#5B8FB9] shadow-inner group-hover:bg-[#5B8FB9] group-hover:text-white transition-colors capitalize shrink-0">
-            {emp.first_name.substring(0, 1)}
-        </div>
-        <span className="font-black text-[10px] text-gray-700 text-center capitalize leading-tight w-full">
-            {emp.first_name.split(' ')[0]}
-        </span>
-    </button>
-));
-StaffGridItem.displayName = 'StaffGridItem';
+// StaffGridItem removed in favor of shared StaffSelectionModal
 
 // Local components moved to shared src/components/
 
@@ -816,37 +804,20 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </>
             )}
             {
-                isStaffModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsStaffModalOpen(false)}>
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                                <div>
-                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Plantilla</h3>
-                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Empleado ({allEmployees.length})</p>
-                                </div>
-                                <button onClick={() => setIsStaffModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
-                            </div>
-                            <div className="p-4 bg-gray-50/30 flex-1 overflow-y-auto">
-                                {/* Botón Crear Nuevo */}
-                                <button
-                                    onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
-                                    className="w-full mb-3 py-3 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
-                                >
-                                    <Plus size={18} /> Nuevo Trabajador
-                                </button>
-                                <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto no-scrollbar pb-2">
-                                    {allEmployees.map((emp) => (
-                                        <StaffGridItem
-                                            key={emp.id}
-                                            emp={emp}
-                                            onClick={() => router.push(`/profile?id=${emp.id}`)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )
+                <StaffSelectionModal
+                    isOpen={isStaffModalOpen}
+                    onClose={() => setIsStaffModalOpen(false)}
+                    employees={allEmployees}
+                    onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
+                    title="Plantilla"
+                >
+                    <button
+                        onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
+                        className="w-full mb-6 py-4 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                    >
+                        <Plus size={20} /> <span className="uppercase tracking-widest font-black text-[10px]">Nuevo Trabajador</span>
+                    </button>
+                </StaffSelectionModal>
             }
             {/* MODAL: Crear Nuevo Trabajador */}
             {

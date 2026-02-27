@@ -668,6 +668,31 @@ export default function HistoryPage() {
                 )}
 
             </div>
+
+            <StaffSelectionModal
+                isOpen={showEmployeeDropdown}
+                onClose={() => setShowEmployeeDropdown(false)}
+                employees={employees}
+                onSelect={(emp) => {
+                    setSelectedEmployeeId(emp.id);
+                    setShowEmployeeDropdown(false);
+                }}
+                title="Seleccionar Personal"
+            >
+                <div className="mb-6">
+                    <button
+                        onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
+                        className={cn(
+                            "w-full py-4 border-2 border-zinc-200 text-zinc-600 font-bold rounded-2xl hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95",
+                            selectedEmployeeId === currentUserId && "border-blue-500 bg-blue-50 text-blue-600"
+                        )}
+                    >
+                        <Users size={20} />
+                        <span className="uppercase tracking-widest font-black text-[10px]">Ver Mi Historial</span>
+                    </button>
+                    <div className="h-px bg-zinc-100 mt-6" />
+                </div>
+            </StaffSelectionModal>
         </div >
     );
 }

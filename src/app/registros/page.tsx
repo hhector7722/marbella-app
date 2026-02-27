@@ -3,26 +3,11 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Trash2,
-    Plus,
-    ArrowLeft,
-    ArrowRight as ArrowRightIcon,
-    Save,
-    Filter,
-    X,
-    Calendar as CalendarIcon,
-    LayoutGrid,
-    Coins,
-    Landmark,
-    ArrowLeftCircle,
-    Check
-} from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Trash2, Plus, ArrowLeft, ArrowRight as ArrowRightIcon, Save, Filter, X, Calendar as CalendarIcon, LayoutGrid, Coins, Landmark, ArrowLeftCircle, Check } from 'lucide-react';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from "@/lib/utils";
 import {
     format,
@@ -137,6 +122,7 @@ export default function RegistrosPage() {
     const [filterStartDate, setFilterStartDate] = useState<string>('');
     const [filterEndDate, setFilterEndDate] = useState<string>('');
     const [showMonthPicker, setShowMonthPicker] = useState(false);
+    const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const isFilterActive = filterStartDate || filterEndDate;
 
     // --- CARGA ---
@@ -416,20 +402,21 @@ export default function RegistrosPage() {
                 {/* 2. Filtro Empleado + Switch de Vista (Misma Fila en móvil) */}
                 <div className="flex items-center gap-2 w-full md:w-auto">
 
-                    {/* Buscador Trabajador Compacto */}
-                    <div className="flex-1 min-w-0 flex items-center gap-2 bg-white/10 pl-3 pr-2 py-1.5 md:py-2 rounded-xl backdrop-blur-sm border border-white/10 h-10">
-                        <Filter size={14} className="text-white/40 shrink-0" />
-                        <select
-                            value={selectedWorkerId}
-                            onChange={(e) => setSelectedWorkerId(e.target.value)}
-                            className="bg-transparent text-white font-bold text-xs md:text-sm focus:outline-none cursor-pointer w-full truncate [&>option]:text-gray-800"
-                        >
-                            <option value="">Empleado...</option>
-                            {employees.map(emp => (
-                                <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {/* Buscador Trabajador Compacto (Modificado a Modal) */}
+                    <button
+                        onClick={() => setIsStaffModalOpen(true)}
+                        className="flex-1 min-w-0 flex items-center justify-between gap-2 bg-white/10 pl-3 pr-3 py-1.5 md:py-2 rounded-xl backdrop-blur-sm border border-white/10 h-10 hover:bg-white/20 transition-all active:scale-95"
+                    >
+                        <div className="flex items-center gap-2 truncate">
+                            <Filter size={14} className="text-white/40 shrink-0" />
+                            <span className="text-white font-bold text-xs md:text-sm truncate">
+                                {selectedWorkerId
+                                    ? employees.find(e => e.id === selectedWorkerId)?.first_name
+                                    : 'Seleccionar...'}
+                            </span>
+                        </div>
+                        <ChevronDown size={14} className="text-white/40 shrink-0" />
+                    </button>
 
                     {/* Switch Vistas Compacto */}
                     <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-sm border border-white/10 shadow-inner h-10 shrink-0">
@@ -858,6 +845,17 @@ export default function RegistrosPage() {
                             </div>
                         </div>
                     </div>
+                )
+            }
+            {
+                isStaffModalOpen && (
+                    <StaffSelectionModal
+                        isOpen={isStaffModalOpen}
+                        onClose={() => setIsStaffModalOpen(false)}
+                        employees={employees}
+                        onSelect={(emp) => setSelectedWorkerId(emp.id)}
+                        title="Seleccionar Trabajador"
+                    />
                 )
             }
         </div >

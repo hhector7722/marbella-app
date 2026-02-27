@@ -1,13 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-26 (Refinamiento Estético /staff/history v2 & Estilos Dashboard)
+**Última actualización:** 2026-02-27 (Rediseño de Selección de Personal - Icon Modal)
 
 ## 📌 ESTADO GENERAL
-El proyecto ha alcanzado la madurez en la lógica de horas. Se ha impuesto el principio de "Single Source of Truth" (SSOT) en PostgreSQL, garantizando que el redondeo (20/50), la agregación semanal y los arrastres asimétricos sean consistentes en todos los dashboards. Además, se han establecido defaults de seguridad (0h de contrato y NO acumulación) para perfiles incompletos.
+El proyecto ha alcanzado la madurez en la lógica de selección de personal. Se ha sustituido el sistema de listas y dropdowns por un modal premium basado en una cuadrícula de iconos (`StaffSelectionModal`), mejorando radicalmente la UX táctil en todo el ecosistema (Admin, Registros e Historial).
 
 ---
 
 ## ✅ COMPLETADO
+- [x] **Rediseño de Selección de Personal (Icon Modal)**: Implementación del componente `StaffSelectionModal` con visualización de iconos de usuario en "Bento Grid". Integrado en el Dashboard de Administrador, la página de Registros y el Historial de Staff.
 - [x] **Refinamiento Estético /staff/history (v2)**: Bordes blancos en cabeceras de días, reducción de altura de resumen a h-6 y fuentes optimizadas. Sello "PAGADO" reposicionado para sobresalir de la tarjeta.
 - [x] **Infraestructura Base:** Next.js + Supabase Auth / SSR configurado.
 - [x] **Redirección por Rol:** Implementación de lógica en `/` para dirigir a Managers a `/dashboard` y Staff a `/staff/dashboard`.
