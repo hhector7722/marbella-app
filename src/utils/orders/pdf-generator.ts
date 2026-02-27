@@ -153,9 +153,9 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         styles: {
             font: 'helvetica',
-            fontSize: 11,
+            fontSize: 14, // Increased from 11
             textColor: [60, 60, 60],
-            cellPadding: { top: 9, bottom: 9, left: 10, right: 10 },
+            cellPadding: { top: 7, bottom: 7, left: 10, right: 10 }, // Reduced from 9
             valign: 'middle',
             minCellHeight: 28
         },
@@ -228,7 +228,7 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
         didParseCell: function (data: any) {
             if (data.section === 'body' && data.column.index === 0) {
-                data.cell.styles.cellPadding = { left: 35, top: 9, bottom: 9, right: 10 };
+                data.cell.styles.cellPadding = { left: 35, top: 7, bottom: 7, right: 10 };
             }
         },
 
