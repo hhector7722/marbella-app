@@ -631,7 +631,7 @@ export default function HistoryPage() {
                                                         <option key={type.value} value={type.value}>{type.label}</option>
                                                     ))}
                                                 </select>
-                                                <div className="flex-1 bg-blue-600 rounded-lg border border-white/10 flex items-center px-2">
+                                                <div className="flex-1 bg-blue-500 rounded-lg border border-white/10 flex items-center px-2">
                                                     <input
                                                         type="date"
                                                         value={entry.date}

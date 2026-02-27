@@ -169,7 +169,7 @@ export const CashDenominationForm = ({
                     <div className="flex flex-col gap-2 px-1">
                         {/* ROW 1: Fecha y Concepto */}
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col justify-center bg-blue-600 p-2 rounded-xl border border-white/10 shadow-sm transition-all">
+                            <div className="flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all">
                                 <input
                                     type="datetime-local"
                                     value={selectedDate}
@@ -251,7 +251,7 @@ export const CashDenominationForm = ({
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
                         <div className={cn(
-                            "flex flex-col justify-center bg-blue-600 p-2 rounded-xl border border-white/10 shadow-sm transition-all",
+                            "flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all",
                             isAudit && "col-span-full"
                         )}>
                             <input

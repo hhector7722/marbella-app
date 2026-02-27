@@ -181,24 +181,18 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                 {/* CONTENT */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                     {/* TIME & ID */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-400">
-                                <Calendar size={16} />
-                            </div>
-                            <div className="flex flex-col leading-none">
-                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Fecha</span>
-                                <span className="text-[12px] font-bold text-zinc-900">{format(new Date(movement.created_at), 'd MMMM yyyy', { locale: es })}</span>
-                            </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-3 bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm transition-all">
+                            <Calendar size={16} className="text-white/60" />
+                            <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">
+                                {format(new Date(movement.created_at), 'd MMM yyyy', { locale: es })}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-400">
-                                <Clock size={16} />
-                            </div>
-                            <div className="flex flex-col leading-none">
-                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Hora</span>
-                                <span className="text-[12px] font-bold text-zinc-900">{format(new Date(movement.created_at), 'HH:mm')}</span>
-                            </div>
+                        <div className="flex items-center gap-3 bg-zinc-50 p-3 rounded-2xl border border-zinc-100 shadow-sm transition-all">
+                            <Clock size={16} className="text-zinc-400" />
+                            <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
+                                {format(new Date(movement.created_at), 'HH:mm')}
+                            </span>
                         </div>
                     </div>
 
