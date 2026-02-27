@@ -433,7 +433,7 @@ export default function HistoryPage() {
                                                     </span>
 
                                                     {/* Centro: evento especial o fichajes */}
-                                                    <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
+                                                    <div className="flex-1 flex flex-col items-center justify-center mt-1.5 w-full">
                                                         {isSpecial ? (
                                                             <div className={cn("px-2 py-1 rounded shadow-sm text-center", eventConfig.color)}>
                                                                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none block pt-0.5">{eventConfig.label}</span>
@@ -508,7 +508,7 @@ export default function HistoryPage() {
                                                         "text-[9px] font-black leading-none block",
                                                         (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
                                                     )}
-                                                    style={{ textShadow: '0px 0px 2px rgba(255,255,255,0.8)' }}
+                                                    style={{ textShadow: '-0.5px -0.5px 0 #fff, 0.5px -0.5px 0 #fff, -0.5px 0.5px 0 #fff, 0.5px 0.5px 0 #fff' }}
                                                 >
                                                     {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -527,7 +527,7 @@ export default function HistoryPage() {
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span
                                                     className="text-[9px] font-black leading-none text-green-400 block"
-                                                    style={{ textShadow: '0px 0px 2px rgba(255,255,255,0.8)' }}
+                                                    style={{ textShadow: '-0.5px -0.5px 0 #fff, 0.5px -0.5px 0 #fff, -0.5px 0.5px 0 #fff, 0.5px 0.5px 0 #fff' }}
                                                 >
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
