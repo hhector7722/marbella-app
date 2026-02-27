@@ -627,7 +627,7 @@ export default function RegistrosPage() {
                                     <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-2xl border border-white/20">
                                         <input
                                             type="number"
-                                            value={weeklyConfig.contracted}
+                                            value={weeklyConfig.contracted || ''}
                                             onChange={(e) => setWeeklyConfig(prev => ({ ...prev, contracted: Number(e.target.value) }))}
                                             className="w-10 sm:w-12 bg-transparent text-center font-black text-white text-base focus:outline-none"
                                         />

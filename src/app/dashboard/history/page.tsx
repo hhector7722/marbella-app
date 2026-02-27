@@ -772,7 +772,7 @@ export default function HistoryPage() {
                                 <div className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 flex flex-col justify-between">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 block">Facturación Total</span>
                                     {isEditing ? (
-                                        <input type="number" className="w-full bg-transparent text-2xl font-black text-gray-900 border-b-2 border-[#5B8FB9] outline-none pb-1" value={editData?.tpv_sales || 0} onChange={e => handleFieldUpdate('tpv_sales', parseFloat(e.target.value) || 0)} />
+                                        <input type="number" className="w-full bg-transparent text-2xl font-black text-gray-900 border-b-2 border-[#5B8FB9] outline-none pb-1" value={editData?.tpv_sales || ''} onChange={e => handleFieldUpdate('tpv_sales', parseFloat(e.target.value) || 0)} />
                                     ) : (
                                         <span className="text-2xl font-black text-gray-900">{selectedClosing.tpv_sales.toFixed(2)}€</span>
                                     )}
@@ -810,7 +810,7 @@ export default function HistoryPage() {
                                                     {isCash && <ChevronRightIcon size={14} className="opacity-40" />}
                                                 </div>
                                                 {isEditing && !['difference', 'cash_counted'].includes(row.key) ? (
-                                                    <input type="number" className="bg-transparent text-right font-black outline-none border-b border-black/10 text-lg" value={val || 0} onChange={e => handleFieldUpdate(row.key, parseFloat(e.target.value) || 0)} />
+                                                    <input type="number" className="bg-transparent text-right font-black outline-none border-b border-black/10 text-lg" value={val || ''} onChange={e => handleFieldUpdate(row.key, parseFloat(e.target.value) || 0)} />
                                                 ) : (
                                                     <span className="text-lg font-black">{val.toFixed(2)}€</span>
                                                 )}

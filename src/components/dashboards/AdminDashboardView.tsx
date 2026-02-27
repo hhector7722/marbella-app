@@ -54,38 +54,14 @@ const StaffOvertimeRow = memo(({
 }) => (
     <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
         <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
-                {staff.name.charAt(0)}
-            </div>
-            <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
-                    {staff.name}
-                </span>
-                <span className="text-[10px] font-medium text-gray-400">
-                    {staff.preferStock ? 'A Bolsa' : 'A Nómina'}
-                </span>
-            </div>
+            <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
+                {staff.name}
+            </span>
         </div>
         <div className="flex items-center gap-3">
             <span className="text-xs font-black text-gray-800">{staff.amount.toFixed(0)}€</span>
 
             <div className="flex items-center bg-gray-100/50 rounded-full h-8 px-1 gap-1">
-                {/* Toggle Prefer Stock (Bank vs Pay) */}
-                <button
-                    onClick={(e) => onTogglePreferStock(e, weekId, staff.id, staff.preferStock)}
-                    title={staff.preferStock ? "Cambiar a Pago en Nómina" : "Cambiar a Bolsa de Horas"}
-                    className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90",
-                        staff.preferStock
-                            ? "bg-purple-100 text-purple-600 shadow-sm"
-                            : "bg-emerald-100 text-emerald-600 shadow-sm"
-                    )}
-                >
-                    {staff.preferStock ? <Landmark className="w-3.5 h-3.5" /> : <Coins className="w-3.5 h-3.5" />}
-                </button>
-
-                <div className="w-px h-4 bg-gray-300 mx-0.5" />
-
                 {/* Toggle Paid Status */}
                 <button
                     onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
@@ -460,7 +436,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <div className="flex-[2] basis-0 grid grid-cols-3 gap-2">
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'in')}
-                                                className="bg-transparent hover:bg-emerald-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
+                                                className="bg-transparent hover:bg-emerald-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-2.5 transition-all active:scale-95 group"
                                             >
                                                 <div className="w-8 h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                     <Plus size={16} strokeWidth={4} className="text-white" />
@@ -469,7 +445,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             </button>
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'out')}
-                                                className="bg-transparent hover:bg-rose-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
+                                                className="bg-transparent hover:bg-rose-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-2.5 transition-all active:scale-95 group"
                                             >
                                                 <div className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                     <Minus size={16} strokeWidth={4} className="text-white" />
@@ -478,7 +454,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             </button>
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'audit')}
-                                                className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group"
+                                                className="bg-transparent hover:bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center gap-2.5 transition-all active:scale-95 group"
                                             >
                                                 <div className="w-8 h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                     <RefreshCw size={14} strokeWidth={4} className="text-white" />
@@ -619,7 +595,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <div className="flex-[2] basis-0 grid grid-cols-3 gap-1.5">
                                         <button
                                             onClick={() => openTreasuryModal(box, 'in')}
-                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group min-h-[48px]"
                                         >
                                             <div className="w-7 h-7 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <Plus size={14} strokeWidth={4} className="text-white" />
@@ -628,7 +604,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'out')}
-                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group min-h-[48px]"
                                         >
                                             <div className="w-7 h-7 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <Minus size={14} strokeWidth={4} className="text-white" />
@@ -637,7 +613,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         </button>
                                         <button
                                             onClick={() => openTreasuryModal(box, 'audit')}
-                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[48px]"
+                                            className="bg-transparent p-2 rounded-xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group min-h-[48px]"
                                         >
                                             <div className="w-7 h-7 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                 <RefreshCw size={12} strokeWidth={4} className="text-white" />
@@ -880,7 +856,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Horas/Sem</label>
                                         <input
                                             type="number"
-                                            value={newWorkerData.contracted_hours_weekly}
+                                            value={newWorkerData.contracted_hours_weekly || ''}
                                             onChange={e => setNewWorkerData({ ...newWorkerData, contracted_hours_weekly: Number(e.target.value) })}
                                             className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
                                         />
@@ -890,7 +866,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <input
                                             type="number"
                                             step="0.01"
-                                            value={newWorkerData.overtime_cost_per_hour}
+                                            value={newWorkerData.overtime_cost_per_hour || ''}
                                             onChange={e => setNewWorkerData({ ...newWorkerData, overtime_cost_per_hour: Number(e.target.value) })}
                                             className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
                                         />

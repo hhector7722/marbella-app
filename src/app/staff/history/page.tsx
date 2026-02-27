@@ -6,6 +6,7 @@ import {
     Calendar, X, Check, Plus, Trash2, Save, Users, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
@@ -66,12 +67,14 @@ const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const fmtHours = (val: number): string => {
     if (!val || Math.abs(val) < 0.05) return '';
     const rounded = Math.round(val * 2) / 2;
-    return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    return val < 0 ? `-${str}` : str;
 };
 
 const fmtMoney = (val: number): string => {
     if (!val || Math.abs(val) < 0.05) return '';
-    return `${val.toFixed(0)}€`;
+    const str = Math.abs(val).toFixed(0);
+    return val < 0 ? `-${str}€` : `${str}€`;
 };
 
 const fmtBalance = (val: number): string => {
@@ -114,6 +117,7 @@ export default function HistoryPage() {
 
     // Edición (Manager)
     const [editingWeek, setEditingWeek] = useState<WeekData | null>(null);
+    const [editingDate, setEditingDate] = useState<string | null>(null);
     const [editEntries, setEditEntries] = useState<TimeLogEntry[]>([]);
     const [savingEdit, setSavingEdit] = useState(false);
 
@@ -202,18 +206,16 @@ export default function HistoryPage() {
     };
 
     // --- EDICIÓN: Manager ---
-    const openEdit = async (week: WeekData) => {
+    const openEdit = async (week: WeekData, specificDate?: string) => {
         const targetUserId = selectedEmployeeId || currentUserId;
-        const mondayISO = week.startDate;
-        const sundayDate = new Date(mondayISO);
-        sundayDate.setDate(sundayDate.getDate() + 6);
-        const sundayISO = format(sundayDate, 'yyyy-MM-dd');
+        const startDate = specificDate || week.startDate;
+        const endDate = specificDate || format(new Date(new Date(week.startDate).setDate(new Date(week.startDate).getDate() + 6)), 'yyyy-MM-dd');
 
         const { data: logs } = await supabase.from('time_logs')
             .select('id, clock_in, clock_out, event_type')
             .eq('user_id', targetUserId)
-            .gte('clock_in', `${mondayISO}T00:00:00.000Z`)
-            .lte('clock_in', `${sundayISO}T23:59:59.999Z`)
+            .gte('clock_in', `${startDate}T00:00:00.000Z`)
+            .lte('clock_in', `${endDate}T23:59:59.999Z`)
             .order('clock_in', { ascending: true });
 
         const entries: TimeLogEntry[] = (logs || []).map(l => ({
@@ -226,11 +228,13 @@ export default function HistoryPage() {
 
         setEditEntries(entries);
         setEditingWeek(week);
+        setEditingDate(specificDate || null);
     };
 
     const addEntry = () => {
         if (!editingWeek) return;
-        setEditEntries([...editEntries, { date: editingWeek.startDate, clock_in: '09:00', clock_out: '17:00', event_type: 'regular', isNew: true }]);
+        const defaultDate = editingDate || (editEntries.length > 0 ? editEntries[0].date : editingWeek.startDate);
+        setEditEntries([...editEntries, { date: defaultDate, clock_in: '09:00', clock_out: '17:00', event_type: 'regular', isNew: true }]);
     };
 
     const removeEntry = (idx: number) => {
@@ -316,6 +320,7 @@ export default function HistoryPage() {
             }
 
             setEditingWeek(null);
+            setEditingDate(null);
             setEditEntries([]);
             fetchCalendar();
         } catch (err) {
@@ -417,7 +422,7 @@ export default function HistoryPage() {
                                             return (
                                                 <div
                                                     key={di}
-                                                    onClick={() => isManager ? openEdit(week) : undefined}
+                                                    onClick={() => isManager ? openEdit(week, day.date) : undefined}
                                                     className={cn(
                                                         "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1",
                                                         day.isToday && "bg-blue-50/10",
@@ -498,7 +503,7 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-white block">
                                                     {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">HORAS</span>
+                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter">HORAS</span>
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
@@ -506,9 +511,11 @@ export default function HistoryPage() {
                                                 <span
                                                     className="text-[9px] font-black leading-none text-white block"
                                                 >
-                                                    {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
+                                                    {Math.abs(week.summary.startBalance ?? 0) > 0.05
+                                                        ? `${week.summary.startBalance < 0 ? '-' : ''}${Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '')}`
+                                                        : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
@@ -516,7 +523,7 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-white block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">EXTRAS</span>
+                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
@@ -526,7 +533,7 @@ export default function HistoryPage() {
                                                 >
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
                                             </div>
                                         </div>
                                     </div>
@@ -546,11 +553,10 @@ export default function HistoryPage() {
                     )}
                 </div>
 
-                {/* ── MODAL: Editar Registros (Manager) ── */}
                 {editingWeek !== null && (
                     <div
                         className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
-                        onClick={() => { setEditingWeek(null); setEditEntries([]); }}
+                        onClick={() => { setEditingWeek(null); setEditingDate(null); setEditEntries([]); }}
                     >
                         <div
                             className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
@@ -558,13 +564,18 @@ export default function HistoryPage() {
                         >
                             <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <div className="flex flex-col">
-                                    <h3 className="text-base font-black uppercase tracking-wider leading-none">Editar Registros</h3>
+                                    <h3 className="text-base font-black uppercase tracking-wider leading-none">
+                                        {editingDate ? "Editar Registro Día" : "Editar Registros"}
+                                    </h3>
                                     <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                        Semana {editingWeek.weekNumber}
+                                        {editingDate
+                                            ? format(new Date(editingDate + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es }).toUpperCase()
+                                            : `Semana ${editingWeek.weekNumber}`
+                                        }
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => { setEditingWeek(null); setEditEntries([]); }}
+                                    onClick={() => { setEditingWeek(null); setEditingDate(null); setEditEntries([]); }}
                                     className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
                                 >
                                     <X size={20} strokeWidth={3} />
@@ -672,22 +683,7 @@ export default function HistoryPage() {
                     setSelectedEmployeeId(emp.id);
                     setShowEmployeeDropdown(false);
                 }}
-                title="Seleccionar Personal"
-            >
-                <div className="mb-6">
-                    <button
-                        onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
-                        className={cn(
-                            "w-full py-4 border-2 border-zinc-200 text-zinc-600 font-bold rounded-2xl hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95",
-                            selectedEmployeeId === currentUserId && "border-blue-500 bg-blue-50 text-blue-600"
-                        )}
-                    >
-                        <Users size={20} />
-                        <span className="uppercase tracking-widest font-black text-[10px]">Ver Mi Historial</span>
-                    </button>
-                    <div className="h-px bg-zinc-100 mt-6" />
-                </div>
-            </StaffSelectionModal>
+            />
         </div >
     );
 }

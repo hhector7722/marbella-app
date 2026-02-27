@@ -283,8 +283,8 @@ function RecipeDetailContent() {
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const QuantityInput = ({ initialValue, onSave }: { initialValue: number; onSave: (val: number) => void }) => {
-        const [localValue, setLocalValue] = useState<string>(initialValue?.toString() || '');
-        useEffect(() => { setLocalValue(initialValue?.toString() || ''); }, [initialValue]);
+        const [localValue, setLocalValue] = useState<string>(initialValue ? initialValue.toString() : '');
+        useEffect(() => { setLocalValue(initialValue ? initialValue.toString() : ''); }, [initialValue]);
         const handleCommit = () => {
             const parsed = parseFloat(localValue.replace(',', '.'));
             if (!isNaN(parsed) && parsed >= 0) onSave(parsed);
@@ -294,7 +294,7 @@ function RecipeDetailContent() {
     };
 
     const EditablePrice = ({ value, onChange, onBlur, className, ...props }: any) => {
-        const [localValue, setLocalValue] = useState(value !== undefined ? value.toFixed(2) : "0.00");
+        const [localValue, setLocalValue] = useState(value ? value.toFixed(2) : "");
         useEffect(() => {
             if (value !== undefined && Math.abs(value - parseFloat(localValue)) > 0.001) {
                 setLocalValue(value.toFixed(2));

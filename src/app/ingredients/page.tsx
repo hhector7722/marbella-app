@@ -280,7 +280,7 @@ export default function IngredientsPage() {
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
-                                    <input type="number" step="0.01" value={editForm.current_price} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
+                                    <input type="number" step="0.01" value={editForm.current_price || ''} onChange={e => setEditForm({ ...editForm, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
                                 </div>
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
@@ -294,7 +294,7 @@ export default function IngredientsPage() {
                                 </div>
                                 <div className="w-1/4">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
-                                    <input type="number" step="0.01" value={editForm.waste_percentage} onChange={e => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
+                                    <input type="number" step="0.01" value={editForm.waste_percentage || ''} onChange={e => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" />
                                 </div>
                                 <div className="w-1/4">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">U. Pedido</label>
@@ -347,7 +347,7 @@ export default function IngredientsPage() {
                             <div className="flex gap-2">
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio</label>
-                                    <input type="number" step="0.01" onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Precio" />
+                                    <input type="number" step="0.01" value={newIngredient.current_price || ''} onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Precio" />
                                 </div>
                                 <div className="w-1/2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad</label>
@@ -361,7 +361,7 @@ export default function IngredientsPage() {
                             <div className="flex gap-2">
                                 <div className="w-1/3">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
-                                    <input type="number" step="0.01" value={newIngredient.waste_percentage} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Merma" />
+                                    <input type="number" step="0.01" value={newIngredient.waste_percentage || ''} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Merma" />
                                 </div>
                                 <div className="w-1/3">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">U. Pedido</label>

@@ -70,7 +70,7 @@ export default function CreateModal({
                             <input
                                 type="number"
                                 step="0.10"
-                                value={newRecipe.sale_price || 0}
+                                value={newRecipe.sale_price || ''}
                                 onChange={e => setNewRecipe({ ...newRecipe, sale_price: parseFloat(e.target.value) })}
                                 className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
                             />
@@ -106,7 +106,7 @@ export default function CreateModal({
                                         <input
                                             type="number"
                                             step="0.001"
-                                            value={row.quantity}
+                                            value={row.quantity || ''}
                                             onChange={e => updateRecipeIngredient(idx, 'quantity', parseFloat(e.target.value))}
                                             className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium text-center focus:border-[#36606F] outline-none"
                                             placeholder="Cant."

@@ -287,7 +287,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                         <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-200">
                                             <input
                                                 type="number"
-                                                value={tempContractHours}
+                                                value={tempContractHours || ''}
                                                 onChange={(e) => setTempContractHours(Number(e.target.value))}
                                                 className="w-12 text-center font-black text-xs border-b-2 border-[#36606F] outline-none"
                                                 autoFocus

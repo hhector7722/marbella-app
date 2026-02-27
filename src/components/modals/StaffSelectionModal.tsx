@@ -1,9 +1,6 @@
-'use client';
-
-import React, { useState } from 'react';
-import { X, Search } from 'lucide-react';
+import React from 'react';
+import { X } from 'lucide-react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 
 interface Employee {
     id: string;
@@ -26,16 +23,10 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     onClose,
     onSelect,
     employees,
-    title = "Seleccionar Empleado",
+    title = "Plantilla",
     children
 }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-
     if (!isOpen) return null;
-
-    const filteredEmployees = employees.filter(emp =>
-        `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div
@@ -50,9 +41,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                 <div className="bg-[#36606F] px-8 py-6 flex justify-between items-center text-white shrink-0">
                     <div>
                         <h3 className="text-xl font-black uppercase tracking-wider leading-none">{title}</h3>
-                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 italic">
-                            {employees.length} TRABAJADORES EN PLANTILLA
-                        </p>
                     </div>
                     <button
                         onClick={onClose}
@@ -62,63 +50,42 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     </button>
                 </div>
 
-                {/* Buscador */}
-                <div className="px-6 py-4 border-b border-zinc-100 bg-zinc-50/50 shrink-0">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full h-12 pl-12 pr-4 bg-white border-2 border-zinc-200 rounded-2xl text-sm font-bold text-zinc-700 focus:ring-4 focus:ring-blue-50 focus:border-[#5B8FB9] outline-none transition-all placeholder:text-zinc-300"
-                            autoFocus
-                        />
-                    </div>
-                </div>
-
-                {/* Grid de Empleados (Bento Style) */}
-                <div className="p-6 overflow-y-auto no-scrollbar flex-1 bg-white">
+                {/* Grid de Empleados (Bento Style Simplificado) */}
+                <div className="p-4 overflow-y-auto no-scrollbar flex-1 bg-white">
                     {children}
-                    {filteredEmployees.length === 0 ? (
-                        <div className="py-12 text-center">
-                            <p className="text-zinc-400 font-bold italic">No se encontraron resultados</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-3 gap-4">
-                            {filteredEmployees.map((emp) => (
-                                <button
-                                    key={emp.id}
-                                    onClick={() => {
-                                        onSelect(emp);
-                                        onClose();
-                                    }}
-                                    className="group flex flex-col items-center gap-3 p-4 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 border-2 border-transparent hover:border-blue-100"
-                                >
-                                    {/* Contenedor Icono */}
-                                    <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center overflow-hidden border border-zinc-100 group-hover:shadow-lg transition-all group-hover:-translate-y-1">
-                                        <Image
-                                            src="/icons/user.png"
-                                            alt={emp.first_name}
-                                            width={48}
-                                            height={48}
-                                            className="w-10 h-10 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
-                                        />
-                                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {employees.map((emp) => (
+                            <button
+                                key={emp.id}
+                                onClick={() => {
+                                    onSelect(emp);
+                                    onClose();
+                                }}
+                                className="group flex flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95"
+                            >
+                                {/* Contenedor Icono Flotante */}
+                                <div className="w-14 h-14 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                                    <Image
+                                        src="/icons/user.png"
+                                        alt={emp.first_name}
+                                        width={48}
+                                        height={48}
+                                        className="w-12 h-12 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                                    />
+                                </div>
 
-                                    {/* Nombre */}
-                                    <div className="text-center">
-                                        <p className="text-xs font-black text-zinc-700 leading-tight truncate w-full max-w-[80px]">
-                                            {emp.first_name}
-                                        </p>
-                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter truncate w-full max-w-[80px]">
-                                            {emp.last_name || ' '}
-                                        </p>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                                {/* Nombre */}
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-zinc-700 leading-tight truncate w-full max-w-[70px] uppercase">
+                                        {emp.first_name}
+                                    </p>
+                                    <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter truncate w-full max-w-[70px]">
+                                        {emp.last_name || ' '}
+                                    </p>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Footer Sutil */}

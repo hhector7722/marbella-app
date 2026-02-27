@@ -38,38 +38,14 @@ const StaffOvertimeRow = memo(({
 }) => (
     <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
         <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5E35B1] flex items-center justify-center text-xs font-black capitalize">
-                {staff.name.charAt(0)}
-            </div>
-            <div>
-                <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors block">
-                    {staff.name}
-                </span>
-                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
-                    {staff.overtimeHours.toFixed(1)}h extra • {staff.preferStock ? 'A Bolsa' : 'A Nómina'}
-                </span>
-            </div>
+            <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors block">
+                {staff.name}
+            </span>
         </div>
         <div className="flex items-center gap-3">
             <span className="text-sm font-black text-gray-800">{formatDisplay(staff.totalCost, '€')}</span>
 
             <div className="flex items-center bg-gray-100 rounded-full h-9 px-1 gap-1">
-                {/* Toggle Prefer Stock (Bank vs Pay) */}
-                <button
-                    onClick={(e) => onTogglePreferStock(e, weekId, staff.id, !!staff.preferStock)}
-                    title={staff.preferStock ? "Cambiar a Pago en Nómina" : "Cambiar a Bolsa de Horas"}
-                    className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90",
-                        staff.preferStock
-                            ? "bg-purple-100 text-purple-600 shadow-sm"
-                            : "bg-emerald-100 text-emerald-600 shadow-sm"
-                    )}
-                >
-                    {staff.preferStock ? <Landmark className="w-3.5 h-3.5" /> : <Coins className="w-3.5 h-3.5" />}
-                </button>
-
-                <div className="w-px h-5 bg-gray-300 mx-0.5" />
-
                 <button
                     onClick={(e) => onTogglePaid(e, weekId, staff.id, !staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
                     className={cn(
