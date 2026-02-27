@@ -686,28 +686,42 @@ export default function StaffDashboardView() {
                                     </h3>
                                     <div className="p-8 space-y-2 overflow-y-auto">
                                         {!infoSubMenu && (
-                                            <>
-                                                <button onClick={() => setInfoSubMenu('contactos')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Phone size={24} strokeWidth={2.5} /></div>
-                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Contactos</span>
+                                            <div className="space-y-1">
+                                                <button onClick={() => setInfoSubMenu('contactos')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                        <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                    </div>
+                                                    <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
                                                 </button>
-                                                <button onClick={() => setInfoSubMenu('convenio')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><FileText size={24} strokeWidth={2.5} /></div>
-                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Convenio</span>
+
+                                                <button onClick={() => setInfoSubMenu('convenio')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                        <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                    </div>
+                                                    <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
                                                 </button>
-                                                <button onClick={() => setInfoSubMenu('conducta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><Scale size={24} strokeWidth={2.5} /></div>
-                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Código de Conducta</span>
+
+                                                <button onClick={() => setInfoSubMenu('conducta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                        <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                    </div>
+                                                    <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
                                                 </button>
-                                                <button onClick={() => setInfoSubMenu('reservas')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><CalendarCheck size={24} strokeWidth={2.5} /></div>
-                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Reservas</span>
+
+                                                <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                        <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                    </div>
+                                                    <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
                                                 </button>
-                                                <button onClick={() => setInfoSubMenu('carta')} className="w-full h-16 px-4 bg-transparent rounded-2xl flex items-center gap-5 transition-all active:scale-95 group min-h-[56px] text-gray-600 hover:text-[#5B8FB9]">
-                                                    <div className="p-3 rounded-xl transition-all group-hover:bg-gray-50 text-gray-400 group-hover:text-[#5B8FB9]"><BookOpen size={24} strokeWidth={2.5} /></div>
-                                                    <span className="font-bold text-base tracking-tight text-left flex-1">Carta</span>
+
+                                                <button onClick={() => setInfoSubMenu('carta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                        <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                                    </div>
+                                                    <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
                                                 </button>
-                                            </>
+                                            </div>
                                         )}
                                         {infoSubMenu === 'contactos' && (
                                             <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
