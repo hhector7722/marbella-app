@@ -82,19 +82,22 @@ function drawHeader(doc: any, logoImage: string | null): number {
     });
 
     // --- RIGHT BLOCK: Metadata ---
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const rightMargin = 10;
 
-    // 6. "Pedido" at y: 25, x: 195, align: 'right', size 22
+    // 6. "Pedido" at top right
     doc.setFontSize(22);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0);
-    doc.text('Pedido', 195, 25, { align: 'right' });
+    doc.text('Pedido', pageWidth - rightMargin, 25, { align: 'right' });
 
-    // 7. Date at y: 35, x: 195, align: 'right', size 11
+    // 7. Date at top right
     const today = format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
     const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
 
     doc.setFontSize(11);
-    doc.text(formattedDate, 195, 35, { align: 'right' });
+    doc.text(formattedDate, pageWidth - rightMargin, 35, { align: 'right' });
+
 
     return cursorY;
 }
@@ -109,11 +112,12 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
     const doc = new jsPDF({
         orientation: 'p',
         unit: 'mm',
-        format: [210, Math.max(297, estimatedHeight)] // At least A4 height
+        format: [150, Math.max(200, estimatedHeight)] // Narrower width for mobile
     }) as any;
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
+    const margin = 10; // Reduced margin
+
 
     // --------------------------------------------------------------------------
     // 0. PRE-LOAD IMAGES
@@ -191,9 +195,10 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
                 // Track start Y for the frame
                 currentPageStartY = y;
 
-                const w = doc.internal.pageSize.getWidth() - (20 * 2); // pageWidth - margin*2
+                const w = doc.internal.pageSize.getWidth() - (10 * 2); // pageWidth - margin*2
                 const h = data.cell.height;
                 const r = 4; // Border radius
+
 
                 doc.setFillColor(56, 94, 102); // Petroleum #385E66
 
