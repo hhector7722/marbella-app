@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, Check, Plus, Trash2, Save
+    Calendar, X, Check, Plus, Trash2, Save, Users, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
 
 // --- TIPOS ---
@@ -334,18 +335,20 @@ export default function HistoryPage() {
         <div className="pb-10">
             <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
 
-                {/* FILTRO EMPLEADOS (MANUAL MANAGER) */}
+                {/* FILTRO EMPLEADOS (MANUAL MANAGER) - MODAL ICONOS */}
                 {isManager && (
                     <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-700">
                         <div className="relative z-20">
                             <button
                                 onClick={() => setShowEmployeeDropdown(true)}
                                 className={cn(
-                                    "px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 active:scale-95",
-                                    viewingOther ? "text-blue-600 ring-2 ring-blue-100" : "text-zinc-800"
+                                    "px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 active:scale-95 text-zinc-800",
+                                    viewingOther && "text-blue-600 ring-2 ring-blue-100"
                                 )}
                             >
-                                <span>{viewingOther ? selectedEmployeeName : "Seleccionar Empleado"}</span>
+                                <Users size={14} className="mr-2 opacity-50" />
+                                <span>{viewingOther ? selectedEmployeeName : "Mi Personal"}</span>
+                                <ChevronDown size={14} className="ml-2 opacity-30" />
                             </button>
                             {viewingOther && (
                                 <button
@@ -356,48 +359,6 @@ export default function HistoryPage() {
                                 </button>
                             )}
                         </div>
-
-                        {showEmployeeDropdown && (
-                            <div
-                                className="fixed inset-0 bg-black/40 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300"
-                                onClick={() => setShowEmployeeDropdown(false)}
-                            >
-                                <div
-                                    className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[80vh]"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-zinc-100 shrink-0">
-                                        <div className="flex flex-col">
-                                            <h3 className="text-xl font-black text-zinc-900 leading-tight">Personal</h3>
-                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Selecciona un trabajador</p>
-                                        </div>
-                                        <button onClick={() => setShowEmployeeDropdown(false)} className="h-12 w-12 flex items-center justify-center bg-zinc-100 rounded-full hover:bg-zinc-200 text-zinc-500 transition-all active:scale-90">
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                    <div className="p-4 overflow-y-auto">
-                                        <button
-                                            onClick={() => { setSelectedEmployeeId(currentUserId); setShowEmployeeDropdown(false); }}
-                                            className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === currentUserId ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
-                                        >
-                                            <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === currentUserId ? "bg-white" : "bg-blue-500")} />
-                                            Mi Historial
-                                        </button>
-                                        <div className="h-px bg-zinc-100 my-4" />
-                                        {employees.filter(e => e.id !== currentUserId).map(emp => (
-                                            <button
-                                                key={emp.id}
-                                                onClick={() => { setSelectedEmployeeId(emp.id); setShowEmployeeDropdown(false); }}
-                                                className={cn("w-full px-6 py-4 text-left text-sm font-black uppercase tracking-wider flex items-center gap-4 rounded-xl transition-all mb-2", selectedEmployeeId === emp.id ? "bg-[#36606F] text-white shadow-lg" : "text-zinc-600 hover:bg-zinc-50")}
-                                            >
-                                                <div className={cn("w-2 h-2 rounded-full", selectedEmployeeId === emp.id ? "bg-white" : "bg-zinc-300")} />
-                                                {emp.first_name} {emp.last_name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
 
@@ -458,7 +419,7 @@ export default function HistoryPage() {
                                                     key={di}
                                                     onClick={() => isManager ? openEdit(week) : undefined}
                                                     className={cn(
-                                                        "relative border-r border-gray-100 last:border-r-0 min-h-[108px] flex flex-col items-center bg-white p-1 pb-2",
+                                                        "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1",
                                                         day.isToday && "bg-blue-50/10",
                                                         isManager && "cursor-pointer hover:bg-zinc-50 transition-colors"
                                                     )}
@@ -472,7 +433,7 @@ export default function HistoryPage() {
                                                     </span>
 
                                                     {/* Centro: evento especial o fichajes */}
-                                                    <div className="flex-1 flex flex-col items-center justify-center mt-4 w-full">
+                                                    <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
                                                         {isSpecial ? (
                                                             <div className={cn("px-2 py-1 rounded shadow-sm text-center", eventConfig.color)}>
                                                                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none block pt-0.5">{eventConfig.label}</span>
@@ -501,7 +462,7 @@ export default function HistoryPage() {
 
                                                     {/* Pie: H y Ex en miniatura, Zero-Display */}
                                                     {!isSpecial && (
-                                                        <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                        <div className="w-full space-y-0 pt-0 min-h-[20px]">
                                                             {day.hasLog && hFormatted ? (
                                                                 <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                                                     <span className="ml-0.5">H</span>
@@ -537,18 +498,21 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-white block">
                                                     {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter">HORAS</span>
+                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">HORAS</span>
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className={cn(
-                                                    "text-[9px] font-black leading-none block",
-                                                    (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
-                                                )}>
+                                                <span
+                                                    className={cn(
+                                                        "text-[9px] font-black leading-none block",
+                                                        (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
+                                                    )}
+                                                    style={{ textShadow: '0px 0px 2px rgba(255,255,255,0.8)' }}
+                                                >
                                                     {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
@@ -556,15 +520,18 @@ export default function HistoryPage() {
                                                 <span className="text-[9px] font-black leading-none text-green-400 block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter">EXTRAS</span>
+                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-green-400 block">
+                                                <span
+                                                    className="text-[9px] font-black leading-none text-green-400 block"
+                                                    style={{ textShadow: '0px 0px 2px rgba(255,255,255,0.8)' }}
+                                                >
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/70 font-bold leading-none uppercase tracking-tighter">IMPORTE</span>
+                                                <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">IMPORTE</span>
                                             </div>
                                         </div>
                                     </div>
