@@ -87,7 +87,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             } else {
                 fetchTodayVentas();
             }
-            fetchCurrentInventory();
         } else {
             // Reset state on close
             setStep('tpv_data');
@@ -107,21 +106,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }
     }, [selectedDateTime]);
 
-    async function fetchCurrentInventory() {
-        try {
-            const { data: box } = await supabase.from('cash_boxes').select('id').eq('type', 'operational').maybeSingle();
-            if (box) {
-                const { data: inventory } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
-                if (inventory) {
-                    const initial: any = {};
-                    inventory.forEach((d: any) => initial[d.denomination] = d.quantity);
-                    setCounts(initial);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching inventory:", error);
-        }
-    }
 
     async function fetchTodayVentas() {
         setLoading(true);
@@ -414,7 +398,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 </div>
                                 <div className="text-right">
                                     <span className="text-[10px] font-black text-gray-400 uppercase">Esperado</span>
-                                    <div className="text-lg font-bold text-gray-500">{expectedCash.toFixed(2)}€</div>
+                                    <div className="text-lg font-bold text-gray-500">{expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : " "}</div>
                                 </div>
                             </div>
                             <div className="p-4 flex flex-col gap-4">
@@ -480,7 +464,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-50">
                                 <div className="flex flex-col items-center justify-center text-center col-span-2">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Efectivo Contado (Total Retirado)</span>
-                                    <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted.toFixed(2)}€</span>
+                                    <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted > 0.005 ? `${totalCounted.toFixed(2)}€` : " "}</span>
                                 </div>
                             </div>
 
@@ -490,7 +474,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     "text-xl font-black",
                                     difference === 0 ? "text-emerald-500" : "text-rose-500"
                                 )}>
-                                    {difference === 0 ? "0.00€" : `${difference > 0 ? '+' : ''}${difference.toFixed(2)}€`}
+                                    {Math.abs(difference) < 0.005 ? " " : `${difference > 0 ? '+' : ''}${difference.toFixed(2)}€`}
                                 </span>
                             </div>
 

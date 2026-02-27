@@ -59,7 +59,7 @@ const StaffOvertimeRow = memo(({
             </span>
         </div>
         <div className="flex items-center gap-3">
-            <span className="text-xs font-black text-gray-800">{staff.amount.toFixed(0)}€</span>
+            <span className="text-xs font-black text-gray-800">{staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : " "}</span>
 
             <div className="flex items-center bg-gray-100/50 rounded-full h-8 px-1 gap-1">
                 {/* Toggle Paid Status */}
@@ -119,7 +119,7 @@ const WeekOvertimeCard = memo(({
                     </div>
                 </div>
                 <div className="text-right flex items-center gap-3">
-                    <span className="text-lg font-black text-gray-900">{week.total.toFixed(0)}€</span>
+                    <span className="text-lg font-black text-gray-900">{week.total > 0.05 ? `${week.total.toFixed(0)}€` : " "}</span>
                 </div>
             </button>
             {week.expanded && (
@@ -343,7 +343,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     const openTreasuryModal = async (box: any, mode: CashModalMode) => {
         setSelectedBox(box);
-        if (mode === 'out' || mode === 'audit' || mode === 'inventory') {
+        if (mode === 'audit' || mode === 'inventory') {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
             const initial: Record<number, number> = {};
             data?.forEach(d => initial[Number(d.denomination)] = d.quantity);
@@ -429,7 +429,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         >
                                             <div className="flex flex-col items-start leading-none gap-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                                <span className="text-3xl font-black">{box.current_balance.toFixed(2)}€</span>
+                                                <span className="text-3xl font-black">{box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}</span>
                                             </div>
                                         </button>
 
@@ -473,7 +473,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                     (box.difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
                                                 )}>
                                                     {(box.difference || 0) > 0 ? '+' : ''}
-                                                    {(box.difference || 0).toFixed(2)}€
+                                                    {Math.abs(box.difference || 0) > 0.005 ? (box.difference || 0).toFixed(2) : " "}€
                                                 </span>
                                             )}
                                         </div>
@@ -487,7 +487,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 {boxMovements.map(mov => (
                                                     <div key={mov.id} className="flex justify-between items-center text-[11px] bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
                                                         <div className="flex items-center gap-2 overflow-hidden">{mov.type === 'OUT' ? <ArrowUpRight className="w-3 h-3 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-3 h-3 text-emerald-500 shrink-0" />}<span className="truncate max-w-[140px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span></div>
-                                                        <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>{mov.type === 'OUT' ? '-' : '+'}{mov.amount.toFixed(2)}€</span>
+                                                        <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>{mov.type === 'OUT' ? '-' : '+'}{mov.amount > 0.005 ? `${mov.amount.toFixed(2)}€` : " "}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -511,12 +511,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <div className="grow-[1.5] basis-0 px-2 py-1 flex flex-row items-center justify-between">
                                                 <div className="flex flex-col items-start leading-none gap-0.5">
                                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Cambio {idx + 1}</span>
-                                                    <span className="text-2xl font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
+                                                    <span className="text-2xl font-black text-zinc-800">{box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}</span>
                                                     {isOk ? (
                                                         <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5" strokeWidth={4} />
                                                     ) : (
                                                         <span className={cn("text-sm font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
-                                                            {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
+                                                            {diff > 0.005 ? `+${diff.toFixed(2)}€` : (Math.abs(diff) > 0.005 ? `${diff.toFixed(2)}€` : " ")}
                                                         </span>
                                                     )}
                                                 </div>
@@ -588,7 +588,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     >
                                         <div className="flex flex-col items-start leading-none gap-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                            <span className="text-lg font-black">{box.current_balance.toFixed(2)}€</span>
+                                            <span className="text-lg font-black">{box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}</span>
                                         </div>
                                     </button>
 
@@ -631,8 +631,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 "text-[8px] font-black uppercase tracking-widest",
                                                 (box.difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
                                             )}>
-                                                {(box.difference || 0) > 0 ? '+' : ''}
-                                                {(box.difference || 0).toFixed(2)}€
+                                                {Math.abs(box.difference || 0) > 0.005 ? ((box.difference || 0) > 0 ? '+' : '') + (box.difference || 0).toFixed(2) + "€" : " "}
                                             </span>
                                         )}
                                     </div>
@@ -646,7 +645,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             {boxMovements.map(mov => (
                                                 <div key={mov.id} className="flex justify-between items-center text-[9px] bg-gray-50 p-2 rounded-xl border border-gray-100/50">
                                                     <div className="flex items-center gap-1.5 overflow-hidden">{mov.type === 'OUT' ? <ArrowUpRight className="w-2.5 h-2.5 text-rose-400 shrink-0" /> : <ArrowDownLeft className="w-2.5 h-2.5 text-emerald-500 shrink-0" />}<span className="truncate max-w-[100px] text-gray-600 font-medium">{mov.notes || 'Sin nota'}</span></div>
-                                                    <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>{mov.type === 'OUT' ? '-' : '+'}{mov.amount.toFixed(2)}€</span>
+                                                    <span className={cn("font-black", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>{mov.type === 'OUT' ? '-' : '+'}{mov.amount > 0.005 ? `${mov.amount.toFixed(2)}€` : " "}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -697,12 +696,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             {/* Caja Display */}
                                             <div className="flex-[1.2] basis-0 px-1 flex flex-col">
                                                 <span className="text-[7px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
-                                                <span className="text-sm font-black text-zinc-800">{box.current_balance.toFixed(2)}€</span>
+                                                <span className="text-sm font-black text-zinc-800">{box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}</span>
                                                 {isOk ? (
                                                     <Check size={10} strokeWidth={4} className="text-emerald-500 mt-0.5" />
                                                 ) : (
                                                     <span className={cn("text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
-                                                        {diff > 0 ? '+' : ''}{diff.toFixed(2)}€
+                                                        {diff > 0.005 ? `+${diff.toFixed(2)}€` : (Math.abs(diff) > 0.005 ? `${diff.toFixed(2)}€` : " ")}
                                                     </span>
                                                 )}
                                             </div>

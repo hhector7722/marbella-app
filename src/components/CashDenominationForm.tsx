@@ -138,7 +138,7 @@ export const CashDenominationForm = ({
                             {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
                         </span>
                         <div className="flex items-baseline justify-end gap-0.5">
-                            <span className="text-xl font-black tabular-nums">{total.toFixed(2)}</span>
+                            <span className="text-xl font-black tabular-nums">{total > 0.005 ? total.toFixed(2) : " "}</span>
                             <span className="text-xs font-black opacity-50">€</span>
                         </div>
                     </div>
@@ -232,7 +232,7 @@ export const CashDenominationForm = ({
                                 )}
                             >
                                 <span className="text-[8px] opacity-80 uppercase tracking-widest">Entregado</span>
-                                <span className="text-xs mt-0.5">{totalGiven.toFixed(2)}€</span>
+                                <span className="text-xs mt-0.5">{totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : " "}</span>
                             </button>
 
                             {/* TU CAMBIO / CAMBIO */}
@@ -244,7 +244,7 @@ export const CashDenominationForm = ({
                                 )}
                             >
                                 <span className="text-[8px] opacity-80 uppercase tracking-widest">Cambio</span>
-                                <span className="text-xs mt-0.5">{totalReceived.toFixed(2)}€</span>
+                                <span className="text-xs mt-0.5">{totalReceived > 0.005 ? `${totalReceived.toFixed(2)}€` : " "}</span>
                             </button>
                         </div>
                     </div>
@@ -348,7 +348,7 @@ export const CashDenominationForm = ({
                             </div>
                             {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
                                 <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
-                                    {totalGiven < purchasePrice ? `Falta ${(purchasePrice - totalGiven).toFixed(2)}€` : `Da cambio: ${(totalGiven - purchasePrice - totalReceived).toFixed(2)}€`}
+                                    {totalGiven < purchasePrice ? `Falta ${Math.abs(purchasePrice - totalGiven) > 0.005 ? (purchasePrice - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - purchasePrice - totalReceived) > 0.005 ? (totalGiven - purchasePrice - totalReceived).toFixed(2) : " "}€`}
                                 </span>
                             )}
                         </button>
@@ -382,7 +382,7 @@ export const CashDenominationForm = ({
                     </div>
                     {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
                         <span className="text-[7px] opacity-80">
-                            {totalGiven < purchasePrice ? `Falta ${(purchasePrice - totalGiven).toFixed(2)}€` : `Da cambio: ${(totalGiven - purchasePrice - totalReceived).toFixed(2)}€`}
+                            {totalGiven < purchasePrice ? `Falta ${Math.abs(purchasePrice - totalGiven) > 0.005 ? (purchasePrice - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - purchasePrice - totalReceived) > 0.005 ? (totalGiven - purchasePrice - totalReceived).toFixed(2) : " "}€`}
                         </span>
                     )}
                 </button>
