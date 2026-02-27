@@ -125,7 +125,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                                         {count} x {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                     </span>
                                     <span className="text-[9px] font-bold text-zinc-400">
-                                        {(count * denom).toFixed(2)}€
+                                        {(count * denom) > 0.005 ? `${(count * denom).toFixed(2)}€` : " "}
                                     </span>
                                 </div>
                             </div>
@@ -168,7 +168,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                     {/* MAIN AMOUNT */}
                     <div className="flex flex-col items-center justify-center py-2">
                         <span className="text-4xl font-black italic tracking-tight">
-                            {isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(movement.amount).toFixed(2)}€
+                            {isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(movement.amount) > 0.005 ? `${Math.abs(movement.amount).toFixed(2)}€` : " "}
                         </span>
                         {isAdjustment && (
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] mt-1 opacity-80">

@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-27 (Rediseño de Modal de Personal y Edición Diaria en Historial)
+**Última actualización:** 2026-02-27 (Implementación Estricta Zero-Display en Tesorería y Dashboard)
 
 ## 📌 ESTADO GENERAL
 El sistema de historial ha sido refinado para permitir una gestión granular por días, facilitando la auditoría de registros para los managers. El modal de selección de personal ha sido rediseñado bajo un enfoque minimalista y ultra-compacto, optimizado para interfaces táctiles de alta densidad.
@@ -10,7 +10,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ## ✅ COMPLETADO
 - [x] **Rediseño Modal Info Staff (Premium)**: Actualización radical del modal de información en el panel de staff. Se han sustituido los botones por una estética de "Opciones Flotantes" (sin bordes/fondos) con feedback táctil, utilizando iconos premium específicos (`whatsapp`, `convenio`, `ley`, `reservas`, `menu`) e integrando nuevas secciones para Reservas y Carta digital.
 - [x] **Protección de Estado "Bolsa vs Pago"**: Eliminación de la edición directa del sistema de banco de horas desde las tarjetas de extras en el Dashboard y la vista de Overtime, convirtiendo los botones en indicadores estáticos para evitar errores operativos.
-- [x] **Implementación Global de Regla Zero-Display**: Extensión de la regla "Cero es Vacío" a todos los formularios y modales de la aplicación (Cajas, Recetas, Ingredientes, Registros, Historial). Ahora, cualquier valor numérico igual a 0 se muestra como un espacio vacío (" ") para mejorar la claridad visual y evitar el ruido de ceros innecesarios.
+- [x] **Implementación Global de Regla Zero-Display (Reforzada)**: Aplicación estricta de la regla "Cero es Vacío" en todos los módulos monetarios (Arqueos, Entradas, Salidas, Cierres de Caja) y el Dashboard de Administración. Ahora, los balances, diferencias y totales de solo lectura se muestran como un espacio vacío (" ") cuando el valor es 0, optimizando la claridad operativa y eliminando ruido visual.
 - [x] **Rediseño de Selección de Personal (Icon Modal)**: Implementación del componente `StaffSelectionModal` con visualización de iconos de usuario en "Bento Grid". Integrado en el Dashboard de Administrador, la página de Registros y el Historial de Staff.
 - [x] **Refinamiento Estético /staff/history (v2)**: Bordes blancos en cabeceras de días, reducción de altura de resumen a h-6 y fuentes optimizadas. Sello "PAGADO" reposicionado para sobresalir de la tarjeta.
 - [x] **Infraestructura Base:** Next.js + Supabase Auth / SSR configurado.
