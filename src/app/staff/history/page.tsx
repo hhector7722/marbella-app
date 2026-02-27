@@ -433,7 +433,7 @@ export default function HistoryPage() {
                                                     </span>
 
                                                     {/* Centro: evento especial o fichajes */}
-                                                    <div className="flex-1 flex flex-col items-center justify-center mt-1.5 w-full">
+                                                    <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
                                                         {isSpecial ? (
                                                             <div className={cn("px-2 py-1 rounded shadow-sm text-center", eventConfig.color)}>
                                                                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none block pt-0.5">{eventConfig.label}</span>
@@ -462,7 +462,7 @@ export default function HistoryPage() {
 
                                                     {/* Pie: H y Ex en miniatura, Zero-Display */}
                                                     {!isSpecial && (
-                                                        <div className="w-full space-y-0 mt-1.5 min-h-[20px]">
+                                                        <div className="w-full space-y-0 mt-0.5 min-h-[20px]">
                                                             {day.hasLog && hFormatted ? (
                                                                 <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                                                     <span className="ml-0.5">H</span>
@@ -504,11 +504,7 @@ export default function HistoryPage() {
                                             {/* COL 2: PENDIENTE */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span
-                                                    className={cn(
-                                                        "text-[9px] font-black leading-none block",
-                                                        (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
-                                                    )}
-                                                    style={{ textShadow: '-0.4px -0.4px 0 #000, 0.4px -0.4px 0 #000, -0.4px 0.4px 0 #000, 0.4px 0.4px 0 #000' }}
+                                                    className="text-[9px] font-black leading-none text-white block"
                                                 >
                                                     {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -517,7 +513,7 @@ export default function HistoryPage() {
 
                                             {/* COL 3: EXTRAS */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-green-400 block">
+                                                <span className="text-[9px] font-black leading-none text-white block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
                                                 <span className="text-[7px] text-white font-black leading-none uppercase tracking-tighter">EXTRAS</span>
@@ -526,8 +522,7 @@ export default function HistoryPage() {
                                             {/* COL 4: IMPORTE */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span
-                                                    className="text-[9px] font-black leading-none text-green-400 block"
-                                                    style={{ textShadow: '-0.4px -0.4px 0 #000, 0.4px -0.4px 0 #000, -0.4px 0.4px 0 #000, 0.4px 0.4px 0 #000' }}
+                                                    className="text-[9px] font-black leading-none text-white block"
                                                 >
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
