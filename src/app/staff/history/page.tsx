@@ -462,7 +462,7 @@ export default function HistoryPage() {
 
                                                     {/* Pie: H y Ex en miniatura, Zero-Display */}
                                                     {!isSpecial && (
-                                                        <div className="w-full space-y-0 pt-0 min-h-[20px]">
+                                                        <div className="w-full space-y-0 mt-1.5 min-h-[20px]">
                                                             {day.hasLog && hFormatted ? (
                                                                 <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                                                     <span className="ml-0.5">H</span>
@@ -508,7 +508,7 @@ export default function HistoryPage() {
                                                         "text-[9px] font-black leading-none block",
                                                         (week.summary.startBalance ?? 0) < -0.05 ? "text-red-400" : (week.summary.startBalance ?? 0) > 0.05 ? "text-green-400" : "text-white"
                                                     )}
-                                                    style={{ textShadow: '-0.5px -0.5px 0 #fff, 0.5px -0.5px 0 #fff, -0.5px 0.5px 0 #fff, 0.5px 0.5px 0 #fff' }}
+                                                    style={{ textShadow: '-0.4px -0.4px 0 #000, 0.4px -0.4px 0 #000, -0.4px 0.4px 0 #000, 0.4px 0.4px 0 #000' }}
                                                 >
                                                     {Math.abs(week.summary.startBalance ?? 0) > 0.05 ? Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
@@ -527,7 +527,7 @@ export default function HistoryPage() {
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span
                                                     className="text-[9px] font-black leading-none text-green-400 block"
-                                                    style={{ textShadow: '-0.5px -0.5px 0 #fff, 0.5px -0.5px 0 #fff, -0.5px 0.5px 0 #fff, 0.5px 0.5px 0 #fff' }}
+                                                    style={{ textShadow: '-0.4px -0.4px 0 #000, 0.4px -0.4px 0 #000, -0.4px 0.4px 0 #000, 0.4px 0.4px 0 #000' }}
                                                 >
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
