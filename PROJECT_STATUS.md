@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-27 (Refinamiento UI Staff Dashboard y Modal Petrol)
+**Última actualización:** 2026-02-28 (Detalle del día en Staff Dashboard)
 
 ## 📌 ESTADO GENERAL
 El sistema de historial ha sido refinado para permitir una gestión granular por días, facilitando la auditoría de registros para los managers. El modal de selección de personal ha sido rediseñado bajo un enfoque minimalista y ultra-compacto, optimizado para interfaces táctiles de alta densidad. El panel de staff ha sido actualizado con elementos más grandes y la nueva estética de cabeceras "Petrol".
@@ -8,6 +8,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ---
 
 ## ✅ COMPLETADO
+- [x] **Modal de Detalle del Día (Staff Dashboard)**: Implementación de un modal interactivo al pulsar sobre cualquier día del calendario. Permite visualizar registros detallados y, para Managers, habilita la edición de tiempos y tipos de evento (`Regular`, `Festivo`, `Baja`, etc.) con persistencia en base de datos y recálculo de balances.
 - [x] **Refinamiento UI Staff Dashboard & Modal Info**: Aumento de tamaño de iconos de acción (48px) y fuentes (9px). Unificación estética de cabeceras utilizando el estilo "Petrol" y "Cápsula Azul" para resúmenes, garantizando coherencia visual en todo el panel de staff.
 - [x] **Rediseño Modal Info Staff (Premium)**: Actualización radical del modal de información en el panel de staff. Se han sustituido los botones por una estética de "Opciones Flotantes" (sin bordes/fondos) con feedback táctil, utilizando iconos premium específicos (`whatsapp`, `convenio`, `ley`, `reservas`, `menu`) e integrando nuevas secciones para Reservas y Carta digital.
 - [x] **Protección de Estado "Bolsa vs Pago"**: Eliminación de la edición directa del sistema de banco de horas desde las tarjetas de extras en el Dashboard y la vista de Overtime, convirtiendo los botones en indicadores estáticos para evitar errores operativos.

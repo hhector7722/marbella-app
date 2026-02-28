@@ -15,6 +15,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
+import { DayDetailModal } from '@/components/modals/DayDetailModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -99,6 +100,8 @@ export default function StaffDashboardView() {
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
+    const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
 
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
     const [operationalBox, setOperationalBox] = useState<any>(null);
@@ -480,7 +483,13 @@ export default function StaffDashboardView() {
                                                 <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
                                                     <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                                 </div>
-                                                <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
+                                                <div
+                                                    className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white cursor-pointer hover:bg-blue-50/50 transition-colors"
+                                                    onClick={() => {
+                                                        setSelectedDayDate(day.date);
+                                                        setIsDayDetailModalOpen(true);
+                                                    }}
+                                                >
                                                     <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
                                                     <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
                                                         <div className="h-3 flex items-center justify-center gap-1">
@@ -896,6 +905,15 @@ export default function StaffDashboardView() {
                 <SupplierSelectionModal
                     isOpen={isSupplierModalOpen}
                     onClose={() => setIsSupplierModalOpen(false)}
+                />
+
+                <DayDetailModal
+                    isOpen={isDayDetailModalOpen}
+                    date={selectedDayDate}
+                    userId={userId}
+                    userRole={userRole}
+                    onClose={() => setIsDayDetailModalOpen(false)}
+                    onSuccess={() => initialize()}
                 />
             </div>
         </div >
