@@ -423,24 +423,24 @@ export default function StaffDashboardView() {
     const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
             onClick={onClick}
-            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group aspect-square w-full h-full"
+            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
         >
-            <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
+            <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
                 {img ? (
                     <Image
                         src={img}
                         alt={typeof label === 'string' ? label : 'Icon'}
-                        width={40}
-                        height={40}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-contain"
                     />
                 ) : (
-                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
-                        <Icon size={24} fill="currentColor" strokeWidth={2.5} />
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
+                        <Icon size={28} fill="currentColor" strokeWidth={2.5} />
                     </div>
                 )}
             </div>
-            <span className="text-[7px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{label}</span>
+            <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{label}</span>
         </button>
     );
 
@@ -459,9 +459,10 @@ export default function StaffDashboardView() {
                     <div className="lg:col-span-2 space-y-4 md:space-y-6">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                            <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
+                                <div className="flex items-center gap-2 bg-blue-600 px-3 py-1.5 rounded-xl border border-white/10 shadow-sm">
+                                    <Calendar size={12} className="text-white/60" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">
                                         {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                     </span>
                                 </div>
@@ -670,127 +671,132 @@ export default function StaffDashboardView() {
                 {activeMenu && (
                     <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
                         <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
-                            {infoSubMenu && (
-                                <button onClick={() => setInfoSubMenu(null)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
-                                    <ArrowLeft size={16} />
-                                </button>
-                            )}
-                            {activeMenu === 'info' && (
-                                <>
-                                    <button onClick={closeMenus} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
-                                        <X size={16} />
-                                    </button>
-                                    <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 justify-center mt-2">
-                                        <Info size={24} className="text-blue-500" />
+                            {/* Header Petrol - Estilo Modal Marbella */}
+                            <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
+                                <div className="flex items-center gap-3">
+                                    {infoSubMenu ? (
+                                        <button onClick={() => setInfoSubMenu(null)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                            <ArrowLeft size={18} strokeWidth={3} />
+                                        </button>
+                                    ) : (
+                                        <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-xl shadow-sm">
+                                            <Info size={18} fill="currentColor" />
+                                        </div>
+                                    )}
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest">
                                         {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
                                     </h3>
-                                    <div className="p-8 space-y-2 overflow-y-auto">
-                                        {!infoSubMenu && (
-                                            <div className="space-y-1">
-                                                <button onClick={() => setInfoSubMenu('contactos')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                        <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                                    </div>
-                                                    <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
-                                                </button>
+                                </div>
+                                <button onClick={closeMenus} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
+                                    <X size={18} strokeWidth={3} />
+                                </button>
+                            </div>
 
-                                                <button onClick={() => setInfoSubMenu('convenio')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                        <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                                    </div>
-                                                    <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
-                                                </button>
+                            <div className="p-8 space-y-2 overflow-y-auto">
+                                {!infoSubMenu && (
+                                    <div className="space-y-1">
+                                        <button onClick={() => setInfoSubMenu('contactos')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
+                                        </button>
 
-                                                <button onClick={() => setInfoSubMenu('conducta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                        <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                                    </div>
-                                                    <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
-                                                </button>
+                                        <button onClick={() => setInfoSubMenu('convenio')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
+                                        </button>
 
-                                                <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                        <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                                    </div>
-                                                    <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
-                                                </button>
+                                        <button onClick={() => setInfoSubMenu('conducta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
+                                        </button>
 
-                                                <button onClick={() => setInfoSubMenu('carta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                        <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                                    </div>
-                                                    <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
-                                                </button>
+                                        <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
-                                        )}
-                                        {infoSubMenu === 'contactos' && (
-                                            <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
-                                                {CONTACTS_DATA.map((c, idx) => (
-                                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
-                                                            <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
-                                                        </div>
-                                                        <div className="flex gap-4 items-center">
-                                                            <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
-                                                            <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
-                                                                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                            <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
+                                        </button>
+
+                                        <button onClick={() => setInfoSubMenu('carta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
-                                        )}
-                                        {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
-                                            <div className="flex flex-col items-center gap-6 py-4">
-                                                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                                    <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="text-base font-black text-gray-800 mb-1">
-                                                        {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
-                                                    </p>
-                                                    <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
-                                                    className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
-                                                >
-                                                    <ExternalLink size={20} />
-                                                    <span>Abrir Documento</span>
-                                                </button>
-                                                <a
-                                                    href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
-                                                    download
-                                                    className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
-                                                >
-                                                    Descargar PDF
-                                                </a>
-                                            </div>
-                                        )}
-                                        {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
-                                            <div className="flex flex-col items-center gap-6 py-4">
-                                                <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
-                                                    {infoSubMenu === 'reservas' ? (
-                                                        <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
-                                                    ) : (
-                                                        <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
-                                                    )}
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="text-base font-black text-gray-800 mb-1">
-                                                        {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
-                                                    </p>
-                                                    <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
-                                                </div>
-                                                <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
-                                                    <span className="text-sm">En desarrollo</span>
-                                                </div>
-                                            </div>
-                                        )}
+                                            <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
+                                        </button>
                                     </div>
-                                </>
-                            )}
+                                )}
+                                {infoSubMenu === 'contactos' && (
+                                    <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+                                        {CONTACTS_DATA.map((c, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
+                                                </div>
+                                                <div className="flex gap-4 items-center">
+                                                    <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
+                                                    <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
+                                                        <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
+                                    <div className="flex flex-col items-center gap-6 py-4">
+                                        <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                            <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-base font-black text-gray-800 mb-1">
+                                                {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
+                                            </p>
+                                            <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
+                                        </div>
+                                        <button
+                                            onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
+                                            className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                        >
+                                            <ExternalLink size={20} />
+                                            <span>Abrir Documento</span>
+                                        </button>
+                                        <a
+                                            href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
+                                            download
+                                            className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
+                                        >
+                                            Descargar PDF
+                                        </a>
+                                    </div>
+                                )}
+                                {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
+                                    <div className="flex flex-col items-center gap-6 py-4">
+                                        <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
+                                            {infoSubMenu === 'reservas' ? (
+                                                <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
+                                            ) : (
+                                                <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-base font-black text-gray-800 mb-1">
+                                                {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
+                                            </p>
+                                            <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
+                                        </div>
+                                        <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
+                                            <span className="text-sm">En desarrollo</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -892,6 +898,6 @@ export default function StaffDashboardView() {
                     onClose={() => setIsSupplierModalOpen(false)}
                 />
             </div>
-        </div>
+        </div >
     );
 }
