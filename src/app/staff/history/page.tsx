@@ -233,48 +233,50 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
-                    <div className="bg-[#36606F] px-4 py-3 flex items-center justify-center relative min-h-[56px]">
-                        {/* Centro: Mes y Flechas */}
-                        <div className="flex items-center gap-4">
-                            <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
-                                <span className="text-xl font-bold font-mono">{'<'}</span>
+                    <div className="bg-[#36606F] px-4 py-2.5 grid grid-cols-3 items-center min-h-[52px]">
+                        {/* Col 1: Equilibrio */}
+                        <div className="flex justify-start"></div>
+
+                        {/* Col 2: Mes y Flechas (Agrupado y Cercano) */}
+                        <div className="flex items-center justify-center gap-1">
+                            <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
+                                <span className="text-lg font-bold font-mono">{'<'}</span>
                             </button>
 
-                            <h2 className="text-[14px] md:text-base font-black text-white uppercase tracking-widest whitespace-nowrap">
+                            <h2 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest whitespace-nowrap">
                                 {getMonthLabel(filterYear, filterMonth)}
                             </h2>
 
-                            <button onClick={nextMonth} className="text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
-                                <span className="text-xl font-bold font-mono">{'>'}</span>
+                            <button onClick={nextMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
+                                <span className="text-lg font-bold font-mono">{'>'}</span>
                             </button>
                         </div>
 
-                        {/* Derecha: Selector de Personal (Manager) */}
-                        {isManager && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20">
+                        {/* Col 3: Selector de Personal (Manager - Compacto) */}
+                        <div className="flex justify-end">
+                            {isManager && (
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowEmployeeDropdown(true)}
                                         className={cn(
-                                            "h-10 px-4 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shadow-sm",
+                                            "h-8 px-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/10 flex items-center justify-center text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shadow-sm",
                                             viewingOther && "bg-white/20 border-white/30"
                                         )}
                                     >
-                                        <Users size={14} className={cn("mr-2", viewingOther ? "text-blue-300" : "opacity-60")} />
-                                        <span className="max-w-[80px] truncate">{viewingOther ? selectedEmployeeName : "Plantilla"}</span>
-                                        <ChevronDown size={12} className="ml-2 opacity-40" />
+                                        <span className="max-w-[70px] truncate">{viewingOther ? selectedEmployeeName : "Plantilla"}</span>
+                                        <ChevronDown size={10} className="ml-1.5 opacity-40 shrink-0" />
                                     </button>
                                     {viewingOther && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
-                                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
+                                            className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
                                         >
-                                            <X size={10} strokeWidth={3} />
+                                            <X size={8} strokeWidth={4} />
                                         </button>
                                     )}
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     {loading ? (
