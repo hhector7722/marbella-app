@@ -68,17 +68,17 @@ export const CashDenominationForm = ({
     const handleCountChange = (val: number, qty: string) => {
         const numQty = parseInt(qty) || 0;
         if (isPurchaseMode && purchaseTab === 'received') {
-            setReceivedCounts(prev => ({ ...prev, [val]: Math.max(0, numQty) }));
+            setReceivedCounts(prev => ({ ...prev, [val]: numQty }));
         } else {
-            setCounts(prev => ({ ...prev, [val]: Math.max(0, numQty) }));
+            setCounts(prev => ({ ...prev, [val]: numQty }));
         }
     };
 
     const handleAdjust = (val: number, delta: number) => {
         if (isPurchaseMode && purchaseTab === 'received') {
-            setReceivedCounts(prev => ({ ...prev, [val]: Math.max(0, (prev[val] || 0) + delta) }));
+            setReceivedCounts(prev => ({ ...prev, [val]: (prev[val] || 0) + delta }));
         } else {
-            setCounts(prev => ({ ...prev, [val]: Math.max(0, (prev[val] || 0) + delta) }));
+            setCounts(prev => ({ ...prev, [val]: (prev[val] || 0) + delta }));
         }
     };
 
@@ -304,7 +304,6 @@ export const CashDenominationForm = ({
                                         </button>
                                         <input
                                             type="number"
-                                            min="0"
                                             value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
                                             onChange={(e) => handleCountChange(denom, e.target.value)}
                                             placeholder=""
