@@ -488,10 +488,10 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-[#487B8F] text-white flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
+                                    <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
                                         {/* ZONA IZQUIERDA (Fija) */}
                                         <div className="w-16 pl-3 shrink-0 flex items-center h-full">
-                                            <span className="font-black text-[7px] uppercase leading-none">
+                                            <span className="font-black text-[7px] uppercase leading-none text-zinc-600">
                                                 SEMANA {week.weekNumber}
                                             </span>
                                         </div>
@@ -500,40 +500,40 @@ export default function HistoryPage() {
                                         <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
                                             {/* COL 1: HORAS */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-white block">
+                                                <span className="text-[9px] font-black leading-none text-black block">
                                                     {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter">HORAS</span>
+                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
                                             </div>
 
                                             {/* COL 2: PENDIENTE */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span
-                                                    className="text-[9px] font-black leading-none text-white block"
+                                                    className="text-[9px] font-black leading-none text-red-600 block"
                                                 >
                                                     {Math.abs(week.summary.startBalance ?? 0) > 0.05
-                                                        ? `${week.summary.startBalance < 0 ? '-' : ''}${Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '')}`
+                                                        ? `${Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '')}`
                                                         : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                                             </div>
 
                                             {/* COL 3: EXTRAS */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-white block">
+                                                <span className="text-[9px] font-black leading-none text-black block">
                                                     {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
+                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                                             </div>
 
                                             {/* COL 4: IMPORTE */}
                                             <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                 <span
-                                                    className="text-[9px] font-black leading-none text-white block"
+                                                    className="text-[9px] font-black leading-none text-emerald-600 block"
                                                 >
                                                     {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
                                                 </span>
-                                                <span className="text-[7px] text-white/60 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
                                             </div>
                                         </div>
                                     </div>
