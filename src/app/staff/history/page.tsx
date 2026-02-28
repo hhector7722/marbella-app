@@ -455,7 +455,7 @@ export default function HistoryPage() {
                 isOpen={showEmployeeDropdown}
                 onClose={() => setShowEmployeeDropdown(false)}
                 employees={employees}
-                onSelect={(emp: any) => {
+                onSelect={(emp: { id: string; first_name: string; last_name: string }) => {
                     setSelectedEmployeeId(emp.id);
                     setShowEmployeeDropdown(false);
                 }}

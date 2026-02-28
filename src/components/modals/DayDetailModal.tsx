@@ -60,13 +60,20 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
 
             if (error) throw error;
 
-            setLogs(data?.map(l => ({
+            const rawLogs = data?.map(l => ({
                 id: l.id,
                 in_time: format(parseISO(l.clock_in), 'HH:mm'),
                 out_time: l.clock_out ? format(parseISO(l.clock_out), 'HH:mm') : '',
                 event_type: l.event_type || 'regular',
                 is_deleted: false
-            })) || []);
+            })) || [];
+
+            // Aseguramos que siempre haya al menos un objeto de log para editar
+            if (rawLogs.length === 0) {
+                setLogs([{ in_time: '00:00', out_time: '00:00', event_type: 'regular', is_deleted: false }]);
+            } else {
+                setLogs(rawLogs);
+            }
         } catch (err) {
             console.error(err);
             toast.error("Error al cargar registros");
@@ -190,9 +197,9 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] p-6 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="w-full max-w-[320px] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-[320px] aspect-square bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 {/* Red Header */}
-                <div className="bg-[#D65D67] h-[72px] flex items-center justify-center px-6 relative">
+                <div className="bg-[#D65D67] h-[64px] flex items-center justify-center px-6 relative shrink-0">
                     <h3 className="text-white text-lg font-medium tracking-tight">
                         {date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
                     </h3>
@@ -202,127 +209,105 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                 </div>
 
                 {/* Body */}
-                <div className="p-8 flex-1 flex flex-col items-center">
+                <div className="px-8 pb-8 pt-4 flex-1 flex flex-col">
                     {loading ? (
-                        <div className="py-12 flex flex-col items-center gap-3">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3">
                             <LoadingSpinner size="lg" className="text-[#D65D67]" />
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cargando...</p>
                         </div>
                     ) : (
-                        <div className="w-full space-y-8">
-                            {logs.length === 0 && !isManager && (
-                                <p className="text-center text-gray-400 font-medium py-10">No hay registros</p>
-                            )}
+                        <div className="w-full flex-1 flex flex-col justify-between">
+                            {(() => {
+                                const log = logs.filter(l => !l.is_deleted)[0] || { in_time: '00:00', out_time: '00:00', event_type: 'regular' };
+                                const workedHours = calculateLogHours(log.in_time, log.out_time);
 
-                            <div className="space-y-6">
-                                {logs.filter(l => !l.is_deleted).map((log, idx) => {
-                                    const workedHours = calculateLogHours(log.in_time, log.out_time);
-
-                                    return (
-                                        <div key={idx} className="space-y-8 animate-in slide-in-from-bottom-2">
-                                            {/* Times with Dots */}
-                                            <div className="flex flex-col items-center gap-4">
-                                                {/* Entry */}
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
-                                                    {isManager ? (
-                                                        <input
-                                                            type="time"
-                                                            value={log.in_time}
-                                                            onChange={(e) => updateLog(idx, 'in_time', e.target.value)}
-                                                            className="text-3xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[120px] text-center"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-3xl font-mono font-medium text-gray-600">
-                                                            {log.in_time || '00:00'}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Exit */}
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-                                                    {isManager ? (
-                                                        <input
-                                                            type="time"
-                                                            value={log.out_time}
-                                                            onChange={(e) => updateLog(idx, 'out_time', e.target.value)}
-                                                            className="text-3xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[120px] text-center"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-3xl font-mono font-medium text-gray-600">
-                                                            {log.out_time || '00:00'}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                return (
+                                    <div className="flex-1 flex flex-col justify-between pt-2">
+                                        {/* Times with Dots */}
+                                        <div className="flex flex-col items-center gap-4 py-2">
+                                            {/* Entry */}
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
+                                                {isManager ? (
+                                                    <input
+                                                        type="time"
+                                                        value={log.in_time}
+                                                        onChange={(e) => updateLog(0, 'in_time', e.target.value)}
+                                                        className="text-4xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
+                                                    />
+                                                ) : (
+                                                    <span className="text-4xl font-mono font-medium text-gray-600">
+                                                        {log.in_time || '00:00'}
+                                                    </span>
+                                                )}
                                             </div>
 
-                                            {/* Metrics: HORAS and HORAS EXTRAS */}
-                                            <div className="space-y-4 pt-4 border-t border-gray-50">
-                                                <div className="flex justify-between items-center px-2">
-                                                    <span className="text-sm font-black text-[#7C8B9C] uppercase tracking-wide">HORAS</span>
-                                                    <span className="text-lg font-medium text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center px-2">
-                                                    <span className="text-sm font-black text-[#7C8B9C] uppercase tracking-wide">HORAS EXTRAS</span>
-                                                    <span className="text-lg font-medium text-gray-800">{workedHours > 8 ? (workedHours - 8).toFixed(0) : 0}</span>
-                                                </div>
+                                            {/* Exit */}
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+                                                {isManager ? (
+                                                    <input
+                                                        type="time"
+                                                        value={log.out_time}
+                                                        onChange={(e) => updateLog(0, 'out_time', e.target.value)}
+                                                        className="text-4xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
+                                                    />
+                                                ) : (
+                                                    <span className="text-4xl font-mono font-medium text-gray-600">
+                                                        {log.out_time || '00:00'}
+                                                    </span>
+                                                )}
                                             </div>
-
-                                            {isManager && (
-                                                <div className="flex justify-between items-center pt-2">
-                                                    <select
-                                                        value={log.event_type}
-                                                        onChange={(e) => updateLog(idx, 'event_type', e.target.value)}
-                                                        className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent"
-                                                    >
-                                                        {EVENT_TYPES.map(t => (
-                                                            <option key={t.value} value={t.value} className="text-gray-900 bg-white">
-                                                                {t.label}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <button
-                                                        onClick={() => removeLog(idx)}
-                                                        className="text-gray-300 hover:text-rose-500 transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
-                                    );
-                                })}
-                            </div>
 
-                            {isManager && (
-                                <div className="space-y-4 pt-4">
-                                    <button
-                                        onClick={addLog}
-                                        className="w-full h-10 border border-dashed border-gray-200 rounded-2xl flex items-center justify-center gap-2 text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-all font-bold text-[10px] uppercase tracking-widest"
-                                    >
-                                        <Plus size={14} />
-                                        <span>AÑADIR LÍNEA</span>
-                                    </button>
+                                        {/* Metrics: HORAS and HORAS EXTRAS */}
+                                        <div className="space-y-3 py-4 border-t border-gray-50">
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-wide">HORAS</span>
+                                                <span className="text-lg font-medium text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-wide">HORAS EXTRAS</span>
+                                                <span className="text-lg font-medium text-gray-800">{workedHours > 8 ? (workedHours - 8).toFixed(0) : 0}</span>
+                                            </div>
+                                        </div>
 
-                                    <div className="grid grid-cols-2 gap-3 pt-2">
-                                        <button
-                                            onClick={onClose}
-                                            className="h-12 rounded-2xl bg-gray-50 text-gray-400 font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all"
-                                        >
-                                            Cerrar
-                                        </button>
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={isSaving}
-                                            className="h-12 rounded-2xl bg-[#D65D67] text-white font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2 disabled:opacity-50"
-                                        >
-                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={16} />}
-                                            <span>GUARDAR</span>
-                                        </button>
+                                        {/* Manager Actions (Simplified) */}
+                                        {isManager && (
+                                            <div className="pt-2 border-t border-gray-50 flex items-center justify-between gap-3">
+                                                <select
+                                                    value={log.event_type}
+                                                    onChange={(e) => updateLog(0, 'event_type', e.target.value)}
+                                                    className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent"
+                                                >
+                                                    {EVENT_TYPES.map(t => (
+                                                        <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                            {t.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    onClick={handleSave}
+                                                    disabled={isSaving}
+                                                    className="h-10 px-6 rounded-2xl bg-[#D65D67] text-white font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                                                >
+                                                    {isSaving ? <LoadingSpinner size="sm" /> : <Save size={14} />}
+                                                    <span>GUARDAR</span>
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {!isManager && (
+                                            <button
+                                                onClick={onClose}
+                                                className="w-full h-10 rounded-2xl bg-gray-50 text-gray-400 font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all mt-2"
+                                            >
+                                                Cerrar
+                                            </button>
+                                        )}
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
                         </div>
                     )}
                 </div>
