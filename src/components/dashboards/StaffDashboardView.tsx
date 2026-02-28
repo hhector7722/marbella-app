@@ -463,10 +463,9 @@ export default function StaffDashboardView() {
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
                             <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
-                                <div className="flex items-center gap-2 bg-blue-600 px-3 py-1.5 rounded-xl border border-white/10 shadow-sm">
-                                    <Calendar size={12} className="text-white/60" />
+                                <div className="flex items-center">
                                     <span className="text-[9px] font-black uppercase tracking-widest leading-none text-white">
-                                        {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
+                                        {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
                                     </span>
                                 </div>
                                 <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
