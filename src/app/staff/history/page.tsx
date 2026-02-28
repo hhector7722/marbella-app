@@ -233,12 +233,9 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
-                    <div className="bg-[#36606F] px-4 py-2.5 grid grid-cols-3 items-center min-h-[52px]">
-                        {/* Col 1: Equilibrio */}
-                        <div className="flex justify-start"></div>
-
-                        {/* Col 2: Mes y Flechas (Agrupado y Cercano) */}
-                        <div className="flex items-center justify-center gap-1">
+                    <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between min-h-[52px]">
+                        {/* Izquierda: Mes y Flechas (Agrupado y Cercano) */}
+                        <div className="flex items-center gap-1">
                             <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
                                 <span className="text-lg font-bold font-mono">{'<'}</span>
                             </button>
@@ -252,7 +249,7 @@ export default function HistoryPage() {
                             </button>
                         </div>
 
-                        {/* Col 3: Selector de Personal (Manager - Compacto) */}
+                        {/* Derecha: Selector de Personal (Manager - Compacto) */}
                         <div className="flex justify-end">
                             {isManager && (
                                 <div className="relative">
