@@ -227,50 +227,54 @@ export default function HistoryPage() {
         <div className="pb-10">
             <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
 
-                {/* FILTRO EMPLEADOS (MANUAL MANAGER) - MODAL ICONOS */}
-                {isManager && (
-                    <div className="flex flex-wrap justify-center items-center gap-4 py-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-700">
-                        <div className="relative z-20">
-                            <button
-                                onClick={() => setShowEmployeeDropdown(true)}
-                                className={cn(
-                                    "px-8 py-3 bg-white rounded-full shadow-xl border border-zinc-100 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 active:scale-95 text-zinc-800",
-                                    viewingOther && "text-blue-600 ring-2 ring-blue-100"
-                                )}
-                            >
-                                <Users size={14} className="mr-2 opacity-50" />
-                                <span>{viewingOther ? selectedEmployeeName : "Mi Personal"}</span>
-                                <ChevronDown size={14} className="ml-2 opacity-30" />
-                            </button>
-                            {viewingOther && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
-                                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
-                                >
-                                    <X size={12} strokeWidth={3} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
 
 
                 {/* ── CONTENIDO PRINCIPAL DEL CALENDARIO UNIFICADO ── */}
                 <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
-                    <div className="bg-[#36606F] px-4 py-4 flex items-center justify-center relative">
-                        <button onClick={prevMonth} className="absolute left-6 text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
-                            <span className="text-xl font-bold font-mono">{'<'}</span>
-                        </button>
+                    <div className="bg-[#36606F] px-4 py-3 flex items-center justify-center relative min-h-[56px]">
+                        {/* Centro: Mes y Flechas */}
+                        <div className="flex items-center gap-4">
+                            <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
+                                <span className="text-xl font-bold font-mono">{'<'}</span>
+                            </button>
 
-                        <h2 className="text-[14px] md:text-base font-black text-white uppercase tracking-widest">
-                            {getMonthLabel(filterYear, filterMonth)}
-                        </h2>
+                            <h2 className="text-[14px] md:text-base font-black text-white uppercase tracking-widest whitespace-nowrap">
+                                {getMonthLabel(filterYear, filterMonth)}
+                            </h2>
 
-                        <button onClick={nextMonth} className="absolute right-6 text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
-                            <span className="text-xl font-bold font-mono">{'>'}</span>
-                        </button>
+                            <button onClick={nextMonth} className="text-white hover:text-white/70 transition-colors p-2 active:scale-90 opacity-80 hover:opacity-100">
+                                <span className="text-xl font-bold font-mono">{'>'}</span>
+                            </button>
+                        </div>
+
+                        {/* Derecha: Selector de Personal (Manager) */}
+                        {isManager && (
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowEmployeeDropdown(true)}
+                                        className={cn(
+                                            "h-10 px-4 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shadow-sm",
+                                            viewingOther && "bg-white/20 border-white/30"
+                                        )}
+                                    >
+                                        <Users size={14} className={cn("mr-2", viewingOther ? "text-blue-300" : "opacity-60")} />
+                                        <span className="max-w-[80px] truncate">{viewingOther ? selectedEmployeeName : "Plantilla"}</span>
+                                        <ChevronDown size={12} className="ml-2 opacity-40" />
+                                    </button>
+                                    {viewingOther && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
+                                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
+                                        >
+                                            <X size={10} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {loading ? (

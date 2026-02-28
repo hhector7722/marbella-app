@@ -209,11 +209,11 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                 </div>
 
                 {/* Body */}
-                <div className="px-8 pb-8 pt-4 flex-1 flex flex-col">
+                <div className="px-6 pb-6 pt-2 flex-1 flex flex-col overflow-hidden">
                     {loading ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                            <LoadingSpinner size="lg" className="text-[#D65D67]" />
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cargando...</p>
+                        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                            <LoadingSpinner size="lg" className="text-red-500" />
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Cargando...</p>
                         </div>
                     ) : (
                         <div className="w-full flex-1 flex flex-col justify-between">
@@ -222,38 +222,38 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                 const workedHours = calculateLogHours(log.in_time, log.out_time);
 
                                 return (
-                                    <div className="flex-1 flex flex-col justify-between pt-2">
+                                    <div className="flex-1 flex flex-col justify-between pt-1">
                                         {/* Times with Dots */}
-                                        <div className="flex flex-col items-center gap-4 py-2">
+                                        <div className="flex flex-col items-center gap-2 py-1">
                                             {/* Entry */}
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
                                                 {isManager ? (
                                                     <input
                                                         type="time"
                                                         value={log.in_time}
                                                         onChange={(e) => updateLog(0, 'in_time', e.target.value)}
-                                                        className="text-4xl font-mono font-black text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
+                                                        className="text-3xl font-mono font-black text-gray-700 bg-transparent border-none p-0 focus:ring-0 w-[120px] text-center"
                                                     />
                                                 ) : (
-                                                    <span className="text-4xl font-mono font-black text-gray-600">
+                                                    <span className="text-3xl font-mono font-black text-gray-700">
                                                         {log.in_time || '00:00'}
                                                     </span>
                                                 )}
                                             </div>
 
                                             {/* Exit */}
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-[#EF4444]" />
                                                 {isManager ? (
                                                     <input
                                                         type="time"
                                                         value={log.out_time}
                                                         onChange={(e) => updateLog(0, 'out_time', e.target.value)}
-                                                        className="text-4xl font-mono font-black text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
+                                                        className="text-3xl font-mono font-black text-gray-700 bg-transparent border-none p-0 focus:ring-0 w-[120px] text-center"
                                                     />
                                                 ) : (
-                                                    <span className="text-4xl font-mono font-black text-gray-600">
+                                                    <span className="text-3xl font-mono font-black text-gray-700">
                                                         {log.out_time || '00:00'}
                                                     </span>
                                                 )}
@@ -261,27 +261,27 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                         </div>
 
                                         {/* Metrics: HORAS and HORAS EXTRAS */}
-                                        <div className="space-y-3 py-4 border-t border-gray-50">
+                                        <div className="space-y-2 py-3 border-t border-gray-50">
                                             <div className="flex justify-between items-center px-1">
-                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-[0.15em]">HORAS</span>
-                                                <span className="text-lg font-black text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>
+                                                <span className="text-[10px] font-black text-[#7C8B9C] uppercase tracking-[0.1em]">HORAS</span>
+                                                <span className="text-base font-black text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>
                                             </div>
                                             <div className="flex justify-between items-center px-1">
-                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-[0.15em]">HORAS EXTRAS</span>
-                                                <span className="text-lg font-black text-gray-800">{workedHours > 8 ? (workedHours - 8).toFixed(0) : 0}</span>
+                                                <span className="text-[10px] font-black text-[#7C8B9C] uppercase tracking-[0.1em]">HORAS EXTRAS</span>
+                                                <span className="text-base font-black text-gray-800">{workedHours > 8 ? (workedHours - 8).toFixed(0) : 0}</span>
                                             </div>
                                         </div>
 
                                         {/* Footer Actions - Monetary Modal Style */}
-                                        <div className="pt-2 flex items-center justify-between gap-3">
+                                        <div className="pt-2 flex items-center justify-between gap-2">
                                             {isManager ? (
                                                 <>
-                                                    <div className="flex-1 flex flex-col">
-                                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Tipo Evento</span>
+                                                    <div className="flex-1 flex flex-col min-w-0">
+                                                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-0.5 ml-1">Evento</span>
                                                         <select
                                                             value={log.event_type}
                                                             onChange={(e) => updateLog(0, 'event_type', e.target.value)}
-                                                            className="text-[10px] font-black text-gray-600 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent"
+                                                            className="text-[9px] font-black text-gray-600 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent truncate"
                                                         >
                                                             {EVENT_TYPES.map(t => (
                                                                 <option key={t.value} value={t.value} className="text-gray-900 bg-white">
@@ -290,28 +290,28 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex gap-1.5 shrink-0">
                                                         <button
                                                             onClick={onClose}
-                                                            className="h-10 px-4 rounded-xl bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
+                                                            className="h-9 px-3 rounded-xl bg-rose-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1"
                                                         >
-                                                            <X size={14} strokeWidth={3} />
+                                                            <X size={12} strokeWidth={3} />
                                                             <span>SALIR</span>
                                                         </button>
                                                         <button
                                                             onClick={handleSave}
                                                             disabled={isSaving}
-                                                            className="h-10 px-4 rounded-xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                                            className="h-9 px-3 rounded-xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-1 disabled:opacity-50"
                                                         >
-                                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={14} strokeWidth={3} />}
-                                                            <span>GUARDAR</span>
+                                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={12} strokeWidth={3} />}
+                                                            <span>OK</span>
                                                         </button>
                                                     </div>
                                                 </>
                                             ) : (
                                                 <button
                                                     onClick={onClose}
-                                                    className="w-full h-10 rounded-xl bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
+                                                    className="w-full h-9 rounded-xl bg-rose-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
                                                 >
                                                     <X size={14} strokeWidth={3} />
                                                     <span>Cerrar</span>
