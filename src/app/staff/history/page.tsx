@@ -396,7 +396,7 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-3 p-4 bg-zinc-50/50">
+                        <div className="flex flex-col gap-8 p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
                                 <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col">
 
