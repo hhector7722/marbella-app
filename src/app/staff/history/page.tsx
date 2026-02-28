@@ -10,6 +10,7 @@ import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
+import { DayDetailModal } from '@/components/modals/DayDetailModal';
 
 // --- TIPOS ---
 interface DayData {
@@ -149,6 +150,11 @@ export default function HistoryPage() {
         }
     }
 
+    // Modal Success Handler
+    const handleModalSuccess = () => {
+        fetchCalendar();
+    };
+
     async function fetchCalendar() {
         setLoading(true);
         try {
@@ -206,129 +212,10 @@ export default function HistoryPage() {
     };
 
     // --- EDICIÓN: Manager ---
-    const openEdit = async (week: WeekData, specificDate?: string) => {
-        const targetUserId = selectedEmployeeId || currentUserId;
-        const startDate = specificDate || week.startDate;
-        const endDate = specificDate || format(new Date(new Date(week.startDate).setDate(new Date(week.startDate).getDate() + 6)), 'yyyy-MM-dd');
-
-        const { data: logs } = await supabase.from('time_logs')
-            .select('id, clock_in, clock_out, event_type')
-            .eq('user_id', targetUserId)
-            .gte('clock_in', `${startDate}T00:00:00.000Z`)
-            .lte('clock_in', `${endDate}T23:59:59.999Z`)
-            .order('clock_in', { ascending: true });
-
-        const entries: TimeLogEntry[] = (logs || []).map(l => ({
-            id: l.id,
-            date: new Date(l.clock_in).toISOString().split('T')[0],
-            clock_in: new Date(l.clock_in).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-            clock_out: l.clock_out ? new Date(l.clock_out).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '',
-            event_type: l.event_type || 'regular'
-        }));
-
-        setEditEntries(entries);
-        setEditingWeek(week);
+    const openEdit = (week: WeekData, specificDate?: string) => {
         setEditingDate(specificDate || null);
     };
 
-    const addEntry = () => {
-        if (!editingWeek) return;
-        const defaultDate = editingDate || (editEntries.length > 0 ? editEntries[0].date : editingWeek.startDate);
-        setEditEntries([...editEntries, { date: defaultDate, clock_in: '09:00', clock_out: '17:00', event_type: 'regular', isNew: true }]);
-    };
-
-    const removeEntry = (idx: number) => {
-        const entry = editEntries[idx];
-        if (entry.isNew) {
-            setEditEntries(editEntries.filter((_, i) => i !== idx));
-        } else {
-            const updated = [...editEntries];
-            updated[idx] = { ...entry, toDelete: true };
-            setEditEntries(updated);
-        }
-    };
-
-    const updateEntry = (idx: number, field: keyof TimeLogEntry, value: string) => {
-        const updated = [...editEntries];
-        updated[idx] = { ...updated[idx], [field]: value };
-        if (field === 'event_type' && value !== 'regular') {
-            updated[idx].clock_in = '09:00';
-            updated[idx].clock_out = '17:00';
-        }
-        setEditEntries(updated);
-    };
-
-    const saveEdits = async () => {
-        if (!editingWeek) return;
-        setSavingEdit(true);
-        try {
-            const targetUserId = selectedEmployeeId || currentUserId;
-
-            const toDelete = editEntries.filter(e => e.toDelete && e.id);
-            for (const entry of toDelete) {
-                await supabase.from('time_logs').delete().eq('id', entry.id!);
-            }
-
-            const toUpdate = editEntries.filter(e => !e.isNew && !e.toDelete && e.id);
-            for (const entry of toUpdate) {
-                let clockInDT: Date;
-                let clockOutDT: Date | null = null;
-                let totalHours: number | null = null;
-                if (entry.event_type !== 'regular') {
-                    clockInDT = new Date(`${entry.date}T09:00:00`);
-                    clockOutDT = new Date(`${entry.date}T17:00:00`);
-                    totalHours = 8;
-                } else {
-                    clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
-                    clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
-                    if (clockOutDT) {
-                        totalHours = applyRoundingRule((clockOutDT.getTime() - clockInDT.getTime()) / 60000);
-                    }
-                }
-                await supabase.from('time_logs').update({
-                    clock_in: clockInDT.toISOString(),
-                    clock_out: clockOutDT?.toISOString() ?? null,
-                    total_hours: totalHours,
-                    event_type: entry.event_type
-                }).eq('id', entry.id!);
-            }
-
-            const toInsert = editEntries.filter(e => e.isNew && !e.toDelete);
-            for (const entry of toInsert) {
-                let clockInDT: Date;
-                let clockOutDT: Date | null = null;
-                let totalHours: number | null = null;
-                if (entry.event_type !== 'regular') {
-                    clockInDT = new Date(`${entry.date}T09:00:00`);
-                    clockOutDT = new Date(`${entry.date}T17:00:00`);
-                    totalHours = 8;
-                } else {
-                    clockInDT = new Date(`${entry.date}T${entry.clock_in}:00`);
-                    clockOutDT = entry.clock_out ? new Date(`${entry.date}T${entry.clock_out}:00`) : null;
-                    if (clockOutDT) {
-                        totalHours = applyRoundingRule((clockOutDT.getTime() - clockInDT.getTime()) / 60000);
-                    }
-                }
-                await supabase.from('time_logs').insert({
-                    user_id: targetUserId,
-                    clock_in: clockInDT.toISOString(),
-                    clock_out: clockOutDT?.toISOString() ?? null,
-                    total_hours: totalHours,
-                    is_manual_entry: true,
-                    event_type: entry.event_type
-                });
-            }
-
-            setEditingWeek(null);
-            setEditingDate(null);
-            setEditEntries([]);
-            fetchCalendar();
-        } catch (err) {
-            console.error('Error saving edits:', err);
-        } finally {
-            setSavingEdit(false);
-        }
-    };
 
     const isManager = userRole === 'manager';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
@@ -396,7 +283,7 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-8 p-4 bg-zinc-50/50">
+                        <div className="flex flex-col gap-12 p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
                                 <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col">
 
@@ -553,125 +440,14 @@ export default function HistoryPage() {
                     )}
                 </div>
 
-                {editingWeek !== null && (
-                    <div
-                        className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
-                        onClick={() => { setEditingWeek(null); setEditingDate(null); setEditEntries([]); }}
-                    >
-                        <div
-                            className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
-                                <div className="flex flex-col">
-                                    <h3 className="text-base font-black uppercase tracking-wider leading-none">
-                                        {editingDate ? "Editar Registro Día" : "Editar Registros"}
-                                    </h3>
-                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">
-                                        {editingDate
-                                            ? format(new Date(editingDate + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es }).toUpperCase()
-                                            : `Semana ${editingWeek.weekNumber}`
-                                        }
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => { setEditingWeek(null); setEditingDate(null); setEditEntries([]); }}
-                                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90"
-                                >
-                                    <X size={20} strokeWidth={3} />
-                                </button>
-                            </div>
-
-                            <div className="max-h-[50vh] overflow-y-auto p-4 space-y-3">
-                                {editEntries.filter(e => !e.toDelete).length === 0 && (
-                                    <div className="py-6 text-center text-zinc-400 text-sm font-medium italic">
-                                        No hay registros esta semana
-                                    </div>
-                                )}
-                                {editEntries.map((entry, idx) => {
-                                    if (entry.toDelete) return null;
-                                    const isRegular = entry.event_type === 'regular';
-                                    const eventConfig = EVENT_TYPES.find(t => t.value === entry.event_type);
-                                    return (
-                                        <div key={idx} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    value={entry.event_type}
-                                                    onChange={(e) => updateEntry(idx, 'event_type', e.target.value)}
-                                                    className="bg-white text-[10px] font-black uppercase text-zinc-500 rounded-lg border border-zinc-200 h-8 px-2 outline-none focus:border-blue-400"
-                                                >
-                                                    {EVENT_TYPES.map(type => (
-                                                        <option key={type.value} value={type.value}>{type.label}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="flex-1 bg-blue-500 rounded-lg border border-white/10 flex items-center px-2">
-                                                    <input
-                                                        type="date"
-                                                        value={entry.date}
-                                                        onChange={(e) => updateEntry(idx, 'date', e.target.value)}
-                                                        className="w-full bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:ring-0 cursor-pointer"
-                                                    />
-                                                </div>
-                                                <button
-                                                    onClick={() => removeEntry(idx)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-90 shrink-0"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                            {isRegular ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex-1 flex items-center gap-1.5">
-                                                        <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                                                        <input
-                                                            type="time"
-                                                            value={entry.clock_in}
-                                                            onChange={(e) => updateEntry(idx, 'clock_in', e.target.value)}
-                                                            className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 flex items-center gap-1.5">
-                                                        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                                                        <input
-                                                            type="time"
-                                                            value={entry.clock_out}
-                                                            onChange={(e) => updateEntry(idx, 'clock_out', e.target.value)}
-                                                            className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-center gap-2 bg-white border border-zinc-100 rounded-xl p-3 shadow-sm">
-                                                    <div className={cn("w-3 h-3 rounded-full", (eventConfig?.color || 'bg-gray-400').split(' ')[0])} />
-                                                    <span className="text-xs font-black text-zinc-500 uppercase">
-                                                        8 Horas - {eventConfig?.label || 'Evento'}
-                                                    </span>
-                                                </div>
-                                            )
-                                            }
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="p-4 border-t border-zinc-100 flex gap-3">
-                                <button
-                                    onClick={addEntry}
-                                    className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 active:scale-95 transition-all text-sm"
-                                >
-                                    <Plus size={18} /> Añadir
-                                </button>
-                                <button
-                                    onClick={saveEdits}
-                                    disabled={savingEdit}
-                                    className="flex-1 h-12 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
-                                >
-                                    {savingEdit ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <DayDetailModal
+                    isOpen={!!editingDate}
+                    onClose={() => setEditingDate(null)}
+                    date={editingDate ? new Date(editingDate + 'T12:00:00') : null}
+                    userId={selectedEmployeeId || currentUserId}
+                    userRole={userRole as any}
+                    onSuccess={handleModalSuccess}
+                />
 
             </div>
 
@@ -679,7 +455,7 @@ export default function HistoryPage() {
                 isOpen={showEmployeeDropdown}
                 onClose={() => setShowEmployeeDropdown(false)}
                 employees={employees}
-                onSelect={(emp) => {
+                onSelect={(emp: any) => {
                     setSelectedEmployeeId(emp.id);
                     setShowEmployeeDropdown(false);
                 }}

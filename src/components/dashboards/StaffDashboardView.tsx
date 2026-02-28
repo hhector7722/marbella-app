@@ -465,7 +465,7 @@ export default function StaffDashboardView() {
                             <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
                                 <div className="flex items-center gap-2 bg-blue-600 px-3 py-1.5 rounded-xl border border-white/10 shadow-sm">
                                     <Calendar size={12} className="text-white/60" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none text-zinc-600">
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none text-white">
                                         {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                     </span>
                                 </div>

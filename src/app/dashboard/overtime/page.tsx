@@ -343,7 +343,7 @@ export default function OvertimePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                         {weeksData.map(week => (
                                             <WeekOvertimeCard
                                                 key={week.weekId}
