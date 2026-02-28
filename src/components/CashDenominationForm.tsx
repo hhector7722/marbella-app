@@ -278,50 +278,53 @@ export const CashDenominationForm = ({
                 )}
 
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
-                    {DENOMINATIONS.map(denom => (
-                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
-                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
-                            </div>
-                            <div className="text-center w-full">
-                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
-                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                </span>
-                                <div className={cn(
-                                    "flex items-center justify-between w-full h-10 bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
-                                    hasStockIssue
-                                        ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
-                                        : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
-                                )}>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAdjust(denom, -1)}
-                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                    >
-                                        <Minus size={14} strokeWidth={3} />
-                                    </button>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
-                                        onChange={(e) => handleCountChange(denom, e.target.value)}
-                                        placeholder="0"
-                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAdjust(denom, 1)}
-                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                    >
-                                        <Plus size={14} strokeWidth={3} />
-                                    </button>
+                    {DENOMINATIONS.map(denom => {
+                        const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && (counts[denom] || 0) > (availableStock[denom] || 0);
+                        return (
+                            <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
+                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
                                 </div>
-                                {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {availableStock[denom]}</span>
-                                )}
+                                <div className="text-center w-full">
+                                    <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                    </span>
+                                    <div className={cn(
+                                        "flex items-center justify-between w-full h-10 bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
+                                        hasStockIssue
+                                            ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
+                                            : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
+                                    )}>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAdjust(denom, -1)}
+                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                        >
+                                            <Minus size={14} strokeWidth={3} />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
+                                            onChange={(e) => handleCountChange(denom, e.target.value)}
+                                            placeholder="0"
+                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAdjust(denom, 1)}
+                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                        >
+                                            <Plus size={14} strokeWidth={3} />
+                                        </button>
+                                    </div>
+                                    {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (
+                                        <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {availableStock[denom]}</span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {/* IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c on small screens, or wraps on larger depending on cols) */}
                     <div className={cn(
