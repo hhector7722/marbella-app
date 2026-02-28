@@ -198,9 +198,9 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] p-6 animate-in fade-in duration-200" onClick={onClose}>
             <div className="w-full max-w-[320px] aspect-square bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                {/* Red Header */}
-                <div className="bg-[#D65D67] h-[64px] flex items-center justify-center px-6 relative shrink-0">
-                    <h3 className="text-white text-lg font-medium tracking-tight">
+                {/* Red Header - Match Weekly Summary Gradient */}
+                <div className="bg-gradient-to-b from-red-500 to-red-600 h-[64px] flex items-center justify-center px-6 relative shrink-0 shadow-md">
+                    <h3 className="text-white text-[11px] font-black uppercase tracking-[0.2em] drop-shadow-sm">
                         {date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
                     </h3>
                     <button onClick={onClose} className="absolute right-4 top-4 text-white/50 hover:text-white transition-colors">
@@ -233,10 +233,10 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                                         type="time"
                                                         value={log.in_time}
                                                         onChange={(e) => updateLog(0, 'in_time', e.target.value)}
-                                                        className="text-4xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
+                                                        className="text-4xl font-mono font-black text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
                                                     />
                                                 ) : (
-                                                    <span className="text-4xl font-mono font-medium text-gray-600">
+                                                    <span className="text-4xl font-mono font-black text-gray-600">
                                                         {log.in_time || '00:00'}
                                                     </span>
                                                 )}
@@ -250,10 +250,10 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                                         type="time"
                                                         value={log.out_time}
                                                         onChange={(e) => updateLog(0, 'out_time', e.target.value)}
-                                                        className="text-4xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
+                                                        className="text-4xl font-mono font-black text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[140px] text-center"
                                                     />
                                                 ) : (
-                                                    <span className="text-4xl font-mono font-medium text-gray-600">
+                                                    <span className="text-4xl font-mono font-black text-gray-600">
                                                         {log.out_time || '00:00'}
                                                     </span>
                                                 )}
@@ -263,48 +263,61 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                         {/* Metrics: HORAS and HORAS EXTRAS */}
                                         <div className="space-y-3 py-4 border-t border-gray-50">
                                             <div className="flex justify-between items-center px-1">
-                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-wide">HORAS</span>
-                                                <span className="text-lg font-medium text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>
+                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-[0.15em]">HORAS</span>
+                                                <span className="text-lg font-black text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>
                                             </div>
                                             <div className="flex justify-between items-center px-1">
-                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-wide">HORAS EXTRAS</span>
-                                                <span className="text-lg font-medium text-gray-800">{workedHours > 8 ? (workedHours - 8).toFixed(0) : 0}</span>
+                                                <span className="text-xs font-black text-[#7C8B9C] uppercase tracking-[0.15em]">HORAS EXTRAS</span>
+                                                <span className="text-lg font-black text-gray-800">{workedHours > 8 ? (workedHours - 8).toFixed(0) : 0}</span>
                                             </div>
                                         </div>
 
-                                        {/* Manager Actions (Simplified) */}
-                                        {isManager && (
-                                            <div className="pt-2 border-t border-gray-50 flex items-center justify-between gap-3">
-                                                <select
-                                                    value={log.event_type}
-                                                    onChange={(e) => updateLog(0, 'event_type', e.target.value)}
-                                                    className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent"
-                                                >
-                                                    {EVENT_TYPES.map(t => (
-                                                        <option key={t.value} value={t.value} className="text-gray-900 bg-white">
-                                                            {t.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                        {/* Footer Actions - Monetary Modal Style */}
+                                        <div className="pt-2 flex items-center justify-between gap-3">
+                                            {isManager ? (
+                                                <>
+                                                    <div className="flex-1 flex flex-col">
+                                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Tipo Evento</span>
+                                                        <select
+                                                            value={log.event_type}
+                                                            onChange={(e) => updateLog(0, 'event_type', e.target.value)}
+                                                            className="text-[10px] font-black text-gray-600 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent"
+                                                        >
+                                                            {EVENT_TYPES.map(t => (
+                                                                <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                                    {t.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={onClose}
+                                                            className="h-10 px-4 rounded-xl bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
+                                                        >
+                                                            <X size={14} strokeWidth={3} />
+                                                            <span>SALIR</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={handleSave}
+                                                            disabled={isSaving}
+                                                            className="h-10 px-4 rounded-xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                                        >
+                                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={14} strokeWidth={3} />}
+                                                            <span>GUARDAR</span>
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            ) : (
                                                 <button
-                                                    onClick={handleSave}
-                                                    disabled={isSaving}
-                                                    className="h-10 px-6 rounded-2xl bg-[#D65D67] text-white font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                                                    onClick={onClose}
+                                                    className="w-full h-10 rounded-xl bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
                                                 >
-                                                    {isSaving ? <LoadingSpinner size="sm" /> : <Save size={14} />}
-                                                    <span>GUARDAR</span>
+                                                    <X size={14} strokeWidth={3} />
+                                                    <span>Cerrar</span>
                                                 </button>
-                                            </div>
-                                        )}
-
-                                        {!isManager && (
-                                            <button
-                                                onClick={onClose}
-                                                className="w-full h-10 rounded-2xl bg-gray-50 text-gray-400 font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all mt-2"
-                                            >
-                                                Cerrar
-                                            </button>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })()}
