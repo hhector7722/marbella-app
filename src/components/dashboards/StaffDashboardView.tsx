@@ -465,7 +465,7 @@ export default function StaffDashboardView() {
                             <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
                                 <div className="flex items-center gap-2 bg-blue-600 px-3 py-1.5 rounded-xl border border-white/10 shadow-sm">
                                     <Calendar size={12} className="text-white/60" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none text-zinc-600">
                                         {currentMonthName} {weekNumber ? `- SEM ${weekNumber}` : ''}
                                     </span>
                                 </div>
@@ -532,31 +532,31 @@ export default function StaffDashboardView() {
                                 <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
                                     <div className="flex flex-col items-center flex-1 border-r border-gray-100">
                                         <div className="h-4 flex items-center">
-                                            <span className="font-black text-gray-800 text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                            <span className="font-black text-black text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
                                         </div>
                                         <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                     </div>
 
                                     <div className="flex flex-col items-center flex-1 border-r border-gray-100">
                                         <div className="h-4 flex items-center">
-                                            <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                {formatBalance(weeklySummary.startBalance)}
+                                            <span className={`font-black text-[11px] md:text-xs leading-none text-red-600`}>
+                                                {formatWorked(weeklySummary.startBalance)}
                                             </span>
                                         </div>
                                         <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1 border-r border-gray-100">
                                         <div className="h-4 flex items-center">
-                                            <span className={`font-black text-[11px] md:text-xs leading-none ${weeklySummary.currentBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                                                {weeklySummary.currentBalance > 0 ? formatBalance(weeklySummary.currentBalance) : " "}
+                                            <span className={`font-black text-[11px] md:text-xs leading-none text-black`}>
+                                                {weeklySummary.currentBalance > 0 ? formatWorked(weeklySummary.currentBalance) : " "}
                                             </span>
                                         </div>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">H Extras</span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 flex items-center">
-                                            <span className="font-black text-[11px] md:text-xs leading-none text-green-600">
-                                                {!preferStock ? formatMoney(weeklySummary.estimatedPayout) : " "}
+                                            <span className="font-black text-[11px] md:text-xs leading-none text-emerald-600">
+                                                {!preferStock ? formatWorked(weeklySummary.estimatedPayout) : "0"}€
                                             </span>
                                         </div>
                                         <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
