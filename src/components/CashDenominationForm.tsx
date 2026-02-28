@@ -307,7 +307,7 @@ export const CashDenominationForm = ({
                                             min="0"
                                             value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
                                             onChange={(e) => handleCountChange(denom, e.target.value)}
-                                            placeholder="0"
+                                            placeholder=""
                                             className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
                                         />
                                         <button
