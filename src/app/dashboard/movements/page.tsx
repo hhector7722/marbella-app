@@ -225,8 +225,10 @@ export default function MovementsPage() {
 
     const openOut = async () => {
         if (!boxData) return;
-        setBoxInventoryMap({});
-        setBoxInventory([]);
+        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
+        const initial: Record<number, number> = {};
+        data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
+        setBoxInventoryMap(initial);
         setCashModalMode('out');
     };
 

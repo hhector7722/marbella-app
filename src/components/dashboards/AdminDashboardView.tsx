@@ -343,13 +343,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     const openTreasuryModal = async (box: any, mode: CashModalMode) => {
         setSelectedBox(box);
-        if (mode === 'audit' || mode === 'inventory') {
-            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
-            const initial: Record<number, number> = {};
-            data?.forEach(d => initial[Number(d.denomination)] = d.quantity);
-            setBoxInventoryMap(initial);
-            setBoxInventory(data || []);
-        }
+        // Fetch inventory backgrounds for "Disponible: X" labels in all modes
+        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+        const initial: Record<number, number> = {};
+        data?.forEach(d => initial[Number(d.denomination)] = d.quantity);
+        setBoxInventoryMap(initial);
+        setBoxInventory(data || []);
+
         setCashModalMode(mode);
     };
 
