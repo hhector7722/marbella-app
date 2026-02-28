@@ -126,8 +126,9 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 - [x] **🛒 Refactorización Modo Compra**: Redistribución total de campos. Fecha y Concepto comparten fila superior; Precio, Entregado y Cambio comparten fila inferior. Lógica matemática de cuadre corregida para permitir el guardado solo con balance exacto.
 - [x] **✨ Refinamiento UI Compra (Header Toggle)**: El interruptor de "Modo Compra" ha sido trasladado a la cabecera superior derecha del modal, con el total acumulado a su izquierda, para una interfaz más despejada y profesional.
 - [x] **📱 Alineación Mobile de Botones Monetarios**: Los botones de acción en los formularios de denominación ahora suben a la fila del céntimo, con ajuste dinámico de padding para compensar el marcador de stock y mantener la alineación visual con los inputs.
-- [x] **🗓️ Refinamiento Historial Staff (Premium UI)**: Actualización a color azul petróleo (#487B8F) en las bandas de resumen, compactación de alturas, sombras proyectadas más profundas y bordes redondeados consistentes.
-- [x] **📱 Alineación de Dashboards (Consistent UI)**: Sincronización de espaciados entre `/dashboard` (Admin) y `/staff/dashboard`. Ajustados huecos verticales (`gap-4`, `space-y-4`) para evitar el aspecto "demasiado compacto" y asegurar que el contenido no se corte por la cabecera fija.
+- [x] 🗓️ **Refinamiento Historial Staff (Premium UI)**: Actualización a color azul petróleo (#487B8F) en las bandas de resumen, compactación de alturas, sombras proyectadas más profundas y bordes redondeados consistentes.
+- [x] 📱 **Alineación de Dashboards (Consistent UI)**: Sincronización de espaciados entre `/dashboard` (Admin) y `/staff/dashboard`. Ajustados huecos verticales (`gap-4`, `space-y-4`) para evitar el aspecto "demasiado compacto" y asegurar que el contenido no se corte por la cabecera fija.
+- [x] 🖼️ **Diseño Flush en Tablas**: Eliminación de los bordes/contornos blancos exteriores en los contenedores de tablas de `/staff/schedule/editor` y `/registros`, permitiendo que el contenido flote sobre el fondo azul Marbella con un acabado más limpio y moderno.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.

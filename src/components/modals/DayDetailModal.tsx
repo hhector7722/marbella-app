@@ -209,7 +209,7 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                 </div>
 
                 {/* Body */}
-                <div className="px-6 pb-6 pt-2 flex-1 flex flex-col overflow-hidden">
+                <div className="px-6 pb-5 pt-0 flex-1 flex flex-col overflow-hidden">
                     {loading ? (
                         <div className="flex-1 flex flex-col items-center justify-center gap-2">
                             <LoadingSpinner size="lg" className="text-red-500" />
@@ -222,21 +222,21 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                 const workedHours = calculateLogHours(log.in_time, log.out_time);
 
                                 return (
-                                    <div className="flex-1 flex flex-col justify-between pt-1">
+                                    <div className="flex-1 flex flex-col justify-between pt-0">
                                         {/* Times with Dots */}
-                                        <div className="flex flex-col items-center gap-2 py-1">
+                                        <div className="flex flex-col items-center gap-1 py-1">
                                             {/* Entry */}
                                             <div className="flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                                                <div className="w-1 h-1 rounded-full bg-[#22C55E]" />
                                                 {isManager ? (
                                                     <input
                                                         type="time"
                                                         value={log.in_time}
                                                         onChange={(e) => updateLog(0, 'in_time', e.target.value)}
-                                                        className="text-3xl font-mono font-black text-gray-700 bg-transparent border-none p-0 focus:ring-0 w-[120px] text-center"
+                                                        className="text-2xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[100px] text-center"
                                                     />
                                                 ) : (
-                                                    <span className="text-3xl font-mono font-black text-gray-700">
+                                                    <span className="text-2xl font-mono font-medium text-gray-600">
                                                         {log.in_time || '00:00'}
                                                     </span>
                                                 )}
@@ -244,16 +244,16 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
 
                                             {/* Exit */}
                                             <div className="flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                                                <div className="w-1 h-1 rounded-full bg-[#EF4444]" />
                                                 {isManager ? (
                                                     <input
                                                         type="time"
                                                         value={log.out_time}
                                                         onChange={(e) => updateLog(0, 'out_time', e.target.value)}
-                                                        className="text-3xl font-mono font-black text-gray-700 bg-transparent border-none p-0 focus:ring-0 w-[120px] text-center"
+                                                        className="text-2xl font-mono font-medium text-gray-600 bg-transparent border-none p-0 focus:ring-0 w-[100px] text-center"
                                                     />
                                                 ) : (
-                                                    <span className="text-3xl font-mono font-black text-gray-700">
+                                                    <span className="text-2xl font-mono font-medium text-gray-600">
                                                         {log.out_time || '00:00'}
                                                     </span>
                                                 )}
@@ -261,7 +261,7 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                         </div>
 
                                         {/* Metrics: HORAS and HORAS EXTRAS */}
-                                        <div className="space-y-2 py-3 border-t border-gray-50">
+                                        <div className="space-y-1.5 py-2 border-t border-gray-50">
                                             <div className="flex justify-between items-center px-1">
                                                 <span className="text-[10px] font-black text-[#7C8B9C] uppercase tracking-[0.1em]">HORAS</span>
                                                 <span className="text-base font-black text-gray-800">{workedHours > 0 ? workedHours.toFixed(0) : "0"}</span>

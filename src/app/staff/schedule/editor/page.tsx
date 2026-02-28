@@ -443,7 +443,7 @@ export default function ScheduleEditorPage() {
             </div>
 
             {/* ZONA DE TRABAJO (FLOATING) */}
-            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-zinc-200 shadow-xl bg-white mt-1">
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden shadow-xl bg-white mt-1">
                 <div className="w-full flex flex-col relative">
                     {/* ENCABEZADO DE HORAS - ROJO */}
                     <div className="flex bg-red-500 text-white border-b border-red-600 sticky top-0 z-30">

@@ -479,7 +479,7 @@ export default function RegistrosPage() {
             {/* --- CONTENIDO PRINCIPAL --- */}
             <div className={cn(
                 "flex-1 flex flex-col min-h-0",
-                viewMode === 'calendar' ? "bg-white rounded-xl shadow-2xl border border-white/10 overflow-hidden" : ""
+                viewMode === 'calendar' ? "bg-white rounded-xl shadow-2xl overflow-hidden" : ""
             )}>
 
                 {viewMode === 'calendar' ? (
@@ -638,7 +638,7 @@ export default function RegistrosPage() {
                         </div>
 
                         {/* Lista de Fichajes de la Semana (En una sola fila de 7 columnas) */}
-                        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full mb-10 overflow-hidden overflow-x-auto no-scrollbar">
+                        <div className="bg-white rounded-2xl shadow-xl w-full mb-10 overflow-hidden overflow-x-auto no-scrollbar">
                             <div className="min-w-[340px] w-full grid grid-cols-7 divide-x divide-gray-100">
                                 {modalLogs.map((log, idx) => {
                                     const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
