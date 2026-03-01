@@ -529,14 +529,14 @@ export default function StaffDashboardView() {
                                 </div>
 
                                 <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                                    <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 flex items-center">
                                             <span className="font-black text-black text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
                                         </div>
                                         <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                     </div>
 
-                                    <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 flex items-center">
                                             <span className={`font-black text-[11px] md:text-xs leading-none text-red-600`}>
                                                 {formatWorked(weeklySummary.startBalance)}
@@ -544,7 +544,7 @@ export default function StaffDashboardView() {
                                         </div>
                                         <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                     </div>
-                                    <div className="flex flex-col items-center flex-1 border-r border-gray-100">
+                                    <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 flex items-center">
                                             <span className={`font-black text-[11px] md:text-xs leading-none text-black`}>
                                                 {weeklySummary.currentBalance > 0 ? formatWorked(weeklySummary.currentBalance) : " "}
