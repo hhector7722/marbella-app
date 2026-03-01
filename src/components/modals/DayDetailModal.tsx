@@ -194,12 +194,12 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] p-6 animate-in fade-in duration-200" onClick={onClose}>
             <div className="w-full max-w-[320px] aspect-square bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 {/* Red Header - Match Weekly Summary Gradient */}
-                <div className="bg-gradient-to-b from-red-500 to-red-600 h-[64px] flex items-center justify-center px-6 relative shrink-0 shadow-md">
-                    <h3 className="text-white text-[11px] font-black uppercase tracking-[0.2em] drop-shadow-sm">
+                <div className="bg-gradient-to-b from-red-500 to-red-600 h-[52px] flex items-center justify-center px-6 relative shrink-0 shadow-md">
+                    <h3 className="text-white text-[10px] font-black uppercase tracking-[0.2em] drop-shadow-sm">
                         {date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
                     </h3>
-                    <button onClick={onClose} className="absolute right-4 top-4 text-white/50 hover:text-white transition-colors">
-                        <X size={20} />
+                    <button onClick={onClose} className="absolute right-4 top-3 text-white/50 hover:text-white transition-colors">
+                        <X size={18} />
                     </button>
                 </div>
 
@@ -237,56 +237,50 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                         {/* Bento Times Grid */}
                                         <div className="grid grid-cols-1 gap-3">
                                             {/* Entry Card */}
-                                            <div className="bg-zinc-50 rounded-2xl p-4 flex items-center justify-between border border-zinc-100 shadow-sm relative overflow-hidden group">
+                                            <div className="bg-zinc-50 rounded-2xl p-2.5 flex items-center justify-between border border-zinc-100 shadow-sm relative overflow-hidden group">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Entrada</span>
+                                                    <span className="text-[7px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">Entrada</span>
                                                     {isManager ? (
                                                         <input
                                                             type="time"
                                                             value={log.in_time}
                                                             onChange={(e) => updateLog(0, 'in_time', e.target.value)}
-                                                            className="text-3xl font-black text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-[120px]"
+                                                            className="text-xl font-black text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-[80px]"
                                                         />
                                                     ) : (
-                                                        <span className="text-3xl font-black text-gray-800 tracking-tight">
+                                                        <span className="text-xl font-black text-gray-800 tracking-tight">
                                                             {log.in_time || '00:00'}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 transition-transform group-hover:scale-110">
-                                                    <Clock size={20} strokeWidth={3} />
-                                                </div>
                                             </div>
 
                                             {/* Exit Card */}
-                                            <div className="bg-zinc-50 rounded-2xl p-4 flex items-center justify-between border border-zinc-100 shadow-sm relative overflow-hidden group">
+                                            <div className="bg-zinc-50 rounded-2xl p-2.5 flex items-center justify-between border border-zinc-100 shadow-sm relative overflow-hidden group">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-500" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-rose-600 uppercase tracking-widest mb-1">Salida</span>
+                                                    <span className="text-[7px] font-black text-rose-600 uppercase tracking-widest mb-0.5">Salida</span>
                                                     {isManager ? (
                                                         <input
                                                             type="time"
                                                             value={log.out_time}
                                                             onChange={(e) => updateLog(0, 'out_time', e.target.value)}
-                                                            className="text-3xl font-black text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-[120px]"
+                                                            className="text-xl font-black text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-[80px]"
                                                         />
                                                     ) : (
-                                                        <span className="text-3xl font-black text-gray-800 tracking-tight">
+                                                        <span className="text-xl font-black text-gray-800 tracking-tight">
                                                             {log.out_time || '00:00'}
                                                         </span>
                                                     )}
-                                                </div>
-                                                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 transition-transform group-hover:scale-110">
-                                                    <Clock size={20} strokeWidth={3} />
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Metrics Bento Grid */}
                                         <div className="grid grid-cols-2 gap-3">
-                                            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex flex-col justify-center gap-1">
-                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Horas</span>
+                                            <div className="bg-white rounded-2xl p-2.5 border border-zinc-100 shadow-sm flex flex-col justify-center gap-1">
+                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">Horas</span>
                                                 {isManager ? (
                                                     <input
                                                         type="number"
@@ -294,14 +288,14 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                                         value={workedHours > 0 ? workedHours : ""}
                                                         placeholder=" "
                                                         onChange={(e) => updateHours(parseFloat(e.target.value) || 0)}
-                                                        className="text-xl font-black text-zinc-800 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                        className="text-lg font-black text-zinc-800 bg-transparent border-none p-0 focus:ring-0 w-full"
                                                     />
                                                 ) : (
-                                                    <span className="text-xl font-black text-zinc-800">{workedHours > 0 ? workedHours.toFixed(1).replace('.0', '') : " "}</span>
+                                                    <span className="text-lg font-black text-zinc-800">{workedHours > 0 ? workedHours.toFixed(1).replace('.0', '') : " "}</span>
                                                 )}
                                             </div>
-                                            <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex flex-col justify-center gap-1">
-                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">H Extras</span>
+                                            <div className="bg-white rounded-2xl p-2.5 border border-zinc-100 shadow-sm flex flex-col justify-center gap-1">
+                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">H Extras</span>
                                                 {isManager ? (
                                                     <input
                                                         type="number"
@@ -309,10 +303,10 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                                         value={workedHours > 8 ? workedHours - 8 : ""}
                                                         placeholder=" "
                                                         onChange={(e) => updateHours(8 + (parseFloat(e.target.value) || 0))}
-                                                        className="text-xl font-black text-red-600 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                        className="text-lg font-black text-red-600 bg-transparent border-none p-0 focus:ring-0 w-full"
                                                     />
                                                 ) : (
-                                                    <span className="text-xl font-black text-red-600">{workedHours > 8 ? (workedHours - 8).toFixed(1).replace('.0', '') : " "}</span>
+                                                    <span className="text-lg font-black text-red-600">{workedHours > 8 ? (workedHours - 8).toFixed(1).replace('.0', '') : " "}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -338,17 +332,17 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                                     <div className="flex gap-2 shrink-0">
                                                         <button
                                                             onClick={onClose}
-                                                            className="h-11 px-4 rounded-2xl bg-white border border-rose-100 text-rose-500 font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+                                                            className="h-10 px-4 rounded-2xl bg-white border border-rose-100 text-rose-500 font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
                                                         >
-                                                            <X size={14} strokeWidth={3} />
+                                                            <X size={12} strokeWidth={3} />
                                                             <span>SALIR</span>
                                                         </button>
                                                         <button
                                                             onClick={handleSave}
                                                             disabled={isSaving}
-                                                            className="h-11 px-6 rounded-2xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                                                            className="h-10 px-6 rounded-2xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-50"
                                                         >
-                                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={14} strokeWidth={3} />}
+                                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={12} strokeWidth={3} />}
                                                             <span>OK</span>
                                                         </button>
                                                     </div>

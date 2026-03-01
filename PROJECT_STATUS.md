@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-01 (Rediseño Modal Historial v2)
+**Última actualización:** 2026-03-01 (Rediseño Editor Horarios Marbella Detail)
 
 ## 📌 ESTADO GENERAL
 El sistema de historial ha sido refinado para permitir una gestión granular por días, facilitando la auditoría de registros para los managers. El modal de selección de personal ha sido rediseñado bajo un enfoque minimalista y ultra-compacto, optimizado para interfaces táctiles de alta densidad. El panel de staff ha sido actualizado con elementos más grandes y la nueva estética de cabeceras "Petrol".
@@ -8,6 +8,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ---
 
 ## ✅ COMPLETADO
+- [x] **Rediseño Editor de Horarios (Marbella Detail)**: Transformación radical de `/staff/schedule/editor` a la estética unificada. Implementado contenedor de tarjeta blanca sobre fondo azul Marbella, cabecera Petrol (#36606F) con fecha interactiva, y sección superior de campos editables (Actividad, Inicio, Final, Participantes). Se ha respetado escrupulosamente la tabla de trabajadores y sus proporciones originales, permitiendo una visualización completa en smartphones y manteniendo la interactividad de las barras de turnos.
 - [x] **Rediseño y Unificación Modal Detalle Día (Bento-View v3)**: Transformación radical de la interfaz de detalle diario. Se ha implementado el componente unificado en `/staff/history` y `/registros`, eliminando códigos duplicados. Etiquetas compactas ("Horas" / "H Extras") con capacidad de edición manual exclusiva para Managers y lógica reactiva de sincronización. Estética premium ("Apple Human Interface") con tarjetas Bento y tipografía bold sans-serif.
 - [x] **Corrección Acceso Modal Historial (Staff)**: Eliminada la restricción `isManager` en `/staff/history` que impedía a los trabajadores pulsar en un día para ver su desglose.
 - [x] **Refinamiento UI Modo Compra**: Eliminación de los botones de ajuste incremental ("+" y "-") en el campo de precio del modal de compras. Se ha implementado la regla Zero-Display en el input de precio, permitiendo que el campo inicie vacío en lugar de mostrar "0", optimizando la entrada manual directa.
