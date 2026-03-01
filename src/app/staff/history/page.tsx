@@ -146,8 +146,12 @@ export default function HistoryPage() {
             const { data: emps } = await supabase.from('profiles')
                 .select('id, first_name, last_name')
                 .order('first_name');
-            setEmployees(emps || []);
+            setEmployees((emps || []).filter((e: any) => {
+                const name = (e.first_name || '').trim().toLowerCase();
+                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+            }));
         }
+
     }
 
     // Modal Success Handler

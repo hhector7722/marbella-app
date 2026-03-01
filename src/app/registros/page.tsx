@@ -139,7 +139,12 @@ export default function RegistrosPage() {
                 .select('id, first_name, last_name, overtime_cost_per_hour')
                 .order('first_name');
 
-            if (staff) setEmployees(staff);
+            if (staff) {
+                setEmployees(staff.filter((e: any) => {
+                    const name = (e.first_name || '').trim().toLowerCase();
+                    return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+                }));
+            }
 
             // Helper para enriquecer logs con datos de empleado
             const enrichLogs = (rawLogs: any[]) => {
@@ -447,6 +452,14 @@ export default function RegistrosPage() {
                                 </span>
                                 <ChevronDown size={10} className="ml-1.5 opacity-40 shrink-0" />
                             </button>
+                            {selectedWorkerId && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedWorkerId(''); }}
+                                    className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
+                                >
+                                    <X size={8} strokeWidth={4} />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

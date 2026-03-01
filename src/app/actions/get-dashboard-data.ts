@@ -185,6 +185,9 @@ export async function getDashboardData() {
         boxMovements,
         overtimeData,
         paidStatus: initialPaidStatus,
-        allEmployees: allProfiles || []
+        allEmployees: (allProfiles || []).filter((p: any) => {
+            const name = (p.first_name || '').trim().toLowerCase();
+            return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+        })
     };
 }

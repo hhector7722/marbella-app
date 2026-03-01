@@ -635,7 +635,7 @@ export default function StaffDashboardView() {
                             {/* Iconos Flotantes - Ahora fuera de Horarios */}
                             <div className="grid grid-cols-2 gap-2">
                                 <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
-                                    if (!changeBox || !operationalBox) { toast.error('Cajas no configuradas completamente'); return; }
+                                    if (!changeBox && !operationalBox) { toast.error('Cajas no configuradas'); return; }
                                     setIsCashOptionsModalOpen(true);
                                 }} />
                                 <IOSIconBoxed
@@ -837,6 +837,10 @@ export default function StaffDashboardView() {
                             <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
                                 <button
                                     onClick={() => {
+                                        if (!changeBox) {
+                                            toast.error('Caja de cambio no configurada');
+                                            return;
+                                        }
                                         setIsCashOptionsModalOpen(false);
                                         setShowSwapModal(true);
                                     }}
@@ -853,6 +857,10 @@ export default function StaffDashboardView() {
 
                                 <button
                                     onClick={() => {
+                                        if (!operationalBox) {
+                                            toast.error('Caja operacional no configurada');
+                                            return;
+                                        }
                                         setIsCashOptionsModalOpen(false);
                                         openTreasuryModal(operationalBox, 'out');
                                     }}

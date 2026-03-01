@@ -92,7 +92,10 @@ export default function StaffSchedulePage() {
                     .from('profiles')
                     .select('id, first_name, last_name, role')
                     .order('first_name');
-                setEmployees(allEmployees || []);
+                setEmployees((allEmployees || []).filter((e: any) => {
+                    const name = (e.first_name || '').trim().toLowerCase();
+                    return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+                }));
             }
 
             // 3. Por defecto, mostrar solo turnos del usuario actual

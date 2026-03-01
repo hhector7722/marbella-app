@@ -137,7 +137,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
                         </div>
                     </>
                 ) : (
-                    <div className="w-full h-full flex-shrink-0">
+                    <div className="w-full h-full flex-shrink-0 mt-4 md:mt-0">
                         <StaffDashboardView />
                     </div>
                 )}

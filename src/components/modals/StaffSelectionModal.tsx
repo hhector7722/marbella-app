@@ -28,6 +28,11 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 }) => {
     if (!isOpen) return null;
 
+    const filteredEmployees = employees.filter(emp => {
+        const name = (emp.first_name || '').trim().toLowerCase();
+        return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+    });
+
     return (
         <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200"
@@ -54,7 +59,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                 <div className="p-4 overflow-y-auto no-scrollbar flex-1 bg-white">
                     {children}
                     <div className="grid grid-cols-4 gap-2">
-                        {employees.map((emp) => (
+                        {filteredEmployees.map((emp) => (
                             <button
                                 key={emp.id}
                                 onClick={() => {
