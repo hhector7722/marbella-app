@@ -266,16 +266,13 @@ export default function StaffDashboardView() {
                 startBalance: effectivePivot
             });
 
-            // Cargar caja de cambio para acceso directo "Cambiar"
-            const { data: changeBoxes } = await supabase.from('cash_boxes').select('*').eq('type', 'change').order('name').limit(1);
-            if (changeBoxes && changeBoxes.length > 0) {
-                setChangeBox(changeBoxes[0]);
-            }
-
-            // Cargar caja operacional para acceso a "Compra"
-            const { data: opBoxes } = await supabase.from('cash_boxes').select('*').eq('type', 'operational').order('name').limit(1);
-            if (opBoxes && opBoxes.length > 0) {
-                setOperationalBox(opBoxes[0]);
+            // Cargar cajas de forma más robusta (Consolidación de Tesorería)
+            const { data: allBoxes } = await supabase.from('cash_boxes').select('*').order('name');
+            if (allBoxes && allBoxes.length > 0) {
+                const cBox = allBoxes.find(b => b.type === 'change') || allBoxes[0];
+                const oBox = allBoxes.find(b => b.type === 'operational') || allBoxes[0];
+                setChangeBox(cBox);
+                setOperationalBox(oBox);
             }
 
             const { data: realShifts } = await supabase
