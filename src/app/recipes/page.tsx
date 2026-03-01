@@ -257,8 +257,7 @@ function RecipesContent() {
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Columna Izquierda: Ingredientes */}
-                                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col min-h-[300px]">
+                                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
                                         <div className="bg-[#36606F] px-5 py-3 flex items-center justify-between shrink-0">
                                             <div className="flex items-center gap-2">
                                                 <UtensilsCrossed size={14} className="text-white/70" />

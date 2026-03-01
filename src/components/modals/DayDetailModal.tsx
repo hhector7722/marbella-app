@@ -68,12 +68,7 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                 is_deleted: false
             })) || [];
 
-            // Aseguramos que siempre haya al menos un objeto de log para editar
-            if (rawLogs.length === 0) {
-                setLogs([{ in_time: '00:00', out_time: '00:00', event_type: 'regular', is_deleted: false }]);
-            } else {
-                setLogs(rawLogs);
-            }
+            setLogs(rawLogs);
         } catch (err) {
             console.error(err);
             toast.error("Error al cargar registros");
@@ -218,7 +213,17 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                     ) : (
                         <div className="w-full flex-1 flex flex-col justify-between">
                             {(() => {
-                                const log = logs.filter(l => !l.is_deleted)[0] || { in_time: '00:00', out_time: '00:00', event_type: 'regular' };
+                                const activeLogs = logs.filter(l => !l.is_deleted);
+
+                                if (activeLogs.length === 0) {
+                                    return (
+                                        <div className="flex-1 flex flex-col items-center justify-center h-full">
+                                            <span className="text-gray-400 text-sm font-medium">Sin datos</span>
+                                        </div>
+                                    );
+                                }
+
+                                const log = activeLogs[0];
                                 const workedHours = calculateLogHours(log.in_time, log.out_time);
 
                                 return (
