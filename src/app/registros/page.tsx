@@ -582,13 +582,13 @@ export default function RegistrosPage() {
                                                             key={log.id}
                                                             title={eventConfig?.label || 'Regular'}
                                                             className={cn(
-                                                                "flex flex-row items-center gap-1 w-full min-w-0 mb-0.5 p-0.5",
-                                                                !isRegular && cn("rounded-md border p-0.5", eventConfig?.border || 'bg-gray-50 border-gray-100')
+                                                                "flex flex-row items-center gap-0.5 w-full min-w-0 mb-0.5 p-[2px]",
+                                                                !isRegular && cn("rounded-md border p-[1px]", eventConfig?.border || 'bg-gray-50 border-gray-100')
                                                             )}
                                                         >
                                                             {/* Círculo de Iniciales */}
                                                             <div className={cn(
-                                                                "w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0",
+                                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center text-[6.5px] leading-none font-black text-white shrink-0",
                                                                 isComplete ? "bg-emerald-600" : "bg-rose-600"
                                                             )}>
                                                                 {f}{l}
@@ -596,12 +596,12 @@ export default function RegistrosPage() {
 
                                                             {/* Horas */}
                                                             <div className="flex items-center min-w-0 flex-1">
-                                                                <span className="text-emerald-600 text-[10px] font-bold leading-none shrink-0">
+                                                                <span className="text-emerald-600 text-[8.5px] sm:text-[9px] font-bold leading-none shrink-0 tracking-tighter">
                                                                     {format(parseISO(log.clock_in), 'H')}
                                                                 </span>
-                                                                <span className="text-gray-400 text-[10px] mx-0.5 leading-none shrink-0">-</span>
+                                                                <span className="text-gray-400 text-[8.5px] sm:text-[9px] leading-none shrink-0">-</span>
                                                                 {log.clock_out && (
-                                                                    <span className="text-rose-600 text-[10px] font-bold leading-none shrink-0">
+                                                                    <span className="text-rose-600 text-[8.5px] sm:text-[9px] font-bold leading-none shrink-0 tracking-tighter">
                                                                         {format(parseISO(log.clock_out), 'H')}
                                                                     </span>
                                                                 )}
