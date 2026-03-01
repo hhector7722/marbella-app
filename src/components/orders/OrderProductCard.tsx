@@ -117,8 +117,8 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
     const renderCard = (isModal: boolean) => (
         <div className={cn(
-            "bg-white transition-all flex flex-col h-full overflow-hidden w-full relative",
-            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "rounded-2xl shadow-md",
+            "bg-white transition-all flex flex-col items-stretch overflow-hidden w-full relative",
+            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "rounded-2xl shadow-md aspect-square",
             !isModal && quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "",
             !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
         )}>
@@ -135,7 +135,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 <div
                     className={cn(
                         "w-full bg-white rounded-lg flex items-center justify-center overflow-hidden relative",
-                        isModal ? "h-32 mb-4" : "h-14 mb-1 cursor-pointer"
+                        isModal ? "h-32 mb-4" : "h-14 mb-0.5 cursor-pointer"
                     )}
                     onClick={() => {
                         if (!isModal) setShowModal(true);
@@ -155,7 +155,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Product Info */}
-                <div className={cn("flex flex-col mt-auto px-0.5 items-center justify-center text-center", isModal ? "gap-1.5" : "gap-0.5")}>
+                <div className={cn("flex flex-col mt-auto px-1", isModal ? "gap-1.5 items-center justify-center text-center" : "gap-0 items-start text-left mb-1")}>
                     <span className={cn("font-bold text-gray-700 leading-tight truncate w-full", isModal ? "text-sm sm:text-base" : "text-[10px]")} title={ingredient.name}>
                         {ingredient.name}
                     </span>
@@ -197,7 +197,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             </div>
                         )
                     ) : (
-                        <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest truncate">
+                        <span className="text-[9px] font-medium text-gray-400 lowercase tracking-widest truncate">
                             {isCustomUnit ? (customUnit || '?') : unit}
                         </span>
                     )}
@@ -206,18 +206,18 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
             {/* Controls (Bottom Area) */}
             <div className={cn(
-                "bg-[#36606F] flex flex-row items-center justify-around shrink-0 shadow-inner w-full mt-auto",
-                isModal ? "px-6 py-4" : "px-3 py-1.5 sm:py-2"
+                "bg-[#36606F] flex flex-row items-center justify-between shrink-0 shadow-inner w-full mt-auto",
+                isModal ? "px-6 py-4" : "px-1.5 py-1 sm:py-1.5"
             )}>
                 <button
                     onClick={handleDecrement}
                     disabled={quantity === 0}
                     className={cn(
                         "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-8 h-8 sm:w-10 sm:h-10"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-8 sm:h-8"
                     )}
                 >
-                    <Minus size={isModal ? 24 : 18} strokeWidth={3} className={cn(!isModal && "w-5 h-5 sm:w-6 sm:h-6")} />
+                    <Minus size={isModal ? 24 : 16} strokeWidth={3} className={cn(!isModal && "w-4 h-4 sm:w-5 sm:h-5")} />
                 </button>
 
                 <input
@@ -238,10 +238,10 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     onClick={handleIncrement}
                     className={cn(
                         "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-8 h-8 sm:w-10 sm:h-10"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-8 sm:h-8"
                     )}
                 >
-                    <Plus size={isModal ? 24 : 18} strokeWidth={3} className={cn(!isModal && "w-5 h-5 sm:w-6 sm:h-6")} />
+                    <Plus size={isModal ? 24 : 16} strokeWidth={3} className={cn(!isModal && "w-4 h-4 sm:w-5 sm:h-5")} />
                 </button>
             </div>
 
