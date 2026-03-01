@@ -139,6 +139,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 - [x] **Refinamiento UI Modal Info**: Eliminado el icono de información en la cabecera del modal del panel de staff para un diseño más limpio y minimalista.
 - [x] **Refinamiento UI Recetas (Staff)**: Actualización del modal de detalle de receta en el dashboard de staff (`/recipes`) para que la sección de "Presentación y Notas" se muestre como una lista paso a paso ("X" rotada en lugar de un único bloque de texto), manteniendo la coherencia visual con la vista de detalle principal.
+- [x] **Relajación de Restricción de Caja (Staff)**: Modificada la validación estricta del botón "Caja" en el dashboard de personal. Ahora permite abrir el modal de opciones si al menos una caja (Operacional o Cambio) está configurada, validando individualmente cada opción en su interior para evitar bloqueos por falta de cajas redundantes.
 - [x] **Alineación Vertical Dashboards**: Corregida la diferencia de altura del panel de staff al ser visualizado por un empleado vs un manager (en `/staff/dashboard`). Se ha igualado el espaciado superior (`mt-4 md:mt-0`) para que todos los usuarios vean el contenido en la misma posición, eliminando el desplazamiento superior anómalo.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
