@@ -545,51 +545,67 @@ export default function RegistrosPage() {
                                             <div className="flex-1 space-y-1 w-full overflow-hidden">
                                                 {dayLogs.slice(0, 4).map((log) => {
                                                     const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
-                                                    const getInitials = () => {
-                                                        // 1. Prefer components
-                                                        if (log.first_name && log.last_name) return `${log.first_name.charAt(0)}${log.last_name.charAt(0)}`.toUpperCase();
-                                                        if (log.first_name) return log.first_name.charAt(0).toUpperCase();
+                                                    const isRegular = log.event_type === 'regular';
 
-                                                        // 2. Fallback to employee_name string
-                                                        if (log.employee_name && log.employee_name !== '?') {
+                                                    const getInitialsPair = () => {
+                                                        let f = '?';
+                                                        let l = '';
+
+                                                        if (log.first_name && log.last_name) {
+                                                            f = log.first_name.charAt(0).toUpperCase();
+                                                            l = log.last_name.charAt(0).toUpperCase();
+                                                        } else if (log.first_name) {
+                                                            f = log.first_name.charAt(0).toUpperCase();
+                                                        } else if (log.employee_name && log.employee_name !== '?') {
                                                             const parts = log.employee_name.trim().split(/\s+/);
-                                                            if (parts.length >= 2) return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
-                                                            return parts[0].charAt(0).toUpperCase();
+                                                            f = parts[0].charAt(0).toUpperCase();
+                                                            if (parts.length >= 2) l = parts[1].charAt(0).toUpperCase();
                                                         }
-                                                        return '?';
+                                                        return { f, l };
                                                     };
-                                                    const initials = getInitials();
+
+                                                    const { f, l } = getInitialsPair();
+                                                    const isComplete = !!log.clock_out;
 
                                                     return (
                                                         <div
                                                             key={log.id}
                                                             title={eventConfig?.label || 'Regular'}
                                                             className={cn(
-                                                                "flex items-center justify-between min-w-0 mb-0.5",
-                                                                log.event_type !== 'regular'
+                                                                "flex flex-col min-w-0 mb-1",
+                                                                !isRegular
                                                                     ? cn("w-full rounded-md border p-0.5 sm:p-1", eventConfig?.border || 'bg-gray-50 border-gray-100')
                                                                     : "w-[calc(100%+8px)] -mx-1"
                                                             )}
                                                         >
-                                                            <div className="flex items-center gap-1 min-w-0 shrink-0">
+                                                            {/* Fila 1: Inicial Nombre + Clock In */}
+                                                            <div className="flex items-center justify-between w-full">
                                                                 <span className={cn(
-                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase truncate",
-                                                                    log.event_type !== 'regular' ? "text-gray-500" : (log.clock_out ? "text-emerald-700" : "text-rose-700")
+                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
+                                                                    !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-700" : "text-rose-700")
                                                                 )}>
-                                                                    {initials || '?'}
+                                                                    {f}
                                                                 </span>
-                                                            </div>
-                                                            <div className="flex flex-col items-end shrink-0">
                                                                 <span className={cn(
                                                                     "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
-                                                                    log.event_type !== 'regular' ? "text-gray-500" : (log.clock_out ? "text-emerald-600" : "text-rose-600")
+                                                                    !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-600" : "text-rose-600")
                                                                 )}>
                                                                     {format(parseISO(log.clock_in), 'HH:mm')}
                                                                 </span>
+                                                            </div>
+
+                                                            {/* Fila 2: Inicial Apellido + Clock Out */}
+                                                            <div className="flex items-center justify-between w-full mt-[1px]">
+                                                                <span className={cn(
+                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
+                                                                    !isRegular ? "text-gray-400" : (isComplete ? "text-emerald-700" : "text-rose-700")
+                                                                )}>
+                                                                    {l || ' '}
+                                                                </span>
                                                                 {log.clock_out && (
                                                                     <span className={cn(
-                                                                        "text-[8.5px] sm:text-[10px] font-mono font-black leading-none mt-[1px]",
-                                                                        log.event_type !== 'regular' ? "text-gray-400" : "text-rose-500"
+                                                                        "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
+                                                                        !isRegular ? "text-gray-400" : "text-rose-500"
                                                                     )}>
                                                                         {format(parseISO(log.clock_out), 'HH:mm')}
                                                                     </span>

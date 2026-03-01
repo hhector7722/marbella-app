@@ -18,19 +18,39 @@ export default function Navbar() {
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('first_name, role, email, is_supervisor')
-                    .eq('id', user.id)
-                    .single();
-                setUserData({
-                    name: profile?.first_name || 'Empleado',
-                    role: profile?.role || 'staff',
-                    email: user.email || '',
-                    is_supervisor: profile?.is_supervisor || false
-                });
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    // Fetch profile separately to ensure we get the latest role
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('first_name, role, email, is_supervisor')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profileError) {
+                        console.error("Error fetching user profile in Navbar:", profileError);
+                        // Fallback to basic user data if profile fetch fails
+                        setUserData({
+                            name: user.user_metadata?.first_name || 'Empleado',
+                            role: user.user_metadata?.role || 'staff',
+                            email: user.email || '',
+                            is_supervisor: user.user_metadata?.is_supervisor || false
+                        });
+                        return;
+                    }
+
+                    if (profile) {
+                        setUserData({
+                            name: profile.first_name || 'Empleado',
+                            role: profile.role || 'staff',
+                            email: profile.email || user.email || '',
+                            is_supervisor: profile.is_supervisor || false
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Critical error in Navbar fetchUserData:", error);
             }
         };
         fetchUserData();
