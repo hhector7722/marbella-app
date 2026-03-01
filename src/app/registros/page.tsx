@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from "@/lib/utils";
+import { DayDetailModal } from '@/components/modals/DayDetailModal';
 import {
     format,
     startOfMonth,
@@ -117,6 +118,7 @@ export default function RegistrosPage() {
     const [agileWeekStart, setAgileWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [weeklyConfig, setWeeklyConfig] = useState<{ contracted: number; preferStock: boolean }>({ contracted: 40, preferStock: false });
     const [isSavingAgile, setIsSavingAgile] = useState(false);
+    const [userRole, setUserRole] = useState<'manager' | 'supervisor' | 'staff'>('staff');
 
     // --- FILTROS ---
     const [filterStartDate, setFilterStartDate] = useState<string>('');
@@ -128,7 +130,16 @@ export default function RegistrosPage() {
     // --- CARGA ---
     useEffect(() => {
         fetchData();
+        fetchUserRole();
     }, [currentDate, viewMode, selectedWorkerId, agileWeekStart]);
+
+    async function fetchUserRole() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            if (data?.role) setUserRole(data.role as any);
+        }
+    }
 
     async function fetchData() {
         setLoading(true);
@@ -762,112 +773,15 @@ export default function RegistrosPage() {
                 </div >
             </div >
 
-            {/* MODAL ANTIGUO (Se mantiene solo para cuando haces click en el calendario) */}
-            {
-                selectedDate && viewMode === 'calendar' && (
-                    <div
-                        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-                        onClick={handleCloseModal}
-                    >
-                        <div
-                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
-                                <div>
-                                    <h3 className="text-lg font-bold leading-tight">Registros</h3>
-                                    <p className="text-blue-100 text-xs capitalize opacity-90">{format(selectedDate, 'EEEE, d MMMM', { locale: es })}</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <button onClick={handleCloseModal} className="text-sm font-medium text-white/90 hover:text-white transition-colors px-2">Cancelar</button>
-                                    <button
-                                        onClick={async () => {
-                                            // Mantenemos compatibilidad con saveAgileChanges pero adaptado para 1 solo día
-                                            setIsSavingAgile(true);
-                                            try {
-                                                if (!selectedDate) return;
-
-                                                const logsToUpdate = modalLogs.filter(l => {
-                                                    if (!l.id && !l.in_time && l.event_type === 'regular' && !l.is_deleted) return false;
-                                                    if (!l.id && l.is_deleted) return false;
-                                                    return true;
-                                                }).map(l => {
-                                                    let inTimeIso = '';
-                                                    let outTimeIso = '';
-
-                                                    if (l.in_time) {
-                                                        const [inH, inM] = l.in_time.split(':').map(Number);
-                                                        const cd = new Date(l.date);
-                                                        cd.setHours(inH, inM, 0, 0);
-                                                        inTimeIso = cd.toISOString();
-                                                    }
-
-                                                    if (l.out_time) {
-                                                        const [outH, outM] = l.out_time.split(':').map(Number);
-                                                        const cdo = new Date(l.date);
-                                                        cdo.setHours(outH, outM, 0, 0);
-                                                        if (l.in_time) {
-                                                            const [inH] = l.in_time.split(':').map(Number);
-                                                            if (outH < inH) cdo.setDate(cdo.getDate() + 1);
-                                                        }
-                                                        outTimeIso = cdo.toISOString();
-                                                    }
-
-                                                    return {
-                                                        ...l,
-                                                        date: format(l.date, 'yyyy-MM-dd'),
-                                                        inTimeIso,
-                                                        outTimeIso
-                                                    };
-                                                });
-
-                                                const result = await updateWeeklyWorkerConfig(modalLogs[0]?.user_id, format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'), {
-                                                    logs: logsToUpdate
-                                                });
-                                                if (result.success) {
-                                                    toast.success("Registros guardados");
-                                                    setSelectedDate(null);
-                                                    fetchData();
-                                                } else throw new Error(result.error);
-                                            } catch (e: any) {
-                                                toast.error("Error: " + e.message);
-                                            } finally { setIsSavingAgile(false); }
-                                        }}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#5B8FB9] shadow-sm active:scale-95"
-                                    >
-                                        Confirmar
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
-                                {/* ... Resto del body del modal original ... */}
-                                <div className="space-y-4">
-                                    {modalLogs.map((log, idx) => (
-                                        <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm">
-                                            <select
-                                                value={log.user_id}
-                                                onChange={(e) => updateLogField(idx, 'user_id', e.target.value)}
-                                                className="flex-1 bg-transparent font-black text-xs text-gray-700 focus:outline-none"
-                                            >
-                                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name}</option>)}
-                                            </select>
-                                            <input type="time" value={log.in_time} onChange={(e) => updateLogField(idx, 'in_time', e.target.value)} className="w-20 text-center font-mono font-bold text-emerald-600 bg-emerald-50 rounded-lg p-1" />
-                                            <input type="time" value={log.out_time} onChange={(e) => updateLogField(idx, 'out_time', e.target.value)} className="w-20 text-center font-mono font-bold text-rose-500 bg-rose-50 rounded-lg p-1" />
-                                            <button onClick={() => deleteLog(idx)} className="text-gray-300 hover:text-rose-500"><Trash2 size={16} /></button>
-                                        </div>
-                                    ))}
-                                    <button
-                                        onClick={addNewLog}
-                                        className="w-full py-4 border-2 border-dashed border-gray-300 text-gray-400 font-black rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] flex items-center justify-center gap-2"
-                                    >
-                                        <Plus size={20} /> Añadir Fichaje
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+            {/* MODAL DETALLE REFINADO (Reemplaza al antiguo inline) */}
+            <DayDetailModal
+                isOpen={!!selectedDate && viewMode === 'calendar'}
+                onClose={handleCloseModal}
+                date={selectedDate}
+                userId={selectedWorkerId || null}
+                userRole={userRole}
+                onSuccess={fetchData}
+            />
             {
                 isStaffModalOpen && (
                     <StaffSelectionModal
