@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-01 (Rediseño Modal Historial)
+**Última actualización:** 2026-03-01 (Rediseño Modal Historial v2)
 
 ## 📌 ESTADO GENERAL
 El sistema de historial ha sido refinado para permitir una gestión granular por días, facilitando la auditoría de registros para los managers. El modal de selección de personal ha sido rediseñado bajo un enfoque minimalista y ultra-compacto, optimizado para interfaces táctiles de alta densidad. El panel de staff ha sido actualizado con elementos más grandes y la nueva estética de cabeceras "Petrol".
@@ -8,7 +8,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ---
 
 ## ✅ COMPLETADO
-- [x] **Rediseño Modal Detalle Día (Bento-View)**: Transformación radical de la interfaz de detalle diario. Se ha eliminado la tipografía mono en favor de una estética premium ("Apple Human Interface"), implementando un layout basado en tarjetas Bento de alto contraste para los registros de entrada/salida y cuadrículas simétricas para las métricas de horas. Incluye la regla "Zero-Display" y el estado vacío "Sin Datos".
+- [x] **Rediseño Modal Detalle Día (Bento-View v2)**: Transformación radical de la interfaz de detalle diario. Se han implementado etiquetas compactas ("Horas" / "H Extras") con capacidad de edición manual exclusiva para Managers. Incluye lógica reactiva de sincronización de horas y persistencia mediante `total_hours_override`. Estética premium ("Apple Human Interface") con tarjetas Bento y tipografía bold sans-serif (eliminada la mono).
 - [x] **Corrección Acceso Modal Historial (Staff)**: Eliminada la restricción `isManager` en `/staff/history` que impedía a los trabajadores pulsar en un día para ver su desglose. Ahora el modal se abre para todos los roles, manteniendo la lógica de edición protegida solo para managers.
 - [x] **Refinamiento UI Modo Compra**: Eliminación de los botones de ajuste incremental ("+" y "-") en el campo de precio del modal de compras. Se ha implementado la regla Zero-Display en el input de precio, permitiendo que el campo inicie vacío en lugar de mostrar "0", optimizando la entrada manual directa.
 - [x] **Refinamiento UI Tarjetas de Pedido (v2)**: Implementación de estética Marbella Premium con tarjetas 100% cuadradas (`aspect-square`), justificación de texto a la izquierda, unidades en minúsculas y optimización de espaciados. Se han redimensionado los controles de cantidad para asegurar que permanezcan dentro de los márgenes de la tarjeta.
