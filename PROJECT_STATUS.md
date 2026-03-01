@@ -8,6 +8,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refinamiento UI Calendario Registros**: Eliminado el fondo y los bordes para los fichajes regulares en la vista mensual, haciendo que floten directamente sobre el calendario y aprovechando el máximo ancho disponible. Aumentado el tamaño de las iniciales para mayor legibilidad y ajustado el padding para máxima claridad en la interfaz táctil.
 - [x] **Refinamiento UI Resumen Semanal**: Eliminadas las líneas verticales divisorias (order-r) entre las columnas del resumen al final del panel de staff, creando un layout más limpio y continuo.
 - [x] **Rediseño Vista Registros (V2)**: Implementación radical de la "Plantilla Vista Detalle" en `/registros`. Contenedor principal expandido (`bg-white rounded-[20px] shadow-xl`), integración de cabecera Azul Petróleo (`#36606F`) flotante con navegación unificada de mes, switch de vistas y filtro de plantilla alineado a la derecha. Respeto absoluto a las proporciones, grid paramétrico de 7 columnas e información densada del calendario subyacente. Se ha contrastado el panel de opciones de "Modo Editable" al nuevo fondo blanco.
 - [x] **Refinamiento UI Pago Extras**: Actualizado el icono de confirmación de pago de horas extras en el dashboard y en la vista detallada. Se ha sustituido por un círculo completo verde (`bg-emerald-500`) con un tick blanco (`text-white`), garantizando máxima claridad visual y consistencia con las cabeceras de semana.

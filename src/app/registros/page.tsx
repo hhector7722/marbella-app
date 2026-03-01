@@ -565,15 +565,15 @@ export default function RegistrosPage() {
                                                             key={log.id}
                                                             title={eventConfig?.label || 'Regular'}
                                                             className={cn(
-                                                                "w-full flex items-center justify-between rounded-md border p-0.5 sm:p-1 min-w-0 mb-0.5",
+                                                                "flex items-center justify-between min-w-0 mb-0.5",
                                                                 log.event_type !== 'regular'
-                                                                    ? (eventConfig?.border || 'bg-gray-50 border-gray-100')
-                                                                    : (log.clock_out ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200 shadow-[0_0_8px_rgba(244,63,94,0.15)]")
+                                                                    ? cn("w-full rounded-md border p-0.5 sm:p-1", eventConfig?.border || 'bg-gray-50 border-gray-100')
+                                                                    : "w-[calc(100%+8px)] -mx-1"
                                                             )}
                                                         >
-                                                            <div className="flex items-center gap-1 min-w-0">
+                                                            <div className="flex items-center gap-1 min-w-0 shrink-0">
                                                                 <span className={cn(
-                                                                    "text-[7px] sm:text-[8px] font-black uppercase truncate",
+                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase truncate",
                                                                     log.event_type !== 'regular' ? "text-gray-500" : (log.clock_out ? "text-emerald-700" : "text-rose-700")
                                                                 )}>
                                                                     {initials || '?'}
@@ -581,13 +581,16 @@ export default function RegistrosPage() {
                                                             </div>
                                                             <div className="flex flex-col items-end shrink-0">
                                                                 <span className={cn(
-                                                                    "text-[7px] sm:text-[8px] font-mono font-bold leading-tight",
-                                                                    log.clock_out ? "text-emerald-600" : "text-rose-600"
+                                                                    "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
+                                                                    log.event_type !== 'regular' ? "text-gray-500" : (log.clock_out ? "text-emerald-600" : "text-rose-600")
                                                                 )}>
                                                                     {format(parseISO(log.clock_in), 'HH:mm')}
                                                                 </span>
                                                                 {log.clock_out && (
-                                                                    <span className="text-[7px] sm:text-[8px] font-mono font-bold text-rose-500 leading-tight">
+                                                                    <span className={cn(
+                                                                        "text-[8.5px] sm:text-[10px] font-mono font-black leading-none mt-[1px]",
+                                                                        log.event_type !== 'regular' ? "text-gray-400" : "text-rose-500"
+                                                                    )}>
                                                                         {format(parseISO(log.clock_out), 'HH:mm')}
                                                                     </span>
                                                                 )}
