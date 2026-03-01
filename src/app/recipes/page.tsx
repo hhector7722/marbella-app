@@ -322,9 +322,14 @@ function RecipesContent() {
                                                             Presentación y Notas
                                                         </h5>
                                                         <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
-                                                            <p className="text-[11px] text-emerald-800/80 leading-relaxed italic font-medium">
-                                                                {fullRecipeData.presentation}
-                                                            </p>
+                                                            <ul className="space-y-3">
+                                                                {fullRecipeData.presentation.split('\n').filter(Boolean).map((step: string, i: number) => (
+                                                                    <li key={i} className="flex gap-3 text-emerald-800/90 text-[11px] leading-relaxed font-medium">
+                                                                        <X className="rotate-45 w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={4} />
+                                                                        <span>{step}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
                                                         </div>
                                                     </div>
                                                 )}
