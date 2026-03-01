@@ -431,7 +431,6 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
-    return (
         <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-6 animate-in fade-in duration-500">
             <div className="max-w-6xl mx-auto w-full space-y-4">
 

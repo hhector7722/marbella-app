@@ -571,42 +571,27 @@ export default function RegistrosPage() {
                                                             key={log.id}
                                                             title={eventConfig?.label || 'Regular'}
                                                             className={cn(
-                                                                "flex flex-col min-w-0 mb-1",
-                                                                !isRegular
-                                                                    ? cn("w-full rounded-md border p-0.5 sm:p-1", eventConfig?.border || 'bg-gray-50 border-gray-100')
-                                                                    : "w-[calc(100%+8px)] -mx-1"
+                                                                "flex flex-row items-center gap-1 w-full min-w-0 mb-0.5 p-0.5",
+                                                                !isRegular && cn("rounded-md border p-0.5", eventConfig?.border || 'bg-gray-50 border-gray-100')
                                                             )}
                                                         >
-                                                            {/* Fila 1: Inicial Nombre + Clock In */}
-                                                            <div className="flex items-center justify-between w-full">
-                                                                <span className={cn(
-                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
-                                                                    !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-700" : "text-rose-700")
-                                                                )}>
-                                                                    {f}
-                                                                </span>
-                                                                <span className={cn(
-                                                                    "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
-                                                                    !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-600" : "text-rose-600")
-                                                                )}>
-                                                                    {format(parseISO(log.clock_in), 'HH:mm')}
-                                                                </span>
+                                                            {/* Círculo de Iniciales */}
+                                                            <div className={cn(
+                                                                "w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0",
+                                                                isComplete ? "bg-emerald-600" : "bg-rose-600"
+                                                            )}>
+                                                                {f}{l}
                                                             </div>
 
-                                                            {/* Fila 2: Inicial Apellido + Clock Out */}
-                                                            <div className="flex items-center justify-between w-full mt-[1px]">
-                                                                <span className={cn(
-                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
-                                                                    !isRegular ? "text-gray-400" : (isComplete ? "text-emerald-700" : "text-rose-700")
-                                                                )}>
-                                                                    {l || ' '}
+                                                            {/* Horas */}
+                                                            <div className="flex items-center min-w-0 flex-1">
+                                                                <span className="text-emerald-600 text-[10px] font-bold leading-none shrink-0">
+                                                                    {format(parseISO(log.clock_in), 'H')}
                                                                 </span>
+                                                                <span className="text-gray-400 text-[10px] mx-0.5 leading-none shrink-0">-</span>
                                                                 {log.clock_out && (
-                                                                    <span className={cn(
-                                                                        "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
-                                                                        !isRegular ? "text-gray-400" : "text-emerald-600"
-                                                                    )}>
-                                                                        {format(parseISO(log.clock_out), 'HH:mm')}
+                                                                    <span className="text-rose-600 text-[10px] font-bold leading-none shrink-0">
+                                                                        {format(parseISO(log.clock_out), 'H')}
                                                                     </span>
                                                                 )}
                                                             </div>
