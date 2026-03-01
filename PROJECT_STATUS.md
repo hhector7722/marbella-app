@@ -8,6 +8,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refinamiento UI Modo Compra**: Eliminación de los botones de ajuste incremental ("+" y "-") en el campo de precio del modal de compras. Se ha implementado la regla Zero-Display en el input de precio, permitiendo que el campo inicie vacío en lugar de mostrar "0", optimizando la entrada manual directa.
 - [x] **Refinamiento UI Tarjetas de Pedido (v2)**: Implementación de estética Marbella Premium con tarjetas 100% cuadradas (`aspect-square`), justificación de texto a la izquierda, unidades en minúsculas y optimización de espaciados. Se han redimensionado los controles de cantidad para asegurar que permanezcan dentro de los márgenes de la tarjeta.
 - [x] **Refinamiento UI Calendario Registros (v2)**: Reestructuración total de los fichajes regulares. Las iniciales se dividen por filas (Nombre arriba con Entrada, Apellido abajo con Salida) para evitar cortes. Lógica de color dinámica: Verde (`emerald-700`) para turnos completos y Rojo (`rose-700`) para turnos abiertos. Eliminación definitiva de fondos y bordes grises, permitiendo que los datos floten directamente sobre el calendario con el máximo ancho disponible.
 - [x] **Refinamiento UI Resumen Semanal**: Eliminadas las líneas verticales divisorias (order-r) entre las columnas del resumen al final del panel de staff, creando un layout más limpio y continuo.

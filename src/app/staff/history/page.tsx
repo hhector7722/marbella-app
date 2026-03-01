@@ -316,11 +316,10 @@ export default function HistoryPage() {
                                             return (
                                                 <div
                                                     key={di}
-                                                    onClick={() => isManager ? openEdit(week, day.date) : undefined}
+                                                    onClick={() => openEdit(week, day.date)}
                                                     className={cn(
-                                                        "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1",
-                                                        day.isToday && "bg-blue-50/10",
-                                                        isManager && "cursor-pointer hover:bg-zinc-50 transition-colors"
+                                                        "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1 cursor-pointer hover:bg-zinc-50 transition-colors",
+                                                        day.isToday && "bg-blue-50/10"
                                                     )}
                                                 >
                                                     {/* Número de día superior derecha */}

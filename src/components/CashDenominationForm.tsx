@@ -59,7 +59,7 @@ export const CashDenominationForm = ({
 
     // 5. PURCHASE MODE STATES
     const [isPurchaseMode, setIsPurchaseMode] = useState(forcePurchaseMode || false);
-    const [purchasePrice, setPurchasePrice] = useState<number>(0);
+    const [purchasePrice, setPurchasePrice] = useState<number | ''>('');
     const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
     const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
 
@@ -82,20 +82,17 @@ export const CashDenominationForm = ({
         }
     };
 
-    const handleAdjustPrice = (delta: number) => {
-        setPurchasePrice(prev => Math.max(0, (prev || 0) + delta));
-    };
 
     const totalGiven = calculateTotal(counts);
     const totalReceived = calculateTotal(receivedCounts);
-    const total = isPurchaseMode ? purchasePrice : totalGiven;
+    const total = isPurchaseMode ? (purchasePrice || 0) : totalGiven;
 
     const netDifference = totalGiven - totalReceived;
-    const isMathCorrect = Math.abs(netDifference - purchasePrice) < 0.01;
+    const isMathCorrect = Math.abs(netDifference - (purchasePrice || 0)) < 0.01;
     // check stock issue for OUTs
     const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && DENOMINATIONS.some(d => (counts[d] || 0) > (availableStock[d] || 0));
     // canSubmitPurchase allows submission if Math is Correct, OR if they are just doing a simple exit of money (given = price) without expecting change
-    const canSubmitPurchase = isMathCorrect && purchasePrice > 0 && totalGiven >= purchasePrice;
+    const canSubmitPurchase = isMathCorrect && (purchasePrice || 0) > 0 && totalGiven >= (purchasePrice || 0);
 
     const handleConfirm = () => {
         if (isPurchaseMode) {
@@ -106,7 +103,7 @@ export const CashDenominationForm = ({
                 if (net !== 0) netBreakdown[d] = net;
             });
             // Total cost is purchasePrice, passing netBreakdown to deduct precise stock
-            onSubmit(purchasePrice, netBreakdown, notes || 'Compra', selectedDate ? new Date(selectedDate).toISOString() : undefined);
+            onSubmit((purchasePrice || 0), netBreakdown, notes || 'Compra', selectedDate ? new Date(selectedDate).toISOString() : undefined);
         } else {
             onSubmit(totalGiven, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined);
         }
@@ -194,32 +191,19 @@ export const CashDenominationForm = ({
                             {/* PRECIO */}
                             <div className="flex flex-col p-1.5 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm justify-center">
                                 <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 text-center">Precio</label>
-                                <div className="flex items-center justify-center gap-0.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAdjustPrice(-1)}
-                                        className="w-6 h-6 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
-                                    >
-                                        <Minus size={14} strokeWidth={3} />
-                                    </button>
-                                    <div className="flex items-center relative flex-1 max-w-[48px] justify-center">
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={purchasePrice || ''}
-                                            onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
-                                            placeholder="0.00"
-                                            className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none focus:ring-0 text-center flex-1 min-w-0"
-                                        />
-                                        <span className="text-orange-400 font-black absolute right-0 text-[10px] pointer-events-none opacity-50">€</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAdjustPrice(1)}
-                                        className="w-6 h-6 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
-                                    >
-                                        <Plus size={14} strokeWidth={3} />
-                                    </button>
+                                <div className="flex items-center relative flex-1 max-w-[64px] justify-center mx-auto">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={purchasePrice}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setPurchasePrice(val === '' ? '' : parseFloat(val));
+                                        }}
+                                        placeholder="0.00"
+                                        className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none focus:ring-0 text-center flex-1 min-w-0"
+                                    />
+                                    <span className="text-orange-400 font-black absolute right-0 text-[10px] pointer-events-none opacity-50">€</span>
                                 </div>
                             </div>
 
@@ -348,9 +332,9 @@ export const CashDenominationForm = ({
                                 <Save size={16} strokeWidth={3} />
                                 {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
                             </div>
-                            {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
+                            {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
                                 <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
-                                    {totalGiven < purchasePrice ? `Falta ${Math.abs(purchasePrice - totalGiven) > 0.005 ? (purchasePrice - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - purchasePrice - totalReceived) > 0.005 ? (totalGiven - purchasePrice - totalReceived).toFixed(2) : " "}€`}
+                                    {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
                                 </span>
                             )}
                         </button>
@@ -382,9 +366,9 @@ export const CashDenominationForm = ({
                         <Save size={16} strokeWidth={3} />
                         {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
                     </div>
-                    {isPurchaseMode && !canSubmitPurchase && purchasePrice > 0 && (
+                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
                         <span className="text-[7px] opacity-80">
-                            {totalGiven < purchasePrice ? `Falta ${Math.abs(purchasePrice - totalGiven) > 0.005 ? (purchasePrice - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - purchasePrice - totalReceived) > 0.005 ? (totalGiven - purchasePrice - totalReceived).toFixed(2) : " "}€`}
+                            {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
                         </span>
                     )}
                 </button>
