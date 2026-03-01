@@ -546,354 +546,354 @@ export default function RegistrosPage() {
                                                 {dayLogs.slice(0, 4).map((log) => {
                                                     const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
                                                     const isRegular = !log.event_type || log.event_type === 'regular' || log.event_type === '';
-                                                    550:                                                     const getInitialsPair = () => {
-                                                    551:                                                         let f = '?';
-                                                552:                                                         let l = '';
-                                                553:
-                                                554:                                                         if (log.first_name && log.last_name) {
-                                                    555:                                                             f = log.first_name.charAt(0).toUpperCase();
-                                                556:                                                             l = log.last_name.charAt(0).toUpperCase();
-557:                                                         } else if (log.first_name) {
-                                                    558:                                                             f = log.first_name.charAt(0).toUpperCase();
-559:                                                         } else if (log.employee_name && log.employee_name !== '?') {
-                                                    560:                                                             const parts = log.employee_name.trim().split(/\s+/);
-                                                561:                                                             f = parts[0].charAt(0).toUpperCase();
-562:                                                             if (parts.length >= 2) l = parts[1].charAt(0).toUpperCase();
-563:                                                         }
-                                                564:                                                         return {f, l};
-565:                                                     };
-                                                566:
-                                                567:                                                     const {f, l} = getInitialsPair();
-                                                568:                                                     const isComplete = !!log.clock_out;
-                                                569:
-                                                570:                                                     return (
-                                                571:                                                         <div
-572:                                                             key={log.id}
-                                                573:                                                             title={eventConfig?.label || 'Regular'}
-                                                574:                                                             className={cn(
-                                                    575:                                                                 "flex flex-col min-w-0 mb-1",
-                                                576:                                                                 !isRegular
-                                                577:                                                                     ? cn("w-full rounded-md border p-0.5 sm:p-1", eventConfig?.border || 'bg-gray-50 border-gray-100')
-                                                578:                                                                     : "w-[calc(100%+8px)] -mx-1"
-579:                                                             )}
-580:                                                         >
-                                                581:                                                             {/* Fila 1: Inicial Nombre + Clock In */}
-                                                582:                                                             <div className="flex items-center justify-between w-full">
-                                                    583:                                                                 <span className={cn(
-                                                        584:                                                                     "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
-                                                    585:                                                                     !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-700" : "text-rose-700")
-586:                                                                 )}>
-                                                    587:                                                                     {f}
-                                                    588:                                                                 </span>
-                                                589:                                                                 <span className={cn(
-                                                    590:                                                                     "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
-                                                591:                                                                     !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-600" : "text-rose-600")
-592:                                                                 )}>
-                                                593:                                                                     {format(parseISO(log.clock_in), 'HH:mm')}
-                                                594:                                                                 </span>
-                                            595:                                                             </div>
-596:
-                                597:                                                             {/* Fila 2: Inicial Apellido + Clock Out */}
-                                598:                                                             <div className="flex items-center justify-between w-full mt-[1px]">
-                                    599:                                                                 <span className={cn(
-                                        600:                                                                     "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
-                                    601:                                                                     !isRegular ? "text-gray-400" : (isComplete ? "text-emerald-700" : "text-rose-700")
-602:                                                                 )}>
-                                    603:                                                                     {l || ' '}
-                                    604:                                                                 </span>
-                                605:                                                                 {log.clock_out && (
-                                    606:                                                                     <span className={cn(
-                                        607:                                                                         "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
-                                608:                                                                         !isRegular ? "text-gray-400" : "text-rose-500"
-609:                                                                     )}>
-                                610:                                                                         {format(parseISO(log.clock_out), 'HH:mm')}
-                                611:                                                                     </span>
-612:                                                                 )}
-                            613:                                                             </div>
-614:                                                         </div>
-                615:                                                     );
-616:                                                 })}
-                {dayLogs.length > 4 && (
-                    <div className="text-[7px] font-bold text-gray-400 text-center">+ {dayLogs.length - 4} más</div>
-                )}
-            </div>
-        </div>
-    );
-})}
+                                                    const getInitialsPair = () => {
+                                                        let f = '?';
+                                                        let l = '';
+
+                                                        if (log.first_name && log.last_name) {
+                                                            f = log.first_name.charAt(0).toUpperCase();
+                                                            l = log.last_name.charAt(0).toUpperCase();
+                                                        } else if (log.first_name) {
+                                                            f = log.first_name.charAt(0).toUpperCase();
+                                                        } else if (log.employee_name && log.employee_name !== '?') {
+                                                            const parts = log.employee_name.trim().split(/\s+/);
+                                                            f = parts[0].charAt(0).toUpperCase();
+                                                            if (parts.length >= 2) l = parts[1].charAt(0).toUpperCase();
+                                                        }
+                                                        return { f, l };
+                                                    };
+
+                                                    const { f, l } = getInitialsPair();
+                                                    const isComplete = !!log.clock_out;
+
+                                                    return (
+                                                        <div
+                                                            key={log.id}
+                                                            title={eventConfig?.label || 'Regular'}
+                                                            className={cn(
+                                                                "flex flex-col min-w-0 mb-1",
+                                                                !isRegular
+                                                                    ? cn("w-full rounded-md border p-0.5 sm:p-1", eventConfig?.border || 'bg-gray-50 border-gray-100')
+                                                                    : "w-[calc(100%+8px)] -mx-1"
+                                                            )}
+                                                        >
+                                                            {/* Fila 1: Inicial Nombre + Clock In */}
+                                                            <div className="flex items-center justify-between w-full">
+                                                                <span className={cn(
+                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
+                                                                    !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-700" : "text-rose-700")
+                                                                )}>
+                                                                    {f}
+                                                                </span>
+                                                                <span className={cn(
+                                                                    "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
+                                                                    !isRegular ? "text-gray-500" : (isComplete ? "text-emerald-600" : "text-rose-600")
+                                                                )}>
+                                                                    {format(parseISO(log.clock_in), 'HH:mm')}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Fila 2: Inicial Apellido + Clock Out */}
+                                                            <div className="flex items-center justify-between w-full mt-[1px]">
+                                                                <span className={cn(
+                                                                    "text-[8.5px] sm:text-[10px] font-black uppercase shrink-0",
+                                                                    !isRegular ? "text-gray-400" : (isComplete ? "text-emerald-700" : "text-rose-700")
+                                                                )}>
+                                                                    {l || ' '}
+                                                                </span>
+                                                                {log.clock_out && (
+                                                                    <span className={cn(
+                                                                        "text-[8.5px] sm:text-[10px] font-mono font-black leading-none",
+                                                                        !isRegular ? "text-gray-400" : "text-emerald-600"
+                                                                    )}>
+                                                                        {format(parseISO(log.clock_out), 'HH:mm')}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {dayLogs.length > 4 && (
+                                                    <div className="text-[7px] font-bold text-gray-400 text-center">+ {dayLogs.length - 4} más</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div >
                         </div >
                     ) : (
-    /* --- VISTA GESTIÓN ÁGIL (Semanal) --- */
-    <div className="flex-1 flex flex-col gap-4 sm:gap-6 overflow-y-auto no-scrollbar">
-        {/* Panel de Configuración Semanal (Compacto) */}
-        <div className="p-3 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm w-full mb-4">
-            <div className="flex flex-row items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full">
+                        /* --- VISTA GESTIÓN ÁGIL (Semanal) --- */
+                        <div className="flex-1 flex flex-col gap-4 sm:gap-6 overflow-y-auto no-scrollbar">
+                            {/* Panel de Configuración Semanal (Compacto) */}
+                            <div className="p-3 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm w-full mb-4">
+                                <div className="flex flex-row items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full">
 
-                {/* Bolsa vs Pago Switch */}
-                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1">Overtime</span>
-                    <div className="flex bg-zinc-100 p-1 rounded-2xl shadow-inner max-w-[140px]">
-                        <button
-                            onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: false }))}
-                            className={cn(
-                                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black transition-all",
-                                !weeklyConfig.preferStock ? "bg-white text-emerald-600 shadow-md" : "text-zinc-500 hover:text-zinc-800"
-                            )}
-                        >
-                            <Coins size={12} className="hidden sm:inline-block" />
-                            PAGO
-                        </button>
-                        <button
-                            onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: true }))}
-                            className={cn(
-                                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black transition-all",
-                                weeklyConfig.preferStock ? "bg-white text-blue-600 shadow-md" : "text-zinc-500 hover:text-zinc-800"
-                            )}
-                        >
-                            <Landmark size={12} className="hidden sm:inline-block" />
-                            BOLSA
-                        </button>
-                    </div>
-                </div>
+                                    {/* Bolsa vs Pago Switch */}
+                                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1">Overtime</span>
+                                        <div className="flex bg-zinc-100 p-1 rounded-2xl shadow-inner max-w-[140px]">
+                                            <button
+                                                onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: false }))}
+                                                className={cn(
+                                                    "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black transition-all",
+                                                    !weeklyConfig.preferStock ? "bg-white text-emerald-600 shadow-md" : "text-zinc-500 hover:text-zinc-800"
+                                                )}
+                                            >
+                                                <Coins size={12} className="hidden sm:inline-block" />
+                                                PAGO
+                                            </button>
+                                            <button
+                                                onClick={() => setWeeklyConfig(prev => ({ ...prev, preferStock: true }))}
+                                                className={cn(
+                                                    "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black transition-all",
+                                                    weeklyConfig.preferStock ? "bg-white text-blue-600 shadow-md" : "text-zinc-500 hover:text-zinc-800"
+                                                )}
+                                            >
+                                                <Landmark size={12} className="hidden sm:inline-block" />
+                                                BOLSA
+                                            </button>
+                                        </div>
+                                    </div>
 
-                {/* Horas Contrato */}
-                <div className="flex flex-col gap-1.5 shrink-0">
-                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 text-right sm:text-left">Contrato</span>
-                    <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-2xl border border-zinc-200">
-                        <input
-                            type="number"
-                            value={weeklyConfig.contracted || ''}
-                            onChange={(e) => setWeeklyConfig(prev => ({ ...prev, contracted: Number(e.target.value) }))}
-                            className="w-10 sm:w-12 bg-transparent text-center font-black text-zinc-800 text-base focus:outline-none"
-                        />
-                        <span className="text-[9px] font-bold text-zinc-400">H</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Lista de Fichajes de la Semana (En una sola fila de 7 columnas) */}
-        <div className="bg-white rounded-2xl shadow-xl w-full mb-10 overflow-hidden overflow-x-auto no-scrollbar">
-            <div className="min-w-[340px] w-full grid grid-cols-7 divide-x divide-gray-100">
-                {modalLogs.map((log, idx) => {
-                    const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
-                    const isRegular = log.event_type === 'regular';
-                    const dayName = ['L', 'M', 'X', 'J', 'V', 'S', 'D'][idx];
-
-                    if (log.is_deleted) {
-                        return (
-                            <div key={idx} className="flex flex-col items-center bg-gray-50/30 min-h-[160px]">
-                                <div className="w-full bg-[#D64D5D] py-1 flex flex-col items-center justify-center shadow-sm mb-auto">
-                                    <span className="text-[7.5px] sm:text-[9px] font-black uppercase text-white tracking-widest leading-none mb-0.5">{dayName}</span>
-                                    <span className="text-[10px] sm:text-[11px] font-black text-white leading-none">{format(log.date, 'd')}</span>
-                                </div>
-
-                                <button
-                                    onClick={() => updateLogField(idx, 'is_deleted', false)}
-                                    className="mt-auto mb-3 p-2 bg-white border border-gray-200 shadow-sm rounded-full text-[#5B8FB9] hover:bg-gray-50 active:scale-95 transition-transform"
-                                >
-                                    <Plus size={14} />
-                                </button>
-                            </div>
-                        );
-                    }
-
-                    return (
-                        <div
-                            key={idx}
-                            className={cn(
-                                "flex flex-col items-center transition-colors relative group min-h-[160px]",
-                                log.out_time ? "bg-emerald-50/10" : "bg-white"
-                            )}
-                        >
-                            <div className="w-full bg-[#D64D5D] py-1 flex flex-col items-center justify-center shadow-sm mb-1.5">
-                                <span className="text-[7.5px] sm:text-[9px] font-black uppercase text-white tracking-widest leading-none mb-0.5">{dayName}</span>
-                                <span className="text-[10px] sm:text-[11px] font-black text-white leading-none">{format(log.date, 'd')}</span>
-                            </div>
-
-                            <div className="w-full relative flex items-center justify-center mb-1.5 px-1 sm:px-1.5">
-                                <select
-                                    value={log.event_type}
-                                    onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
-                                    className={cn(
-                                        "w-full text-[8px] sm:text-[9.5px] font-black px-0.5 py-1.5 rounded-lg border focus:outline-none uppercase appearance-none text-center truncate",
-                                        isRegular ? "bg-gray-50 border-gray-200 text-gray-700" : (eventConfig?.color + " border-transparent")
-                                    )}
-                                    style={{ paddingRight: '4px' }}
-                                >
-                                    {EVENT_TYPES.map(t => (
-                                        <option key={t.value} value={t.value} className="text-gray-900 bg-white">
-                                            {t.label.substring(0, 3)}
-                                        </option>
-                                    ))}
-                                </select>
-                                {/* Pequeña flecha para indicar que es un select */}
-                                <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
-                                    <svg width="5" height="4" viewBox="0 0 6 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M3 4L0.401924 0.25L5.59808 0.25L3 4Z" fill="currentColor" />
-                                    </svg>
+                                    {/* Horas Contrato */}
+                                    <div className="flex flex-col gap-1.5 shrink-0">
+                                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 text-right sm:text-left">Contrato</span>
+                                        <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-2xl border border-zinc-200">
+                                            <input
+                                                type="number"
+                                                value={weeklyConfig.contracted || ''}
+                                                onChange={(e) => setWeeklyConfig(prev => ({ ...prev, contracted: Number(e.target.value) }))}
+                                                className="w-10 sm:w-12 bg-transparent text-center font-black text-zinc-800 text-base focus:outline-none"
+                                            />
+                                            <span className="text-[9px] font-bold text-zinc-400">H</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {isRegular ? (
-                                <div className="flex flex-col gap-1 w-full px-1 sm:px-1.5 mb-2">
-                                    <input
-                                        type="time"
-                                        value={log.in_time}
-                                        onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-md px-0 py-1.5 font-mono text-[9.5px] sm:text-[11px] font-black focus:outline-none text-center text-emerald-600"
-                                    />
-                                    <input
-                                        type="time"
-                                        value={log.out_time}
-                                        onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-md px-0 py-1.5 font-mono text-[9.5px] sm:text-[11px] font-black focus:outline-none text-center text-rose-500"
-                                    />
-                                </div>
-                            ) : (
-                                <div className={cn(
-                                    "w-full py-1.5 rounded-md flex flex-col items-center justify-center gap-0.5 mb-2 px-1 sm:px-1.5 mt-1",
-                                    eventConfig?.border || 'bg-gray-50'
-                                )}>
-                                    <span className="text-[9.5px] sm:text-[11px] font-black text-yellow-600 font-mono">09:00</span>
-                                    <span className="text-[9.5px] sm:text-[11px] font-black text-yellow-600 font-mono">17:00</span>
-                                </div>
-                            )}
+                            {/* Lista de Fichajes de la Semana (En una sola fila de 7 columnas) */}
+                            <div className="bg-white rounded-2xl shadow-xl w-full mb-10 overflow-hidden overflow-x-auto no-scrollbar">
+                                <div className="min-w-[340px] w-full grid grid-cols-7 divide-x divide-gray-100">
+                                    {modalLogs.map((log, idx) => {
+                                        const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
+                                        const isRegular = log.event_type === 'regular';
+                                        const dayName = ['L', 'M', 'X', 'J', 'V', 'S', 'D'][idx];
 
-                            <button
-                                onClick={() => deleteLog(idx)}
-                                className="mt-auto mb-2 p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors active:scale-95"
-                                title="Eliminar Registro"
-                            >
-                                <Trash2 size={13} strokeWidth={2.5} />
-                            </button>
+                                        if (log.is_deleted) {
+                                            return (
+                                                <div key={idx} className="flex flex-col items-center bg-gray-50/30 min-h-[160px]">
+                                                    <div className="w-full bg-[#D64D5D] py-1 flex flex-col items-center justify-center shadow-sm mb-auto">
+                                                        <span className="text-[7.5px] sm:text-[9px] font-black uppercase text-white tracking-widest leading-none mb-0.5">{dayName}</span>
+                                                        <span className="text-[10px] sm:text-[11px] font-black text-white leading-none">{format(log.date, 'd')}</span>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => updateLogField(idx, 'is_deleted', false)}
+                                                        className="mt-auto mb-3 p-2 bg-white border border-gray-200 shadow-sm rounded-full text-[#5B8FB9] hover:bg-gray-50 active:scale-95 transition-transform"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className={cn(
+                                                    "flex flex-col items-center transition-colors relative group min-h-[160px]",
+                                                    log.out_time ? "bg-emerald-50/10" : "bg-white"
+                                                )}
+                                            >
+                                                <div className="w-full bg-[#D64D5D] py-1 flex flex-col items-center justify-center shadow-sm mb-1.5">
+                                                    <span className="text-[7.5px] sm:text-[9px] font-black uppercase text-white tracking-widest leading-none mb-0.5">{dayName}</span>
+                                                    <span className="text-[10px] sm:text-[11px] font-black text-white leading-none">{format(log.date, 'd')}</span>
+                                                </div>
+
+                                                <div className="w-full relative flex items-center justify-center mb-1.5 px-1 sm:px-1.5">
+                                                    <select
+                                                        value={log.event_type}
+                                                        onChange={(e) => updateLogField(idx, 'event_type', e.target.value)}
+                                                        className={cn(
+                                                            "w-full text-[8px] sm:text-[9.5px] font-black px-0.5 py-1.5 rounded-lg border focus:outline-none uppercase appearance-none text-center truncate",
+                                                            isRegular ? "bg-gray-50 border-gray-200 text-gray-700" : (eventConfig?.color + " border-transparent")
+                                                        )}
+                                                        style={{ paddingRight: '4px' }}
+                                                    >
+                                                        {EVENT_TYPES.map(t => (
+                                                            <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                                {t.label.substring(0, 3)}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {/* Pequeña flecha para indicar que es un select */}
+                                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                                                        <svg width="5" height="4" viewBox="0 0 6 4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M3 4L0.401924 0.25L5.59808 0.25L3 4Z" fill="currentColor" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+
+                                                {isRegular ? (
+                                                    <div className="flex flex-col gap-1 w-full px-1 sm:px-1.5 mb-2">
+                                                        <input
+                                                            type="time"
+                                                            value={log.in_time}
+                                                            onChange={(e) => updateLogField(idx, 'in_time', e.target.value)}
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-md px-0 py-1.5 font-mono text-[9.5px] sm:text-[11px] font-black focus:outline-none text-center text-emerald-600"
+                                                        />
+                                                        <input
+                                                            type="time"
+                                                            value={log.out_time}
+                                                            onChange={(e) => updateLogField(idx, 'out_time', e.target.value)}
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-md px-0 py-1.5 font-mono text-[9.5px] sm:text-[11px] font-black focus:outline-none text-center text-rose-500"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className={cn(
+                                                        "w-full py-1.5 rounded-md flex flex-col items-center justify-center gap-0.5 mb-2 px-1 sm:px-1.5 mt-1",
+                                                        eventConfig?.border || 'bg-gray-50'
+                                                    )}>
+                                                        <span className="text-[9.5px] sm:text-[11px] font-black text-yellow-600 font-mono">09:00</span>
+                                                        <span className="text-[9.5px] sm:text-[11px] font-black text-yellow-600 font-mono">17:00</span>
+                                                    </div>
+                                                )}
+
+                                                <button
+                                                    onClick={() => deleteLog(idx)}
+                                                    className="mt-auto mb-2 p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors active:scale-95"
+                                                    title="Eliminar Registro"
+                                                >
+                                                    <Trash2 size={13} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
-                    );
-                })}
-            </div>
-        </div>
-    </div>
-)}
+                    )}
                 </div >
             </div >
 
-    {/* MODAL ANTIGUO (Se mantiene solo para cuando haces click en el calendario) */ }
-{
-    selectedDate && viewMode === 'calendar' && (
-        <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={handleCloseModal}
-        >
-            <div
-                className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
-                    <div>
-                        <h3 className="text-lg font-bold leading-tight">Registros</h3>
-                        <p className="text-blue-100 text-xs capitalize opacity-90">{format(selectedDate, 'EEEE, d MMMM', { locale: es })}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button onClick={handleCloseModal} className="text-sm font-medium text-white/90 hover:text-white transition-colors px-2">Cancelar</button>
-                        <button
-                            onClick={async () => {
-                                // Mantenemos compatibilidad con saveAgileChanges pero adaptado para 1 solo día
-                                setIsSavingAgile(true);
-                                try {
-                                    if (!selectedDate) return;
-
-                                    const logsToUpdate = modalLogs.filter(l => {
-                                        if (!l.id && !l.in_time && l.event_type === 'regular' && !l.is_deleted) return false;
-                                        if (!l.id && l.is_deleted) return false;
-                                        return true;
-                                    }).map(l => {
-                                        let inTimeIso = '';
-                                        let outTimeIso = '';
-
-                                        if (l.in_time) {
-                                            const [inH, inM] = l.in_time.split(':').map(Number);
-                                            const cd = new Date(l.date);
-                                            cd.setHours(inH, inM, 0, 0);
-                                            inTimeIso = cd.toISOString();
-                                        }
-
-                                        if (l.out_time) {
-                                            const [outH, outM] = l.out_time.split(':').map(Number);
-                                            const cdo = new Date(l.date);
-                                            cdo.setHours(outH, outM, 0, 0);
-                                            if (l.in_time) {
-                                                const [inH] = l.in_time.split(':').map(Number);
-                                                if (outH < inH) cdo.setDate(cdo.getDate() + 1);
-                                            }
-                                            outTimeIso = cdo.toISOString();
-                                        }
-
-                                        return {
-                                            ...l,
-                                            date: format(l.date, 'yyyy-MM-dd'),
-                                            inTimeIso,
-                                            outTimeIso
-                                        };
-                                    });
-
-                                    const result = await updateWeeklyWorkerConfig(modalLogs[0]?.user_id, format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'), {
-                                        logs: logsToUpdate
-                                    });
-                                    if (result.success) {
-                                        toast.success("Registros guardados");
-                                        setSelectedDate(null);
-                                        fetchData();
-                                    } else throw new Error(result.error);
-                                } catch (e: any) {
-                                    toast.error("Error: " + e.message);
-                                } finally { setIsSavingAgile(false); }
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#5B8FB9] shadow-sm active:scale-95"
+            {/* MODAL ANTIGUO (Se mantiene solo para cuando haces click en el calendario) */}
+            {
+                selectedDate && viewMode === 'calendar' && (
+                    <div
+                        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={handleCloseModal}
+                    >
+                        <div
+                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            Confirmar
-                        </button>
-                    </div>
-                </div>
-                <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
-                    {/* ... Resto del body del modal original ... */}
-                    <div className="space-y-4">
-                        {modalLogs.map((log, idx) => (
-                            <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm">
-                                <select
-                                    value={log.user_id}
-                                    onChange={(e) => updateLogField(idx, 'user_id', e.target.value)}
-                                    className="flex-1 bg-transparent font-black text-xs text-gray-700 focus:outline-none"
-                                >
-                                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name}</option>)}
-                                </select>
-                                <input type="time" value={log.in_time} onChange={(e) => updateLogField(idx, 'in_time', e.target.value)} className="w-20 text-center font-mono font-bold text-emerald-600 bg-emerald-50 rounded-lg p-1" />
-                                <input type="time" value={log.out_time} onChange={(e) => updateLogField(idx, 'out_time', e.target.value)} className="w-20 text-center font-mono font-bold text-rose-500 bg-rose-50 rounded-lg p-1" />
-                                <button onClick={() => deleteLog(idx)} className="text-gray-300 hover:text-rose-500"><Trash2 size={16} /></button>
+                            <div className="bg-[#5B8FB9] text-white p-4 flex justify-between items-center shrink-0 shadow-md z-10">
+                                <div>
+                                    <h3 className="text-lg font-bold leading-tight">Registros</h3>
+                                    <p className="text-blue-100 text-xs capitalize opacity-90">{format(selectedDate, 'EEEE, d MMMM', { locale: es })}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={handleCloseModal} className="text-sm font-medium text-white/90 hover:text-white transition-colors px-2">Cancelar</button>
+                                    <button
+                                        onClick={async () => {
+                                            // Mantenemos compatibilidad con saveAgileChanges pero adaptado para 1 solo día
+                                            setIsSavingAgile(true);
+                                            try {
+                                                if (!selectedDate) return;
+
+                                                const logsToUpdate = modalLogs.filter(l => {
+                                                    if (!l.id && !l.in_time && l.event_type === 'regular' && !l.is_deleted) return false;
+                                                    if (!l.id && l.is_deleted) return false;
+                                                    return true;
+                                                }).map(l => {
+                                                    let inTimeIso = '';
+                                                    let outTimeIso = '';
+
+                                                    if (l.in_time) {
+                                                        const [inH, inM] = l.in_time.split(':').map(Number);
+                                                        const cd = new Date(l.date);
+                                                        cd.setHours(inH, inM, 0, 0);
+                                                        inTimeIso = cd.toISOString();
+                                                    }
+
+                                                    if (l.out_time) {
+                                                        const [outH, outM] = l.out_time.split(':').map(Number);
+                                                        const cdo = new Date(l.date);
+                                                        cdo.setHours(outH, outM, 0, 0);
+                                                        if (l.in_time) {
+                                                            const [inH] = l.in_time.split(':').map(Number);
+                                                            if (outH < inH) cdo.setDate(cdo.getDate() + 1);
+                                                        }
+                                                        outTimeIso = cdo.toISOString();
+                                                    }
+
+                                                    return {
+                                                        ...l,
+                                                        date: format(l.date, 'yyyy-MM-dd'),
+                                                        inTimeIso,
+                                                        outTimeIso
+                                                    };
+                                                });
+
+                                                const result = await updateWeeklyWorkerConfig(modalLogs[0]?.user_id, format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd'), {
+                                                    logs: logsToUpdate
+                                                });
+                                                if (result.success) {
+                                                    toast.success("Registros guardados");
+                                                    setSelectedDate(null);
+                                                    fetchData();
+                                                } else throw new Error(result.error);
+                                            } catch (e: any) {
+                                                toast.error("Error: " + e.message);
+                                            } finally { setIsSavingAgile(false); }
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#5B8FB9] shadow-sm active:scale-95"
+                                    >
+                                        Confirmar
+                                    </button>
+                                </div>
                             </div>
-                        ))}
-                        <button
-                            onClick={addNewLog}
-                            className="w-full py-4 border-2 border-dashed border-gray-300 text-gray-400 font-black rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] flex items-center justify-center gap-2"
-                        >
-                            <Plus size={20} /> Añadir Fichaje
-                        </button>
+                            <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
+                                {/* ... Resto del body del modal original ... */}
+                                <div className="space-y-4">
+                                    {modalLogs.map((log, idx) => (
+                                        <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm">
+                                            <select
+                                                value={log.user_id}
+                                                onChange={(e) => updateLogField(idx, 'user_id', e.target.value)}
+                                                className="flex-1 bg-transparent font-black text-xs text-gray-700 focus:outline-none"
+                                            >
+                                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name}</option>)}
+                                            </select>
+                                            <input type="time" value={log.in_time} onChange={(e) => updateLogField(idx, 'in_time', e.target.value)} className="w-20 text-center font-mono font-bold text-emerald-600 bg-emerald-50 rounded-lg p-1" />
+                                            <input type="time" value={log.out_time} onChange={(e) => updateLogField(idx, 'out_time', e.target.value)} className="w-20 text-center font-mono font-bold text-rose-500 bg-rose-50 rounded-lg p-1" />
+                                            <button onClick={() => deleteLog(idx)} className="text-gray-300 hover:text-rose-500"><Trash2 size={16} /></button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={addNewLog}
+                                        className="w-full py-4 border-2 border-dashed border-gray-300 text-gray-400 font-black rounded-xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={20} /> Añadir Fichaje
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-{
-    isStaffModalOpen && (
-        <StaffSelectionModal
-            isOpen={isStaffModalOpen}
-            onClose={() => setIsStaffModalOpen(false)}
-            employees={employees}
-            onSelect={(emp) => setSelectedWorkerId(emp.id)}
-            title="Seleccionar Trabajador"
-        />
-    )
-}
+                )
+            }
+            {
+                isStaffModalOpen && (
+                    <StaffSelectionModal
+                        isOpen={isStaffModalOpen}
+                        onClose={() => setIsStaffModalOpen(false)}
+                        employees={employees}
+                        onSelect={(emp) => setSelectedWorkerId(emp.id)}
+                        title="Seleccionar Trabajador"
+                    />
+                )
+            }
         </div >
     );
 }
