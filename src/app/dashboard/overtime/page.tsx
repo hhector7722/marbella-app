@@ -53,7 +53,7 @@ const StaffOvertimeRow = memo(({
                         staff.isPaid ? "bg-emerald-500 text-white shadow-md border-0" : "bg-white border-2 border-gray-200 text-transparent"
                     )}
                 >
-                    <CheckCircle2 className="w-4 h-4" />
+                    <Check className="w-4 h-4" strokeWidth={4} />
                 </button>
             </div>
         </div>

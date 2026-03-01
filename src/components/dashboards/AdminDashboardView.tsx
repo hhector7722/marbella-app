@@ -67,10 +67,16 @@ const StaffOvertimeRow = memo(({
                     onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
                     className={cn(
                         "flex items-center justify-center transition-all active:scale-90 p-0.5",
-                        isPaid ? "text-emerald-500" : "text-gray-300 hover:text-gray-400"
+                        isPaid ? "" : "text-gray-300 hover:text-gray-400"
                     )}
                 >
-                    {isPaid ? <CheckCircle2 className="w-5 h-5 shadow-sm rounded-full bg-white" /> : <Circle className="w-5 h-5" />}
+                    {isPaid ? (
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
+                        </div>
+                    ) : (
+                        <Circle className="w-5 h-5" />
+                    )}
                 </button>
             </div>
         </div>
