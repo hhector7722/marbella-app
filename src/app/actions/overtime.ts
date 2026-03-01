@@ -298,6 +298,17 @@ export async function updateWeeklyWorkerConfig(
                         dOutFallback.setHours(dOutFallback.getHours() + 8);
                         clockOutStr = dOutFallback.toISOString();
                     }
+                } else if (log.total_hours_override !== undefined) {
+                    // SI HAY OVERRIDE MANUAL (desde el modal de detalle), lo respetamos
+                    totalHours = log.total_hours_override;
+                    if (log.outTimeIso) {
+                        clockOutStr = log.outTimeIso;
+                    } else if (log.out_time) {
+                        const [outH, outM] = log.out_time.split(':').map(Number);
+                        const dOutFallback = new Date(log.date + "T00:00:00");
+                        dOutFallback.setHours(outH, outM, 0, 0);
+                        clockOutStr = dOutFallback.toISOString();
+                    }
                 } else if (log.outTimeIso || log.out_time) {
                     if (log.outTimeIso) {
                         clockOutStr = log.outTimeIso;

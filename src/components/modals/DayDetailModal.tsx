@@ -224,7 +224,13 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                 }
 
                                 const log = activeLogs[0];
-                                const workedHours = calculateLogHours(log.in_time, log.out_time);
+                                const workedHours = log.total_hours_override !== undefined
+                                    ? log.total_hours_override
+                                    : calculateLogHours(log.in_time, log.out_time);
+
+                                const updateHours = (val: number) => {
+                                    updateLog(0, 'total_hours_override', val);
+                                };
 
                                 return (
                                     <div className="flex-1 flex flex-col gap-4 pt-2">
@@ -280,12 +286,34 @@ export function DayDetailModal({ isOpen, onClose, date, userId, userRole, onSucc
                                         {/* Metrics Bento Grid */}
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex flex-col justify-center gap-1">
-                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Horas Reales</span>
-                                                <span className="text-xl font-black text-zinc-800">{workedHours > 0 ? workedHours.toFixed(1).replace('.0', '') : " "}</span>
+                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Horas</span>
+                                                {isManager ? (
+                                                    <input
+                                                        type="number"
+                                                        step="0.5"
+                                                        value={workedHours > 0 ? workedHours : ""}
+                                                        placeholder=" "
+                                                        onChange={(e) => updateHours(parseFloat(e.target.value) || 0)}
+                                                        className="text-xl font-black text-zinc-800 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xl font-black text-zinc-800">{workedHours > 0 ? workedHours.toFixed(1).replace('.0', '') : " "}</span>
+                                                )}
                                             </div>
                                             <div className="bg-white rounded-2xl p-4 border border-zinc-100 shadow-sm flex flex-col justify-center gap-1">
-                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Horas Extras</span>
-                                                <span className="text-xl font-black text-red-600">{workedHours > 8 ? (workedHours - 8).toFixed(1).replace('.0', '') : " "}</span>
+                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">H Extras</span>
+                                                {isManager ? (
+                                                    <input
+                                                        type="number"
+                                                        step="0.5"
+                                                        value={workedHours > 8 ? workedHours - 8 : ""}
+                                                        placeholder=" "
+                                                        onChange={(e) => updateHours(8 + (parseFloat(e.target.value) || 0))}
+                                                        className="text-xl font-black text-red-600 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xl font-black text-red-600">{workedHours > 8 ? (workedHours - 8).toFixed(1).replace('.0', '') : " "}</span>
+                                                )}
                                             </div>
                                         </div>
 
