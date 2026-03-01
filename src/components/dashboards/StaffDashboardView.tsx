@@ -267,12 +267,17 @@ export default function StaffDashboardView() {
             });
 
             // Cargar cajas de forma más robusta (Consolidación de Tesorería)
-            const { data: allBoxes } = await supabase.from('cash_boxes').select('*').order('name');
+            const { data: allBoxes, error: boxError } = await supabase.from('cash_boxes').select('*').order('name');
+            console.log("Initialize Boxes Data:", allBoxes);
+            if (boxError) console.error("Initialize Boxes Error:", boxError);
+
             if (allBoxes && allBoxes.length > 0) {
                 const cBox = allBoxes.find(b => b.type === 'change') || allBoxes[0];
                 const oBox = allBoxes.find(b => b.type === 'operational') || allBoxes[0];
                 setChangeBox(cBox);
                 setOperationalBox(oBox);
+            } else {
+                console.warn("No cash boxes found or accessible via RLS for this user.");
             }
 
             const { data: realShifts } = await supabase
