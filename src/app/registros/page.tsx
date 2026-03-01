@@ -536,7 +536,7 @@ export default function RegistrosPage() {
                                             key={day.toISOString()}
                                             onClick={() => handleDayClick(day)}
                                             className={cn(
-                                                "relative p-2 flex flex-col cursor-pointer transition-all border-b border-r border-gray-100 group",
+                                                "relative p-0.5 sm:p-2 flex flex-col cursor-pointer transition-all border-b border-r border-gray-100 group",
                                                 !isCurrentMonth ? "bg-gray-50/50 opacity-40" : "bg-white hover:bg-blue-50/30",
                                                 isToday && "bg-emerald-50/30"
                                             )}
@@ -582,7 +582,7 @@ export default function RegistrosPage() {
                                                             key={log.id}
                                                             title={eventConfig?.label || 'Regular'}
                                                             className={cn(
-                                                                "flex flex-row items-center gap-0.5 w-full min-w-0 mb-0.5 p-[2px]",
+                                                                "flex flex-row items-center gap-[2px] w-full min-w-0 mb-0.5 p-0 overflow-visible",
                                                                 !isRegular && cn("rounded-md border p-[1px]", eventConfig?.border || 'bg-gray-50 border-gray-100')
                                                             )}
                                                         >
@@ -595,13 +595,13 @@ export default function RegistrosPage() {
                                                             </div>
 
                                                             {/* Horas */}
-                                                            <div className="flex items-center min-w-0 flex-1">
-                                                                <span className="text-emerald-600 text-[8.5px] sm:text-[9px] font-bold leading-none shrink-0 tracking-tighter">
+                                                            <div className="flex items-center min-w-0 flex-1 whitespace-nowrap overflow-visible">
+                                                                <span className="text-emerald-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
                                                                     {format(parseISO(log.clock_in), 'H')}
                                                                 </span>
-                                                                <span className="text-gray-400 text-[8.5px] sm:text-[9px] leading-none shrink-0">-</span>
+                                                                <span className="text-gray-400 text-[8.5px] sm:text-[10px] leading-none shrink-0">-</span>
                                                                 {log.clock_out && (
-                                                                    <span className="text-rose-600 text-[8.5px] sm:text-[9px] font-bold leading-none shrink-0 tracking-tighter">
+                                                                    <span className="text-rose-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
                                                                         {format(parseISO(log.clock_out), 'H')}
                                                                     </span>
                                                                 )}
