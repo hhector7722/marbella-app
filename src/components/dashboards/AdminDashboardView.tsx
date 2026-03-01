@@ -472,7 +472,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <div className="flex flex-col flex-1 min-h-0">
                                         <div className="flex items-center px-2 mb-1">
                                             {Math.abs(box.difference || 0) < 0.01 ? (
-                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-3.5 h-3.5" /> 0.00€</span>
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-3.5 h-3.5" /></span>
                                             ) : (
                                                 <span className={cn(
                                                     "text-[10px] font-black uppercase tracking-widest",
@@ -631,7 +631,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <div className="flex flex-col flex-1 min-h-0">
                                     <div className="flex items-center px-1 mb-1">
                                         {Math.abs(box.difference || 0) < 0.01 ? (
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> 0.00€</span>
+                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /></span>
                                         ) : (
                                             <span className={cn(
                                                 "text-[8px] font-black uppercase tracking-widest",
