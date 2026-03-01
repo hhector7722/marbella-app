@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-02-28 (Detalle del día en Staff Dashboard)
+**Última actualización:** 2026-02-28 (Rediseño Radical Editor Horarios)
 
 ## 📌 ESTADO GENERAL
 El sistema de historial ha sido refinado para permitir una gestión granular por días, facilitando la auditoría de registros para los managers. El modal de selección de personal ha sido rediseñado bajo un enfoque minimalista y ultra-compacto, optimizado para interfaces táctiles de alta densidad. El panel de staff ha sido actualizado con elementos más grandes y la nueva estética de cabeceras "Petrol".
@@ -8,6 +8,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 ---
 
 ## ✅ COMPLETADO
+- [x] **Rediseño Cabecera Fichajes Dashboard**: Eliminación de fondo azul e icono de calendario para integrarlo directamente sobre el fondo "Petrol". Ajuste de "SEM" a "SEMANA" para legibilidad ("Apple Human Interface" UI).
 - [x] **Modal de Detalle del Día (Zoom Weekly Summary)**: Implementación de un modal con diseño premium de "Zoom Visual" del resumen semanal. Cabecera con gradiente rojo (`red-500` a `red-600`), botones con estilo de modales monetarios (Emerald/Rose con sombras y bordes `rounded-xl`), proporción cuadrada y tipografía optimizada con `font-black`. Unificado en el Dashboard y el Historial para una experiencia de edición ultra-progresiva.
 - [x] **Rediseño de Cabecera Historial**: Navegación de meses con flechas adaptativas al texto e integración del selector de personal en la esquina derecha del header (compacto y manager-only).
 - [x] **Refinamiento UI Staff Dashboard & Modal Info**: Aumento de tamaño de iconos de acción (48px) y fuentes (9px). Unificación estética de cabeceras utilizando el estilo "Petrol" y "Cápsula Azul" para resúmenes, garantizando coherencia visual en todo el panel de staff.
@@ -129,6 +130,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 - [x] 🗓️ **Refinamiento Historial Staff (Premium UI)**: Actualización a color azul petróleo (#487B8F) en las bandas de resumen, compactación de alturas, sombras proyectadas más profundas y bordes redondeados consistentes.
 - [x] 📱 **Alineación de Dashboards (Consistent UI)**: Sincronización de espaciados entre `/dashboard` (Admin) y `/staff/dashboard`. Ajustados huecos verticales (`gap-4`, `space-y-4`) para evitar el aspecto "demasiado compacto" y asegurar que el contenido no se corte por la cabecera fija.
 - [x] 🖼️ **Diseño Flush en Tablas**: Eliminación de los bordes/contornos blancos exteriores en los contenedores de tablas de `/staff/schedule/editor` y `/registros`, permitiendo que el contenido flote sobre el fondo azul Marbella con un acabado más limpio y moderno.
+- [x] **Rediseño Radical Editor Horarios**: Implementación de interfaz "Marbella Detail" en `/staff/schedule/editor` con contenedores anidados, cabeceras en color Petróleo (#36606F) y controles de navegación por día. Separación de inputs de actividad (Inicio/Fin), eliminación de bordes innecesarios, reestilización del header de tabla con botón "Plus" verde y reubicación del botón eliminar (círculo rojo) junto al nombre del empleado para maximizar la usabilidad en dispositivos táctiles. Se ha corregido también la lógica para permitir vaciar por completo el horario de un día.
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
