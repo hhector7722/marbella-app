@@ -38,6 +38,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const [isCustomUnit, setIsCustomUnit] = useState(isStartCustom);
     const [customUnit, setCustomUnit] = useState(isStartCustom ? startUnit : '');
     const [isUpdating, setIsUpdating] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     // This ref tells us if the user is currently interacting and hasn't saved yet
     const isDirtyRef = useRef(false);
@@ -114,116 +115,164 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const handleDecrement = () => updateLocal(Math.max(0, quantity - 1), unit, isCustomUnit, customUnit);
     const handleTrash = () => updateLocal(0, unit, isCustomUnit, customUnit);
 
-    return (
-        <div className="relative group overflow-hidden h-full">
-            <div className={cn(
-                "bg-white rounded-2xl shadow-md transition-all flex flex-col h-full overflow-hidden",
-                quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-            )}>
-                {/* Recommended Stock Badge - Positioned Top-Left of Card */}
-                {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
-                    <div className="absolute top-2 left-2 text-zinc-400 text-[9px] font-black flex items-center gap-0.5 transition-all z-30" title="Stock Recomendado">
-                        <Package size={10} strokeWidth={2.5} />
-                        <span>{ingredient.recommended_stock}</span>
-                    </div>
-                )}
-                <div className="p-2.5 sm:p-4 flex-1 flex flex-col min-h-0">
-                    {/* Product Image Area (Compact Gallery Style) - Centered vertically */}
-                    <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
-                        {ingredient.image_url ? (
-                            <img src={ingredient.image_url} className="h-full w-full object-contain" alt={ingredient.name} />
-                        ) : (
-                            <Package className="text-gray-200 w-5 h-5" />
-                        )}
-
-                        {isUpdating && (
-                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-xl z-20">
-                                <LoadingSpinner size="sm" className="text-[#5E35B1]" />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Product Info - Positioned just above Footer */}
-                    <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                        <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={ingredient.name}>
-                            {ingredient.name}
-                        </span>
-                    </div>
+    const renderCard = (isModal: boolean) => (
+        <div className={cn(
+            "bg-white transition-all flex flex-col h-full overflow-hidden w-full relative",
+            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "rounded-2xl shadow-md",
+            !isModal && quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "",
+            !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
+        )}>
+            {/* Recommended Stock Badge */}
+            {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
+                <div className={cn("absolute text-zinc-400 font-black flex items-center gap-0.5 transition-all z-30", isModal ? "top-4 left-4 text-xs" : "top-2 left-2 text-[9px]")} title="Stock Recomendado">
+                    <Package size={isModal ? 14 : 10} strokeWidth={2.5} />
+                    <span>{ingredient.recommended_stock}</span>
                 </div>
+            )}
 
-                {/* Controls & Unit (Bottom Area) - Flush bottom and centered vertically */}
-                <div className="bg-[#36606F] px-2 sm:px-3 py-1.5 flex flex-row items-center justify-center gap-0.5 sm:gap-1 shrink-0 shadow-inner w-full mt-auto">
-                    <button
-                        onClick={handleDecrement}
-                        disabled={quantity === 0}
-                        className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0"
-                    >
-                        <Minus size={14} strokeWidth={3} className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
-
-                    <input
-                        type="number"
-                        value={quantity === 0 ? "" : quantity}
-                        onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            updateLocal(isNaN(val) ? 0 : Math.max(0, val), unit, isCustomUnit, customUnit);
-                        }}
-                        placeholder="0"
-                        className="w-4 sm:w-10 bg-transparent text-center font-black text-[10px] sm:text-sm text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-
-                    {isCustomUnit ? (
-                        <div className="flex items-center shrink-0 min-w-0">
-                            <input
-                                type="text"
-                                value={customUnit}
-                                onChange={(e) => updateLocal(quantity, unit, isCustomUnit, e.target.value)}
-                                placeholder="?"
-                                className="w-7 sm:w-12 text-[7px] sm:text-[10px] font-black uppercase bg-white/10 text-white rounded px-0.5 sm:px-1 py-0.5 sm:py-1 outline-none text-center"
-                                autoFocus
-                            />
-                            <button
-                                onClick={() => updateLocal(quantity, unit, false, customUnit)}
-                                className="text-[7px] sm:text-[10px] text-white/50 hover:text-white font-black ml-0.5 sm:ml-1 shrink-0 p-0.5"
-                            >
-                                ✕
-                            </button>
-                        </div>
+            <div className={cn("flex-1 flex flex-col min-h-0", isModal ? "p-6" : "p-2.5 sm:p-4")}>
+                {/* Product Image Area */}
+                <div
+                    className={cn(
+                        "w-full bg-white rounded-lg flex items-center justify-center overflow-hidden relative",
+                        isModal ? "h-32 mb-4" : "h-14 mb-1 cursor-pointer"
+                    )}
+                    onClick={() => {
+                        if (!isModal) setShowModal(true);
+                    }}
+                >
+                    {ingredient.image_url ? (
+                        <img src={ingredient.image_url} className="h-full w-full object-contain" alt={ingredient.name} />
                     ) : (
-                        <select
-                            value={unit}
-                            onChange={(e) => {
-                                if (e.target.value === 'otro...') {
-                                    updateLocal(quantity, unit, true, customUnit);
-                                } else {
-                                    updateLocal(quantity, e.target.value, false, customUnit);
-                                }
-                            }}
-                            className="w-auto text-center text-[7px] sm:text-[10px] font-black uppercase bg-transparent text-white/90 outline-none appearance-none cursor-pointer hover:text-white transition-colors shrink-0 overflow-visible"
-                        >
-                            {unitOptions.map(opt => (
-                                <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
-                            ))}
-                        </select>
+                        <Package className="text-gray-200 w-5 h-5" />
                     )}
 
-                    <button
-                        onClick={handleIncrement}
-                        className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0"
-                    >
-                        <Plus size={14} strokeWidth={3} className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+                    {isUpdating && (
+                        <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px] rounded-xl z-20">
+                            <LoadingSpinner size={isModal ? "md" : "sm"} className="text-[#5E35B1]" />
+                        </div>
+                    )}
                 </div>
 
-                {quantity > 0 && (
-                    <button
-                        onClick={handleTrash}
-                        className="absolute top-1.5 right-1.5 w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center bg-white/90 backdrop-blur shadow-sm rounded-full text-rose-500 hover:bg-rose-50 transition-all animate-in zoom-in duration-200"
-                    >
-                        <Trash2 size={10} className="sm:w-4 sm:h-4" />
-                    </button>
-                )}
+                {/* Product Info */}
+                <div className={cn("flex flex-col mt-auto px-0.5 items-center justify-center text-center", isModal ? "gap-1.5" : "gap-0.5")}>
+                    <span className={cn("font-bold text-gray-700 leading-tight truncate w-full", isModal ? "text-sm sm:text-base" : "text-[10px]")} title={ingredient.name}>
+                        {ingredient.name}
+                    </span>
+                    {isModal ? (
+                        isCustomUnit ? (
+                            <div className="flex items-center justify-center shrink-0 min-w-0 mt-0.5">
+                                <input
+                                    type="text"
+                                    value={customUnit}
+                                    onChange={(e) => updateLocal(quantity, unit, isCustomUnit, e.target.value)}
+                                    placeholder="?"
+                                    className="w-16 sm:w-20 text-[10px] sm:text-xs font-black uppercase bg-gray-100 text-gray-600 rounded px-1 sm:px-2 py-0.5 sm:py-1 outline-none text-center"
+                                    autoFocus
+                                />
+                                <button
+                                    onClick={() => updateLocal(quantity, unit, false, customUnit)}
+                                    className="text-[10px] sm:text-xs text-gray-400 hover:text-gray-600 font-black ml-1 sm:ml-2 shrink-0 p-0.5"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="relative mt-0.5">
+                                <select
+                                    value={unit}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'otro...') {
+                                            updateLocal(quantity, unit, true, customUnit);
+                                        } else {
+                                            updateLocal(quantity, e.target.value, false, customUnit);
+                                        }
+                                    }}
+                                    className="w-auto min-w-[60px] text-center text-[10px] sm:text-xs font-black uppercase bg-gray-50 text-gray-500 rounded px-2 py-0.5 outline-none cursor-pointer hover:bg-gray-100 transition-colors shrink-0 appearance-none border border-gray-100"
+                                >
+                                    {unitOptions.map(opt => (
+                                        <option key={opt} value={opt} className="text-zinc-800">{opt}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )
+                    ) : (
+                        <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest truncate">
+                            {isCustomUnit ? (customUnit || '?') : unit}
+                        </span>
+                    )}
+                </div>
             </div>
+
+            {/* Controls (Bottom Area) */}
+            <div className={cn(
+                "bg-[#36606F] flex flex-row items-center justify-around shrink-0 shadow-inner w-full mt-auto",
+                isModal ? "px-6 py-4" : "px-3 py-1.5 sm:py-2"
+            )}>
+                <button
+                    onClick={handleDecrement}
+                    disabled={quantity === 0}
+                    className={cn(
+                        "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-8 h-8 sm:w-10 sm:h-10"
+                    )}
+                >
+                    <Minus size={isModal ? 24 : 18} strokeWidth={3} className={cn(!isModal && "w-5 h-5 sm:w-6 sm:h-6")} />
+                </button>
+
+                <input
+                    type="number"
+                    value={quantity === 0 ? "" : quantity}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        updateLocal(isNaN(val) ? 0 : Math.max(0, val), unit, isCustomUnit, customUnit);
+                    }}
+                    placeholder=""
+                    className={cn(
+                        "bg-transparent text-center font-black text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                        isModal ? "w-16 sm:w-20 text-lg sm:text-2xl" : "w-10 sm:w-14 text-[12px] sm:text-base"
+                    )}
+                />
+
+                <button
+                    onClick={handleIncrement}
+                    className={cn(
+                        "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0",
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-8 h-8 sm:w-10 sm:h-10"
+                    )}
+                >
+                    <Plus size={isModal ? 24 : 18} strokeWidth={3} className={cn(!isModal && "w-5 h-5 sm:w-6 sm:h-6")} />
+                </button>
+            </div>
+
+            {quantity > 0 && (
+                <button
+                    onClick={handleTrash}
+                    className={cn(
+                        "absolute flex items-center justify-center bg-white/90 backdrop-blur shadow-sm rounded-full text-rose-500 hover:bg-rose-50 transition-all animate-in zoom-in duration-200 z-30",
+                        isModal ? "top-3 right-3 w-8 h-8" : "top-1.5 right-1.5 w-6 h-6 sm:w-7 sm:h-7"
+                    )}
+                >
+                    <Trash2 size={isModal ? 16 : 12} className={cn(!isModal && "sm:w-4 sm:h-4")} />
+                </button>
+            )}
+        </div>
+    );
+
+    return (
+        <div className="relative group overflow-hidden h-full">
+            {renderCard(false)}
+
+            {showModal && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+                    onClick={() => setShowModal(false)}
+                >
+                    <div onClick={(e) => e.stopPropagation()} className="animate-in zoom-in-95 duration-200">
+                        {renderCard(true)}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

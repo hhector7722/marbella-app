@@ -228,7 +228,7 @@ function RecipesContent() {
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <h3 className="text-white text-xl font-black uppercase tracking-widest leading-tight">
+                                    <h3 className="text-white text-lg font-black uppercase tracking-widest leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px] md:max-w-[400px]">
                                         {fullRecipeData?.name || 'Cargando...'}
                                     </h3>
                                     <div className="flex items-center gap-3 mt-1">
@@ -263,17 +263,9 @@ function RecipesContent() {
                                                 <UtensilsCrossed size={14} className="text-white/70" />
                                                 <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes</h4>
                                             </div>
-                                            <span className="text-[10px] font-bold text-white/50">{fullRecipeData?.recipe_ingredients?.length || 0} items</span>
                                         </div>
                                         <div className="flex-1 overflow-y-auto">
                                             <table className="w-full text-left">
-                                                <thead className="sticky top-0 bg-white shadow-sm z-10">
-                                                    <tr className="border-b border-zinc-100 italic">
-                                                        <th className="px-4 py-2.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest">Nombre</th>
-                                                        <th className="px-4 py-2.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest text-right">Cant</th>
-                                                        <th className="px-4 py-2.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest">Ud</th>
-                                                    </tr>
-                                                </thead>
                                                 <tbody className="divide-y divide-zinc-50">
                                                     {fullRecipeData?.recipe_ingredients?.map((ing: any) => (
                                                         <tr key={ing.id} className="hover:bg-zinc-50/50 transition-colors">
@@ -287,14 +279,14 @@ function RecipesContent() {
                                         </div>
                                     </div>
 
-                                    {/* Columna Derecha: Elaboración */}
+                                    {/* Columna Derecha: Elaboración y Presentación */}
                                     <div className="space-y-4">
-                                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-full">
+                                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
                                             <div className="bg-[#36606F] px-5 py-3 flex items-center gap-2 shrink-0">
                                                 <BookOpen size={14} className="text-white/70" />
                                                 <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h4>
                                             </div>
-                                            <div className="p-5 flex-1 overflow-y-auto max-h-[400px]">
+                                            <div className="p-5 overflow-y-auto max-h-[400px]">
                                                 {fullRecipeData?.elaboration ? (
                                                     <ul className="space-y-4">
                                                         {fullRecipeData.elaboration.split('\n').filter(Boolean).map((step: string, i: number) => (
@@ -313,27 +305,29 @@ function RecipesContent() {
                                                         <p className="text-[10px] font-bold uppercase tracking-widest">Sin pasos registrados</p>
                                                     </div>
                                                 )}
-
-                                                {fullRecipeData?.presentation && (
-                                                    <div className="mt-8 pt-6 border-t border-zinc-100">
-                                                        <h5 className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                                            Presentación y Notas
-                                                        </h5>
-                                                        <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
-                                                            <ul className="space-y-3">
-                                                                {fullRecipeData.presentation.split('\n').filter(Boolean).map((step: string, i: number) => (
-                                                                    <li key={i} className="flex gap-3 text-emerald-800/90 text-[11px] leading-relaxed font-medium">
-                                                                        <X className="rotate-45 w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={4} />
-                                                                        <span>{step}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
+
+                                        {fullRecipeData?.presentation && (
+                                            <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit">
+                                                <div className="bg-[#36606F] px-5 py-3 flex items-center gap-2 shrink-0">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                    <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h4>
+                                                </div>
+                                                <div className="p-5">
+                                                    <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
+                                                        <ul className="space-y-3">
+                                                            {fullRecipeData.presentation.split('\n').filter(Boolean).map((step: string, i: number) => (
+                                                                <li key={i} className="flex gap-3 text-emerald-800/90 text-[11px] leading-relaxed font-medium">
+                                                                    <X className="rotate-45 w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={4} />
+                                                                    <span>{step}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
