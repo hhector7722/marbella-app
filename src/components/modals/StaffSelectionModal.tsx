@@ -53,7 +53,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                 {/* Grid de Empleados (Bento Style Simplificado) */}
                 <div className="p-4 overflow-y-auto no-scrollbar flex-1 bg-white">
                     {children}
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         {employees.map((emp) => (
                             <button
                                 key={emp.id}

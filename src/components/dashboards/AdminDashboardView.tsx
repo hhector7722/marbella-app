@@ -791,14 +791,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     employees={allEmployees}
                     onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
                     title="Plantilla"
-                >
-                    <button
-                        onClick={() => { setIsStaffModalOpen(false); setIsNewWorkerModalOpen(true); }}
-                        className="w-full mb-6 py-4 border-2 border-dashed border-gray-300 text-gray-400 font-bold rounded-2xl hover:border-[#5B8FB9] hover:text-[#5B8FB9] hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
-                    >
-                        <Plus size={20} /> <span className="uppercase tracking-widest font-black text-[10px]">Nuevo Trabajador</span>
-                    </button>
-                </StaffSelectionModal>
+                />
             }
             {/* MODAL: Crear Nuevo Trabajador */}
             {

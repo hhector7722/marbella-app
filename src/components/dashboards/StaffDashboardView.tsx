@@ -682,14 +682,10 @@ export default function StaffDashboardView() {
                             {/* Header Petrol - Estilo Modal Marbella */}
                             <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
                                 <div className="flex items-center gap-3">
-                                    {infoSubMenu ? (
+                                    {infoSubMenu && (
                                         <button onClick={() => setInfoSubMenu(null)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
                                             <ArrowLeft size={18} strokeWidth={3} />
                                         </button>
-                                    ) : (
-                                        <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-xl shadow-sm">
-                                            <Info size={18} fill="currentColor" />
-                                        </div>
                                     )}
                                     <h3 className="text-[10px] font-black uppercase tracking-widest">
                                         {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}

@@ -45,14 +45,12 @@ const ShiftBar = ({
     shift,
     onUpdate,
     allowMove = true,
-    barClass = "bg-emerald-100/50 hover:bg-emerald-200/60",
-    isCompact = false
+    barClass = "bg-emerald-100/50 hover:bg-emerald-200/60"
 }: {
     shift: any,
     onUpdate: (s: any) => void,
     allowMove?: boolean,
-    barClass?: string,
-    isCompact?: boolean
+    barClass?: string
 }) => {
     const barRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -124,12 +122,12 @@ const ShiftBar = ({
             onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
         >
             {/* Tirador Izquierda */}
-            <div className={`absolute left-0 top-0 bottom-0 ${isCompact ? 'w-6 md:w-8' : 'w-12 md:w-16'} cursor-ew-resize z-30`} onPointerDown={(e) => handlePointerDown(e, 'left')} />
+            <div className="absolute left-0 top-0 bottom-0 w-8 md:w-10 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
 
             {/* Mini-barra Entrada */}
-            <div className={`absolute left-0 top-0 bottom-0 ${isCompact ? 'min-w-[28px] md:min-w-[32px] px-1' : 'min-w-[48px] px-2'} bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full`}>
-                <span className={`${isCompact ? 'text-[7px]' : 'text-[10px] md:text-sm'} font-black text-white pointer-events-none select-none tracking-tighter`}>
-                    {isCompact ? shift.start.replace(':', '') : shift.start}
+            <div className="absolute left-0 top-0 bottom-0 min-w-[28px] md:min-w-[36px] px-1 bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full">
+                <span className="text-[7px] md:text-[8px] font-black text-white pointer-events-none select-none">
+                    {shift.start.replace(':', '')}
                 </span>
             </div>
 
@@ -137,14 +135,14 @@ const ShiftBar = ({
             <div className="flex-1 h-full" />
 
             {/* Mini-barra Salida */}
-            <div className={`absolute right-0 top-0 bottom-0 ${isCompact ? 'min-w-[28px] md:min-w-[32px] px-1' : 'min-w-[48px] px-2'} bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full`}>
-                <span className={`${isCompact ? 'text-[7px]' : 'text-[10px] md:text-sm'} font-black text-white pointer-events-none select-none tracking-tighter`}>
-                    {isCompact ? shift.end.replace(':', '') : shift.end}
+            <div className="absolute right-0 top-0 bottom-0 min-w-[28px] md:min-w-[36px] px-1 bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full">
+                <span className="text-[7px] md:text-[8px] font-black text-white pointer-events-none select-none">
+                    {shift.end.replace(':', '')}
                 </span>
             </div>
 
             {/* Tirador Derecha */}
-            <div className={`absolute right-0 top-0 bottom-0 ${isCompact ? 'w-6 md:w-8' : 'w-12 md:w-16'} cursor-ew-resize z-30`} onPointerDown={(e) => handlePointerDown(e, 'right')} />
+            <div className="absolute right-0 top-0 bottom-0 w-8 md:w-10 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
         </div>
     );
 };
@@ -434,12 +432,12 @@ export default function ScheduleEditorPage() {
 
     return (
         <div className="min-h-[100dvh] bg-[#5B8FB9] flex flex-col p-1.5 gap-1.5 animate-in fade-in duration-300">
-            {/* CONTENEDOR UNIFICADO PRINCIPAL */}
-            <div className="w-full max-w-5xl mx-auto bg-white rounded-[1.25rem] md:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative mb-24">
+            {/* CONTENEDOR SUPERIOR */}
+            <div className="w-full bg-white rounded-[1.25rem] shadow-xl overflow-hidden flex flex-col relative shrink-0">
                 {/* Cabecera Petróleo */}
-                <div className="bg-[#36606F] px-4 py-3 md:py-4 md:px-6 flex justify-between items-center text-white shadow-sm z-10 shrink-0">
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <Link href="/staff/schedule" className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-lg md:rounded-xl hover:bg-white/20 active:scale-95 transition-all text-white">
+                <div className="bg-[#36606F] px-4 py-2.5 flex justify-between items-center text-white">
+                    <div className="flex items-center gap-2">
+                        <Link href="/staff/schedule" className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-lg hover:bg-white/20 active:scale-95 transition-all text-white">
                             <ArrowLeft size={16} strokeWidth={3} />
                         </Link>
                         <div className="flex flex-col">
@@ -508,12 +506,12 @@ export default function ScheduleEditorPage() {
                 </div>
             </div>
 
-            {/* TABLA FLUIDA INTEGRADA EN CONTENEDOR */}
-            <div className="w-full bg-white flex flex-col relative shrink-0 z-0">
+            {/* TABLA FLUIDA (100% WIDTH) */}
+            <div className="w-full flex-1 bg-white rounded-[1.25rem] shadow-xl overflow-hidden flex flex-col relative border border-white/20">
                 {/* CABECERA (ROJO) */}
-                <div className="flex bg-[#D64D5D] text-white border-y border-[#D64D5D]/80 shrink-0 sticky top-0 z-20 w-full h-8 md:h-10">
+                <div className="flex bg-[#D64D5D] text-white border-b border-[#D64D5D]/80 shrink-0 sticky top-0 z-20 w-full h-8">
                     {/* Botón Añadir */}
-                    <div className="w-16 md:w-24 shrink-0 border-r border-[#D64D5D]/40 flex items-center justify-center relative">
+                    <div className="w-16 md:w-20 shrink-0 border-r border-[#D64D5D]/40 flex items-center justify-center relative">
                         <button
                             onClick={() => setShowAddModal(true)}
                             className="absolute inset-0 m-auto w-5 h-5 rounded-full bg-white text-emerald-600 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
@@ -535,7 +533,7 @@ export default function ScheduleEditorPage() {
                 </div>
 
                 {/* FILAS DE EMPLEADOS */}
-                <div className="w-full bg-white flex flex-col relative pb-2 md:pb-4">
+                <div className="flex-1 w-full bg-white flex flex-col relative pb-20">
                     <div className="absolute inset-0 flex pl-16 md:pl-20 pointer-events-none">
                         {hoursHeader.map((_, i) => (
                             <div key={i} className="flex-1 border-r border-gray-50/80 last:border-r-0" />
@@ -543,7 +541,7 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {shifts.map((shift, idx) => (
-                        <div key={shift.employeeId} className={`flex h-8 md:h-12 border-b border-gray-100 last:border-b-0 w-full transition-colors relative z-10 ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-transparent'}`}>
+                        <div key={shift.employeeId} className={`flex h-10 border-b border-gray-100 last:border-b-0 w-full transition-colors relative z-10 ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-transparent'}`}>
                             {/* Celda Nombre y Eliminar */}
                             <div className="w-16 md:w-20 px-1 flex items-center gap-1 shrink-0 border-r border-gray-100 bg-white/90 z-20">
                                 <button
@@ -566,8 +564,7 @@ export default function ScheduleEditorPage() {
                                     <ShiftBar
                                         shift={shift}
                                         onUpdate={(newS) => handleUpdateShift(idx, newS)}
-                                        barClass={`${editingIndex === idx ? 'bg-[#36606F]/20' : 'bg-[#5B8FB9]/30 hover:bg-[#5B8FB9]/50'}`}
-                                        isCompact={true}
+                                        barClass={`${editingIndex === idx ? 'bg-[#36606F]/20' : 'bg-blue-100/40 hover:bg-blue-100/60'}`}
                                     />
                                 )}
                             </div>
@@ -602,22 +599,21 @@ export default function ScheduleEditorPage() {
 
             {/* BARRA DE EDICIÓN FLOTANTE */}
             {editingIndex !== null && shifts[editingIndex] && (
-                <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-10 duration-300 max-w-2xl mx-auto">
-                    <div className="bg-white/95 backdrop-blur-2xl rounded-[1.5rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border border-gray-200/50 p-2 md:p-3 flex items-center gap-3">
-                        <div className="flex-1 h-14 md:h-16 relative bg-gray-50 rounded-xl md:rounded-2xl overflow-hidden border border-gray-100 shadow-inner">
+                <div className="fixed bottom-3 left-2 right-2 md:left-4 md:right-4 z-50 animate-in slide-in-from-bottom-5 duration-300">
+                    <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 p-2 flex items-center gap-2 max-w-lg mx-auto">
+                        <div className="flex-1 h-[2.5rem] relative bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shadow-inner">
                             <ShiftBar
                                 shift={shifts[editingIndex]}
                                 onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
                                 allowMove={false}
-                                barClass="bg-[#36606F] shadow-lg border border-white/10"
-                                isCompact={false}
+                                barClass="bg-[#36606F]"
                             />
                         </div>
                         <button
                             onClick={() => setEditingIndex(null)}
-                            className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center bg-gray-900 hover:bg-black rounded-xl md:rounded-2xl shadow-xl text-white transition-all active:scale-95 shrink-0"
+                            className="w-10 h-10 flex items-center justify-center bg-gray-900 hover:bg-black rounded-xl shadow-lg text-white transition-all active:scale-95 shrink-0"
                         >
-                            <X size={24} strokeWidth={4} />
+                            <X size={18} strokeWidth={4} />
                         </button>
                     </div>
                 </div>
