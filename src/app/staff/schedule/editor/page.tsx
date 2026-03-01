@@ -12,8 +12,7 @@ import {
     ChevronRight,
     UserPlus,
     Trash2,
-    Send,
-    Calendar
+    Send
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -156,8 +155,7 @@ export default function ScheduleEditorPage() {
 
     // Estado del editor
     const [date, setDate] = useState('');
-    const [activityIn, setActivityIn] = useState('');
-    const [activityOut, setActivityOut] = useState('');
+    const [activity, setActivity] = useState('');
     const [shifts, setShifts] = useState<any[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
@@ -215,12 +213,7 @@ export default function ScheduleEditorPage() {
 
             // Cargar actividad si existe
             if (existingShifts && existingShifts.length > 0 && existingShifts[0].activity) {
-                const parts = existingShifts[0].activity.split(' - ');
-                setActivityIn(parts[0] || '');
-                setActivityOut(parts[1] || '');
-            } else {
-                setActivityIn('');
-                setActivityOut('');
+                setActivity(existingShifts[0].activity);
             }
 
             setShifts(activeShifts);
@@ -281,7 +274,11 @@ export default function ScheduleEditorPage() {
 
     const handleSave = async (silent = false) => {
         const activeShifts = shifts.filter(s => s.active);
-        const combinedActivity = (activityIn || activityOut) ? `${activityIn}${activityOut ? ` - ${activityOut}` : ''}` : null;
+
+        if (activeShifts.length === 0) {
+            if (!silent) toast.error('No hay turnos activos para guardar');
+            return false;
+        }
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -298,7 +295,7 @@ export default function ScheduleEditorPage() {
                     user_id: shift.employeeId,
                     start_time: startDateTime.toISOString(),
                     end_time: endDateTime.toISOString(),
-                    activity: combinedActivity,
+                    activity: activity || null,
                     notes: null,
                     is_published: true
                 };
@@ -320,21 +317,19 @@ export default function ScheduleEditorPage() {
                 return;
             }
 
-            // 2. Insertar los nuevos turnos (solo si hay)
-            if (shiftsToInsert.length > 0) {
-                const { error } = await supabase
-                    .from('shifts')
-                    .insert(shiftsToInsert);
+            // 2. Insertar los nuevos turnos
+            const { error } = await supabase
+                .from('shifts')
+                .insert(shiftsToInsert);
 
-                if (error) {
-                    console.error('Supabase error:', error);
-                    toast.error(`Error: ${error.message}`);
-                    return;
-                }
+            if (error) {
+                console.error('Supabase error:', error);
+                toast.error(`Error: ${error.message}`);
+                return;
             }
 
             setHasUnsavedChanges(false);
-            if (!silent) toast.success(activeShifts.length > 0 ? `${activeShifts.length} turno(s) guardado(s)` : 'Horario vaciado');
+            if (!silent) toast.success(`${activeShifts.length} turno(s) guardado(s)`);
             if (!silent) router.push('/staff/schedule');
             return true;
         } catch (error: any) {
@@ -370,26 +365,6 @@ export default function ScheduleEditorPage() {
             toast.dismiss(loadingToast);
             toast.error('Error al enviar notificaciones');
         }
-    };
-
-    const handlePrevDay = () => {
-        const newDate = new Date(date);
-        newDate.setDate(newDate.getDate() - 1);
-        const dateStr = newDate.toISOString().split('T')[0];
-        setDate(dateStr);
-        setCalendarDate(newDate);
-        fetchData(dateStr);
-        router.push(`/staff/schedule/editor?date=${dateStr}`, { scroll: false });
-    };
-
-    const handleNextDay = () => {
-        const newDate = new Date(date);
-        newDate.setDate(newDate.getDate() + 1);
-        const dateStr = newDate.toISOString().split('T')[0];
-        setDate(dateStr);
-        setCalendarDate(newDate);
-        fetchData(dateStr);
-        router.push(`/staff/schedule/editor?date=${dateStr}`, { scroll: false });
     };
 
     // Generar días del calendario
@@ -434,204 +409,161 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-6 animate-in fade-in duration-500">
-            <div className="max-w-6xl mx-auto w-full space-y-4">
+        <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-4 gap-2">
 
-                {/* CONTENEDOR PRINCIPAL: HORARIOS */}
-                <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-white/20">
+            {/* CABECERA ULTRA-COMPACTA */}
+            <div className="flex justify-center w-full">
+                <div className="flex flex-wrap justify-center gap-2 w-full max-w-lg">
+                    {/* Fecha con botón de calendario */}
+                    <button
+                        onClick={() => setShowCalendarModal(true)}
+                        className="text-black text-[10px] px-3 h-7 rounded-lg font-black bg-white/90 hover:bg-white flex items-center gap-1 transition-colors capitalize"
+                    >
+                        {date && format(new Date(date), "EEE d 'de' MMM", { locale: es }).replace('.', '')}
+                    </button>
+                    <input
+                        type="text"
+                        value={activity}
+                        onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
+                        className="text-black text-[10px] px-2 h-7 rounded-lg border-none outline-none focus:ring-2 focus:ring-green-400 w-28 md:w-32 font-black bg-white/90 text-center"
+                        placeholder="Actividad"
+                    />
+                    {/* Botón Guardar */}
+                    <button
+                        onClick={() => handleSave()}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 h-7 rounded-lg font-black flex items-center justify-center gap-1 shadow-md transition-transform active:scale-95 text-[9px] uppercase tracking-wider"
+                    >
+                        <Save size={12} /> GUARDAR
+                    </button>
+                    {/* Botón Enviar */}
+                    <button
+                        onClick={handleSendNotifications}
+                        className="bg-[#36606F] hover:bg-[#2A4D59] text-white px-3 h-7 rounded-lg font-black flex items-center justify-center gap-1 shadow-md transition-transform active:scale-95 text-[9px] uppercase tracking-wider"
+                    >
+                        <Send size={12} /> ENVIAR
+                    </button>
+                </div>
+            </div>
 
-                    {/* CABECERA PETROLEO: HORARIOS */}
-                    <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center text-white shrink-0">
-                        <div className="flex items-center gap-4">
-                            <Link href="/staff/schedule" className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                <ArrowLeft size={20} className="text-white" strokeWidth={3} />
-                            </Link>
-                            <div className="flex flex-col">
-                                <h3 className="text-lg font-black uppercase tracking-widest leading-none">Horarios</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Turnos</p>
-                            </div>
+            {/* ZONA DE TRABAJO (FLOATING) */}
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden border border-zinc-200 shadow-xl bg-white mt-1">
+                <div className="w-full flex flex-col relative">
+                    {/* ENCABEZADO DE HORAS - ROJO */}
+                    <div className="flex bg-red-500 text-white border-b border-red-600 sticky top-0 z-30">
+                        <div className="w-20 md:w-32 p-1 font-black text-[8px] md:text-[10px] flex items-center justify-center uppercase tracking-tighter shrink-0">
+                            TRABAJADOR
                         </div>
+                        <div className="flex-1 relative h-6 flex">
+                            {hoursHeader.map((hour, i) => (
+                                <div
+                                    key={hour}
+                                    className="flex-1 text-[8px] md:text-[9px] font-black flex items-center justify-center select-none opacity-90 border-r border-red-400/30 last:border-r-0"
+                                >
+                                    {hour}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-10 md:w-12 shrink-0 border-l border-red-600" />
                     </div>
 
-                    {/* CUERPO BLANCO */}
-                    <div className="p-4 md:p-8 space-y-6">
 
-                        {/* CABECERA DEL DÍA */}
-                        <div className="bg-[#5B8FB9] rounded-2xl flex items-center justify-between p-3 md:p-4 text-white shadow-lg">
-                            <div className="flex items-center gap-2 md:gap-4">
-                                <button onClick={handlePrevDay} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90">
-                                    <ChevronLeft size={24} strokeWidth={3} />
-                                </button>
-                                <button
-                                    onClick={() => setShowCalendarModal(true)}
-                                    className="px-4 py-2 bg-white rounded-xl text-[#36606F] font-black text-sm md:text-base capitalize flex items-center gap-2 shadow-sm hover:bg-gray-50 transition-colors"
+                    {/* FILAS DE EMPLEADOS */}
+                    <div className="bg-white">
+                        {shifts.map((shift, idx) => (
+                            <div key={shift.employeeId} className={`flex h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/20' : ''}`}>
+                                {/* Columna Nombre */}
+                                <div className="w-20 md:w-32 px-2 flex items-center shrink-0 border-r border-gray-100 overflow-hidden">
+                                    <span className={`font-black text-[9px] md:text-[10px] truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-blue-600' : 'text-black'}`}>
+                                        {shift.name}
+                                    </span>
+                                </div>
+
+                                {/* Zona de Barras */}
+                                <div
+                                    className="flex-1 relative cursor-pointer group"
+                                    onClick={() => setEditingIndex(idx)}
                                 >
-                                    <Calendar size={18} fill="currentColor" />
-                                    {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
-                                </button>
-                                <button onClick={handleNextDay} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90">
-                                    <ChevronRight size={24} strokeWidth={3} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleSave()}
-                                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 h-10 rounded-xl font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-[10px] md:text-xs uppercase tracking-widest"
-                                >
-                                    <Save size={16} strokeWidth={3} /> <span className="hidden sm:inline">GUARDAR</span>
-                                </button>
-                                <button
-                                    onClick={handleSendNotifications}
-                                    className="bg-white/10 hover:bg-white/20 text-white px-4 h-10 rounded-xl font-black flex items-center justify-center gap-2 shadow-inner transition-all active:scale-95 text-[10px] md:text-xs uppercase tracking-widest"
-                                >
-                                    <Send size={16} strokeWidth={3} /> <span className="hidden sm:inline">ENVIAR</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* CELDAS DE ACTIVIDAD */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col gap-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Inicio Actividad</label>
-                                <input
-                                    type="text"
-                                    value={activityIn}
-                                    onChange={(e) => { setActivityIn(e.target.value); setHasUnsavedChanges(true); }}
-                                    className="w-full bg-white border border-gray-200 h-12 rounded-xl px-4 font-black text-gray-800 text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-gray-200"
-                                    placeholder="00:00"
-                                />
-                            </div>
-                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col gap-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Finalización Actividad</label>
-                                <input
-                                    type="text"
-                                    value={activityOut}
-                                    onChange={(e) => { setActivityOut(e.target.value); setHasUnsavedChanges(true); }}
-                                    className="w-full bg-white border border-gray-200 h-12 rounded-xl px-4 font-black text-gray-800 text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-gray-200"
-                                    placeholder="00:00"
-                                />
-                            </div>
-                        </div>
-
-                        {/* TABLA DE HORARIOS */}
-                        <div className="rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
-                            <div className="w-full flex flex-col relative overflow-x-auto no-scrollbar">
-
-                                {/* CABECERA DE LA TABLA */}
-                                <div className="flex bg-red-500 text-white min-w-[600px]">
-                                    <div className="w-24 md:w-40 flex items-center justify-center shrink-0 border-r border-red-400/30">
-                                        <button
-                                            onClick={() => setShowAddModal(true)}
-                                            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-90 transition-transform hover:rotate-90 duration-300"
-                                        >
-                                            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-                                                <Plus size={20} strokeWidth={4} />
-                                            </div>
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 relative h-10 flex">
-                                        {hoursHeader.map((hour, i) => (
-                                            <div
-                                                key={hour}
-                                                className="flex-1 text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-red-400/30 last:border-r-0 uppercase tracking-tighter"
-                                            >
-                                                {hour}
-                                            </div>
+                                    {/* Guías de fondo */}
+                                    <div className="absolute inset-0 flex">
+                                        {hoursHeader.map((_, i) => (
+                                            <div key={i} className="flex-1 border-r border-gray-50/50 pointer-events-none last:border-r-0" />
                                         ))}
                                     </div>
-                                </div>
 
-                                {/* FILAS DE LOS EMPLEADOS */}
-                                <div className="bg-white min-w-[600px]">
-                                    {shifts.map((shift, idx) => (
-                                        <div key={shift.employeeId} className={`flex h-12 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/30' : ''}`}>
-                                            {/* Columna Nombre con Eliminar */}
-                                            <div className="w-24 md:w-40 px-3 flex items-center gap-2 shrink-0 border-r border-gray-100 overflow-hidden relative group">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                                    className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md active:scale-75 transition-all opacity-100 shrink-0"
-                                                    title="Eliminar"
-                                                >
-                                                    <X size={12} strokeWidth={4} />
-                                                </button>
-                                                <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-blue-600' : 'text-gray-800'}`}>
-                                                    {shift.name}
-                                                </span>
-                                            </div>
-
-                                            {/* Zona de Barras */}
-                                            <div
-                                                className="flex-1 relative cursor-pointer"
-                                                onClick={() => setEditingIndex(idx)}
-                                            >
-                                                <div className="absolute inset-0 flex pointer-events-none">
-                                                    {hoursHeader.map((_, i) => (
-                                                        <div key={i} className="flex-1 border-r border-gray-50/80 last:border-r-0" />
-                                                    ))}
-                                                </div>
-
-                                                {shift.active && (
-                                                    <ShiftBar
-                                                        shift={shift}
-                                                        onUpdate={(newS) => handleUpdateShift(idx, newS)}
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    {shifts.length === 0 && (
-                                        <div className="h-32 flex flex-col items-center justify-center text-gray-300 gap-2">
-                                            <Users size={32} strokeWidth={1.5} className="opacity-20" />
-                                            <p className="text-[10px] font-black uppercase tracking-widest italic opacity-50">Sin empleados programados</p>
-                                        </div>
+                                    {shift.active && (
+                                        <ShiftBar
+                                            shift={shift}
+                                            onUpdate={(newS) => handleUpdateShift(idx, newS)}
+                                        />
                                     )}
+                                </div>
 
-                                    {/* FILA DE TOTALES: BLANCO / NEGRO */}
-                                    <div className="flex bg-white border-t border-gray-200">
-                                        <div className="w-24 md:w-40 p-1 font-black text-gray-400 text-[10px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-gray-100 bg-gray-50">
-                                            TOTAL
-                                        </div>
-                                        <div className="flex-1 relative h-10 flex bg-white">
-                                            {totals.map((count, i) => (
-                                                <div
-                                                    key={i}
-                                                    className={`flex-1 flex items-center justify-center font-black text-[11px] transition-colors ${count > 0 ? 'text-gray-900 scale-110' : 'text-gray-200'}`}
-                                                >
-                                                    {count > 0 ? count : ''}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                {/* Columna Eliminar */}
+                                <div className="w-10 md:w-12 flex items-center justify-center border-l border-gray-100">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                        className="w-7 h-7 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shrink-0 active:scale-90"
+                                        title="Eliminar"
+                                    >
+                                        <X size={14} strokeWidth={4} />
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
+                        ))}
 
-                {/* BARRA DE EDICIÓN FLOTANTE */}
-                {editingIndex !== null && shifts[editingIndex] && (
-                    <div className="fixed bottom-6 left-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-10 duration-500">
-                        <div className="max-w-4xl mx-auto flex items-center gap-4 bg-white/90 backdrop-blur-xl p-3 rounded-3xl shadow-2xl border border-white/50">
-                            <div className="flex-1 h-14 relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-inner">
-                                <ShiftBar
-                                    shift={shifts[editingIndex]}
-                                    onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
-                                    allowMove={false}
-                                    barClass="bg-[#36606F] border border-white/10 shadow-lg"
-                                />
+                        {/* FILA DE TOTALES - DESPUÉS DE LOS TRABAJADORES */}
+                        <div className="flex bg-[#5B8FB9] border-b border-[#5B8FB9]/50">
+                            <div className="w-20 md:w-32 p-1 font-black text-white text-[8px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-[#5B8FB9]/50">
+                                TOT
                             </div>
+                            <div className="flex-1 relative h-6 flex">
+                                {totals.map((count, i) => (
+                                    <div
+                                        key={i}
+                                        className={`flex-1 flex items-center justify-center font-black text-[8px] md:text-[9px] transition-colors ${count > 0 ? 'text-white' : 'text-white/30'}`}
+                                    >
+                                        {count > 0 ? count : ''}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="w-10 md:w-12 shrink-0 border-l border-[#5B8FB9]/50" />
+                        </div>
+
+                        {/* Fila Añadir Trabajador - Relleno verde font blanco */}
+                        <div className="flex h-9 md:h-10 border-b border-gray-100 group">
                             <button
-                                onClick={() => setEditingIndex(null)}
-                                className="w-14 h-14 flex items-center justify-center bg-gray-900 rounded-2xl shadow-lg hover:bg-black text-white transition-all active:scale-90 shrink-0"
+                                onClick={() => setShowAddModal(true)}
+                                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white group"
                             >
-                                <X size={24} strokeWidth={3} />
+                                <Plus size={18} strokeWidth={4} className="group-hover:scale-110 transition-transform text-white" />
+                                <span className="font-black text-[10px] uppercase tracking-wider">Añadir Trabajador</span>
                             </button>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
+
+            {/* BARRA DE EDICIÓN FLOTANTE */}
+            {editingIndex !== null && shifts[editingIndex] && (
+                <div className="mt-2 mx-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="h-12 relative flex items-center">
+                        <div className="flex-1 relative h-full">
+                            <ShiftBar
+                                shift={shifts[editingIndex]}
+                                onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
+                                allowMove={false}
+                                barClass="bg-[#5B8FB9] border border-white/10 shadow-lg"
+                            />
+                        </div>
+                        <button
+                            onClick={() => setEditingIndex(null)}
+                            className="ml-3 w-10 h-10 flex items-center justify-center bg-white/90 rounded-xl shadow-lg hover:bg-white text-gray-500 transition-all active:scale-95 shrink-0"
+                        >
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
 
             {/* MODAL: Calendario */}
