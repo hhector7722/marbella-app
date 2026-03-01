@@ -130,12 +130,12 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             )}
 
-            <div className={cn("flex-1 flex flex-col min-h-0", isModal ? "p-6" : "p-2.5 sm:p-4")}>
+            <div className={cn("flex-1 flex flex-col min-h-0", isModal ? "p-6" : "p-1.5 sm:p-2")}>
                 {/* Product Image Area */}
                 <div
                     className={cn(
                         "w-full bg-white rounded-lg flex items-center justify-center overflow-hidden relative",
-                        isModal ? "h-32 mb-4" : "h-14 mb-0.5 cursor-pointer"
+                        isModal ? "h-32 mb-4" : "flex-1 min-h-0 mb-1 cursor-pointer"
                     )}
                     onClick={() => {
                         if (!isModal) setShowModal(true);
@@ -155,7 +155,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Product Info */}
-                <div className={cn("flex flex-col mt-auto px-1", isModal ? "gap-1.5 items-center justify-center text-center" : "gap-0 items-start text-left mb-1")}>
+                <div className={cn("flex flex-col px-1 shrink-0", isModal ? "mt-auto gap-1.5 items-center justify-center text-center" : "gap-0 items-start text-left mb-0.5")}>
                     <span className={cn("font-bold text-gray-700 leading-tight truncate w-full", isModal ? "text-sm sm:text-base" : "text-[10px]")} title={ingredient.name}>
                         {ingredient.name}
                     </span>
