@@ -117,16 +117,16 @@ const ShiftBar = ({
     return (
         <div
             ref={barRef}
-            className={`absolute top-1 bottom-1 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full shadow-sm ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            className={`absolute top-1.5 bottom-1.5 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
         >
-            {/* Tirador Izquierda (transparente) - Agrandado para t├íctil */}
+            {/* Tirador Izquierda (transparente) - Agrandado para táctil */}
             <div className="absolute left-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
 
             {/* Mini-barra Entrada (Verde) */}
-            <div className="absolute left-0 top-0 bottom-0 min-w-[48px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full shadow-md">
-                <span className="text-[10px] font-black text-white pointer-events-none select-none px-2 uppercase tracking-tighter">
+            <div className="absolute left-0 top-0 bottom-0 min-w-[48px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2">
                     {shift.start}
                 </span>
             </div>
@@ -135,13 +135,13 @@ const ShiftBar = ({
             <div className="flex-1 h-full" />
 
             {/* Mini-barra Salida (Roja) */}
-            <div className="absolute right-0 top-0 bottom-0 min-w-[48px] bg-rose-600 flex items-center justify-center shrink-0 z-20 rounded-full shadow-md">
-                <span className="text-[10px] font-black text-white pointer-events-none select-none px-2 uppercase tracking-tighter">
+            <div className="absolute right-0 top-0 bottom-0 min-w-[48px] bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2">
                     {shift.end}
                 </span>
             </div>
 
-            {/* Tirador Derecha (transparente) - Agrandado para t├íctil */}
+            {/* Tirador Derecha (transparente) - Agrandado para táctil */}
             <div className="absolute right-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
         </div>
     );
@@ -224,7 +224,10 @@ export default function ScheduleEditorPage() {
             }
 
             setShifts(activeShifts);
-            setAvailableProfiles(employees || []);
+            setAvailableProfiles((employees || []).filter((e: any) => {
+                const name = (e.first_name || '').trim().toLowerCase();
+                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+            }));
             setHasUnsavedChanges(false);
         } catch (error) {
             console.error(error);
@@ -434,8 +437,8 @@ export default function ScheduleEditorPage() {
         <div className="min-h-screen bg-[#5B8FB9] flex flex-col p-2 md:p-6 animate-in fade-in duration-500">
             <div className="max-w-6xl mx-auto w-full space-y-4">
 
-                {/* CONTENEDOR PRINCIPAL: HORARIOS (UNIFICADO) */}
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20 flex flex-col flex-1">
+                {/* CONTENEDOR PRINCIPAL: HORARIOS */}
+                <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-white/20">
 
                     {/* CABECERA PETROLEO: HORARIOS */}
                     <div className="bg-[#36606F] px-8 py-5 flex justify-between items-center text-white shrink-0">
@@ -445,45 +448,44 @@ export default function ScheduleEditorPage() {
                             </Link>
                             <div className="flex flex-col">
                                 <h3 className="text-lg font-black uppercase tracking-widest leading-none">Horarios</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Editor / Marbella</p>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Gestión de Turnos</p>
                             </div>
-                        </div>
-
-                        {/* Botones de acción en la cabecera */}
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => handleSave()}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 h-10 rounded-xl font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-[10px] md:text-xs uppercase tracking-widest"
-                            >
-                                <Save size={16} strokeWidth={3} /> <span className="hidden sm:inline">GUARDAR</span>
-                            </button>
-                            <button
-                                onClick={handleSendNotifications}
-                                className="bg-white/10 hover:bg-white/20 text-white px-4 h-10 rounded-xl font-black flex items-center justify-center gap-2 shadow-inner transition-all active:scale-95 text-[10px] md:text-xs uppercase tracking-widest"
-                            >
-                                <Send size={16} strokeWidth={3} /> <span className="hidden sm:inline">ENVIAR</span>
-                            </button>
                         </div>
                     </div>
 
                     {/* CUERPO BLANCO */}
-                    <div className="p-4 md:p-8 space-y-6 overflow-y-auto">
+                    <div className="p-4 md:p-8 space-y-6">
 
-                        {/* CABECERA DEL DÍA (INTEGRADA) */}
-                        <div className="bg-[#5B8FB9] rounded-2xl flex items-center justify-center p-3 md:p-4 text-white shadow-lg relative">
-                            <div className="flex items-center gap-2 md:gap-6">
+                        {/* CABECERA DEL DÍA */}
+                        <div className="bg-[#5B8FB9] rounded-2xl flex items-center justify-between p-3 md:p-4 text-white shadow-lg">
+                            <div className="flex items-center gap-2 md:gap-4">
                                 <button onClick={handlePrevDay} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90">
                                     <ChevronLeft size={24} strokeWidth={3} />
                                 </button>
                                 <button
                                     onClick={() => setShowCalendarModal(true)}
-                                    className="px-6 py-2 bg-white rounded-xl text-[#36606F] font-black text-sm md:text-base capitalize flex items-center gap-3 shadow-sm hover:bg-gray-50 transition-colors"
+                                    className="px-4 py-2 bg-white rounded-xl text-[#36606F] font-black text-sm md:text-base capitalize flex items-center gap-2 shadow-sm hover:bg-gray-50 transition-colors"
                                 >
                                     <Calendar size={18} fill="currentColor" />
                                     {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
                                 </button>
                                 <button onClick={handleNextDay} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90">
                                     <ChevronRight size={24} strokeWidth={3} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleSave()}
+                                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 h-10 rounded-xl font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-[10px] md:text-xs uppercase tracking-widest"
+                                >
+                                    <Save size={16} strokeWidth={3} /> <span className="hidden sm:inline">GUARDAR</span>
+                                </button>
+                                <button
+                                    onClick={handleSendNotifications}
+                                    className="bg-white/10 hover:bg-white/20 text-white px-4 h-10 rounded-xl font-black flex items-center justify-center gap-2 shadow-inner transition-all active:scale-95 text-[10px] md:text-xs uppercase tracking-widest"
+                                >
+                                    <Send size={16} strokeWidth={3} /> <span className="hidden sm:inline">ENVIAR</span>
                                 </button>
                             </div>
                         </div>
@@ -496,7 +498,7 @@ export default function ScheduleEditorPage() {
                                     type="text"
                                     value={activityIn}
                                     onChange={(e) => { setActivityIn(e.target.value); setHasUnsavedChanges(true); }}
-                                    className="w-full bg-white border border-gray-200 h-12 rounded-xl px-4 font-black text-gray-800 text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-gray-200 uppercase text-center"
+                                    className="w-full bg-white border border-gray-200 h-12 rounded-xl px-4 font-black text-gray-800 text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-gray-200"
                                     placeholder="00:00"
                                 />
                             </div>
@@ -506,19 +508,19 @@ export default function ScheduleEditorPage() {
                                     type="text"
                                     value={activityOut}
                                     onChange={(e) => { setActivityOut(e.target.value); setHasUnsavedChanges(true); }}
-                                    className="w-full bg-white border border-gray-200 h-12 rounded-xl px-4 font-black text-gray-800 text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-gray-200 uppercase text-center"
+                                    className="w-full bg-white border border-gray-200 h-12 rounded-xl px-4 font-black text-gray-800 text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-gray-200"
                                     placeholder="00:00"
                                 />
                             </div>
                         </div>
 
-                        {/* TABLA DE HORARIOS (RESTAURACION FEB 28) */}
-                        <div className="rounded-[2rem] border border-gray-100 shadow-xl overflow-hidden">
+                        {/* TABLA DE HORARIOS */}
+                        <div className="rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
                             <div className="w-full flex flex-col relative overflow-x-auto no-scrollbar">
 
-                                {/* CABECERA DE LA TABLA (ROJA) */}
-                                <div className="flex bg-[#D64D5D] text-white min-w-[700px]">
-                                    <div className="w-32 md:w-48 flex items-center justify-center shrink-0 border-r border-white/10">
+                                {/* CABECERA DE LA TABLA */}
+                                <div className="flex bg-red-500 text-white min-w-[600px]">
+                                    <div className="w-24 md:w-40 flex items-center justify-center shrink-0 border-r border-red-400/30">
                                         <button
                                             onClick={() => setShowAddModal(true)}
                                             className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-90 transition-transform hover:rotate-90 duration-300"
@@ -529,10 +531,10 @@ export default function ScheduleEditorPage() {
                                         </button>
                                     </div>
                                     <div className="flex-1 relative h-10 flex">
-                                        {hoursHeader.map((hour) => (
+                                        {hoursHeader.map((hour, i) => (
                                             <div
                                                 key={hour}
-                                                className="flex-1 text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/10 last:border-r-0 uppercase tracking-tighter"
+                                                className="flex-1 text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-red-400/30 last:border-r-0 uppercase tracking-tighter"
                                             >
                                                 {hour}
                                             </div>
@@ -540,20 +542,20 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 </div>
 
-                                {/* FILAS DE LOS EMPLEADOS (h-12) */}
-                                <div className="bg-white min-w-[700px]">
+                                {/* FILAS DE LOS EMPLEADOS */}
+                                <div className="bg-white min-w-[600px]">
                                     {shifts.map((shift, idx) => (
-                                        <div key={shift.employeeId} className={`flex h-12 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/50' : ''}`}>
+                                        <div key={shift.employeeId} className={`flex h-12 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/30' : ''}`}>
                                             {/* Columna Nombre con Eliminar */}
-                                            <div className="w-32 md:w-48 px-4 flex items-center gap-3 shrink-0 border-r border-gray-100 overflow-hidden relative group">
+                                            <div className="w-24 md:w-40 px-3 flex items-center gap-2 shrink-0 border-r border-gray-100 overflow-hidden relative group">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                                    className="w-6 h-6 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shadow-sm active:scale-75 transition-all hover:bg-rose-500 hover:text-white shrink-0"
+                                                    className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md active:scale-75 transition-all opacity-100 shrink-0"
                                                     title="Eliminar"
                                                 >
                                                     <X size={12} strokeWidth={4} />
                                                 </button>
-                                                <span className={`font-black text-[11px] md:text-sm truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#36606F]' : 'text-gray-800'}`}>
+                                                <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-blue-600' : 'text-gray-800'}`}>
                                                     {shift.name}
                                                 </span>
                                             </div>
@@ -573,7 +575,6 @@ export default function ScheduleEditorPage() {
                                                     <ShiftBar
                                                         shift={shift}
                                                         onUpdate={(newS) => handleUpdateShift(idx, newS)}
-                                                        barClass={editingIndex === idx ? "bg-[#36606F]/20" : "bg-emerald-100/50 hover:bg-emerald-200/60"}
                                                     />
                                                 )}
                                             </div>
@@ -587,16 +588,16 @@ export default function ScheduleEditorPage() {
                                         </div>
                                     )}
 
-                                    {/* FILA DE TOTALES (BLANCO / NEGRO) */}
-                                    <div className="flex bg-white border-t border-gray-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                                        <div className="w-32 md:w-48 p-1 font-black text-gray-400 text-[10px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-gray-100 bg-gray-50">
+                                    {/* FILA DE TOTALES: BLANCO / NEGRO */}
+                                    <div className="flex bg-white border-t border-gray-200">
+                                        <div className="w-24 md:w-40 p-1 font-black text-gray-400 text-[10px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-gray-100 bg-gray-50">
                                             TOTAL
                                         </div>
                                         <div className="flex-1 relative h-10 flex bg-white">
                                             {totals.map((count, i) => (
                                                 <div
                                                     key={i}
-                                                    className={`flex-1 flex items-center justify-center font-black text-[12px] transition-colors ${count > 0 ? 'text-gray-900 scale-110' : 'text-gray-200 italic'}`}
+                                                    className={`flex-1 flex items-center justify-center font-black text-[11px] transition-colors ${count > 0 ? 'text-gray-900 scale-110' : 'text-gray-200'}`}
                                                 >
                                                     {count > 0 ? count : ''}
                                                 </div>
@@ -608,131 +609,132 @@ export default function ScheduleEditorPage() {
                         </div>
                     </div>
                 </div>
+
                 {/* BARRA DE EDICIÓN FLOTANTE */}
                 {editingIndex !== null && shifts[editingIndex] && (
-                    <div className="fixed bottom-3 left-2 right-2 md:left-4 md:right-4 z-50 animate-in slide-in-from-bottom-5 duration-300">
-                        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 p-2 flex items-center gap-2 max-w-lg mx-auto">
-                            <div className="flex-1 h-[2.5rem] relative bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shadow-inner">
+                    <div className="fixed bottom-6 left-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-10 duration-500">
+                        <div className="max-w-4xl mx-auto flex items-center gap-4 bg-white/90 backdrop-blur-xl p-3 rounded-3xl shadow-2xl border border-white/50">
+                            <div className="flex-1 h-14 relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-inner">
                                 <ShiftBar
                                     shift={shifts[editingIndex]}
                                     onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
                                     allowMove={false}
-                                    barClass="bg-[#36606F]"
+                                    barClass="bg-[#36606F] border border-white/10 shadow-lg"
                                 />
                             </div>
                             <button
                                 onClick={() => setEditingIndex(null)}
-                                className="w-10 h-10 flex items-center justify-center bg-gray-900 hover:bg-black rounded-xl shadow-lg text-white transition-all active:scale-95 shrink-0"
+                                className="w-14 h-14 flex items-center justify-center bg-gray-900 rounded-2xl shadow-lg hover:bg-black text-white transition-all active:scale-90 shrink-0"
                             >
-                                <X size={18} strokeWidth={4} />
+                                <X size={24} strokeWidth={3} />
                             </button>
                         </div>
                     </div>
                 )}
+            </div>
 
 
-                {/* MODAL: Calendario */}
-                {showCalendarModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
-                        <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                                <div className="flex flex-col">
-                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Calendario</h3>
-                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Fecha</p>
-                                </div>
-                                <button onClick={() => setShowCalendarModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                    <X size={20} strokeWidth={3} />
-                                </button>
+            {/* MODAL: Calendario */}
+            {showCalendarModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                            <div className="flex flex-col">
+                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Calendario</h3>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Fecha</p>
                             </div>
+                            <button onClick={() => setShowCalendarModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                <X size={20} strokeWidth={3} />
+                            </button>
+                        </div>
 
-                            <div className="flex items-center justify-between p-4">
-                                <button
-                                    onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
-                                    className="p-2 hover:bg-gray-100 rounded-xl"
-                                >
-                                    <ChevronLeft size={20} className="text-gray-600" />
-                                </button>
-                                <span className="font-bold text-gray-800 capitalize">
-                                    {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                                </span>
-                                <button
-                                    onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
-                                    className="p-2 hover:bg-gray-100 rounded-xl"
-                                >
-                                    <ChevronRight size={20} className="text-gray-600" />
-                                </button>
+                        <div className="flex items-center justify-between p-4">
+                            <button
+                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                                className="p-2 hover:bg-gray-100 rounded-xl"
+                            >
+                                <ChevronLeft size={20} className="text-gray-600" />
+                            </button>
+                            <span className="font-bold text-gray-800 capitalize">
+                                {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                                className="p-2 hover:bg-gray-100 rounded-xl"
+                            >
+                                <ChevronRight size={20} className="text-gray-600" />
+                            </button>
+                        </div>
+
+                        <div className="p-4 pt-0">
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                    <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
+                                ))}
                             </div>
-
-                            <div className="p-4 pt-0">
-                                <div className="grid grid-cols-7 gap-1 mb-2">
-                                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                        <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
-                                    ))}
-                                </div>
-                                <div className="grid grid-cols-7 gap-1">
-                                    {generateCalendarDays().map((day, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => day && handleSelectCalendarDate(day)}
-                                            disabled={!day}
-                                            className={`aspect-square flex items-center justify-center rounded-xl text-sm font-bold transition-all
+                            <div className="grid grid-cols-7 gap-1">
+                                {generateCalendarDays().map((day, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => day && handleSelectCalendarDate(day)}
+                                        disabled={!day}
+                                        className={`aspect-square flex items-center justify-center rounded-xl text-sm font-bold transition-all
                                             ${!day ? 'invisible' : 'hover:bg-red-100 hover:text-red-600 text-gray-700'}
                                             ${day === new Date().getDate() &&
-                                                    calendarDate.getMonth() === new Date().getMonth() &&
-                                                    calendarDate.getFullYear() === new Date().getFullYear()
-                                                    ? 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
-                                                    : ''
-                                                }
+                                                calendarDate.getMonth() === new Date().getMonth() &&
+                                                calendarDate.getFullYear() === new Date().getFullYear()
+                                                ? 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
+                                                : ''
+                                            }
                                         `}
-                                        >
-                                            {day}
-                                        </button>
-                                    ))}
-                                </div>
+                                    >
+                                        {day}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* MODAL: Añadir Empleado */}
-                {showAddModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowAddModal(false)}>
-                        <div className="bg-white rounded-[2.5rem] w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                                <div className="flex flex-col">
-                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Añadir Staff</h3>
-                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Plantilla Marbella</p>
+            {/* MODAL: Añadir Empleado */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowAddModal(false)}>
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                            <div className="flex flex-col">
+                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Añadir Staff</h3>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Plantilla Marbella</p>
+                            </div>
+                            <button onClick={() => setShowAddModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                <X size={20} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto p-2 grid gap-1">
+                            {availableProfiles
+                                .filter(p => !shifts.some(s => s.employeeId === p.id))
+                                .map(profile => (
+                                    <button
+                                        key={profile.id}
+                                        onClick={() => handleAddEmployee(profile.id)}
+                                        className="flex items-center gap-3 p-3 hover:bg-emerald-50 rounded-xl transition-all group text-left border border-transparent hover:border-emerald-100"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                            <UserPlus size={16} />
+                                        </div>
+                                        <span className="font-bold text-gray-700 text-sm">{profile.first_name}</span>
+                                    </button>
+                                ))
+                            }
+                            {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).length === 0 && (
+                                <div className="p-8 text-center text-gray-400 text-xs font-medium italic">
+                                    Todos los empleados están en el horario
                                 </div>
-                                <button onClick={() => setShowAddModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                    <X size={20} strokeWidth={3} />
-                                </button>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto p-2 grid gap-1">
-                                {availableProfiles
-                                    .filter(p => !shifts.some(s => s.employeeId === p.id))
-                                    .map(profile => (
-                                        <button
-                                            key={profile.id}
-                                            onClick={() => handleAddEmployee(profile.id)}
-                                            className="flex items-center gap-3 p-3 hover:bg-emerald-50 rounded-xl transition-all group text-left border border-transparent hover:border-emerald-100"
-                                        >
-                                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                                <UserPlus size={16} />
-                                            </div>
-                                            <span className="font-bold text-gray-700 text-sm">{profile.first_name}</span>
-                                        </button>
-                                    ))
-                                }
-                                {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).length === 0 && (
-                                    <div className="p-8 text-center text-gray-400 text-xs font-medium italic">
-                                        Todos los empleados están en el horario
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
