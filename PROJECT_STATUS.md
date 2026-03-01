@@ -134,6 +134,7 @@ El sistema de historial ha sido refinado para permitir una gestión granular por
 - [ ] **IA Voz (LiveKit)**: Limitada en entornos Windows ARM64 (Surface) por falta de binarios nativos.
 ## 📅 PENDIENTE
 - [ ] Próximas integraciones de BI y alertas de stock.
+- [x] ⚡ **Optimización Carga Dashboard (Tesorería)**: Eliminada la llamada RPC `get_theoretical_balance` en el renderizado inicial del Dashboard. Ahora el sistema confía plenamente en la columna persistente `difference` de la tabla `cash_boxes`, acelerando radicalmente la carga de la vista principal ("Caja Inicial") bajo el paradigma de "Single Source of Truth" de la base de datos.
 
 ---
 
