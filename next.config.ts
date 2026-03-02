@@ -13,11 +13,6 @@ const nextConfig: NextConfig = {
     config.resolve.alias.canvas = false;
     return config;
   },
-  turbopack: {
-    resolveAlias: {
-      canvas: './empty-module.js',
-    },
-  },
 };
 
 export default nextConfig;
