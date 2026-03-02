@@ -74,21 +74,21 @@ export default function MovementsPage() {
     const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory'>('none');
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
-    const [summary, setSummary] = useState({
+    const [periodSummary, setPeriodSummary] = useState({
         income: 0,
         expense: 0,
-        balance: 0,
-        currentBalance: 0,
-        initialBalanceInRange: 0
     });
-    const [currentSystemStatus, setCurrentSystemStatus] = useState({
+
+    // ESTADO ATEMPORAL (No afectado por filtros)
+    const [currentBoxStatus, setCurrentBoxStatus] = useState({
         theoreticalBalance: 0,
-        physicalBalance: 0
+        physicalBalance: 0,
+        loading: true
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
     // [✓] FÓRMULA ESTRICTA: FÍSICA - TEÓRICA EN CADA RENDER (Globales, no por periodo)
-    const calculatedDifference = currentSystemStatus.physicalBalance - currentSystemStatus.theoreticalBalance;
+    const calculatedDifference = currentBoxStatus.physicalBalance - currentBoxStatus.theoreticalBalance;
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -96,21 +96,18 @@ export default function MovementsPage() {
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+    // 1. CARGA ATEMPORAL (Global)
     useEffect(() => {
-        fetchMovements();
-    }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter]);
+        fetchCurrentBoxStatus();
+    }, []);
 
-    async function fetchMovements() {
-        setLoading(true);
-        setPage(0);
-        setMovements([]);
-        setHasMore(true);
+    async function fetchCurrentBoxStatus() {
         try {
             const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, name').eq('type', 'operational').maybeSingle();
             if (!box) return;
             setBoxData(box);
 
-            // 1. Obtener Saldo Teórico Actual (A) y Físico (B) (independiente de las fechas)
+            // Obtener estrictamente el registro más reciente sin filtros de fecha
             const { data: currentTheoreticalRecord } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
@@ -118,14 +115,29 @@ export default function MovementsPage() {
                 .limit(1)
                 .maybeSingle();
 
-            const currentTheoreticalBalance = currentTheoreticalRecord ? Number(currentTheoreticalRecord.running_balance) : 0;
-            const currentPhysicalBalance = box.current_balance;
-
-            setCurrentSystemStatus({
-                theoreticalBalance: currentTheoreticalBalance,
-                physicalBalance: currentPhysicalBalance
+            setCurrentBoxStatus({
+                theoreticalBalance: currentTheoreticalRecord ? Number(currentTheoreticalRecord.running_balance) : 0,
+                physicalBalance: box.current_balance,
+                loading: false
             });
+        } catch (error) {
+            console.error("Error fetching current box status:", error);
+        }
+    }
 
+    // 2. CARGA TEMPORAL (Filtrada)
+    useEffect(() => {
+        if (!currentBoxStatus.loading) {
+            fetchFilteredMovements();
+        }
+    }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter, currentBoxStatus.loading]);
+
+    async function fetchFilteredMovements() {
+        setLoading(true);
+        setPage(0);
+        setMovements([]);
+        setHasMore(true);
+        try {
             let startISO: string;
             let endISO: string;
 
@@ -138,7 +150,7 @@ export default function MovementsPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setMovements([]);
-                    setSummary({ income: 0, expense: 0, balance: 0, currentBalance: box.current_balance, initialBalanceInRange: 0 });
+                    setPeriodSummary({ income: 0, expense: 0 });
                     setLoading(false);
                     return;
                 }
@@ -150,18 +162,7 @@ export default function MovementsPage() {
                 endISO = e.toISOString();
             }
 
-            // 2. Obtener statistics del periodo filtrado
-            const { data: endRecord } = await supabase
-                .from('v_treasury_movements_balance')
-                .select('running_balance')
-                .lte('created_at', endISO)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
-            const theoreticalEndValue = endRecord ? Number(endRecord.running_balance) : 0;
-
-            // 3. Obtener estadísticas para el resumen sin descargar todo el contenido
+            // Estadísticas para el resumen del periodo seleccionado
             const { data: periodStats } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('type, amount')
@@ -175,15 +176,12 @@ export default function MovementsPage() {
                 exp = periodStats.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
             }
 
-            setSummary({
+            setPeriodSummary({
                 income: inc,
                 expense: exp,
-                balance: theoreticalEndValue,
-                currentBalance: box.current_balance,
-                initialBalanceInRange: 0
             });
 
-            // 4. Obtener la primera página
+            // Obtener la primera página
             await fetchPage(0, startISO, endISO, true);
 
         } catch (error) { console.error(error); } finally { setLoading(false); }
@@ -284,7 +282,8 @@ export default function MovementsPage() {
             if (error) throw error;
 
             setCashModalMode('none');
-            fetchMovements();
+            await fetchCurrentBoxStatus();
+            fetchFilteredMovements();
             toast.success('Operación realizada correctamente');
         } catch (error) {
             console.error(error);
@@ -461,18 +460,18 @@ export default function MovementsPage() {
                         {/* RESUMEN: Grid 4x1 en móvil y escritorio */}
                         <div className="py-4 px-2 grid grid-cols-4 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">+{summary.income.toFixed(0)}€</span>
+                                <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">+{periodSummary.income.toFixed(0)}€</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-rose-500 line-clamp-1">-{summary.expense.toFixed(0)}€</span>
+                                <span className="text-[13px] md:text-2xl font-black text-rose-500 line-clamp-1">-{periodSummary.expense.toFixed(0)}€</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">GASTOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {currentSystemStatus.theoreticalBalance.toFixed(0)}€
+                                    {currentBoxStatus.theoreticalBalance.toFixed(0)}€
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
@@ -716,9 +715,10 @@ export default function MovementsPage() {
                 <CashClosingModal
                     isOpen={isClosingModalOpen}
                     onClose={() => setIsClosingModalOpen(false)}
-                    onSuccess={() => {
+                    onSuccess={async () => {
                         setIsClosingModalOpen(false);
-                        fetchMovements();
+                        await fetchCurrentBoxStatus();
+                        fetchFilteredMovements();
                         toast.success("Cierre realizado correctamente");
                     }}
                 />
