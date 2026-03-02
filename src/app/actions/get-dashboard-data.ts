@@ -118,6 +118,10 @@ export async function getDashboardData() {
     // --- PROCESS BOXES & MOVEMENTS ---
     let boxes = [];
     let boxMovements = [];
+    let theoreticalBalance = 0;
+    let actualBalance = 0;
+    let difference = 0;
+
     if (allBoxes) {
         const sorted = allBoxes.sort((a, b) => a.type === 'operational' ? -1 : 1);
         boxes = sorted;
@@ -132,7 +136,16 @@ export async function getDashboardData() {
 
             boxMovements = moves || [];
 
-            // La diferencia ya viene calculada desde la DB en la columna 'difference' de 'cash_boxes'
+            // Fetch theoretical balance from view
+            const { data: viewData } = await supabase.from('v_treasury_movements_balance')
+                .select('running_balance')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            theoreticalBalance = viewData?.running_balance || 0;
+            actualBalance = opBox.current_balance || 0;
+            difference = actualBalance - theoreticalBalance;
         }
     }
 
@@ -183,6 +196,9 @@ export async function getDashboardData() {
         liveTickets: { total: totalVentas, count: Math.max(0, countVentas) },
         boxes,
         boxMovements,
+        theoreticalBalance,
+        actualBalance,
+        difference,
         overtimeData,
         paidStatus: initialPaidStatus,
         allEmployees: (allProfiles || []).filter((p: any) => {

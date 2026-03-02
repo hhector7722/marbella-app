@@ -9,7 +9,7 @@ import {
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
     PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check,
-    Coins, Landmark
+    Coins, Landmark, AlertTriangle
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
@@ -164,6 +164,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
     const [boxes, setBoxes] = useState<any[]>(initialData?.boxes || []);
     const [boxMovements, setBoxMovements] = useState<any[]>(initialData?.boxMovements || []);
+    const [theoreticalBalance, setTheoreticalBalance] = useState<number>(initialData?.theoreticalBalance || 0);
+    const [actualBalance, setActualBalance] = useState<number>(initialData?.actualBalance || 0);
+    const [difference, setDifference] = useState<number>(initialData?.difference || 0);
     const [overtimeData, setOvertimeData] = useState<any[]>(initialData?.overtimeData || []);
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -299,6 +302,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 setLiveTickets(data.liveTickets);
                 setBoxes(data.boxes);
                 setBoxMovements(data.boxMovements);
+                setTheoreticalBalance(data.theoreticalBalance || 0);
+                setActualBalance(data.actualBalance || 0);
+                setDifference(data.difference || 0);
                 setOvertimeData(data.overtimeData);
                 setPaidStatus(data.paidStatus);
                 setAllEmployees(data.allEmployees);
@@ -435,7 +441,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         >
                                             <div className="flex flex-col items-start leading-none gap-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                                <span className="text-3xl font-black">{box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}</span>
+                                                <span className="text-3xl font-black">{theoreticalBalance > 0.005 ? `${theoreticalBalance.toFixed(2)}€` : " "}</span>
                                             </div>
                                         </button>
 
@@ -471,15 +477,16 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     </div>
                                     <div className="flex flex-col flex-1 min-h-0">
                                         <div className="flex items-center px-2 mb-1">
-                                            {Math.abs(box.difference || 0) < 0.01 ? (
+                                            {Math.abs(difference || 0) < 0.01 ? (
                                                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-3.5 h-3.5" /></span>
                                             ) : (
                                                 <span className={cn(
-                                                    "text-[10px] font-black uppercase tracking-widest",
-                                                    (box.difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
+                                                    "text-[10px] font-black uppercase tracking-widest flex items-center gap-1",
+                                                    (difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
                                                 )}>
-                                                    {(box.difference || 0) > 0 ? '+' : ''}
-                                                    {Math.abs(box.difference || 0) > 0.005 ? (box.difference || 0).toFixed(2) : " "}€
+                                                    <AlertTriangle className="w-3.5 h-3.5" strokeWidth={3} />
+                                                    {(difference || 0) > 0 ? '+' : ''}
+                                                    {Math.abs(difference || 0) > 0.005 ? (difference || 0).toFixed(2) : " "}€
                                                 </span>
                                             )}
                                         </div>
@@ -594,7 +601,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     >
                                         <div className="flex flex-col items-start leading-none gap-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                            <span className="text-lg font-black">{box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}</span>
+                                            <span className="text-lg font-black">{theoreticalBalance > 0.005 ? `${theoreticalBalance.toFixed(2)}€` : " "}</span>
                                         </div>
                                     </button>
 
@@ -630,14 +637,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 </div>
                                 <div className="flex flex-col flex-1 min-h-0">
                                     <div className="flex items-center px-1 mb-1">
-                                        {Math.abs(box.difference || 0) < 0.01 ? (
+                                        {Math.abs(difference || 0) < 0.01 ? (
                                             <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /></span>
                                         ) : (
                                             <span className={cn(
-                                                "text-[8px] font-black uppercase tracking-widest",
-                                                (box.difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
+                                                "text-[8px] font-black uppercase tracking-widest flex items-center gap-1",
+                                                (difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
                                             )}>
-                                                {Math.abs(box.difference || 0) > 0.005 ? ((box.difference || 0) > 0 ? '+' : '') + (box.difference || 0).toFixed(2) + "€" : " "}
+                                                <AlertTriangle className="w-2.5 h-2.5" strokeWidth={3} />
+                                                {Math.abs(difference || 0) > 0.005 ? ((difference || 0) > 0 ? '+' : '') + (difference || 0).toFixed(2) + "€" : " "}
                                             </span>
                                         )}
                                     </div>
