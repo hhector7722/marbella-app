@@ -516,12 +516,11 @@ export default function ScheduleEditorPage() {
                     <div className="w-full flex flex-col rounded-[20px] overflow-hidden border border-gray-100 shadow-xl bg-white relative">
                         {/* ENCABEZADO DE HORAS - ROJO */}
                         <div className="flex bg-[#D64D5D] text-white sticky top-0 z-30 shadow-sm">
-                            <div className="w-20 md:w-32 p-1 border-r border-white/10 shrink-0 flex items-center justify-center bg-white">
+                            <div className="w-20 md:w-32 h-7 border-r border-white/10 shrink-0 flex items-center justify-center bg-white/10 group cursor-pointer hover:bg-white/20 transition-colors" onClick={() => setShowAddModal(true)}>
                                 <button
-                                    onClick={() => setShowAddModal(true)}
-                                    className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#1bc689] text-white flex items-center justify-center hover:bg-[#15a470] transition-transform active:scale-95 shadow-sm"
+                                    className="w-4 h-4 rounded-full bg-[#1bc689] text-white flex items-center justify-center transition-transform group-active:scale-90 shadow-sm pointer-events-none"
                                 >
-                                    <Plus size={20} strokeWidth={4} />
+                                    <Plus size={10} strokeWidth={4} />
                                 </button>
                             </div>
                             <div className="flex-1 relative h-7 flex">
