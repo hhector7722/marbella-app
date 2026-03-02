@@ -81,10 +81,14 @@ export default function MovementsPage() {
         currentBalance: 0,
         initialBalanceInRange: 0
     });
+    const [currentSystemStatus, setCurrentSystemStatus] = useState({
+        theoreticalBalance: 0,
+        physicalBalance: 0
+    });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
-    // [✓] FÓRMULA ESTRICTA: FÍSICA - TEÓRICA EN CADA RENDER
-    const calculatedDifference = summary.currentBalance - summary.balance;
+    // [✓] FÓRMULA ESTRICTA: FÍSICA - TEÓRICA EN CADA RENDER (Globales, no por periodo)
+    const calculatedDifference = currentSystemStatus.physicalBalance - currentSystemStatus.theoreticalBalance;
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -105,6 +109,22 @@ export default function MovementsPage() {
             const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, name').eq('type', 'operational').maybeSingle();
             if (!box) return;
             setBoxData(box);
+
+            // 1. Obtener Saldo Teórico Actual (A) y Físico (B) (independiente de las fechas)
+            const { data: currentTheoreticalRecord } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('running_balance')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            const currentTheoreticalBalance = currentTheoreticalRecord ? Number(currentTheoreticalRecord.running_balance) : 0;
+            const currentPhysicalBalance = box.current_balance;
+
+            setCurrentSystemStatus({
+                theoreticalBalance: currentTheoreticalBalance,
+                physicalBalance: currentPhysicalBalance
+            });
 
             let startISO: string;
             let endISO: string;
@@ -130,7 +150,7 @@ export default function MovementsPage() {
                 endISO = e.toISOString();
             }
 
-            // 1. Obtener theoreticalEndValue del registro más reciente del periodo
+            // 2. Obtener statistics del periodo filtrado
             const { data: endRecord } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
@@ -141,7 +161,7 @@ export default function MovementsPage() {
 
             const theoreticalEndValue = endRecord ? Number(endRecord.running_balance) : 0;
 
-            // 2. Obtener estadísticas para el resumen sin descargar todo el contenido
+            // 3. Obtener estadísticas para el resumen sin descargar todo el contenido
             const { data: periodStats } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('type, amount')
@@ -163,7 +183,7 @@ export default function MovementsPage() {
                 initialBalanceInRange: 0
             });
 
-            // 3. Obtener la primera página
+            // 4. Obtener la primera página
             await fetchPage(0, startISO, endISO, true);
 
         } catch (error) { console.error(error); } finally { setLoading(false); }
@@ -452,9 +472,9 @@ export default function MovementsPage() {
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {summary.balance.toFixed(0)}€
+                                    {currentSystemStatus.theoreticalBalance.toFixed(0)}€
                                 </span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
@@ -464,7 +484,7 @@ export default function MovementsPage() {
                                 )}>
                                     {Math.abs(calculatedDifference) < 0.01 ? "0€" : `${calculatedDifference > 0 ? '+' : ''}${calculatedDifference.toFixed(0)}€`}
                                 </span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFERENCIA</span>
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFER. ACTUAL</span>
                             </div>
                         </div>
 
