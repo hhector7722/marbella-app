@@ -9,7 +9,7 @@ import Image from 'next/image';
 import {
     User, Phone, CreditCard, FileText, Copy, Check,
     Briefcase, Hash, Euro, FileClock, Mail,
-    CheckCircle2, ArrowLeft, Settings, LogOut, Lock, ChevronRight
+    CheckCircle2, ArrowLeft, Settings, LogOut, Lock, ChevronRight, Receipt
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
@@ -191,6 +191,16 @@ function ProfileContent() {
                                 className="absolute top-5 right-5 w-12 h-12 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
                             >
                                 <Settings size={20} />
+                            </button>
+                        )}
+
+                        {currentUser?.id === 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6' && (
+                            <button
+                                onClick={() => router.push('/dashboard/ledger')}
+                                className="absolute top-5 left-5 h-12 px-4 flex items-center gap-2 justify-center bg-[#5B8FB9] shadow-xl shadow-blue-900/20 rounded-xl hover:bg-blue-400 border border-white/20 transition-all text-white active:scale-90"
+                            >
+                                <Receipt size={18} strokeWidth={2.5} />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Facturas</span>
                             </button>
                         )}
                     </div>

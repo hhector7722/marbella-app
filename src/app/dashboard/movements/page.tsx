@@ -42,7 +42,7 @@ interface Movement {
     id: string;
     created_at: string;
     amount: number;
-    type: 'income' | 'expense';
+    type: 'income' | 'expense' | 'adjustment';
     notes: string;
     running_balance: number;
     breakdown?: any;
@@ -84,9 +84,11 @@ export default function MovementsPage() {
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
-    // ARCHITECT_ULTRAFLUIDITY: Incremental rendering to keep Main Thread free
-    const [displayLimit, setDisplayLimit] = useState(40);
-    const visibleMovements = movements.slice(0, displayLimit);
+    // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
+    const PAGE_SIZE = 40;
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     useEffect(() => {
         fetchMovements();
@@ -94,6 +96,9 @@ export default function MovementsPage() {
 
     async function fetchMovements() {
         setLoading(true);
+        setPage(0);
+        setMovements([]);
+        setHasMore(true);
         try {
             const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, name').eq('type', 'operational').maybeSingle();
             if (!box) return;
@@ -123,61 +128,116 @@ export default function MovementsPage() {
                 endISO = e.toISOString();
             }
 
-            // 1. Obtener datos básicos de la caja
-            const { data: rangeMoves } = await supabase
-                .from('treasury_log')
+            // 1. Obtener theoreticalEndValue del registro más reciente del periodo
+            const { data: endRecord } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('running_balance')
+                .lte('created_at', endISO)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            const theoreticalEndValue = endRecord ? Number(endRecord.running_balance) : 0;
+
+            // 2. Obtener estadísticas para el resumen sin descargar todo el contenido
+            const { data: periodStats } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('type, amount')
+                .gte('created_at', startISO)
+                .lte('created_at', endISO);
+
+            let inc = 0;
+            let exp = 0;
+            if (periodStats) {
+                inc = periodStats.filter(m => m.type === 'IN' || m.type === 'CLOSE_ENTRY').reduce((sum, m) => sum + m.amount, 0);
+                exp = periodStats.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
+            }
+
+            const difference = box.current_balance - theoreticalEndValue;
+
+            setSummary({
+                income: inc,
+                expense: exp,
+                difference: difference,
+                balance: theoreticalEndValue,
+                currentBalance: box.current_balance,
+                initialBalanceInRange: 0
+            });
+
+            // 3. Obtener la primera página
+            await fetchPage(0, startISO, endISO, true);
+
+        } catch (error) { console.error(error); } finally { setLoading(false); }
+    }
+
+    async function fetchPage(pageIndex: number, startISO: string, endISO: string, isInitial: boolean = false) {
+        if (!isInitial) setIsLoadingMore(true);
+        try {
+            const from = pageIndex * PAGE_SIZE;
+            const to = from + PAGE_SIZE - 1;
+
+            const { data: pageMoves } = await supabase
+                .from('v_treasury_movements_balance')
                 .select('*')
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
-                .order('created_at', { ascending: false });
+                .not('type', 'in', '("ADJUSTMENT","SWAP")')
+                .order('created_at', { ascending: false })
+                .range(from, to);
 
-            // 2. Obtener SALDO (Suma de IN/OUT históricos ignorando Arqueos)
-            // Para un periodo dado, el saldo al final es: SUM(IN) - SUM(OUT) de TODO el pasado.
-            const { data: runningData } = await supabase.rpc('get_theoretical_balance', {
-                target_date: endISO
-            });
+            if (pageMoves) {
+                const formatted: Movement[] = pageMoves.map((m: any) => ({
+                    ...m,
+                    type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
+                        (m.type === 'OUT' ? 'expense' : 'adjustment'),
+                    original_type: m.type,
+                    running_balance: Number(m.running_balance)
+                }));
 
-            const theoreticalEndValue = runningData || 0;
+                if (isInitial) {
+                    setMovements(formatted);
+                } else {
+                    setMovements(prev => [...prev, ...formatted]);
+                }
 
-            if (rangeMoves) {
-                let currentRunning = theoreticalEndValue;
-
-                const processed = rangeMoves.map((m: any) => {
-                    const movement: Movement = {
-                        ...m,
-                        type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
-                            (m.type === 'OUT' ? 'expense' : 'adjustment'),
-                        original_type: m.type,
-                        running_balance: currentRunning
-                    };
-
-                    // El saldo en la tabla sigue la línea de flujo (IN/OUT)
-                    if (m.type === 'IN' || m.type === 'CLOSE_ENTRY' || m.type === 'OUT') {
-                        const isInc = (m.type === 'IN' || m.type === 'CLOSE_ENTRY');
-                        currentRunning -= (isInc ? m.amount : -m.amount);
-                    }
-                    return movement;
-                });
-
-                const filtered = processed.filter(m => m.original_type !== 'ADJUSTMENT' && m.original_type !== 'SWAP');
-                const inc = rangeMoves.filter(m => (m.type === 'IN' || m.type === 'CLOSE_ENTRY')).reduce((sum, m) => sum + m.amount, 0);
-                const exp = rangeMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
-
-                // La diferencia es: Caja Real ACTUAL - Saldo ACTUAL
-                const difference = box.current_balance - theoreticalEndValue;
-
-                setMovements(filtered);
-                setSummary({
-                    income: inc,
-                    expense: exp,
-                    difference: difference,
-                    balance: theoreticalEndValue,
-                    currentBalance: box.current_balance,
-                    initialBalanceInRange: currentRunning
-                });
+                setHasMore(pageMoves.length === PAGE_SIZE);
+            } else {
+                setHasMore(false);
             }
-        } catch (error) { console.error(error); } finally { setLoading(false); }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            if (!isInitial) setIsLoadingMore(false);
+        }
     }
+
+    const loadMore = () => {
+        setPage(prevPage => {
+            const nextPage = prevPage + 1;
+
+            let startISO: string;
+            let endISO: string;
+
+            if (filterMode === 'single') {
+                const d = new Date(selectedDate);
+                d.setHours(0, 0, 0, 0);
+                startISO = d.toISOString();
+                d.setHours(23, 59, 59, 999);
+                endISO = d.toISOString();
+            } else {
+                if (!rangeStart || !rangeEnd) return prevPage;
+                const s = new Date(rangeStart);
+                s.setHours(0, 0, 0, 0);
+                const e = new Date(rangeEnd);
+                e.setHours(23, 59, 59, 999);
+                startISO = s.toISOString();
+                endISO = e.toISOString();
+            }
+
+            fetchPage(nextPage, startISO, endISO);
+            return nextPage;
+        });
+    };
 
     const handleCashTransaction = async (total: number, breakdown: any, notes: string, customDate?: string) => {
         try {
@@ -441,7 +501,7 @@ export default function MovementsPage() {
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                visibleMovements.map((mov) => {
+                                                movements.map((mov) => {
                                                     const date = new Date(mov.created_at);
                                                     return (
                                                         <tr
@@ -500,14 +560,15 @@ export default function MovementsPage() {
                                     </table>
 
                                     {/* SCROLL SENSOR */}
-                                    {movements.length > displayLimit && (
+                                    {hasMore && movements.length > 0 && (
                                         <div
                                             className="py-6 flex justify-center"
                                             ref={(el) => {
                                                 if (!el) return;
                                                 const observer = new IntersectionObserver((entries) => {
-                                                    if (entries[0].isIntersecting) {
-                                                        setDisplayLimit(prev => prev + 40);
+                                                    if (entries[0].isIntersecting && !isLoadingMore && !loading) {
+                                                        loadMore();
+                                                        observer.disconnect();
                                                     }
                                                 });
                                                 observer.observe(el);
