@@ -198,6 +198,7 @@ export default function HistoryPage() {
 
     const [closings, setClosings] = useState<any[]>([]);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
+    const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
 
     useEffect(() => {
         checkUserRole();
@@ -238,10 +239,16 @@ export default function HistoryPage() {
                 .lte('closing_date', endISO)
                 .order('closing_date', { ascending: false });
 
-            const [closingsRes] = await Promise.all([closingsPromise]);
+            const summaryPromise = supabase.rpc('get_cash_closings_summary', {
+                p_start_date: startISO,
+                p_end_date: endISO
+            });
+
+            const [closingsRes, summaryRes] = await Promise.all([closingsPromise, summaryPromise]);
 
             if (closingsRes.error) throw closingsRes.error;
             setClosings(closingsRes.data || []);
+            setSummary(summaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
 
             try {
                 const { data: hourlyData, error: hourlyError } = await supabase
@@ -308,18 +315,6 @@ export default function HistoryPage() {
         }
     };
 
-    const summary = useMemo(() => {
-        if (!closings.length) return { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 };
-        const totalNet = closings.reduce((acc, c) => acc + (c.net_sales || 0), 0);
-        const totalGross = closings.reduce((acc, c) => acc + (c.tpv_sales || 0), 0);
-        const totalTickets = closings.reduce((acc, c) => acc + (c.tickets_count || 0), 0);
-        return {
-            totalNet,
-            totalGross,
-            avgTicket: totalTickets > 0 ? totalGross / totalTickets : 0,
-            count: closings.length
-        };
-    }, [closings]);
 
     const formatValue = (val: number, type: MetricType) => {
         if (type === 'tickets_count') return val.toString();
