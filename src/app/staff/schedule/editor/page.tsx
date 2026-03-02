@@ -166,6 +166,7 @@ export default function ScheduleEditorPage() {
     // Horas por defecto (celdas vacías por defecto)
     const [defaultStart, setDefaultStart] = useState('');
     const [defaultEnd, setDefaultEnd] = useState('');
+    const [participantsCount, setParticipantsCount] = useState<string>('');
 
     // Modales
     const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -254,8 +255,8 @@ export default function ScheduleEditorPage() {
         const newShift = {
             employeeId: profile.id,
             name: profile.first_name,
-            start: '09:00',
-            end: '17:00',
+            start: defaultStart || '09:00',
+            end: defaultEnd || '17:00',
             active: true
         };
 
@@ -499,7 +500,13 @@ export default function ScheduleEditorPage() {
                             <div className="flex flex-col gap-1 shrink-0 w-[45px] sm:w-[60px]">
                                 <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
                                 <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200 h-[30px] sm:h-[34px]">
-                                    <span className="font-black text-zinc-800 text-[10px] sm:text-xs">{shifts.length}</span>
+                                    <input
+                                        type="text"
+                                        value={participantsCount}
+                                        onChange={(e) => setParticipantsCount(e.target.value)}
+                                        className="bg-transparent text-center font-black text-zinc-800 text-[10px] sm:text-xs focus:outline-none w-full"
+                                        placeholder=""
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -509,7 +516,14 @@ export default function ScheduleEditorPage() {
                     <div className="w-full flex flex-col rounded-[20px] overflow-hidden border border-gray-100 shadow-xl bg-white relative">
                         {/* ENCABEZADO DE HORAS - ROJO */}
                         <div className="flex bg-[#D64D5D] text-white sticky top-0 z-30 shadow-sm">
-                            <div className="w-20 md:w-32 p-1 border-r border-white/10 shrink-0" />
+                            <div className="w-20 md:w-32 p-1 border-r border-white/10 shrink-0 flex items-center justify-center">
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#10b981] text-white flex items-center justify-center hover:bg-[#059669] transition-all active:scale-90 shadow-sm"
+                                >
+                                    <Plus size={18} strokeWidth={4} />
+                                </button>
+                            </div>
                             <div className="flex-1 relative h-7 flex">
                                 {hoursHeader.map((hour, i) => (
                                     <div
