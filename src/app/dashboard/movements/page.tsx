@@ -118,7 +118,7 @@ export default function MovementsPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setMovements([]);
-                    setSummary({ income: 0, expense: 0, difference: 0, balance: 0, currentBalance: box.current_balance, initialBalanceInRange: 0 });
+                    setSummary({ income: 0, expense: 0, balance: 0, currentBalance: box.current_balance, initialBalanceInRange: 0 });
                     setLoading(false);
                     return;
                 }
