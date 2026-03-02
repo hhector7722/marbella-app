@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 
-const START_HOUR = 7; // 7:00 AM
+const START_HOUR = 8; // 8:00 AM
 const END_HOUR = 23;  // 23:00 PM
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const SNAP_MINUTES = 30;
@@ -530,7 +530,7 @@ export default function ScheduleEditorPage() {
                                         key={hour}
                                         className="flex-1 text-[8px] md:text-[9px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/5 last:border-r-0"
                                     >
-                                        {i % 2 === 0 ? hour : ''}
+                                        {hour}
                                     </div>
                                 ))}
                             </div>

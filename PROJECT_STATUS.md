@@ -1,13 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-01 (Rediseño Editor Horarios Marbella Detail)
+**Última actualización:** 2026-03-02 (Refinamiento UI Resumen Semanal)
 
 ## 📌 ESTADO GENERAL
-El sistema de historial ha sido refinado para permitir una gestión granular por días, facilitando la auditoría de registros para los managers. El modal de selección de personal ha sido rediseñado bajo un enfoque minimalista y ultra-compacto, optimizado para interfaces táctiles de alta densidad. El panel de staff ha sido actualizado con elementos más grandes y la nueva estética de cabeceras "Petrol".
+El sistema ha sido refinado eliminando ruidos visuales en el dashboard de staff, específicamente el contorno y sombras de las cabeceras del resumen semanal para una estética más integrada.
 
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refinamiento UI Resumen Semanal (Flush Header)**: Eliminado el contorno blanco exterior y las sombras (`shadow-md`) de las cabeceras de los días de la semana en el dashboard de staff y en la vista de historial semanal. Se ha suprimido también el borde inferior separador para lograr un diseño más limpio y fluido ("Apple Human Interface").
 - [x] **Rediseño Editor de Horarios (Marbella Detail v2)**: Evolución funcional de la interfaz. Se ha habilitado la entrada manual de participantes de actividad y el borrado total de celdas de tiempo (inicio/final). Integración del botón circular verde de añadir staff en la primera columna de la cabecera de la tabla, con lógica de autocompletado de horas basada en la configuración por defecto del día.
 - [x] **Rediseño Editor de Horarios (Marbella Detail)**: Transformación radical de `/staff/schedule/editor` a la estética unificada. Implementado contenedor de tarjeta blanca sobre fondo azul Marbella, cabecera Petrol (#36606F) con fecha interactiva, y sección superior de campos editables (Actividad, Inicio, Final, Participantes). Se ha respetado escrupulosamente la tabla de trabajadores y sus proporciones originales, permitiendo una visualización completa en smartphones y manteniendo la interactividad de las barras de turnos.
 - [x] **Rediseño y Unificación Modal Detalle Día (Bento-View v3)**: Transformación radical de la interfaz de detalle diario. Se ha implementado el componente unificado en `/staff/history` y `/registros`, eliminando códigos duplicados. Etiquetas compactas ("Horas" / "H Extras") con capacidad de edición manual exclusiva para Managers y lógica reactiva de sincronización. Estética premium ("Apple Human Interface") con tarjetas Bento y tipografía bold sans-serif.
