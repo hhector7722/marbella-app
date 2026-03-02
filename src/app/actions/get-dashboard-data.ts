@@ -10,14 +10,14 @@ export async function getDashboardData() {
 
     // 1. Parallel Fetching of Core Data
     const [
-        { data: ticketsToday },
+        { data: salesStats },
         { data: lastClose },
         { data: allBoxes },
         { data: allProfiles },
         { data: dayLogs }, // Will define query below
         { data: snapshots } // Will define query below
     ] = await Promise.all([
-        supabase.from('tickets_marbella').select('total_documento').eq('fecha', todayStr),
+        supabase.rpc('get_daily_sales_stats', { target_date: todayStr }),
         supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single(),
         supabase.from('cash_boxes').select('*').order('name'),
         supabase.from('profiles').select('*'),
@@ -37,14 +37,6 @@ export async function getDashboardData() {
         supabase.from('weekly_snapshots').select('*').gte('week_start', format(addDays(new Date(), -60), 'yyyy-MM-dd'))
     ]);
 
-    // --- PROCESS LIVE TICKETS ---
-    const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-    const countVentas = ticketsToday?.reduce((count, t) => {
-        const val = Number(t.total_documento) || 0;
-        if (val > 0) return count + 1;
-        if (val < 0) return count - 1;
-        return count;
-    }, 0) || 0;
 
     // --- PROCESS LABOR COST (Daily Stats) ---
     let dailyStats = null;
@@ -193,7 +185,7 @@ export async function getDashboardData() {
 
     return {
         dailyStats,
-        liveTickets: { total: totalVentas, count: Math.max(0, countVentas) },
+        liveTickets: { total: salesStats?.total_ventas || 0, count: salesStats?.recuento_tickets || 0 },
         boxes,
         boxMovements,
         theoreticalBalance,
