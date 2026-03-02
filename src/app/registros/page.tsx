@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from "@/lib/utils";
 import { DayDetailModal } from '@/components/modals/DayDetailModal';
+import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import {
     format,
     startOfMonth,
@@ -111,6 +112,8 @@ export default function RegistrosPage() {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [modalLogs, setModalLogs] = useState<EditingLog[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+    const [detailUserId, setDetailUserId] = useState<string | null>(null);
 
     // --- NUEVOS ESTADOS HÍBRIDOS ---
     const [viewMode, setViewMode] = useState<'calendar' | 'agile'>('calendar');
@@ -265,16 +268,35 @@ export default function RegistrosPage() {
 
         const dayLogsRaw = logs.filter(l => isSameDay(parseISO(l.clock_in), day));
 
+        // Mapeamos para el resumen y para el estado interno
         const editableLogs: EditingLog[] = dayLogsRaw.map(l => ({
             id: l.id,
             user_id: l.user_id,
             date: day,
             in_time: format(parseISO(l.clock_in), 'HH:mm'),
             out_time: l.clock_out ? format(parseISO(l.clock_out), 'HH:mm') : '',
-            event_type: l.event_type || 'regular'
+            event_type: l.event_type || 'regular',
+            first_name: l.first_name,
+            last_name: l.last_name,
+            employee_name: l.employee_name
         }));
 
         setModalLogs(editableLogs);
+
+        if (selectedWorkerId) {
+            // Si hay un trabajador filtrado, vamos directo al detalle
+            setDetailUserId(selectedWorkerId);
+            setIsSummaryModalOpen(false);
+        } else {
+            // Si estamos en modo plantilla, mostramos el resumen de todos
+            setDetailUserId(null);
+            setIsSummaryModalOpen(true);
+        }
+    };
+
+    const handleSelectLogFromSummary = (userId: string) => {
+        setDetailUserId(userId);
+        setIsSummaryModalOpen(false);
     };
 
     const handleCloseModal = () => {
@@ -283,6 +305,8 @@ export default function RegistrosPage() {
         }
         setSelectedDate(null);
         setModalLogs([]);
+        setDetailUserId(null);
+        setIsSummaryModalOpen(false);
         setHasUnsavedChanges(false);
     };
 
@@ -773,12 +797,21 @@ export default function RegistrosPage() {
                 </div >
             </div >
 
-            {/* MODAL DETALLE REFINADO (Reemplaza al antiguo inline) */}
-            <DayDetailModal
-                isOpen={!!selectedDate && viewMode === 'calendar'}
+            {/* RESUMEN DIARIO */}
+            <DaySummaryModal
+                isOpen={isSummaryModalOpen}
                 onClose={handleCloseModal}
                 date={selectedDate}
-                userId={selectedWorkerId || null}
+                logs={modalLogs}
+                onSelectLog={handleSelectLogFromSummary}
+            />
+
+            {/* MODAL DETALLE REFINADO */}
+            <DayDetailModal
+                isOpen={!!selectedDate && !!detailUserId && viewMode === 'calendar'}
+                onClose={handleCloseModal}
+                date={selectedDate}
+                userId={detailUserId}
                 userRole={userRole}
                 onSuccess={fetchData}
             />
