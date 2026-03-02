@@ -3,11 +3,12 @@
 **Última actualización:** 2026-03-02 (Refinamiento UI Resumen Semanal)
 
 ## 📌 ESTADO GENERAL
-El sistema ha sido refinado eliminando ruidos visuales en el dashboard de staff, específicamente el contorno y sombras de las cabeceras del resumen semanal para una estética más integrada.
+El sistema ha sido migrado a la nueva convención `proxy.ts` de Next.js 16 para resolver fallos de build en Vercel, manteniendo todas las reglas de autenticación y protección de rutas.
 
 ---
 
 ## ✅ COMPLETADO
+- [x] **Migración Middleware a Proxy (Next.js 16)**: Reemplazada la convención obsoleta `middleware.ts` por el nuevo estándar `proxy.ts`. Se ha renombrado el archivo y la exportación de función (`middleware` -> `proxy`) para cumplir con los requisitos de la versión 16.1.4, eliminando los avisos de deprecación y estabilizando el despliegue en Vercel.
 - [x] **Refinamiento UI Resumen Semanal (Flush Header)**: Eliminado el contorno blanco exterior y las sombras (`shadow-md`) de las cabeceras de los días de la semana en el dashboard de staff y en la vista de historial semanal. Se ha suprimido también el borde inferior separador para lograr un diseño más limpio y fluido ("Apple Human Interface").
 - [x] **Rediseño Editor de Horarios (Marbella Detail v2)**: Evolución funcional de la interfaz. Se ha habilitado la entrada manual de participantes de actividad y el borrado total de celdas de tiempo (inicio/final). Integración del botón circular verde de añadir staff en la primera columna de la cabecera de la tabla, con lógica de autocompletado de horas basada en la configuración por defecto del día.
 - [x] **Rediseño Editor de Horarios (Marbella Detail)**: Transformación radical de `/staff/schedule/editor` a la estética unificada. Implementado contenedor de tarjeta blanca sobre fondo azul Marbella, cabecera Petrol (#36606F) con fecha interactiva, y sección superior de campos editables (Actividad, Inicio, Final, Participantes). Se ha respetado escrupulosamente la tabla de trabajadores y sus proporciones originales, permitiendo una visualización completa en smartphones y manteniendo la interactividad de las barras de turnos.
