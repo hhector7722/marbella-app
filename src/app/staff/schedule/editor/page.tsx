@@ -163,9 +163,9 @@ export default function ScheduleEditorPage() {
     // Estado para detectar cambios sin guardar
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    // Horas por defecto (pueden ser calculadas del primer turno o fijas)
-    const [defaultStart, setDefaultStart] = useState('09:00');
-    const [defaultEnd, setDefaultEnd] = useState('17:00');
+    // Horas por defecto (celdas vacías por defecto)
+    const [defaultStart, setDefaultStart] = useState('');
+    const [defaultEnd, setDefaultEnd] = useState('');
 
     // Modales
     const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -419,22 +419,14 @@ export default function ScheduleEditorPage() {
 
                 {/* CABECERA AZUL PETRÓLEO (NAVEGACIÓN) */}
                 <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between min-h-[52px] shrink-0">
-                    {/* Izquierda: Fecha Interactiva */}
+                    {/* Izquierda: Fecha Justificada */}
                     <button
                         onClick={() => setShowCalendarModal(true)}
                         className="flex items-center gap-2 group cursor-pointer hover:bg-white/5 px-2 py-1 rounded-lg transition-all"
                     >
-                        <span className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 group-hover:opacity-100">
-                            <span className="text-lg font-bold font-mono">{'<'}</span>
-                        </span>
-
                         <h2 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest whitespace-nowrap select-none capitalize">
                             {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
                         </h2>
-
-                        <span className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 group-hover:opacity-100">
-                            <span className="text-lg font-bold font-mono">{'>'}</span>
-                        </span>
                     </button>
 
                     {/* Derecha: Botones de Acción */}
@@ -457,59 +449,57 @@ export default function ScheduleEditorPage() {
                 </div>
 
                 {/* --- CONTENIDO PRINCIPAL --- */}
-                <div className="flex-1 flex flex-col min-h-0 bg-[#fafafa] p-4 sm:p-6 overflow-y-auto no-scrollbar">
+                <div className="flex-1 flex flex-col min-h-0 bg-[#fafafa] p-3 sm:p-5 lg:p-6 overflow-y-auto no-scrollbar">
 
-                    {/* TARJETA DE CAMPOS EDITABLES SUPERIORES */}
-                    <div className="p-3 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm w-full mb-6">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 items-center justify-between gap-4 w-full">
+                    {/* TARJETA DE CAMPOS EDITABLES SUPERIORES (FILA ÚNICA) */}
+                    <div className="p-2 sm:p-3 bg-white rounded-xl border border-gray-100 shadow-sm w-full mb-4">
+                        <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden">
 
                             {/* Actividad */}
-                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1">Actividad</span>
-                                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-2xl border border-zinc-200">
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest pl-1">Actividad</span>
+                                <div className="flex items-center bg-zinc-50 px-2 py-1.5 rounded-xl border border-zinc-200">
                                     <input
                                         type="text"
                                         value={activity}
                                         onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
-                                        className="w-full bg-transparent text-left font-black text-zinc-800 text-xs sm:text-sm focus:outline-none uppercase"
-                                        placeholder="EJ: SERVICIO"
+                                        className="w-full bg-transparent text-left font-black text-zinc-800 text-[10px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
+                                        placeholder="SERVICIO..."
                                     />
                                 </div>
                             </div>
 
                             {/* Inicio */}
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1">Hora Inicio</span>
-                                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-2xl border border-zinc-200">
+                            <div className="flex flex-col gap-1 shrink-0 w-[70px] sm:w-[85px]">
+                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest pl-1 text-center">Inicio</span>
+                                <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200">
                                     <input
                                         type="time"
                                         value={defaultStart}
                                         onChange={(e) => setDefaultStart(e.target.value)}
-                                        className="bg-transparent text-center font-black text-emerald-600 text-sm focus:outline-none font-mono"
+                                        className="bg-transparent text-center font-black text-emerald-600 text-[10px] sm:text-xs focus:outline-none font-mono w-full"
                                     />
                                 </div>
                             </div>
 
                             {/* Final */}
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1">Hora Final</span>
-                                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-2xl border border-zinc-200">
+                            <div className="flex flex-col gap-1 shrink-0 w-[70px] sm:w-[85px]">
+                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest pl-1 text-center">Final</span>
+                                <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200">
                                     <input
                                         type="time"
                                         value={defaultEnd}
                                         onChange={(e) => setDefaultEnd(e.target.value)}
-                                        className="bg-transparent text-center font-black text-rose-500 text-sm focus:outline-none font-mono"
+                                        className="bg-transparent text-center font-black text-rose-500 text-[10px] sm:text-xs focus:outline-none font-mono w-full"
                                     />
                                 </div>
                             </div>
 
                             {/* Participantes */}
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1">Participantes</span>
-                                <div className="flex items-center justify-center gap-2 bg-zinc-50 px-3 py-2 rounded-2xl border border-zinc-200 min-w-[100px]">
-                                    <Users size={14} className="text-zinc-400" />
-                                    <span className="font-black text-zinc-800 text-sm">{shifts.length}</span>
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">Staff</span>
+                            <div className="flex flex-col gap-1 shrink-0 w-[45px] sm:w-[60px]">
+                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
+                                <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200 h-[30px] sm:h-[34px]">
+                                    <span className="font-black text-zinc-800 text-[10px] sm:text-xs">{shifts.length}</span>
                                 </div>
                             </div>
                         </div>
@@ -519,9 +509,7 @@ export default function ScheduleEditorPage() {
                     <div className="w-full flex flex-col rounded-[20px] overflow-hidden border border-gray-100 shadow-xl bg-white relative">
                         {/* ENCABEZADO DE HORAS - ROJO */}
                         <div className="flex bg-[#D64D5D] text-white sticky top-0 z-30 shadow-sm">
-                            <div className="w-20 md:w-32 p-1 font-black text-[8px] md:text-[10px] flex items-center justify-center uppercase tracking-tighter shrink-0 border-r border-white/10">
-                                TRABAJADOR
-                            </div>
+                            <div className="w-20 md:w-32 p-1 border-r border-white/10 shrink-0" />
                             <div className="flex-1 relative h-7 flex">
                                 {hoursHeader.map((hour, i) => (
                                     <div
@@ -532,7 +520,6 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="w-10 md:w-12 shrink-0 border-l border-white/10" />
                         </div>
 
                         {/* FILAS DE EMPLEADOS */}
@@ -565,17 +552,6 @@ export default function ScheduleEditorPage() {
                                             />
                                         )}
                                     </div>
-
-                                    {/* Columna Eliminar */}
-                                    <div className="w-10 md:w-12 flex items-center justify-center border-l border-gray-50">
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                            className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shrink-0 active:scale-90"
-                                            title="Eliminar"
-                                        >
-                                            <X size={16} strokeWidth={3} />
-                                        </button>
-                                    </div>
                                 </div>
                             ))}
 
@@ -594,27 +570,15 @@ export default function ScheduleEditorPage() {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="w-10 md:w-12 shrink-0 border-l border-white/10" />
                             </div>
-
-                            {/* BOTÓN AÑADIR TRABAJADOR (Integrado flush) */}
-                            <button
-                                onClick={() => setShowAddModal(true)}
-                                className="w-full flex items-center justify-center gap-3 py-3 bg-white hover:bg-emerald-50 transition-colors text-emerald-600 border-t border-gray-50 group"
-                            >
-                                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-sm">
-                                    <Plus size={18} strokeWidth={4} />
-                                </div>
-                                <span className="font-black text-[10px] sm:text-xs uppercase tracking-[0.15em]">Añadir Trabajador</span>
-                            </button>
                         </div>
                     </div>
 
                     {/* BARRA DE EDICIÓN FLOTANTE (ESTILIZADA) */}
                     {editingIndex !== null && shifts[editingIndex] && (
-                        <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <div className="h-14 relative flex items-center bg-white rounded-2xl shadow-lg border border-gray-100 p-2">
-                                <div className="flex-1 relative h-full">
+                        <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="h-12 relative flex items-center p-1">
+                                <div className="flex-1 relative h-full bg-white/10 rounded-xl overflow-hidden self-center">
                                     <ShiftBar
                                         shift={shifts[editingIndex]}
                                         onUpdate={(newShift) => handleUpdateShift(editingIndex, newShift)}
@@ -624,7 +588,7 @@ export default function ScheduleEditorPage() {
                                 </div>
                                 <button
                                     onClick={() => setEditingIndex(null)}
-                                    className="ml-3 w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl hover:bg-rose-50 text-gray-400 hover:text-rose-500 transition-all active:scale-95 shrink-0"
+                                    className="ml-2 w-10 h-10 flex items-center justify-center bg-white/20 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0"
                                 >
                                     <X size={20} strokeWidth={3} />
                                 </button>
@@ -639,35 +603,35 @@ export default function ScheduleEditorPage() {
             {showCalendarModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
                     <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                            <div className="flex flex-col">
-                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Calendario</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Seleccionar Fecha</p>
+                        {/* Header del Modal - Petrol con Navegación */}
+                        <div className="bg-[#36606F] p-4 flex items-center justify-between border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                                    className="text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                                >
+                                    <ChevronLeft size={20} strokeWidth={3} />
+                                </button>
+                                <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">
+                                    {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                                </span>
+                                <button
+                                    onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                                    className="text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                                >
+                                    <ChevronRight size={20} strokeWidth={3} />
+                                </button>
                             </div>
-                            <button onClick={() => setShowCalendarModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+
+                            <button
+                                onClick={() => setShowCalendarModal(false)}
+                                className="bg-white/10 hover:bg-rose-500 text-white p-2 rounded-xl transition-all"
+                            >
                                 <X size={20} strokeWidth={3} />
                             </button>
                         </div>
 
-                        <div className="flex items-center justify-between p-4">
-                            <button
-                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
-                                className="p-2 hover:bg-gray-100 rounded-xl"
-                            >
-                                <ChevronLeft size={20} className="text-gray-600" />
-                            </button>
-                            <span className="font-bold text-gray-800 capitalize">
-                                {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                            </span>
-                            <button
-                                onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
-                                className="p-2 hover:bg-gray-100 rounded-xl"
-                            >
-                                <ChevronRight size={20} className="text-gray-600" />
-                            </button>
-                        </div>
-
-                        <div className="p-4 pt-0">
+                        <div className="p-4">
                             <div className="grid grid-cols-7 gap-1 mb-2">
                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
                                     <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
@@ -680,11 +644,11 @@ export default function ScheduleEditorPage() {
                                         onClick={() => day && handleSelectCalendarDate(day)}
                                         disabled={!day}
                                         className={`aspect-square flex items-center justify-center rounded-xl text-sm font-bold transition-all
-                                            ${!day ? 'invisible' : 'hover:bg-red-100 hover:text-red-600 text-gray-700'}
+                                            ${!day ? 'invisible' : 'hover:bg-blue-50 hover:text-[#5B8FB9] text-gray-700'}
                                             ${day === new Date().getDate() &&
                                                 calendarDate.getMonth() === new Date().getMonth() &&
                                                 calendarDate.getFullYear() === new Date().getFullYear()
-                                                ? 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
+                                                ? 'bg-[#5B8FB9] text-white'
                                                 : ''
                                             }
                                         `}
@@ -702,13 +666,12 @@ export default function ScheduleEditorPage() {
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowAddModal(false)}>
                     <div className="bg-white rounded-[2.5rem] w-full max-w-xs overflow-hidden shadow-2xl animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#5B8FB9] px-8 py-4 flex justify-between items-center text-white shrink-0">
+                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 border-b border-white/10">
                             <div className="flex flex-col">
-                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Añadir Staff</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Plantilla Marbella</p>
+                                <h3 className="text-sm font-black uppercase tracking-widest leading-none">Añadir Personal</h3>
                             </div>
-                            <button onClick={() => setShowAddModal(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                <X size={20} strokeWidth={3} />
+                            <button onClick={() => setShowAddModal(false)} className="bg-white/10 hover:bg-rose-500 text-white p-2 rounded-xl transition-all active:scale-95">
+                                <X size={18} strokeWidth={3} />
                             </button>
                         </div>
                         <div className="max-h-64 overflow-y-auto p-2 grid gap-1">
