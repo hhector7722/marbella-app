@@ -13,28 +13,12 @@ export async function getDashboardData() {
         { data: salesStats },
         { data: lastClose },
         { data: allBoxes },
-        { data: allProfiles },
-        { data: dayLogs }, // Will define query below
-        { data: snapshots } // Will define query below
+        { data: allProfiles }
     ] = await Promise.all([
         supabase.rpc('get_daily_sales_stats', { target_date: todayStr }),
         supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single(),
         supabase.from('cash_boxes').select('*').order('name'),
-        supabase.from('profiles').select('*'),
-        // Optimization: Fetch time logs for labor cost (today) AND history (60 days) in one go? 
-        // For now, let's keep it robust and fetch what's needed.
-        // Actually, let's split the labor cost query and history query to be safe, or combine if overlapping.
-        // The View fetched dayLogs based on lastClose date.
-        // It also fetched logs for the last 60 days.
-        // Let's do the 60 days fetch, and filter in memory if needed, or just fetch both. 
-        // Fetching 60 days of logs might be heavy. Let's look at the original code.
-        // Original: 
-        // 1. dayLogs (for labor cost) -> gte(closeDateStart) lte(closeDateEnd)
-        // 2. logs (for overtime) -> gte(60 days ago)
-
-        // Let's fetch 60 days efficiently.
-        supabase.from('time_logs').select('user_id, total_hours, clock_in').gte('clock_in', format(addDays(new Date(), -60), 'yyyy-MM-dd')),
-        supabase.from('weekly_snapshots').select('*').gte('week_start', format(addDays(new Date(), -60), 'yyyy-MM-dd'))
+        supabase.from('profiles').select('*')
     ]);
 
 
@@ -43,56 +27,12 @@ export async function getDashboardData() {
     if (lastClose) {
         const closeDate = new Date(lastClose.closed_at);
         const closeDateStart = new Date(closeDate); closeDateStart.setHours(0, 0, 0, 0);
-        const closeDateEnd = new Date(closeDate); closeDateEnd.setHours(23, 59, 59, 999);
 
-        // We need specific logs for the closing day. The 60-day fetch *should* cover this if the closing was recent.
-        // If closing was > 60 days ago (unlikely), we might miss it. Assuming active business.
-        // Let's filter from the 60-day logs if applicable, or fetch specifically if needed. 
-        // Safe bet: The 60 days covers it.
-        const specificDayLogs = dayLogs?.filter((log: any) => {
-            const logTime = new Date(log.clock_in).getTime();
-            return logTime >= closeDateStart.getTime() && logTime <= closeDateEnd.getTime();
-        }) || [];
-
-        let laborCost = 0;
-        const profileMap = new Map(allProfiles?.map((p: any) => [p.id, p]) || []);
-        const countedManagers = new Set<string>();
-        const userDayHours = new Map<string, number>();
-
-        specificDayLogs.forEach((log: any) => {
-            const current = userDayHours.get(log.user_id) || 0;
-            userDayHours.set(log.user_id, current + (log.total_hours || 0));
+        // Fetch labor cost using RPC
+        const { data: laborCostData } = await supabase.rpc('get_daily_labor_cost', {
+            p_target_date: closeDateStart.toISOString().split('T')[0]
         });
-
-        userDayHours.forEach((hours, userId) => {
-            const profile = profileMap.get(userId);
-            if (profile) {
-                const dailyContracted = (profile.contracted_hours_weekly ?? 0) / 5;
-                const regPrice = profile.regular_cost_per_hour || 0;
-                const overPrice = profile.overtime_cost_per_hour || regPrice;
-
-                if (profile.role === 'manager') {
-                    laborCost += dailyContracted * regPrice;
-                    laborCost += hours * overPrice;
-                    countedManagers.add(userId);
-                } else {
-                    if (hours > dailyContracted) {
-                        laborCost += dailyContracted * regPrice;
-                        laborCost += (hours - dailyContracted) * overPrice;
-                    } else {
-                        laborCost += hours * regPrice;
-                    }
-                }
-            }
-        });
-
-        allProfiles?.forEach((profile: any) => {
-            if (profile.role === 'manager' && !countedManagers.has(profile.id)) {
-                const dailyContracted = (profile.contracted_hours_weekly ?? 0) / 5;
-                const regPrice = profile.regular_cost_per_hour || 0;
-                laborCost += dailyContracted * regPrice;
-            }
-        });
+        const laborCost = laborCostData || 0;
 
         const laborPercent = lastClose.net_sales > 0 ? (laborCost / lastClose.net_sales) * 100 : 0;
 
