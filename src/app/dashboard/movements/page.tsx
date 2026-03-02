@@ -108,9 +108,11 @@ export default function MovementsPage() {
             setBoxData(box);
 
             // Obtener estrictamente el registro más reciente sin filtros de fecha
+            // Usamos req eq('box_id', box.id) para ser precisos con la caja operacional
             const { data: currentTheoreticalRecord } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('running_balance')
+                .eq('box_id', box.id)
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .maybeSingle();
@@ -166,6 +168,7 @@ export default function MovementsPage() {
             const { data: periodStats } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('type, amount')
+                .eq('box_id', boxData?.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO);
 
@@ -196,6 +199,7 @@ export default function MovementsPage() {
             const { data: pageMoves } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
+                .eq('box_id', boxData?.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .not('type', 'in', '("ADJUSTMENT","SWAP")')
