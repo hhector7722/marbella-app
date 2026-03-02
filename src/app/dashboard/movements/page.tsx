@@ -77,12 +77,14 @@ export default function MovementsPage() {
     const [summary, setSummary] = useState({
         income: 0,
         expense: 0,
-        difference: 0,
         balance: 0,
         currentBalance: 0,
         initialBalanceInRange: 0
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
+
+    // [✓] FÓRMULA ESTRICTA: FÍSICA - TEÓRICA EN CADA RENDER
+    const calculatedDifference = summary.currentBalance - summary.balance;
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -153,12 +155,9 @@ export default function MovementsPage() {
                 exp = periodStats.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
             }
 
-            const difference = box.current_balance - theoreticalEndValue;
-
             setSummary({
                 income: inc,
                 expense: exp,
-                difference: difference,
                 balance: theoreticalEndValue,
                 currentBalance: box.current_balance,
                 initialBalanceInRange: 0
@@ -461,9 +460,9 @@ export default function MovementsPage() {
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className={cn(
                                     "text-[13px] md:text-2xl font-black line-clamp-1",
-                                    summary.difference > 0 ? "text-blue-500" : summary.difference < 0 ? "text-orange-500" : "text-zinc-400"
+                                    calculatedDifference > 0 ? "text-blue-500" : calculatedDifference < 0 ? "text-orange-500" : "text-zinc-400"
                                 )}>
-                                    {Math.abs(summary.difference) < 0.01 ? "0€" : `${summary.difference > 0 ? '+' : ''}${summary.difference.toFixed(0)}€`}
+                                    {Math.abs(calculatedDifference) < 0.01 ? "0€" : `${calculatedDifference > 0 ? '+' : ''}${calculatedDifference.toFixed(0)}€`}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFERENCIA</span>
                             </div>
