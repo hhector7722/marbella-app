@@ -1,7 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export async function proxy(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
+    const path = request.nextUrl.pathname;
+
+    // --- 1. BYPASS CRÍTICO PARA EL TPV (Añadido) ---
+    // Si la ruta es de la API, dejamos pasar sin ejecutar nada de auth.
+    // Esto evita los Redirects 307 al login que vacían tus tablas.
+    if (path.startsWith('/api/')) {
+        return NextResponse.next();
+    }
+
+    // --- 2. INICIALIZACIÓN (Tu código original) ---
     let response = NextResponse.next({
         request: {
             headers: request.headers,
@@ -17,19 +27,14 @@ export async function proxy(request: NextRequest) {
                     return request.cookies.getAll();
                 },
                 setAll(cookiesToSet) {
-                    // 1. Actualizar cookies en la REQUEST (para que el middleware las vea)
                     cookiesToSet.forEach(({ name, value }) =>
                         request.cookies.set(name, value)
                     );
-
-                    // 2. Actualizar respuesta (para mantener la sesión)
                     response = NextResponse.next({
                         request: {
                             headers: request.headers,
                         },
                     });
-
-                    // 3. Actualizar cookies en la RESPONSE (Corrección del error setAll)
                     cookiesToSet.forEach(({ name, value, options }) =>
                         response.cookies.set(name, value, options)
                     );
@@ -38,18 +43,18 @@ export async function proxy(request: NextRequest) {
         }
     );
 
-    // IMPORTANTE: Ejecutar getUser para refrescar token si es necesario
+    // Refrescar token
     const { data: { user } } = await supabase.auth.getUser();
 
-    // --- LÓGICA DE PROTECCIÓN DE RUTAS ---
+    // --- 3. PROTECCIÓN DE RUTAS (Tu código original) ---
 
-    // 1. Protección Global: Si no hay usuario y no es login/auth, mandar a Login
-    if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
+    // Protección Global: Si no hay usuario y no es login/auth, mandar a Login
+    if (!user && !path.startsWith('/login') && !path.startsWith('/auth')) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
     if (user) {
-        // Obtener rol (Consulta rápida)
+        // Obtener rol
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
@@ -57,17 +62,13 @@ export async function proxy(request: NextRequest) {
             .single();
 
         const role = profile?.role;
-        const path = request.nextUrl.pathname;
 
-        // 3. Bloquear STAFF y SUPERVISOR entrando a MANAGER (/dashboard)
-        // Solo permitir a 'manager' entrar a /dashboard
+        // Bloquear STAFF y SUPERVISOR entrando a MANAGER (/dashboard)
         if ((role === 'staff' || role === 'supervisor') && path.startsWith('/dashboard')) {
             return NextResponse.redirect(new URL("/staff/dashboard", request.url));
         }
 
-        // 4. Bloquear acceso a /staff si no es manager o supervisor (opcional, pero staff debe poder entrar a su zona)
-        // Si un manager entra a /staff, está bien (es el modo staff)
-        // 5. Si está logueado e intenta ir a Login, mandar a Home (que redirige solo)
+        // Si está logueado e intenta ir a Login, mandar a Home
         if (path.startsWith('/login')) {
             return NextResponse.redirect(new URL("/", request.url));
         }
@@ -76,8 +77,9 @@ export async function proxy(request: NextRequest) {
     return response;
 }
 
+// Configuración del matcher simplificada para evitar bloqueos accidentales
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|workbox-.*\\.js|manifest\\.json|site\\.webmanifest|icons/.*|api/.*).*)',
+        '/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|workbox-.*\\.js|manifest\\.json|site\\.webmanifest|icons/.*).*)',
     ],
 };
