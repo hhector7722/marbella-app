@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-02 (Módulo de Cuenta Corriente Exclusivo para Managers)
+**Última actualización:** 2026-03-03 (Sincronización Global de Mejoras UI y Lógica de Negocio)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Sincronización Git Global**: Subida de la versión actual a la rama `main` incluyendo ajustes en `tailwind.config.ts`, `vercel.json.mjs`, políticas RLS y habilidades del agente.
 - [x] **Delegación SQL Paneles Empleado (Móvil y Escritorio)**: Refactorizados `StaffDashboardView.tsx` y `staff/page.tsx` aniquilando la extracción de todos los fichajes de la semana activa. Se sustituyó el ciclo iterativo que computaba los límites diarios y horas extra de cada empleado en JavaScript por una sola invocación declarativa a la RPC `get_worker_weekly_log_grid`.
 - [x] **Delegación SQL Agregación Semanal (Nóminas)**: Refactorizado el componente `WorkerWeeklyHistoryModal.tsx` para erradicar la descarga masiva de crudos `time_logs` y la subsecuente Falsa Agregación en cliente (`.forEach`, bucle `for` de 7 días, `Map`) usada para calcular las horas diarias procesadas y extras progresivas. Se sustituyó exitosamente por la RPC `get_worker_weekly_log_grid`.
 - [x] **Delegación SQL Agregación de Tesorería**: Refactorizado `src/app/dashboard/movements/page.tsx` liquidando el anti-patrón de Descarga Masiva y Falsa Agregación en el cálculo del resumen de ingresos y gastos del periodo. Se eliminó la extracción masiva de movimientos mediante `.from('v_treasury_movements_balance')` y sus posteriores reducciones en React, reemplazándose por la ejecución de la función RPC nativa `get_treasury_period_summary` en PostgreSQL.
