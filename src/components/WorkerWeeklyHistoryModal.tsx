@@ -94,15 +94,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
             const mondayISO = weekStart;
             const sundayISO = format(sundayDate, 'yyyy-MM-dd');
 
-            // 3. Fetch RAW Logs for Grid (Grid needs detailed times)
-            const { data: logs } = await supabase.from('time_logs')
-                .select('*')
-                .eq('user_id', workerId)
-                .gte('clock_in', mondayISO)
-                .lte('clock_in', sundayISO + 'T23:59:59Z')
-                .order('clock_in', { ascending: true });
-
-            // 4. Fetch SSOT Statistics from RPC
+            // 3. Fetch SSOT Statistics from RPC
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
                 p_start_date: mondayISO,
                 p_end_date: sundayISO,
@@ -111,48 +103,25 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
             if (rpcError) throw rpcError;
 
-            // 5. Process Daily Grid (keeps simple rounding for visual)
-            const logsByDate = new Map();
-            logs?.forEach(log => {
-                const dateStr = format(parseISO(log.clock_in), 'yyyy-MM-dd');
-                logsByDate.set(dateStr, log);
-            });
-
-            const weekDays: DailyLog[] = [];
-            let currentAccumulated = 0;
-            const DAILY_LIMIT = 8;
-
-            // Note: rpcData has the SSOT contracted hours etc but for the GRID we might need the weekly one
             const rpcWeek = rpcData?.weeksResult?.[0];
             const rpcStaff = rpcWeek?.staff?.[0];
             const effContractForGrid = rpcStaff?.contracted_hours_weekly ?? 0;
 
-            for (let i = 0; i < 7; i++) {
-                const d = addDays(mondayDate, i);
-                const dStr = format(d, 'yyyy-MM-dd');
-                const isToday = isSameDay(d, new Date());
-                const log = logsByDate.get(dStr);
+            // 4. Fetch precise grid with accumulated logics resolved 
+            const { data: gridDays } = await supabase.rpc('get_worker_weekly_log_grid', {
+                p_user_id: workerId,
+                p_start_date: mondayISO,
+                p_contracted_hours: effContractForGrid
+            });
 
-                let h = 0, cin = '', cout = '', dayExtras = 0;
-                if (log) {
-                    const inD = parseISO(log.clock_in); cin = format(inD, 'HH:mm');
-                    if (log.clock_out) { const outD = parseISO(log.clock_out); cout = format(outD, 'HH:mm'); }
-
-                    h = log.total_hours ? calculateRoundedHours(log.total_hours) : 0;
-                    const newAccumulated = currentAccumulated + h;
-                    if (newAccumulated > effContractForGrid) {
-                        dayExtras = (currentAccumulated >= effContractForGrid) ? h : (newAccumulated - effContractForGrid);
-                    }
-                    currentAccumulated = newAccumulated;
-                }
-                weekDays.push({
-                    date: d,
-                    dayName: format(d, 'EEE', { locale: es }).toUpperCase().slice(0, 3),
-                    dayNumber: d.getDate(),
-                    hasLog: !!log, clockIn: cin, clockOut: cout,
-                    totalHours: h, extraHours: dayExtras, isToday: isToday
-                });
-            }
+            // 5. Build presentation array
+            const weekDays: DailyLog[] = (gridDays || []).map((day: any) => ({
+                ...day,
+                date: new Date(day.date),
+                dayName: format(new Date(day.date), 'EEE', { locale: es }).toUpperCase().slice(0, 3),
+                dayNumber: new Date(day.date).getDate(),
+                isToday: isSameDay(new Date(day.date), new Date())
+            }));
 
             // 6. Set Final State from RPC (SSOT)
             if (rpcStaff) {
