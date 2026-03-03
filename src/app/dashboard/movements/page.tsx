@@ -165,23 +165,15 @@ export default function MovementsPage() {
             }
 
             // Estadísticas para el resumen del periodo seleccionado
-            const { data: periodStats } = await supabase
-                .from('v_treasury_movements_balance')
-                .select('type, amount')
-                .eq('box_id', boxData?.id)
-                .gte('created_at', startISO)
-                .lte('created_at', endISO);
-
-            let inc = 0;
-            let exp = 0;
-            if (periodStats) {
-                inc = periodStats.filter(m => m.type === 'IN' || m.type === 'CLOSE_ENTRY').reduce((sum, m) => sum + m.amount, 0);
-                exp = periodStats.filter(m => m.type === 'OUT').reduce((sum, m) => sum + m.amount, 0);
-            }
+            const { data: summaryData } = await supabase.rpc('get_treasury_period_summary', {
+                p_box_id: boxData?.id,
+                p_start_date: startISO,
+                p_end_date: endISO
+            });
 
             setPeriodSummary({
-                income: inc,
-                expense: exp,
+                income: summaryData?.income || 0,
+                expense: summaryData?.expense || 0,
             });
 
             // Obtener la primera página
