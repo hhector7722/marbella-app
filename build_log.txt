@@ -1,55 +1,28 @@
-
-> bar-marbella-clean@0.1.0 build
-> next build
-
-Γû▓ Next.js 16.1.4 (Turbopack)
+Γû▓ Next.js 16.1.4 (webpack)
 - Environments: .env.local
 
 ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-Γ£ô Compiled successfully in 8.9s
-  Running TypeScript ...
-  Collecting page data using 9 workers ...
-  Generating static pages using 9 workers (0/29) ...
-  Generating static pages using 9 workers (7/29) 
-  Generating static pages using 9 workers (14/29) 
-  Generating static pages using 9 workers (21/29) 
-Γ£ô Generating static pages using 9 workers (29/29) in 291.5ms
-  Finalizing page optimization ...
+Failed to compile.
 
-Route (app)
-Γöî ╞Æ /
-Γö£ ╞Æ /_not-found
-Γö£ ╞Æ /admin/import
-Γö£ ╞Æ /api/ai-tools-executor
-Γö£ ╞Æ /api/chat
-Γö£ ╞Æ /api/cron/cleanup-audio
-Γö£ ╞Æ /api/livekit/token
-Γö£ ╞Æ /api/stt
-Γö£ ╞Æ /dashboard
-Γö£ ╞Æ /dashboard/history
-Γö£ ╞Æ /dashboard/import
-Γö£ ╞Æ /dashboard/labor
-Γö£ ╞Æ /dashboard/movements
-Γö£ ╞Æ /dashboard/overtime
-Γö£ ╞Æ /ingredients
-Γö£ ╞Æ /login
-Γö£ ╞Æ /orders/new
-Γö£ ╞Æ /profile
-Γö£ ╞Æ /recipes
-Γö£ ╞Æ /recipes/[id]
-Γö£ ╞Æ /recipes/import
-Γö£ ╞Æ /registros
-Γö£ ╞Æ /staff
-Γö£ ╞Æ /staff/dashboard
-Γö£ ╞Æ /staff/history
-Γö£ ╞Æ /staff/schedule
-Γö£ ╞Æ /staff/schedule/editor
-Γö£ ╞Æ /suppliers
-Γöö ╞Æ /test-sileo
+./src/app/admin/mapeo/actions.ts
+Error:   ! Plugin is not supported with current @swc/core. Plugin transform will be skipped.
+  x You're importing a component that needs "revalidatePath". That only works in a Server Component but one of its parents is marked with "use client", so it's a Client Component.
+  | Learn more: https://nextjs.org/docs/app/building-your-application/rendering
+  |
+
+   ,-[C:\Users\hhect\bar-marbella-clean\src\app\admin\mapeo\actions.ts:2:1]
+ 1 | import { createClient } from '@/utils/supabase/server';
+ 2 | import { revalidatePath } from 'next/cache';
+   :          ^^^^^^^^^^^^^^
+ 3 | 
+ 4 | export async function linkTpvToRecipe(articuloId: number, recipeId: string, factorPorcion: number) {
+ 4 |     const supabase = await createClient();
+   `----
+
+Import trace for requested module:
+./src/app/admin/mapeo/actions.ts
+./src/app/admin/mapeo/MapeoClient.tsx
 
 
-╞Æ Proxy (Middleware)
-
-╞Æ  (Dynamic)  server-rendered on demand
-
+> Build failed because of webpack errors
