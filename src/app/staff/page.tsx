@@ -152,13 +152,15 @@ export default function StaffDashboard() {
 
             setCurrentMonthName(mondayDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
 
-            // 1. Fetch RAW logs for Daily Grid (keeps the grid alive)
-            const { data: weekLogs } = await supabase.from('time_logs')
-                .select('clock_in, clock_out, total_hours')
-                .eq('user_id', user.id)
-                .gte('clock_in', mondayStr)
-                .lte('clock_in', sundayStr + 'T23:59:59Z')
-                .order('clock_in', { ascending: true });
+            // 1. Fetch precise grid with accumulated logics resolved 
+            const contractHours = profile?.contracted_hours_weekly ?? 0;
+            const effContract = (profile?.role === 'manager') ? 0 : contractHours;
+
+            const { data: gridDays } = await supabase.rpc('get_worker_weekly_log_grid', {
+                p_user_id: user.id,
+                p_start_date: mondayStr,
+                p_contracted_hours: effContract
+            });
 
             // 2. Fetch SSOT Summary from RPC
             const { data: rpcStats, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
@@ -169,39 +171,18 @@ export default function StaffDashboard() {
 
             if (rpcError) console.error("RPC Error in Staff Dash:", rpcError);
 
-            const logsByDay = new Map();
-            weekLogs?.forEach(l => {
-                const day = new Date(l.clock_in).getDate();
-                logsByDay.set(day, l);
-            });
-
-            const daysStructure: DailyLog[] = [];
-            const contractHours = profile?.contracted_hours_weekly ?? 0;
-            const DAILY_LIMIT = contractHours > 0 ? (contractHours / 5) : 8; // Indicativo
             let totalWeekHoursRaw = 0;
-
-            for (let i = 0; i < 7; i++) {
-                const currentDay = new Date(mondayDate); currentDay.setDate(mondayDate.getDate() + i);
-                const isToday = currentDay.getDate() === today.getDate() && currentDay.getMonth() === today.getMonth();
-                const dayLog = logsByDay.get(currentDay.getDate());
-
-                let clockInStr = '', clockOutStr = '', hours = 0, dayExtras = 0;
-                if (dayLog) {
-                    const inDate = new Date(dayLog.clock_in);
-                    clockInStr = inDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                    if (dayLog.clock_out) {
-                        const outDate = new Date(dayLog.clock_out);
-                        clockOutStr = outDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                    }
-                    hours = dayLog.total_hours || 0;
-                    totalWeekHoursRaw += hours;
-                    if (hours > DAILY_LIMIT) dayExtras = hours - DAILY_LIMIT;
-                }
-                daysStructure.push({
-                    date: currentDay, dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i], dayNumber: currentDay.getDate(),
-                    hasLog: !!dayLog, clockIn: clockInStr, clockOut: clockOutStr, totalHours: hours, extraHours: dayExtras, isToday: isToday
-                });
-            }
+            const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
+                totalWeekHoursRaw += day.totalHours || 0;
+                const d = new Date(day.date);
+                return {
+                    ...day,
+                    date: d,
+                    dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
+                    dayNumber: d.getDate(),
+                    isToday: d.getDate() === today.getDate() && d.getMonth() === today.getMonth()
+                };
+            });
             setWeekDays(daysStructure);
 
             // Mapping RPC data to UI Summary

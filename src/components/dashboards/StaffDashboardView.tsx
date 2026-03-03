@@ -194,44 +194,25 @@ export default function StaffDashboardView() {
             const wNum = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
             setWeekNumber(wNum);
 
-            const { data: weekLogs } = await supabase.from('time_logs')
-                .select('clock_in, clock_out, total_hours')
-                .eq('user_id', user.id)
-                .gte('clock_in', monday.toISOString())
-                .lte('clock_in', sunday.toISOString())
-                .order('clock_in', { ascending: true });
-
-            const daysStructure: DailyLog[] = [];
-            let totalWeekHours = 0;
-            let currentAccumulated = 0;
             const effContract = (profile?.role === 'manager' || isFixedSalary) ? 0 : contractHours;
+            const { data: gridDays } = await supabase.rpc('get_worker_weekly_log_grid', {
+                p_user_id: user.id,
+                p_start_date: monday.toISOString().split('T')[0],
+                p_contracted_hours: effContract
+            });
 
-            for (let i = 0; i < 7; i++) {
-                const currentDay = new Date(monday); currentDay.setDate(monday.getDate() + i);
-                const isToday = currentDay.getDate() === today.getDate() && currentDay.getMonth() === today.getMonth();
-                const dayLog = weekLogs?.find(l => new Date(l.clock_in).getDate() === currentDay.getDate());
-
-                let clockInStr = '', clockOutStr = '', hours = 0, dayExtras = 0;
-                if (dayLog) {
-                    const inDate = new Date(dayLog.clock_in);
-                    clockInStr = inDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                    if (dayLog.clock_out) {
-                        const outDate = new Date(dayLog.clock_out);
-                        clockOutStr = outDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                    }
-                    hours = dayLog.total_hours ? roundHoursValue(dayLog.total_hours) : 0;
-                    totalWeekHours += hours;
-                    const newAccumulated = currentAccumulated + hours;
-                    if (newAccumulated > effContract) {
-                        dayExtras = (currentAccumulated >= effContract) ? hours : (newAccumulated - effContract);
-                    }
-                    currentAccumulated = newAccumulated;
-                }
-                daysStructure.push({
-                    date: currentDay, dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i], dayNumber: currentDay.getDate(),
-                    hasLog: !!dayLog, clockIn: clockInStr, clockOut: clockOutStr, totalHours: hours, extraHours: dayExtras, isToday: isToday
-                });
-            }
+            let totalWeekHours = 0;
+            const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
+                totalWeekHours += day.totalHours || 0;
+                const d = new Date(day.date);
+                return {
+                    ...day,
+                    date: d,
+                    dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
+                    dayNumber: d.getDate(),
+                    isToday: d.getDate() === today.getDate() && d.getMonth() === today.getMonth()
+                };
+            });
             setWeekDays(daysStructure);
 
             let weekDifference = 0;
