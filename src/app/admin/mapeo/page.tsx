@@ -15,16 +15,19 @@ export type Recipe = {
 export default async function AdminMapeoPage() {
     const supabase = await createClient();
 
-    // 1. Fetch pending TPV articles (those NOT in map_tpv_receta)
-    // Since we don't have a direct "NOT IN" without a left join or subquery, let's do a fast raw SQL style approach using Supabase's features, or fetch both and filter.
-    // The most robust way in standard Supabase without a custom Postgres view/function is to fetch from bdp_articulos and left join map_tpv_receta, but postgrest requires fk setup.
-    // Assuming a foreign key exists from map_tpv_receta.articulo_id to bdp_articulos.id:
-
+    // 1. Fetch ALL TPV articles (bdp_articulos)
     const { data: allArticles, error: articlesErr } = await supabase
         .from('bdp_articulos')
-        .select('*, map_tpv_receta(articulo_id)');
+        .select('id, nombre')
+        .limit(5000);
 
-    // 2. Fetch all application recipes
+    // 2. Fetch all current mappings to find which ones are already configured
+    const { data: existingMappings, error: mappingsErr } = await supabase
+        .from('map_tpv_receta')
+        .select('articulo_id')
+        .limit(5000);
+
+    // 3. Fetch all application recipes
     const { data: allRecipes, error: recipesErr } = await supabase
         .from('recipes')
         .select('id, name')
@@ -33,14 +36,19 @@ export default async function AdminMapeoPage() {
     if (articlesErr) {
         console.error('Error fetching articles:', articlesErr);
     }
+    if (mappingsErr) {
+        console.error('Error fetching mappings:', mappingsErr);
+    }
     if (recipesErr) {
         console.error('Error fetching recipes:', recipesErr);
     }
 
-    // Filter out articles that already have a mapping.
-    // The left join returns map_tpv_receta array. If it's empty, it's not mapped.
+    // 4. Map and filter
+    // Use a Set for O(1) lookups to determine which articles already have a recipe mapped
+    const mappedArticleIds = new Set((existingMappings || []).map(m => m.articulo_id));
+
     const pendingArticles: TpvArticle[] = (allArticles || [])
-        .filter((a: any) => !a.map_tpv_receta || a.map_tpv_receta.length === 0)
+        .filter((a: any) => !mappedArticleIds.has(a.id))
         .map((a: any) => ({
             id: a.id,
             nombre: a.nombre || 'Desconocido',
