@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-03 (Sincronización Global de Mejoras UI y Lógica de Negocio)
+**Última actualización:** 2026-03-03 (Esquema Final de Ventas TPV)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Mapeo Final TPV (Sales Endpoint)**: Configuración definitiva del endpoint `/api/ventas` para sincronización con el esquema `tickets_marbella` y `ticket_lines_marbella`. Soporte para `hora_cierre`, `fecha_negocio` y gestión de conflictos por línea de ticket.
 - [x] **Sincronización Git Global**: Subida de la versión actual a la rama `main` incluyendo ajustes en `tailwind.config.ts`, `vercel.json.mjs`, políticas RLS y habilidades del agente.
 - [x] **Delegación SQL Paneles Empleado (Móvil y Escritorio)**: Refactorizados `StaffDashboardView.tsx` y `staff/page.tsx` aniquilando la extracción de todos los fichajes de la semana activa. Se sustituyó el ciclo iterativo que computaba los límites diarios y horas extra de cada empleado en JavaScript por una sola invocación declarativa a la RPC `get_worker_weekly_log_grid`.
 - [x] **Delegación SQL Agregación Semanal (Nóminas)**: Refactorizado el componente `WorkerWeeklyHistoryModal.tsx` para erradicar la descarga masiva de crudos `time_logs` y la subsecuente Falsa Agregación en cliente (`.forEach`, bucle `for` de 7 días, `Map`) usada para calcular las horas diarias procesadas y extras progresivas. Se sustituyó exitosamente por la RPC `get_worker_weekly_log_grid`.

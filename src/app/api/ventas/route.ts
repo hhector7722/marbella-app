@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+// Inicialización del cliente de Supabase
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -8,31 +9,26 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { ventas } = body;
+        const { ventas } = await request.json();
 
         for (const v of ventas) {
-            // 1. CABECERAS: Mapeo exacto a public.tickets_marbella
-            const { error: headError } = await supabase
-                .from('tickets_marbella')
-                .upsert({
-                    numero_documento: v.Numero_Documento, // PK
-                    fecha: v.Fecha,
-                    hora_cierre: v.Hora_Cierre,
-                    total_documento: v.Total_Documento
-                });
+            // 1. Insertar Cabecera
+            await supabase.from('tickets_marbella').upsert({
+                numero_documento: v.Numero_Documento,
+                fecha: v.Fecha,
+                hora_cierre: v.Hora_Cierre,
+                total_documento: v.Total_Documento
+            });
 
-            if (headError) throw headError;
-
-            // 2. LÍNEAS: Mapeo exacto a public.ticket_lines_marbella
+            // 2. Insertar Líneas mapeando a tu esquema SQL real
             if (v.lineas && v.lineas.length > 0) {
                 const lineasParaInsertar = v.lineas.map((l: any) => ({
-                    numero_documento: v.Numero_Documento, // FK
+                    numero_documento: v.Numero_Documento,
                     linea: l.Linea,
-                    articulo_id: parseInt(l.Articulo), // PLU -> articulo_id
+                    articulo_id: parseInt(l.Articulo),
                     unidades: l.Unidades,
-                    precio_unidad: l.Precio,
-                    importe_total: (l.Unidades || 0) * (l.Precio || 0),
+                    precio_unitario: l.Precio,      // Columna de tu SQL
+                    importe_total: l.Total,         // Columna de tu SQL
                     fecha_negocio: v.Fecha
                 }));
 
@@ -43,15 +39,9 @@ export async function POST(request: Request) {
                 if (lineError) throw lineError;
             }
         }
-
-        return NextResponse.json({ success: true }, { status: 200 });
-
+        return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('🔥 ERROR ESQUEMA:', error.message);
+        console.error('ERROR API:', error.message);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
-}
-
-export async function GET() {
-    return NextResponse.json({ message: "Endpoint activo" });
 }
