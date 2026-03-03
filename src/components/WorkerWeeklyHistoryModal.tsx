@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { X, Calendar, Edit2, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { format, isSameDay, addDays, parseISO, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn, calculateRoundedHours } from '@/lib/utils'; // Import shared rounding logic
-import { updateWeeklyContractHours } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 
 // --- TYPES ---
@@ -66,9 +65,6 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     const [loading, setLoading] = useState(true);
     const [weekData, setWeekData] = useState<WeeklyData | null>(null);
     const [workerName, setWorkerName] = useState('');
-    const [isEditingContract, setIsEditingContract] = useState(false);
-    const [tempContractHours, setTempContractHours] = useState<number>(40);
-    const [isSavingContract, setIsSavingContract] = useState(false);
 
     useEffect(() => {
         if (isOpen && workerId && weekStart) {
@@ -140,37 +136,12 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                         startBalance: rpcStaff.pendingBalance ?? 0
                     }
                 });
-                setTempContractHours(effContractForGrid);
             }
         } catch (error) {
             console.error("Error in Modal:", error);
             toast.error("Error al cargar detalles semanales");
         } finally {
             setLoading(false);
-        }
-    }
-
-    async function handleSaveContract() {
-        if (!workerId || !weekStart) return;
-        if (isNaN(tempContractHours) || tempContractHours < 0) {
-            toast.error("Las horas deben ser un número válido");
-            return;
-        }
-        setIsSavingContract(true);
-        try {
-            const res = await updateWeeklyContractHours(workerId, weekStart, tempContractHours);
-            if (res.success) {
-                toast.success("Contrato semanal actualizado");
-                setIsEditingContract(false);
-                fetchWeekData();
-            } else {
-                toast.error(res.error || "Error al actualizar contrato");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Error crítico al actualizar contrato");
-        } finally {
-            setIsSavingContract(false);
         }
     }
 
@@ -200,7 +171,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="bg-white rounded-2xl shadow-lg border border-purple-100 overflow-hidden ring-1 ring-purple-100/50 ring-offset-2">
+                        <div className="rounded-2xl overflow-hidden">
                             {/* Days Grid */}
                             <div className="grid grid-cols-7 border-b border-gray-100">
                                 {weekData.days.map((day, i) => (
@@ -251,40 +222,6 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
                             {/* Summary Footer */}
                             <div className="p-3 flex items-center justify-between gap-1 bg-white">
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0 relative group/contract">
-                                    {isEditingContract ? (
-                                        <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-200">
-                                            <input
-                                                type="number"
-                                                value={tempContractHours || ''}
-                                                onChange={(e) => setTempContractHours(Number(e.target.value))}
-                                                className="w-12 text-center font-black text-xs border-b-2 border-[#36606F] outline-none"
-                                                autoFocus
-                                            />
-                                            <div className="flex gap-2">
-                                                <button onClick={handleSaveContract} disabled={isSavingContract} className="text-emerald-500 hover:scale-110 transition-transform disabled:opacity-50">
-                                                    {isSavingContract ? <LoadingSpinner size="sm" /> : <Check size={14} strokeWidth={3} />}
-                                                </button>
-                                                <button onClick={() => { setIsEditingContract(false); setTempContractHours(weekData.summary.contractedHours); }} className="text-rose-400 hover:scale-110 transition-transform">
-                                                    <X size={14} strokeWidth={3} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="flex items-center gap-1">
-                                                <span className="font-black text-gray-800 text-xs leading-none">{formatValue(weekData.summary.contractedHours)}</span>
-                                                <button
-                                                    onClick={() => setIsEditingContract(true)}
-                                                    className="opacity-0 group-hover/contract:opacity-100 transition-opacity text-gray-400 hover:text-[#36606F]"
-                                                >
-                                                    <Edit2 size={10} />
-                                                </button>
-                                            </div>
-                                            <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Contrato</span>
-                                        </>
-                                    )}
-                                </div>
                                 <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
                                     <span className="font-black text-gray-800 text-xs leading-none">{formatValue(weekData.summary.totalHours)}</span>
                                     <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
