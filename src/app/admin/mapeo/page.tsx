@@ -24,7 +24,7 @@ export default async function AdminMapeoPage() {
     // 2. Fetch all current mappings to find which ones are already configured
     const { data: existingMappings, error: mappingsErr } = await supabase
         .from('map_tpv_receta')
-        .select('articulo_id')
+        .select('articulo_id, recipe_id, factor_porcion')
         .limit(5000);
 
     // 3. Fetch all application recipes
@@ -44,7 +44,10 @@ export default async function AdminMapeoPage() {
     }
 
     // 4. Map and filter
-    // Use a Set for O(1) lookups to determine which articles already have a recipe mapped
+    // Use a Map for O(1) lookups of articles and recipes
+    const articleMap = new Map((allArticles || []).map(a => [a.id, a.nombre]));
+    const recipeMap = new Map((allRecipes || []).map(r => [r.id, r.name]));
+
     const mappedArticleIds = new Set((existingMappings || []).map(m => m.articulo_id));
 
     const pendingArticles: TpvArticle[] = (allArticles || [])
@@ -55,6 +58,15 @@ export default async function AdminMapeoPage() {
         }));
 
     const recipes: Recipe[] = allRecipes || [];
+
+    // 5. Construct Completed Mappings DTO
+    const completedMappings = (existingMappings || []).map(m => ({
+        articulo_id: m.articulo_id,
+        nombre_tpv: articleMap.get(m.articulo_id) || 'Desconocido',
+        recipe_id: m.recipe_id,
+        nombre_app: recipeMap.get(m.recipe_id) || 'Desconocido',
+        factor_porcion: m.factor_porcion || 1.0,
+    }));
 
     return (
         <div className="w-full max-w-6xl mx-auto space-y-6">
@@ -67,19 +79,11 @@ export default async function AdminMapeoPage() {
                 </p>
             </div>
 
-            {pendingArticles.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-zinc-100 p-12 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl">
-                            ✓
-                        </div>
-                        <h3 className="text-lg font-semibold text-zinc-900">Mapeo Completado</h3>
-                        <p className="text-zinc-500 max-w-sm">No hay artículos del TPV pendientes de vincular con recetas. Buen trabajo.</p>
-                    </div>
-                </div>
-            ) : (
-                <MapeoClient pendingArticles={pendingArticles} recipes={recipes} />
-            )}
+            <MapeoClient
+                pendingArticles={pendingArticles}
+                recipes={recipes}
+                completedMappings={completedMappings}
+            />
         </div>
     );
 }

@@ -30,3 +30,25 @@ export async function linkTpvToRecipe(articuloId: number, recipeId: string, fact
     revalidatePath('/admin/mapeo');
     return { success: true };
 }
+
+export async function unlinkTpvFromRecipe(articuloId: number) {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    const { error } = await supabase
+        .from('map_tpv_receta')
+        .delete()
+        .eq('articulo_id', articuloId);
+
+    if (error) {
+        console.error('Error unlinking TPV from recipe:', error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/mapeo');
+    return { success: true };
+}
