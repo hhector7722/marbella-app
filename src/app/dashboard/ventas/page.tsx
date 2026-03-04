@@ -303,7 +303,13 @@ export default function VentasPage() {
                                                 {tickets.map((ticket, idx) => {
                                                     let dateDisplay = "Fecha Inválida";
                                                     if (ticket.fecha) {
-                                                        const dateInstance = new Date(`${ticket.fecha}T${ticket.hora_cierre || '00:00:00'}`);
+                                                        const cleanDate = ticket.fecha.split('T')[0];
+                                                        const cleanTime = ticket.hora_cierre ? ticket.hora_cierre.trim() : '00:00:00';
+
+                                                        // Fallback just in case hora_cierre doesn't have seconds:
+                                                        const timeFormat = cleanTime.length === 5 ? `${cleanTime}:00` : cleanTime;
+
+                                                        const dateInstance = new Date(`${cleanDate}T${timeFormat}`);
                                                         if (!isNaN(dateInstance.getTime())) {
                                                             dateDisplay = format(dateInstance, 'dd/MM HH:mm');
                                                         }
