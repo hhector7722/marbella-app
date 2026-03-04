@@ -441,7 +441,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         >
                                             <div className="flex flex-col items-start leading-none gap-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                                <span className="text-3xl font-black">{theoreticalBalance > 0.005 ? `${theoreticalBalance.toFixed(2)}€` : " "}</span>
+                                                <span className="text-3xl font-black">{Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}</span>
                                             </div>
                                         </button>
 
@@ -485,8 +485,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                     (difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
                                                 )}>
                                                     <AlertTriangle className="w-3.5 h-3.5" strokeWidth={3} />
-                                                    {(difference || 0) > 0 ? '+' : ''}
-                                                    {Math.abs(difference || 0) > 0.005 ? (difference || 0).toFixed(2) : " "}€
+                                                    {Math.abs(difference || 0) > 0.005 ? `${(difference || 0) > 0 ? '+' : ''}${(difference || 0).toFixed(2)}€` : " "}
                                                 </span>
                                             )}
                                         </div>
@@ -601,7 +600,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     >
                                         <div className="flex flex-col items-start leading-none gap-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                            <span className="text-lg font-black">{theoreticalBalance > 0.005 ? `${theoreticalBalance.toFixed(2)}€` : " "}</span>
+                                            <span className="text-lg font-black">{Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}</span>
                                         </div>
                                     </button>
 
@@ -645,7 +644,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 (difference || 0) < 0 ? "text-rose-500" : "text-emerald-500"
                                             )}>
                                                 <AlertTriangle className="w-2.5 h-2.5" strokeWidth={3} />
-                                                {Math.abs(difference || 0) > 0.005 ? ((difference || 0) > 0 ? '+' : '') + (difference || 0).toFixed(2) + "€" : " "}
+                                                {Math.abs(difference || 0) > 0.005 ? `${(difference || 0) > 0 ? '+' : ''}${(difference || 0).toFixed(2)}€` : " "}
                                             </span>
                                         )}
                                     </div>

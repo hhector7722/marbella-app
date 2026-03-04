@@ -8,6 +8,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refinamiento UI Caja Inicial (Dashboard)**: Corregida la visualización del bloque principal para mostrar el `saldo_actual` en lugar del teórico. Actualizado el indicador de diferencia para consumir directamente la columna `difference` de la tabla `cash_boxes`, con regla de display estricta (ocultar icono y mostrar check si es 0, con color dinámico). Unificado el formato numérico a estrictos 2 decimales (`.toFixed(2)`) en todo el panel y vista detallada de movimientos.
 - [x] **Mapeo de Artículos TPV (/admin/mapeo)**: Implementada nueva vista de administración para vincular productos del TPV (`bdp_articulos`) con las recetas del sistema. Incluye buscador inteligente, ajuste de factor de porción y validaciones de seguridad mediante Server Actions (RLS y DB Supabase Master rules). Interfaz diseñada según Arquitecto UI Kiosco.
 - [x] **Restauración Middleware & Bypass API**: Revertido `proxy.ts` a `middleware.ts`. Implementada regla de exclusión para `/api/` que previene redirecciones no deseadas del TPV, eliminando el riesgo de pérdida de datos por fallos de sesión en peticiones automatizadas.
 - [x] **Mapeo Final TPV (Sales Endpoint)**: Configuración definitiva del endpoint `/api/ventas` para sincronización con el esquema `tickets_marbella` y `ticket_lines_marbella`. Soporte para `hora_cierre`, `fecha_negocio` y gestión de conflictos por línea de ticket.

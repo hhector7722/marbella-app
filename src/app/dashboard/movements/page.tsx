@@ -83,12 +83,13 @@ export default function MovementsPage() {
     const [currentBoxStatus, setCurrentBoxStatus] = useState({
         theoreticalBalance: 0,
         physicalBalance: 0,
+        difference: 0,
         loading: true
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
-    // [✓] FÓRMULA ESTRICTA: FÍSICA - TEÓRICA EN CADA RENDER (Globales, no por periodo)
-    const calculatedDifference = currentBoxStatus.physicalBalance - currentBoxStatus.theoreticalBalance;
+    // [✓] FÓRMULA ESTRICTA: Diferencia extraída directamente de la base de datos
+    const calculatedDifference = currentBoxStatus.difference;
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -103,23 +104,14 @@ export default function MovementsPage() {
 
     async function fetchCurrentBoxStatus() {
         try {
-            const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, name').eq('type', 'operational').maybeSingle();
+            const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, difference, name').eq('type', 'operational').maybeSingle();
             if (!box) return;
             setBoxData(box);
 
-            // Obtener estrictamente el registro más reciente sin filtros de fecha
-            // Usamos req eq('box_id', box.id) para ser precisos con la caja operacional
-            const { data: currentTheoreticalRecord } = await supabase
-                .from('v_treasury_movements_balance')
-                .select('running_balance')
-                .eq('box_id', box.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
             setCurrentBoxStatus({
-                theoreticalBalance: currentTheoreticalRecord ? Number(currentTheoreticalRecord.running_balance) : 0,
-                physicalBalance: box.current_balance,
+                theoreticalBalance: (box.current_balance || 0) - (box.difference || 0),
+                physicalBalance: box.current_balance || 0,
+                difference: box.difference || 0,
                 loading: false
             });
         } catch (error) {
@@ -456,28 +448,32 @@ export default function MovementsPage() {
                         {/* RESUMEN: Grid 4x1 en móvil y escritorio */}
                         <div className="py-4 px-2 grid grid-cols-4 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">+{periodSummary.income.toFixed(0)}€</span>
+                                <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">{periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : " "}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-rose-500 line-clamp-1">-{periodSummary.expense.toFixed(0)}€</span>
+                                <span className="text-[13px] md:text-2xl font-black text-rose-500 line-clamp-1">{periodSummary.expense > 0.005 ? `-${periodSummary.expense.toFixed(2)}€` : " "}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">GASTOS</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {currentBoxStatus.theoreticalBalance.toFixed(0)}€
+                                    {Math.abs(currentBoxStatus.physicalBalance) > 0.005 ? `${currentBoxStatus.physicalBalance.toFixed(2)}€` : " "}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className={cn(
-                                    "text-[13px] md:text-2xl font-black line-clamp-1",
-                                    calculatedDifference > 0 ? "text-blue-500" : calculatedDifference < 0 ? "text-orange-500" : "text-zinc-400"
+                                    "text-[13px] md:text-2xl font-black line-clamp-1 flex items-center justify-center h-full",
+                                    calculatedDifference > 0 ? "text-blue-500" : calculatedDifference < 0 ? "text-orange-500" : "text-emerald-500"
                                 )}>
-                                    {Math.abs(calculatedDifference) < 0.01 ? "0€" : `${calculatedDifference > 0 ? '+' : ''}${calculatedDifference.toFixed(0)}€`}
+                                    {Math.abs(calculatedDifference) < 0.01 ? (
+                                        <Check className="w-4 h-4 md:w-6 md:h-6" strokeWidth={4} />
+                                    ) : (
+                                        `${calculatedDifference > 0 ? '+' : ''}${calculatedDifference.toFixed(2)}€`
+                                    )}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFER. ACTUAL</span>
                             </div>

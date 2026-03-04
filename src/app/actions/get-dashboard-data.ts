@@ -68,16 +68,9 @@ export async function getDashboardData() {
 
             boxMovements = moves || [];
 
-            // Fetch theoretical balance from view
-            const { data: viewData } = await supabase.from('v_treasury_movements_balance')
-                .select('running_balance')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
-
-            theoreticalBalance = viewData?.running_balance || 0;
             actualBalance = opBox.current_balance || 0;
-            difference = actualBalance - theoreticalBalance;
+            difference = opBox.difference || 0;
+            theoreticalBalance = actualBalance - difference;
         }
     }
 
