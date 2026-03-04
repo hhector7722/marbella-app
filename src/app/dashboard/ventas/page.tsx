@@ -64,12 +64,12 @@ export default function VentasPage() {
     async function fetchVentas() {
         setLoading(true);
         try {
-            let startISO: string;
-            let endISO: string;
+            let startDateStr: string;
+            let endDateStr: string;
 
             if (filterMode === 'single') {
-                startISO = selectedDate;
-                endISO = selectedDate;
+                startDateStr = selectedDate;
+                endDateStr = selectedDate;
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setTickets([]);
@@ -78,22 +78,23 @@ export default function VentasPage() {
                     setLoading(false);
                     return;
                 }
-                startISO = rangeStart;
-                endISO = rangeEnd;
+                // Aseguramos el formato puro cortando cualquier ISO string
+                startDateStr = rangeStart.split('T')[0];
+                endDateStr = rangeEnd.split('T')[0];
             }
 
             // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos
             const ticketsPromise = supabase
                 .from('tickets_marbella') // Endpoint/Tabla a utilizar
                 .select('id, numero_documento, fecha, hora_cierre, total_documento')
-                .gte('fecha', startISO)
-                .lte('fecha', endISO)
+                .gte('fecha', startDateStr)
+                .lte('fecha', endDateStr)
                 .order('fecha', { ascending: false })
                 .order('hora_cierre', { ascending: false });
 
             const productsPromise = supabase.rpc('get_product_sales_ranking', {
-                p_start_date: startISO,
-                p_end_date: endISO
+                p_start_date: startDateStr,
+                p_end_date: endDateStr
             });
 
             const [ticketsRes, productsRes] = await Promise.all([ticketsPromise, productsPromise]);
