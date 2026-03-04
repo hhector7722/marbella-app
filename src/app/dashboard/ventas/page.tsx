@@ -30,7 +30,7 @@ export default function VentasPage() {
     const supabase = createClient();
     const router = useRouter();
 
-    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS'>('TICKETS');
+    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS'>('PRODUCTOS');
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
@@ -262,7 +262,7 @@ export default function VentasPage() {
                                     activeTab === 'TICKETS' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                                 )}
                             >
-                                Visión Tickets
+                                Tickets
                             </button>
                             <button
                                 onClick={() => setActiveTab('PRODUCTOS')}
@@ -271,7 +271,7 @@ export default function VentasPage() {
                                     activeTab === 'PRODUCTOS' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                                 )}
                             >
-                                Visión Productos
+                                Productos
                             </button>
                         </div>
                     </div>
