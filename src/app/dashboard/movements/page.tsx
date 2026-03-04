@@ -522,11 +522,17 @@ export default function MovementsPage() {
                                                             <td className="px-3 md:px-6 py-3">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[10px] md:text-[13px] font-black text-zinc-900 italic">
-                                                                        <span className="md:inline hidden">{format(date, 'eeee d MMM', { locale: es })}</span>
-                                                                        <span className="md:hidden inline">{format(date, 'd MMM', { locale: es })}</span>
+                                                                        {isNaN(date.getTime()) ? (
+                                                                            <span className="text-rose-500 text-[10px]">Fecha Inválida</span>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span className="md:inline hidden">{format(date, 'eeee d MMM', { locale: es })}</span>
+                                                                                <span className="md:hidden inline">{format(date, 'd MMM', { locale: es })}</span>
+                                                                            </>
+                                                                        )}
                                                                     </span>
                                                                     <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 font-mono">
-                                                                        {format(date, 'HH:mm')}
+                                                                        {isNaN(date.getTime()) ? '--:--' : format(date, 'HH:mm')}
                                                                     </span>
                                                                 </div>
                                                             </td>

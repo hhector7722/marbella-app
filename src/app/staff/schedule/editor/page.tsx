@@ -12,7 +12,8 @@ import {
     ChevronRight,
     UserPlus,
     Trash2,
-    Send
+    Send,
+    CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -162,6 +163,7 @@ export default function ScheduleEditorPage() {
 
     // Estado para detectar cambios sin guardar
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [isDayPublished, setIsDayPublished] = useState(false);
 
     // Horas por defecto (celdas vacías por defecto)
     const [defaultStart, setDefaultStart] = useState('');
@@ -216,9 +218,14 @@ export default function ScheduleEditorPage() {
                 };
             }) || [];
 
-            // Cargar actividad si existe
-            if (existingShifts && existingShifts.length > 0 && existingShifts[0].activity) {
-                setActivity(existingShifts[0].activity);
+            // Cargar actividad e estado global de publicación
+            if (existingShifts && existingShifts.length > 0) {
+                if (existingShifts[0].activity) {
+                    setActivity(existingShifts[0].activity);
+                }
+                setIsDayPublished(existingShifts.some(s => s.is_published));
+            } else {
+                setIsDayPublished(false);
             }
 
             setShifts(activeShifts);
@@ -277,7 +284,7 @@ export default function ScheduleEditorPage() {
         }
     };
 
-    const handleSave = async (silent = false) => {
+    const handleSave = async (silent = false, publish = false) => {
         const activeShifts = shifts.filter(s => s.active);
 
         if (activeShifts.length === 0) {
@@ -302,7 +309,7 @@ export default function ScheduleEditorPage() {
                     end_time: endDateTime.toISOString(),
                     activity: activity || null,
                     notes: null,
-                    is_published: true
+                    is_published: publish
                 };
             });
 
@@ -334,7 +341,8 @@ export default function ScheduleEditorPage() {
             }
 
             setHasUnsavedChanges(false);
-            if (!silent) toast.success(`${activeShifts.length} turno(s) guardado(s)`);
+            setIsDayPublished(publish);
+            if (!silent) toast.success(`${activeShifts.length} turno(s) guardado(s) ${publish ? 'como OFICIALES' : 'como BORRADOR'}`);
             if (!silent) router.push('/staff/schedule');
             return true;
         } catch (error: any) {
@@ -345,8 +353,8 @@ export default function ScheduleEditorPage() {
     };
 
     const handleSendNotifications = async () => {
-        // 1. Guardar primero de forma silenciosa
-        const saved = await handleSave(true);
+        // 1. Guardar primero de forma silenciosa COMO OFICIAL
+        const saved = await handleSave(true, true);
         if (!saved) return;
 
         const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
@@ -431,20 +439,38 @@ export default function ScheduleEditorPage() {
                     </button>
 
                     {/* Derecha: Botones de Acción */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                        {isDayPublished && !hasUnsavedChanges ? (
+                            <div className="bg-emerald-500/20 text-emerald-100 px-2 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                                <CheckCircle2 size={12} />
+                                <span className="hidden sm:inline">PUBLICADO</span>
+                            </div>
+                        ) : !isDayPublished && shifts.length > 0 && !hasUnsavedChanges ? (
+                            <div className="bg-amber-500/20 text-amber-200 px-2 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                                <span className="hidden sm:inline">BORRADOR</span>
+                            </div>
+                        ) : null}
+
                         <button
-                            onClick={() => handleSave()}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-2"
+                            onClick={() => handleSave(false, false)}
+                            className="bg-zinc-600 hover:bg-zinc-700 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5"
                         >
                             <Save size={14} />
-                            <span>GUARDAR</span>
+                            <span className="hidden sm:inline">BORRADOR</span>
+                        </button>
+                        <button
+                            onClick={() => handleSave(false, true)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5"
+                        >
+                            <CheckCircle2 size={14} />
+                            <span className="hidden sm:inline">CONFIRMAR</span>
                         </button>
                         <button
                             onClick={handleSendNotifications}
-                            className="bg-black/20 hover:bg-black/30 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-2 border border-white/10"
+                            className="bg-black/20 hover:bg-black/30 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5 border border-white/10"
                         >
                             <Send size={14} />
-                            <span>ENVIAR</span>
+                            <span className="hidden sm:inline">ENVIAR</span>
                         </button>
                     </div>
                 </div>

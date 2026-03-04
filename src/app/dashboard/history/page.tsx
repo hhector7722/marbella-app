@@ -119,7 +119,12 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
                 <div className="bg-[#36606F] p-8 text-white text-center relative">
                     <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-xl transition-all"><X size={20} /></button>
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 block">Arqueo de Efectivo</span>
-                    <h3 className="text-xl font-black uppercase tracking-tighter">{format(new Date(date), 'eeee d MMM', { locale: es })}</h3>
+                    <h3 className="text-xl font-black uppercase tracking-tighter">
+                        {(() => {
+                            const d = new Date(date);
+                            return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
+                        })()}
+                    </h3>
                 </div>
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     <div className="space-y-2">
@@ -549,7 +554,10 @@ export default function HistoryPage() {
                                                 >
                                                     <div className="bg-[#D64D5D] p-2.5 md:p-3 flex justify-center items-center shadow-sm">
                                                         <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider">
-                                                            {format(new Date(c.closed_at), 'eeee, d MMM', { locale: es })}
+                                                            {(() => {
+                                                                const d = new Date(c.closed_at);
+                                                                return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee, d MMM', { locale: es });
+                                                            })()}
                                                         </span>
                                                     </div>
 
@@ -747,7 +755,10 @@ export default function HistoryPage() {
                             <div className="mt-4">
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
                                 <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mx-auto max-w-[90%] break-words">
-                                    {format(new Date(selectedClosing.closed_at), 'eeee d MMMM', { locale: es })}
+                                    {(() => {
+                                        const d = new Date(selectedClosing.closed_at);
+                                        return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
+                                    })()}
                                 </h2>
                                 <div className="flex items-center justify-center gap-4 mt-6">
                                     <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">

@@ -210,7 +210,12 @@ export default function ManagerLedgerView() {
                                                 <div className="flex flex-col min-w-0">
                                                     <span className="text-sm font-black text-zinc-900 uppercase tracking-tight truncate">{log.concept}</span>
                                                     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 mt-1">
-                                                        <span className="text-[9px] md:text-[10px] font-bold text-zinc-500 whitespace-nowrap">{format(parseISO(log.date), "d MMM yyyy, HH:mm", { locale: es })}</span>
+                                                        <span className="text-[9px] md:text-[10px] font-bold text-zinc-500 whitespace-nowrap">
+                                                            {(() => {
+                                                                const d = parseISO(log.date);
+                                                                return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, "d MMM yyyy, HH:mm", { locale: es });
+                                                            })()}
+                                                        </span>
                                                         <span className="hidden sm:inline text-zinc-300 shrink-0">•</span>
                                                         <span className="text-[9px] md:text-[10px] font-black uppercase text-zinc-400 truncate">{log.profiles?.full_name || 'Manager'}</span>
                                                     </div>
