@@ -61,17 +61,23 @@ export default function MovementsPage() {
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
 
+    const parseLocalSafe = (dateStr: string | null) => {
+        if (!dateStr) return new Date();
+        const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
     const handlePrevMonth = () => {
-        const currentMonthDate = rangeStart ? new Date(rangeStart) : new Date();
-        const prev = subMonths(currentMonthDate, 1);
+        const current = parseLocalSafe(rangeStart);
+        const prev = subMonths(current, 1);
         setRangeStart(format(startOfMonth(prev), 'yyyy-MM-dd'));
         setRangeEnd(format(endOfMonth(prev), 'yyyy-MM-dd'));
         setFilterMode('range');
     };
 
     const handleNextMonth = () => {
-        const currentMonthDate = rangeStart ? new Date(rangeStart) : new Date();
-        const next = addMonths(currentMonthDate, 1);
+        const current = parseLocalSafe(rangeStart);
+        const next = addMonths(current, 1);
         setRangeStart(format(startOfMonth(next), 'yyyy-MM-dd'));
         setRangeEnd(format(endOfMonth(next), 'yyyy-MM-dd'));
         setFilterMode('range');
@@ -164,9 +170,9 @@ export default function MovementsPage() {
                     setLoading(false);
                     return;
                 }
-                const s = new Date(rangeStart);
+                const s = parseLocalSafe(rangeStart);
                 s.setHours(0, 0, 0, 0);
-                const e = new Date(rangeEnd);
+                const e = parseLocalSafe(rangeEnd);
                 e.setHours(23, 59, 59, 999);
                 startISO = s.toISOString();
                 endISO = e.toISOString();
@@ -247,9 +253,9 @@ export default function MovementsPage() {
                 endISO = d.toISOString();
             } else {
                 if (!rangeStart || !rangeEnd) return prevPage;
-                const s = new Date(rangeStart);
+                const s = parseLocalSafe(rangeStart);
                 s.setHours(0, 0, 0, 0);
-                const e = new Date(rangeEnd);
+                const e = parseLocalSafe(rangeEnd);
                 e.setHours(23, 59, 59, 999);
                 startISO = s.toISOString();
                 endISO = e.toISOString();
@@ -419,16 +425,16 @@ export default function MovementsPage() {
                         {/* FILTROS INTEGRADOS EN CABECERA */}
                         <div className="flex items-center justify-between gap-2 pb-2">
                             {/* NAVEGADOR MENSUAL PRINCIPAL */}
-                            <div className="flex items-center bg-white/5 border border-white/20 rounded-xl overflow-hidden flex-1 max-w-[200px] md:max-w-[250px]">
-                                <button onClick={handlePrevMonth} className="p-1.5 md:p-2 hover:bg-white/10 text-white transition-all outline-none">
+                            <div className="flex items-center gap-0.5 md:gap-1">
+                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
                                     <ChevronLeft size={18} />
                                 </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="flex-1 py-1.5 md:py-2 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center hover:bg-white/10 transition-all truncate outline-none">
+                                <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'SELECCIONAR MES'}
                                 </button>
-                                <button onClick={handleNextMonth} className="p-1.5 md:p-2 hover:bg-white/10 text-white transition-all outline-none">
+                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
                                     <ChevronRight size={18} />
                                 </button>
                             </div>

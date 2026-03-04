@@ -179,17 +179,23 @@ export default function HistoryPage() {
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
     const [selectedMetric, setSelectedMetric] = useState<MetricType>('net_sales');
 
+    const parseLocalSafe = (dateStr: string | null) => {
+        if (!dateStr) return new Date();
+        const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
     const handlePrevMonth = () => {
-        const currentMonthDate = rangeStart ? new Date(rangeStart) : new Date();
-        const prev = subMonths(currentMonthDate, 1);
+        const current = parseLocalSafe(rangeStart);
+        const prev = subMonths(current, 1);
         setRangeStart(format(startOfMonth(prev), 'yyyy-MM-dd'));
         setRangeEnd(format(endOfMonth(prev), 'yyyy-MM-dd'));
         setFilterMode('range');
     };
 
     const handleNextMonth = () => {
-        const currentMonthDate = rangeStart ? new Date(rangeStart) : new Date();
-        const next = addMonths(currentMonthDate, 1);
+        const current = parseLocalSafe(rangeStart);
+        const next = addMonths(current, 1);
         setRangeStart(format(startOfMonth(next), 'yyyy-MM-dd'));
         setRangeEnd(format(endOfMonth(next), 'yyyy-MM-dd'));
         setFilterMode('range');
@@ -467,24 +473,9 @@ export default function HistoryPage() {
                         </div>
 
                         {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="flex items-center justify-between gap-2 pb-2">
-                            {/* NAVEGADOR MENSUAL PRINCIPAL */}
-                            <div className="flex items-center bg-white/5 border border-white/20 rounded-xl overflow-hidden flex-1 max-w-[200px] md:max-w-[250px]">
-                                <button onClick={handlePrevMonth} className="p-1.5 md:p-2 hover:bg-white/10 text-white transition-all outline-none">
-                                    <ChevronLeft size={18} />
-                                </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="flex-1 py-1.5 md:py-2 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center hover:bg-white/10 transition-all truncate outline-none">
-                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'SELECCIONAR MES'}
-                                </button>
-                                <button onClick={handleNextMonth} className="p-1.5 md:p-2 hover:bg-white/10 text-white transition-all outline-none">
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
-
-                            {/* FILTROS SECUNDARIOS REDUCIDOS */}
-                            <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center justify-between gap-1 pb-2 relative min-h-[40px]">
+                            {/* FILTROS SECUNDARIOS REDUCIDOS (A la Izquierda) */}
+                            <div className="flex items-center gap-1.5 shrink-0 z-10 w-[120px] md:w-[150px]">
                                 <button
                                     onClick={() => {
                                         setRangeStart(null);
@@ -508,6 +499,34 @@ export default function HistoryPage() {
                                     )}
                                 >
                                     FECHA
+                                </button>
+                            </div>
+
+                            {/* NAVEGADOR MENSUAL PRINCIPAL (Centrado Absoluto) */}
+                            <div className="absolute left-0 right-0 flex items-center justify-center pointer-events-none">
+                                <div className="flex items-center gap-0.5 md:gap-1 pointer-events-auto">
+                                    <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                        <ChevronLeft size={18} />
+                                    </button>
+                                    <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[10px] sm:text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
+                                        {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                            : 'MES'}
+                                    </button>
+                                    <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* BOTÓN DE VENTAS (A la Derecha) */}
+                            <div className="flex items-center justify-end shrink-0 z-10 w-[120px] md:w-[150px]">
+                                <button
+                                    onClick={() => router.push('/dashboard/ventas')}
+                                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all outline-none bg-white text-[#36606F] hover:bg-white/90 shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
+                                >
+                                    <TrendingUp size={12} strokeWidth={3} className="hidden sm:block" />
+                                    VENTAS
                                 </button>
                             </div>
                         </div>
