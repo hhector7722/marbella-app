@@ -300,29 +300,39 @@ export default function VentasPage() {
                                                 </tr>
                                             </thead>
                                             <tbody className="text-xs font-bold text-zinc-600">
-                                                {tickets.map((ticket, idx) => (
-                                                    <tr
-                                                        key={ticket.numero_documento || idx}
-                                                        onClick={() => handleRowClick(ticket.numero_documento)}
-                                                        className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50 last:border-0"
-                                                    >
-                                                        <td className="p-3 md:p-4 whitespace-nowrap">
-                                                            {format(new Date(`${ticket.fecha}T${ticket.hora_cierre || '00:00:00'}`), 'dd/MM HH:mm')}
-                                                        </td>
-                                                        <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
-                                                            {ticket.numero_documento}
-                                                        </td>
-                                                        <td className="p-3 md:p-4 text-[10px] md:text-xs text-zinc-400">
-                                                            {ticket.origen || 'TPV'}
-                                                        </td>
-                                                        <td className={cn(
-                                                            "p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap",
-                                                            (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
-                                                        )}>
-                                                            {Number(ticket.total_documento || 0).toFixed(2)}€
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {tickets.map((ticket, idx) => {
+                                                    let dateDisplay = "Fecha Inválida";
+                                                    if (ticket.fecha) {
+                                                        const dateInstance = new Date(`${ticket.fecha}T${ticket.hora_cierre || '00:00:00'}`);
+                                                        if (!isNaN(dateInstance.getTime())) {
+                                                            dateDisplay = format(dateInstance, 'dd/MM HH:mm');
+                                                        }
+                                                    }
+
+                                                    return (
+                                                        <tr
+                                                            key={ticket.numero_documento || idx}
+                                                            onClick={() => handleRowClick(ticket.numero_documento)}
+                                                            className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50 last:border-0"
+                                                        >
+                                                            <td className="p-3 md:p-4 whitespace-nowrap">
+                                                                {dateDisplay}
+                                                            </td>
+                                                            <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
+                                                                {ticket.numero_documento}
+                                                            </td>
+                                                            <td className="p-3 md:p-4 text-[10px] md:text-xs text-zinc-400">
+                                                                {ticket.origen || 'TPV'}
+                                                            </td>
+                                                            <td className={cn(
+                                                                "p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap",
+                                                                (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
+                                                            )}>
+                                                                {Number(ticket.total_documento || 0).toFixed(2)}€
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
