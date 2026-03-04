@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -60,6 +60,28 @@ export default function VentasPage() {
         fetchVentas();
     }, [rangeStart, rangeEnd, selectedDate, filterMode]);
 
+    const parseLocalSafe = (dateStr: string | null) => {
+        if (!dateStr) return new Date();
+        const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
+    const handlePrevMonth = () => {
+        const current = parseLocalSafe(rangeStart);
+        const prev = subMonths(current, 1);
+        setRangeStart(format(startOfMonth(prev), 'yyyy-MM-dd'));
+        setRangeEnd(format(endOfMonth(prev), 'yyyy-MM-dd'));
+        setFilterMode('range');
+    };
+
+    const handleNextMonth = () => {
+        const current = parseLocalSafe(rangeStart);
+        const next = addMonths(current, 1);
+        setRangeStart(format(startOfMonth(next), 'yyyy-MM-dd'));
+        setRangeEnd(format(endOfMonth(next), 'yyyy-MM-dd'));
+        setFilterMode('range');
+    };
+
     async function fetchVentas() {
         setLoading(true);
         try {
@@ -77,9 +99,12 @@ export default function VentasPage() {
                     setLoading(false);
                     return;
                 }
-                // Aseguramos el formato puro cortando cualquier ISO string
-                startDateStr = rangeStart.split('T')[0];
-                endDateStr = rangeEnd.split('T')[0];
+                const s = parseLocalSafe(rangeStart);
+                s.setHours(0, 0, 0, 0);
+                const e = parseLocalSafe(rangeEnd);
+                e.setHours(23, 59, 59, 999);
+                startDateStr = s.toISOString();
+                endDateStr = e.toISOString();
             }
 
             // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos
@@ -185,46 +210,50 @@ export default function VentasPage() {
                             <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Ventas</h1>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 pb-2">
-                            <button
-                                onClick={() => setShowMonthPicker(true)}
-                                className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border outline-none truncate",
-                                    filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? "bg-white border-white text-zinc-800 shadow-sm"
-                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                )}
-                            >
-                                {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                    : 'MES'}
-                            </button>
+                        {/* FILTROS INTEGRADOS EN CABECERA */}
+                        <div className="flex items-center justify-between gap-1 pb-2 relative min-h-[40px]">
+                            {/* NAVEGADOR MENSUAL PRINCIPAL (A la Izquierda) */}
+                            <div className="flex items-center gap-0.5 md:gap-1 z-10">
+                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[10px] sm:text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
+                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                        : 'MES'}
+                                </button>
+                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
 
-                            <button
-                                onClick={() => {
-                                    setRangeStart(null);
-                                    setRangeEnd(null);
-                                    setShowCalendar('range');
-                                }}
-                                className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                    filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? "bg-white border-white text-zinc-800 shadow-sm"
-                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                )}
-                            >
-                                PERIODO
-                            </button>
-
-                            <button
-                                onClick={() => setShowCalendar('single')}
-                                className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                    filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                )}
-                            >
-                                FECHA
-                            </button>
+                            {/* FILTROS SECUNDARIOS REDUCIDOS (A la Derecha) */}
+                            <div className="flex items-center justify-end gap-1.5 shrink-0 z-10">
+                                <button
+                                    onClick={() => {
+                                        setRangeStart(null);
+                                        setRangeEnd(null);
+                                        setShowCalendar('range');
+                                    }}
+                                    className={cn(
+                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
+                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? "bg-white border-white text-zinc-800 shadow-sm"
+                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    )}
+                                >
+                                    PERIODO
+                                </button>
+                                <button
+                                    onClick={() => setShowCalendar('single')}
+                                    className={cn(
+                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
+                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    )}
+                                >
+                                    FECHA
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -304,13 +333,16 @@ export default function VentasPage() {
                                                     let dateDisplay = "Fecha Inválida";
                                                     if (ticket.fecha) {
                                                         const cleanDate = ticket.fecha.split('T')[0];
-                                                        const cleanTime = ticket.hora_cierre ? ticket.hora_cierre.trim() : '00:00:00';
+                                                        const dateInstance = parseLocalSafe(cleanDate);
 
-                                                        // Fallback just in case hora_cierre doesn't have seconds:
-                                                        const timeFormat = cleanTime.length === 5 ? `${cleanTime}:00` : cleanTime;
-
-                                                        const dateInstance = new Date(`${cleanDate}T${timeFormat}`);
                                                         if (!isNaN(dateInstance.getTime())) {
+                                                            let cleanTime = ticket.hora_cierre ? ticket.hora_cierre.trim() : '00:00:00';
+                                                            if (cleanTime.length === 5) cleanTime = `${cleanTime}:00`;
+
+                                                            const [hours, minutes] = cleanTime.split(':').map(Number);
+                                                            if (!isNaN(hours) && !isNaN(minutes)) {
+                                                                dateInstance.setHours(hours, minutes, 0, 0);
+                                                            }
                                                             dateDisplay = format(dateInstance, 'dd/MM HH:mm');
                                                         }
                                                     }
