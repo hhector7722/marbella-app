@@ -19,7 +19,7 @@ import { DayDetailModal } from '@/components/modals/DayDetailModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { differenceInMinutes } from 'date-fns';
+import { differenceInMinutes, startOfWeek, addDays, format, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
@@ -176,15 +176,13 @@ export default function StaffDashboardView() {
                 setStatus(log.clock_out ? 'finished' : 'working');
             } else { setTodayLog(null); setStatus('idle'); }
 
-            const dayOfWeek = today.getDay();
-            const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            const monday = new Date(today); monday.setDate(diffToMonday); monday.setHours(0, 0, 0, 0);
-            const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6); sunday.setHours(23, 59, 59, 999);
+            const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+            const realWeekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
-            setCurrentMonthName(monday.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
+            setCurrentMonthName(weekStart.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
 
-            const target = new Date(monday.valueOf());
-            const dayNr = (monday.getDay() + 6) % 7;
+            const target = new Date(weekStart.valueOf());
+            const dayNr = (weekStart.getDay() + 6) % 7;
             target.setDate(target.getDate() - dayNr + 3);
             const firstThursday = target.valueOf();
             target.setMonth(0, 1);
@@ -197,20 +195,20 @@ export default function StaffDashboardView() {
             const effContract = (profile?.role === 'manager' || isFixedSalary) ? 0 : contractHours;
             const { data: gridDays } = await supabase.rpc('get_worker_weekly_log_grid', {
                 p_user_id: user.id,
-                p_start_date: monday.toISOString().split('T')[0],
+                p_start_date: format(weekStart, 'yyyy-MM-dd'),
                 p_contracted_hours: effContract
             });
 
             let totalWeekHours = 0;
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
                 totalWeekHours += day.totalHours || 0;
-                const d = new Date(day.date);
+                const d = realWeekDays[i];
                 return {
                     ...day,
                     date: d,
                     dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
-                    dayNumber: d.getDate(),
-                    isToday: d.getDate() === today.getDate() && d.getMonth() === today.getMonth()
+                    dayNumber: parseInt(format(d, 'd'), 10),
+                    isToday: isSameDay(d, today)
                 };
             });
             setWeekDays(daysStructure);
