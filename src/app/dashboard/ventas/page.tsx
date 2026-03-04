@@ -19,9 +19,19 @@ interface TicketSummary {
     total_documento: number;
 }
 
+interface ProductRanking {
+    rank?: number;
+    nombre_articulo: string;
+    cantidad_total: number;
+    precio_medio: number;
+    total_ingresos: number;
+}
+
 export default function VentasPage() {
     const supabase = createClient();
     const router = useRouter();
+
+    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS'>('TICKETS');
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
@@ -44,6 +54,7 @@ export default function VentasPage() {
     // Estados de Datos
     const [loading, setLoading] = useState(true);
     const [tickets, setTickets] = useState<TicketSummary[]>([]);
+    const [products, setProducts] = useState<ProductRanking[]>([]);
     const [summary, setSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
 
     useEffect(() => {
@@ -62,6 +73,7 @@ export default function VentasPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setTickets([]);
+                    setProducts([]);
                     setSummary({ totalSales: 0, count: 0, avgTicket: 0 });
                     setLoading(false);
                     return;
@@ -70,9 +82,8 @@ export default function VentasPage() {
                 endISO = rangeEnd;
             }
 
-            // Mock Data Query (Assuming tickets_marbella layout requested)
-            // Lógica pendiente de alinear a vista exacta (ej: Documentos_Cabecera / tickets_marbella)
-            const { data, error } = await supabase
+            // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos
+            const ticketsPromise = supabase
                 .from('tickets_marbella') // Endpoint/Tabla a utilizar
                 .select('id, numero_documento, fecha, hora_cierre, total_documento')
                 .gte('fecha', startISO)
@@ -80,21 +91,32 @@ export default function VentasPage() {
                 .order('fecha', { ascending: false })
                 .order('hora_cierre', { ascending: false });
 
-            if (error) {
-                if (error.code === '42P01') {
-                    // Si la tabla tickets_marbella no existe o no tiene estos campos, simulamos 
+            const productsPromise = supabase.rpc('get_product_sales_ranking', {
+                p_start_date: startISO,
+                p_end_date: endISO
+            });
+
+            const [ticketsRes, productsRes] = await Promise.all([ticketsPromise, productsPromise]);
+
+            if (ticketsRes.error) {
+                if (ticketsRes.error.code === '42P01') {
                     console.warn("Tabla tickets_marbella no detectada o permisos erróneos. Mocking data...");
                 } else {
-                    throw error;
+                    throw ticketsRes.error;
                 }
             }
+            if (productsRes.error) {
+                console.warn("Error en RPC get_product_sales_ranking o no existe.", productsRes.error);
+            }
 
-            const activeData = data || [];
+            const activeData = ticketsRes.data || [];
+            const activeProducts = productsRes.data || [];
 
             const total = activeData.reduce((acc, t) => acc + (Number(t.total_documento) || 0), 0);
             const count = activeData.length;
 
             setTickets(activeData as any);
+            setProducts(activeProducts.map((p: any, i: number) => ({ ...p, rank: i + 1 })) as ProductRanking[]);
             setSummary({
                 totalSales: total,
                 count: count,
@@ -229,55 +251,126 @@ export default function VentasPage() {
                         </div>
                     </div>
 
-                    {/* TABLA DE TRANSACCIONES */}
+                    {/* TOGGLE SWITCH DE VISTAS */}
+                    <div className="px-4 md:px-6 py-2 bg-white">
+                        <div className="bg-zinc-100 p-1 rounded-xl flex gap-1 max-w-sm mx-auto md:mx-0">
+                            <button
+                                onClick={() => setActiveTab('TICKETS')}
+                                className={cn(
+                                    "flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all rounded-lg",
+                                    activeTab === 'TICKETS' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                                )}
+                            >
+                                Visión Tickets
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('PRODUCTOS')}
+                                className={cn(
+                                    "flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all rounded-lg",
+                                    activeTab === 'PRODUCTOS' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                                )}
+                            >
+                                Visión Productos
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* TABLAS */}
                     <div className="p-4 md:p-6 bg-zinc-50/30">
                         <div className="p-3 bg-white rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                             {loading ? (
                                 <div className="flex justify-center items-center py-20">
                                     <LoadingSpinner size="lg" className="text-[#36606F]" />
                                 </div>
-                            ) : tickets.length === 0 ? (
-                                <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto custom-scrollbar">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                            <tr>
-                                                <th className="p-3 md:p-4 rounded-tl-xl whitespace-nowrap">Fecha</th>
-                                                <th className="p-3 md:p-4 whitespace-nowrap">Nº Ticket</th>
-                                                <th className="p-3 md:p-4 whitespace-nowrap">Origen</th>
-                                                <th className="p-3 md:p-4 rounded-tr-xl text-right whitespace-nowrap">Importe Total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="text-xs font-bold text-zinc-600">
-                                            {tickets.map((ticket, idx) => (
-                                                <tr
-                                                    key={ticket.id || idx}
-                                                    onClick={() => handleRowClick(ticket.id)}
-                                                    className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50 last:border-0"
-                                                >
-                                                    <td className="p-3 md:p-4 whitespace-nowrap">
-                                                        {format(new Date(`${ticket.fecha}T${ticket.hora_cierre || '00:00:00'}`), 'dd/MM HH:mm')}
-                                                    </td>
-                                                    <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
-                                                        {ticket.numero_documento}
-                                                    </td>
-                                                    <td className="p-3 md:p-4 text-[10px] md:text-xs text-zinc-400">
-                                                        {ticket.origen || 'TPV'}
-                                                    </td>
-                                                    <td className={cn(
-                                                        "p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap",
-                                                        (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
-                                                    )}>
-                                                        {Number(ticket.total_documento || 0).toFixed(2)}€
-                                                    </td>
+                            ) : activeTab === 'TICKETS' ? (
+                                tickets.length === 0 ? (
+                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
+                                                <tr>
+                                                    <th className="p-3 md:p-4 rounded-tl-xl whitespace-nowrap">Fecha</th>
+                                                    <th className="p-3 md:p-4 whitespace-nowrap">Nº Ticket</th>
+                                                    <th className="p-3 md:p-4 whitespace-nowrap">Origen</th>
+                                                    <th className="p-3 md:p-4 rounded-tr-xl text-right whitespace-nowrap">Importe Total</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody className="text-xs font-bold text-zinc-600">
+                                                {tickets.map((ticket, idx) => (
+                                                    <tr
+                                                        key={ticket.id || idx}
+                                                        onClick={() => handleRowClick(ticket.id)}
+                                                        className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50 last:border-0"
+                                                    >
+                                                        <td className="p-3 md:p-4 whitespace-nowrap">
+                                                            {format(new Date(`${ticket.fecha}T${ticket.hora_cierre || '00:00:00'}`), 'dd/MM HH:mm')}
+                                                        </td>
+                                                        <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
+                                                            {ticket.numero_documento}
+                                                        </td>
+                                                        <td className="p-3 md:p-4 text-[10px] md:text-xs text-zinc-400">
+                                                            {ticket.origen || 'TPV'}
+                                                        </td>
+                                                        <td className={cn(
+                                                            "p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap",
+                                                            (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
+                                                        )}>
+                                                            {Number(ticket.total_documento || 0).toFixed(2)}€
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )
+                            ) : (
+                                products.length === 0 ? (
+                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
+                                                <tr>
+                                                    <th className="p-3 md:p-4 rounded-tl-xl whitespace-nowrap">Producto</th>
+                                                    <th className="p-3 md:p-4 text-center whitespace-nowrap">Cantidad</th>
+                                                    <th className="p-3 md:p-4 text-center whitespace-nowrap">Precio Medio</th>
+                                                    <th className="p-3 md:p-4 rounded-tr-xl text-right whitespace-nowrap">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="text-xs font-bold text-zinc-600">
+                                                {products.map((prod, idx) => (
+                                                    <tr
+                                                        key={idx}
+                                                        className="group hover:bg-zinc-50/80 transition-colors border-b border-zinc-50 last:border-0"
+                                                    >
+                                                        <td className="p-3 md:p-4 whitespace-nowrap flex items-center gap-3">
+                                                            <span className="text-[10px] font-black text-zinc-300 tabular-nums w-4 text-right">
+                                                                {prod.rank}
+                                                            </span>
+                                                            <span className="text-zinc-900 font-bold">
+                                                                {prod.nombre_articulo}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-3 md:p-4 text-center text-[10px] md:text-xs text-zinc-500">
+                                                            {Number(prod.cantidad_total).toFixed(0)} uds
+                                                        </td>
+                                                        <td className="p-3 md:p-4 text-center text-[10px] md:text-xs text-zinc-400">
+                                                            {Number(prod.precio_medio).toFixed(2)}€
+                                                        </td>
+                                                        <td className="p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap text-emerald-500">
+                                                            {Number(prod.total_ingresos).toFixed(2)}€
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )
                             )}
                         </div>
                     </div>
