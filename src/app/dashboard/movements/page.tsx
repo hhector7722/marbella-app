@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 import { toast } from 'sonner';
-import { format, addDays, startOfMonth, endOfMonth, isSameMonth, subMonths } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -60,6 +60,22 @@ export default function MovementsPage() {
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+
+    const handlePrevMonth = () => {
+        const currentMonthDate = rangeStart ? new Date(rangeStart) : new Date();
+        const prev = subMonths(currentMonthDate, 1);
+        setRangeStart(format(startOfMonth(prev), 'yyyy-MM-dd'));
+        setRangeEnd(format(endOfMonth(prev), 'yyyy-MM-dd'));
+        setFilterMode('range');
+    };
+
+    const handleNextMonth = () => {
+        const currentMonthDate = rangeStart ? new Date(rangeStart) : new Date();
+        const next = addMonths(currentMonthDate, 1);
+        setRangeStart(format(startOfMonth(next), 'yyyy-MM-dd'));
+        setRangeEnd(format(endOfMonth(next), 'yyyy-MM-dd'));
+        setFilterMode('range');
+    };
 
     // Estados de UI
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
@@ -400,46 +416,50 @@ export default function MovementsPage() {
                         </div>
 
                         {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="grid grid-cols-3 gap-2 pb-2">
-                            <button
-                                onClick={() => setShowMonthPicker(true)}
-                                className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border outline-none truncate",
-                                    filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? "bg-white border-white text-zinc-800 shadow-sm"
-                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                )}
-                            >
-                                {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                    ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                    : 'SELECCIONAR MES'}
-                            </button>
+                        {/* FILTROS INTEGRADOS EN CABECERA */}
+                        <div className="flex items-center justify-between gap-2 pb-2">
+                            {/* NAVEGADOR MENSUAL PRINCIPAL */}
+                            <div className="flex items-center bg-white/5 border border-white/20 rounded-xl overflow-hidden flex-1 max-w-[200px] md:max-w-[250px]">
+                                <button onClick={handlePrevMonth} className="p-1.5 md:p-2 hover:bg-white/10 text-white transition-all outline-none">
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <button onClick={() => setShowMonthPicker(true)} className="flex-1 py-1.5 md:py-2 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center hover:bg-white/10 transition-all truncate outline-none">
+                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                        : 'SELECCIONAR MES'}
+                                </button>
+                                <button onClick={handleNextMonth} className="p-1.5 md:p-2 hover:bg-white/10 text-white transition-all outline-none">
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
 
-                            <button
-                                onClick={() => {
-                                    setRangeStart(null);
-                                    setRangeEnd(null);
-                                    setShowCalendar('range');
-                                }}
-                                className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                    filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? "bg-white border-white text-zinc-800 shadow-sm"
-                                        : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                )}
-                            >
-                                PERIODO
-                            </button>
-
-                            <button
-                                onClick={() => setShowCalendar('single')}
-                                className={cn(
-                                    "py-2 rounded-xl text-[9px] font-black border transition-all flex items-center justify-center gap-2 uppercase tracking-widest outline-none",
-                                    filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                )}
-                            >
-                                FECHA
-                            </button>
+                            {/* FILTROS SECUNDARIOS REDUCIDOS */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                    onClick={() => {
+                                        setRangeStart(null);
+                                        setRangeEnd(null);
+                                        setShowCalendar('range');
+                                    }}
+                                    className={cn(
+                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
+                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? "bg-white border-white text-zinc-800 shadow-sm"
+                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    )}
+                                >
+                                    PERIODO
+                                </button>
+                                <button
+                                    onClick={() => setShowCalendar('single')}
+                                    className={cn(
+                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
+                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    )}
+                                >
+                                    FECHA
+                                </button>
+                            </div>
                         </div>
                     </div>
 
