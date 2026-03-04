@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface TicketSummary {
-    id: string;
     numero_documento: string;
     fecha: string;
     hora_cierre: string;
@@ -86,7 +85,7 @@ export default function VentasPage() {
             // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos
             const ticketsPromise = supabase
                 .from('tickets_marbella') // Endpoint/Tabla a utilizar
-                .select('id, numero_documento, fecha, hora_cierre, total_documento')
+                .select('numero_documento, fecha, hora_cierre, total_documento')
                 .gte('fecha', startDateStr)
                 .lte('fecha', endDateStr)
                 .order('fecha', { ascending: false })
@@ -103,6 +102,7 @@ export default function VentasPage() {
                 if (ticketsRes.error.code === '42P01') {
                     console.warn("Tabla tickets_marbella no detectada o permisos erróneos. Mocking data...");
                 } else {
+                    console.error("Error tickets:", ticketsRes.error);
                     throw ticketsRes.error;
                 }
             }
@@ -302,8 +302,8 @@ export default function VentasPage() {
                                             <tbody className="text-xs font-bold text-zinc-600">
                                                 {tickets.map((ticket, idx) => (
                                                     <tr
-                                                        key={ticket.id || idx}
-                                                        onClick={() => handleRowClick(ticket.id)}
+                                                        key={ticket.numero_documento || idx}
+                                                        onClick={() => handleRowClick(ticket.numero_documento)}
                                                         className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50 last:border-0"
                                                     >
                                                         <td className="p-3 md:p-4 whitespace-nowrap">
