@@ -118,7 +118,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const renderCard = (isModal: boolean) => (
         <div className={cn(
             "flex flex-col bg-white transition-all overflow-hidden relative",
-            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-sm border border-zinc-100",
+            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-sm",
             !isModal && quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "",
             !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
         )}>
@@ -159,8 +159,8 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Product Info */}
-                <div className={cn("flex flex-col w-full items-center text-center", isModal ? "mt-auto gap-1.5 px-1" : "justify-start")}>
-                    <span className={cn("font-black text-zinc-800 leading-tight w-full", isModal ? "text-sm sm:text-base px-1 truncate" : "text-[9px] min-[380px]:text-[10px] line-clamp-2")} title={ingredient.name}>
+                <div className={cn("flex flex-col w-full px-1", isModal ? "mt-auto gap-1.5 items-center text-center" : "items-start text-left justify-start")}>
+                    <span className={cn("font-black text-zinc-800 leading-tight w-full truncate", isModal ? "text-sm sm:text-base px-1" : "text-[9px] min-[380px]:text-[10px]")} title={ingredient.name}>
                         {ingredient.name}
                     </span>
 
@@ -202,7 +202,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             </div>
                         )
                     ) : (
-                        <span className="text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest text-center mt-auto pt-1 w-full">
+                        <span className="text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest text-left mt-auto pt-1 w-full truncate">
                             {isCustomUnit ? (customUnit || '?') : unit}
                         </span>
                     )}

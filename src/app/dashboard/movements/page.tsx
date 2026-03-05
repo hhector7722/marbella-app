@@ -175,7 +175,7 @@ export default function MovementsPage() {
             let endISO: string;
 
             if (filterMode === 'single') {
-                const d = new Date(selectedDate);
+                const d = parseLocalSafe(selectedDate);
                 d.setHours(0, 0, 0, 0);
                 startISO = d.toISOString();
                 d.setHours(23, 59, 59, 999);
@@ -219,15 +219,19 @@ export default function MovementsPage() {
             const from = pageIndex * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
 
-            const { data: pageMoves } = await supabase
+            const { data: pageMoves, error: fetchError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
                 .eq('box_id', boxData?.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
-                .not('type', 'in', '(ADJUSTMENT,SWAP)')
+                .not('type', 'in', ['ADJUSTMENT', 'SWAP'])
                 .order('created_at', { ascending: false })
                 .range(from, to);
+
+            if (fetchError) {
+                console.error("Error crítico cargando movimientos:", fetchError);
+            }
 
             if (pageMoves) {
                 const formatted: Movement[] = pageMoves.map((m: any) => ({
@@ -263,7 +267,7 @@ export default function MovementsPage() {
             let endISO: string;
 
             if (filterMode === 'single') {
-                const d = new Date(selectedDate);
+                const d = parseLocalSafe(selectedDate);
                 d.setHours(0, 0, 0, 0);
                 startISO = d.toISOString();
                 d.setHours(23, 59, 59, 999);
