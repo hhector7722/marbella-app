@@ -517,7 +517,8 @@ export default function VentasPage() {
                                                                 </tr>
                                                             )}
                                                         </React.Fragment>
-                                                    ))}
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
