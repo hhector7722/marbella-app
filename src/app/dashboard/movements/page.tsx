@@ -142,7 +142,7 @@ export default function MovementsPage() {
         try {
             const { data: box, error } = await supabase
                 .from('cash_boxes')
-                .select('id, current_balance, difference, name')
+                .select('id, current_balance, target_balance, name')
                 .eq('type', 'operational')
                 .maybeSingle();
 
@@ -150,30 +150,42 @@ export default function MovementsPage() {
 
             if (box) {
                 setBoxData(box);
+                // Cálculo del desfase: Saldo Físico (current) - Saldo Teórico (target)
+                const diff = (box.current_balance || 0) - (box.target_balance || 0);
+
                 setCurrentBoxStatus({
-                    theoreticalBalance: (box.current_balance || 0) - (box.difference || 0),
+                    theoreticalBalance: box.target_balance || 0,
                     physicalBalance: box.current_balance || 0,
-                    difference: box.difference || 0,
+                    difference: diff,
                     loading: false
                 });
             } else {
-                // FALLBACK: Si no hay caja 'operational', buscar cualquier caja
-                const { data: firstBox } = await supabase.from('cash_boxes').select('*').limit(1).maybeSingle();
-                if (firstBox) {
-                    setBoxData(firstBox);
+                // Fallback agresivo si no encuentra 'operational'
+                const { data: fallbackBox, error: fallbackError } = await supabase
+                    .from('cash_boxes')
+                    .select('id, current_balance, target_balance, name')
+                    .limit(1)
+                    .maybeSingle();
+
+                if (fallbackError) throw fallbackError;
+
+                if (fallbackBox) {
+                    setBoxData(fallbackBox);
+                    const fallbackDiff = (fallbackBox.current_balance || 0) - (fallbackBox.target_balance || 0);
                     setCurrentBoxStatus({
-                        theoreticalBalance: (firstBox.current_balance || 0) - (firstBox.difference || 0),
-                        physicalBalance: firstBox.current_balance || 0,
-                        difference: firstBox.difference || 0,
+                        theoreticalBalance: fallbackBox.target_balance || 0,
+                        physicalBalance: fallbackBox.current_balance || 0,
+                        difference: fallbackDiff,
                         loading: false
                     });
                 } else {
-                    console.warn("No se encontró ninguna caja operativa ni fallback.");
+                    toast.error("ERROR: No hay cajas creadas en el sistema.");
                     setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
                 }
             }
         } catch (error) {
-            console.error("Error fetching current box status:", error);
+            console.error("Error crítico de base de datos:", error);
+            toast.error("Error conectando con la caja. Revisa la consola.");
             setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
         }
     }

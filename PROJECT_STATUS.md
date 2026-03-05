@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-05 (Rediseño Editor Horarios v3 + Fix Movements)
+**Última actualización:** 2026-03-05 (Fix Esquema Caja + Editor Horarios v3)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -187,7 +187,8 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 - [x] **Refinamiento UI Modal Resumen Semanal (Staff)**: Eliminación de la columna "Contrato" en el footer y supresión del contorno/marco blanco exterior de la cuadrícula de días para un diseño visualmente más limpio ("Flush Layout").
 - [x] 🎨 **Refinamiento Cabeceras Dashboard**: Eliminado contorno de selección de mes y posicionado dinámico de flechas (sin cortes) en `/movements` y `/history`.
 - [x] 📊 **Refinamiento Pestañas de Ventas**: Renombradas las pestañas de `/dashboard/ventas` a "Tickets" y "Productos", estableciendo "Productos" como la vista por defecto al cargar la página.
-- [x] **Rediseño Radical Editor Horarios (Contenedor Maestro Verde Petróleo v3)**: Refactorización visual completa del editor de horarios. El contenedor principal pasa a ser un card verde petróleo (`#36606F`) con esquinas `rounded-[32px]` que engloba la cabecera de fecha, los botones de acción y el panel blanco unificado. El encabezado de horas adopta color `#E55353`, la fila de totales usa `#0FA968` sticky en el footer, y el botón de eliminar empleado se reposiciona a la derecha de cada fila. Se elimina la sección superior de tarjeta de inputs separada, unificándola dentro del contenedor blanco con bordes redondeados internos.
+- [x] **Rediseño Radical Editor Horarios (Contenedor Maestro Verde Petróleo v3)**: Refactorización visual completa del editor de horarios.
+- [x] **Fix Crítico Esquema Caja (/movements)**: Corregido error de consulta en `cash_boxes`. Se ha sustituido la columna inexistente `difference` por `target_balance`. El desfase de caja ahora se calcula localmente en el frontend para garantizar la compatibilidad con el esquema real de Supabase.
 - [x] **Fix Tesorería (/movements) — Robustez sin box_id**: Eliminada la dependencia de `boxData` y `box_id` en `fetchFilteredMovements`. La RPC `get_treasury_period_summary` y la vista `v_treasury_movements_balance` ahora consultan todos los movimientos sin filtrar por caja específica. Añadido fallback robusto en la inicialización de `currentBoxStatus` para recuperar cualquier caja disponible si la 'operational' no existe. Eliminada la guarda temprana que bloqueaba la carga con `boxData === null`. Inicialización de fechas con template literals nativos para inmunidad total ante timezone shifts.
 - [x] **Corrección de Carga Infinita en Tesorería (/movements)**: Resuelto el fallo crítico que bloqueaba la interfaz con un spinner infinito cuando la base de datos no devolvía una "Caja Operativa". Se ha refactorizado la inicialización para garantizar que el estado de carga siempre se resuelva (`loading: false`) y se ha corregido la sintaxis de los filtros de exclusión en la consulta de movimientos de Supabase.
 187: - [ ] Próximas integraciones de BI y alertas de stock.
