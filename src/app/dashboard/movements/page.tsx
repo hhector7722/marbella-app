@@ -126,18 +126,29 @@ export default function MovementsPage() {
 
     async function fetchCurrentBoxStatus() {
         try {
-            const { data: box } = await supabase.from('cash_boxes').select('id, current_balance, difference, name').eq('type', 'operational').maybeSingle();
-            if (!box) return;
-            setBoxData(box);
+            const { data: box, error } = await supabase
+                .from('cash_boxes')
+                .select('id, current_balance, difference, name')
+                .eq('type', 'operational')
+                .maybeSingle();
 
-            setCurrentBoxStatus({
-                theoreticalBalance: (box.current_balance || 0) - (box.difference || 0),
-                physicalBalance: box.current_balance || 0,
-                difference: box.difference || 0,
-                loading: false
-            });
+            if (error) throw error;
+
+            if (box) {
+                setBoxData(box);
+                setCurrentBoxStatus({
+                    theoreticalBalance: (box.current_balance || 0) - (box.difference || 0),
+                    physicalBalance: box.current_balance || 0,
+                    difference: box.difference || 0,
+                    loading: false
+                });
+            } else {
+                // Si no hay caja, marcamos como cargado para desbloquear la UI
+                setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
+            }
         } catch (error) {
             console.error("Error fetching current box status:", error);
+            setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
         }
     }
 
@@ -149,6 +160,12 @@ export default function MovementsPage() {
     }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter, currentBoxStatus.loading]);
 
     async function fetchFilteredMovements() {
+        if (!boxData) {
+            setLoading(false);
+            setMovements([]);
+            setPeriodSummary({ income: 0, expense: 0 });
+            return;
+        }
         setLoading(true);
         setPage(0);
         setMovements([]);
@@ -208,7 +225,7 @@ export default function MovementsPage() {
                 .eq('box_id', boxData?.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
-                .not('type', 'in', '("ADJUSTMENT","SWAP")')
+                .not('type', 'in', '(ADJUSTMENT,SWAP)')
                 .order('created_at', { ascending: false })
                 .range(from, to);
 

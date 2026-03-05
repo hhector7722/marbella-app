@@ -566,10 +566,16 @@ export default function ScheduleEditorPage() {
                             {shifts.map((shift, idx) => (
                                 <div key={shift.employeeId} className={`flex h-10 md:h-12 border-b border-gray-50 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : ''}`}>
                                     {/* Columna Nombre */}
-                                    <div className="w-20 md:w-32 px-3 flex items-center shrink-0 border-r border-gray-50 overflow-hidden">
-                                        <span className={`font-black text-[9px] md:text-[11px] truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-700'}`}>
+                                    <div className="w-20 md:w-32 px-2 flex items-center gap-1 shrink-0 border-r border-gray-50 overflow-hidden group/row">
+                                        <span className={`font-black text-[9px] md:text-[11px] truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-700'} flex-1`}>
                                             {shift.name}
                                         </span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                            className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-90"
+                                        >
+                                            <X size={10} strokeWidth={4} />
+                                        </button>
                                     </div>
 
                                     {/* Zona de Barras */}

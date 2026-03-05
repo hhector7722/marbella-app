@@ -23,6 +23,7 @@ async function run() {
             .from('v_treasury_movements_balance')
             .select('*')
             .eq('box_id', box.id)
+            .not('type', 'in', '(ADJUSTMENT,SWAP)')
             .limit(5);
         console.log("Moves (first 5):", moves);
         console.log("Moves Error:", movesError);
