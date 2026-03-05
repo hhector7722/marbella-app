@@ -352,14 +352,14 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
-        <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-6 lg:p-8 overflow-hidden text-gray-800">
-            {/* CONTENEDOR VISTA DETALLE */}
-            <div className="bg-white rounded-[20px] shadow-xl overflow-hidden flex flex-col flex-1 h-full min-h-0 antialiased animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto w-full">
+        <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-6 lg:p-8 text-gray-800">
+            {/* CONTENEDOR MAESTRO VERDE PETRÓLEO */}
+            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col flex-1 max-w-7xl mx-auto w-full p-3 md:p-5 gap-3 md:gap-5 overflow-hidden">
 
-                {/* CABECERA AZUL PETRÓLEO */}
-                <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between min-h-[52px] shrink-0 border-b border-white/5">
-                    <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/5 px-2 py-1 rounded-lg transition-all">
-                        <h2 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
+                {/* CABECERA (Fecha y Botones flotando sobre el verde) */}
+                <div className="flex items-center justify-between px-2 shrink-0">
+                    <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/10 px-2 py-1.5 rounded-xl transition-all">
+                        <h2 className="text-sm md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
                             {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
                         </h2>
                     </button>
@@ -370,156 +370,153 @@ export default function ScheduleEditorPage() {
                                 <CheckCircle2 size={12} /> <span className="hidden sm:inline">PUBLICADO</span>
                             </div>
                         )}
-                        <button onClick={() => handleSave(false, false)} className="bg-zinc-600 hover:bg-zinc-700 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5">
+                        <button onClick={() => handleSave(false, false)} className="bg-white/10 hover:bg-white/20 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5">
                             <Save size={14} /> <span className="hidden sm:inline">BORRADOR</span>
                         </button>
-                        <button onClick={() => handleSave(false, true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5">
+                        <button onClick={() => handleSave(false, true)} className="bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5">
                             <CheckCircle2 size={14} /> <span className="hidden sm:inline">CONFIRMAR</span>
                         </button>
-                        <button onClick={handleSendNotifications} className="bg-black/20 hover:bg-black/30 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5 border border-white/10">
+                        <button onClick={handleSendNotifications} className="bg-white/10 hover:bg-white/20 text-white px-2.5 md:px-3 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center gap-1.5">
                             <Send size={14} /> <span className="hidden sm:inline">ENVIAR</span>
                         </button>
                     </div>
                 </div>
 
-                {/* --- CONTENIDO PRINCIPAL --- */}
-                <div className="flex-1 flex flex-col min-h-0 bg-[#fafafa] p-3 sm:p-5 lg:p-6 overflow-y-auto no-scrollbar">
+                {/* CONTENEDOR BLANCO UNIFICADO (Alineación perfecta de bordes) */}
+                <div className="bg-white rounded-[24px] shadow-inner flex flex-col flex-1 w-full min-h-0">
 
-                    {/* NUEVO CONTENEDOR UNIFICADO VISUALMENTE */}
-                    {/* Este panel exterior maneja el borde sutil gris, la sombra y las esquinas redondeadas grandes */}
-                    <div className="bg-white rounded-[20px] border border-gray-100 shadow-xl overflow-hidden flex flex-col w-full">
-
-                        {/* BLOQUE SUPERIOR DE INPUTS */}
-                        {/* Se quitan sombras, bordes y redondeos exteriores. Se mantiene el fondo blanco */}
-                        <div className="p-3 sm:p-4 bg-white relative z-10">
-                            <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden">
-                                <div className="flex flex-col gap-1 flex-1 min-w-0">
-                                    <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest pl-1">Actividad</span>
-                                    <div className="flex items-center bg-zinc-50 px-2 py-1.5 rounded-xl border border-zinc-200">
-                                        <input
-                                            type="text"
-                                            value={activity}
-                                            onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
-                                            className="w-full bg-transparent text-left font-black text-zinc-800 text-[10px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
-                                            placeholder="SERVICIO..."
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1 shrink-0 w-[70px] sm:w-[85px]">
-                                    <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest pl-1 text-center">Inicio</span>
-                                    <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200">
-                                        <input type="time" value={defaultStart} onChange={(e) => setDefaultStart(e.target.value)} className="bg-transparent text-center font-black text-emerald-600 text-[10px] sm:text-xs focus:outline-none font-mono w-full" />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1 shrink-0 w-[70px] sm:w-[85px]">
-                                    <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest pl-1 text-center">Final</span>
-                                    <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200">
-                                        <input type="time" value={defaultEnd} onChange={(e) => setDefaultEnd(e.target.value)} className="bg-transparent text-center font-black text-rose-500 text-[10px] sm:text-xs focus:outline-none font-mono w-full" />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1 shrink-0 w-[45px] sm:w-[60px]">
-                                    <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
-                                    <div className="flex items-center justify-center bg-zinc-50 px-1 py-1.5 rounded-xl border border-zinc-200 h-[30px] sm:h-[34px]">
-                                        <input type="text" value={participantsCount} onChange={(e) => setParticipantsCount(e.target.value)} className="bg-transparent text-center font-black text-zinc-800 text-[10px] sm:text-xs focus:outline-none w-full" />
-                                    </div>
+                    {/* ZONA DE INPUTS */}
+                    <div className="p-4 md:p-5 w-full shrink-0">
+                        <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden">
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-2">Actividad</span>
+                                <div className="flex items-center bg-zinc-50/50 px-3 py-2 rounded-2xl border border-zinc-200">
+                                    <input
+                                        type="text"
+                                        value={activity}
+                                        onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
+                                        className="w-full bg-transparent text-left font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
+                                        placeholder="ARTÍSTICA"
+                                    />
                                 </div>
                             </div>
-                        </div>
-
-                        {/* BLOQUE DE LA TABLA */}
-                        {/* Sin márgenes, sombras ni bordes exteriores propios. Se funde con el contenedor padre */}
-                        <div className="flex-1 flex flex-col bg-white">
-
-                            {/* ENCABEZADO DE HORAS ROJO */}
-                            {/* MANTIENE SUS ESQUINAS REDONDEADAS (rounded-xl) y flota dentro del panel unificado */}
-                            <div className="mx-3 sm:mx-4 flex bg-[#D64D5D] text-white sticky top-0 z-30 shadow-md rounded-xl overflow-hidden mt-1 mb-2">
-                                <div className="w-20 md:w-32 h-8 border-r border-white/10 shrink-0 flex items-center justify-center bg-white/10 group cursor-pointer hover:bg-white/20 transition-colors" onClick={() => setShowAddModal(true)}>
-                                    <button className="w-5 h-5 rounded-full bg-[#1bc689] text-white flex items-center justify-center transition-transform group-active:scale-90 shadow-sm pointer-events-none">
-                                        <Plus size={12} strokeWidth={4} />
-                                    </button>
-                                </div>
-                                <div className="flex-1 relative h-8 flex">
-                                    {hoursHeader.map((hour) => (
-                                        <div key={hour} className="flex-1 text-[9px] md:text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/5 last:border-r-0">
-                                            {hour}
-                                        </div>
-                                    ))}
+                            <div className="flex flex-col gap-1 shrink-0 w-[70px] sm:w-[90px]">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Inicio</span>
+                                <div className="flex items-center justify-center bg-zinc-50/50 px-2 py-2 rounded-2xl border border-zinc-200">
+                                    <input type="time" value={defaultStart} onChange={(e) => setDefaultStart(e.target.value)} className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
                                 </div>
                             </div>
-
-                            {/* FILAS DE TRABAJADORES */}
-                            <div className="bg-white px-3 sm:px-4 pb-3 sm:pb-4">
-                                {shifts.map((shift, idx) => (
-                                    <div key={shift.employeeId} className={`flex h-11 md:h-13 border-b border-gray-50 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : ''}`}>
-                                        <div className="w-20 md:w-32 px-2 flex items-center gap-1 shrink-0 border-r border-gray-50 overflow-hidden group/row">
-                                            <span className={`font-black text-[9px] md:text-[11px] truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-700'} flex-1`}>
-                                                {shift.name}
-                                            </span>
-                                            <button onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }} className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-0 group-hover/row:opacity-100">
-                                                <X size={10} strokeWidth={4} />
-                                            </button>
-                                        </div>
-                                        <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
-                                            <div className="absolute inset-0 flex">
-                                                {hoursHeader.map((_, i) => (
-                                                    <div key={i} className="flex-1 border-r border-gray-50/50 pointer-events-none last:border-r-0" />
-                                                ))}
-                                            </div>
-                                            {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* FILA DE TOTALES */}
-                                <div className="flex bg-[#36606F] rounded-xl mt-3 mx-0 shadow-inner">
-                                    <div className="w-20 md:w-32 h-8 font-black text-white text-[9px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/10">
-                                        TOT
-                                    </div>
-                                    <div className="flex-1 relative h-8 flex">
-                                        {totals.map((count, i) => (
-                                            <div key={i} className={`flex-1 flex items-center justify-center font-black text-[9px] md:text-[10px] transition-colors ${count > 0 ? 'text-white' : 'text-white/20'}`}>
-                                                {count > 0 ? count : ''}
-                                            </div>
-                                        ))}
-                                    </div>
+                            <div className="flex flex-col gap-1 shrink-0 w-[70px] sm:w-[90px]">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Final</span>
+                                <div className="flex items-center justify-center bg-zinc-50/50 px-2 py-2 rounded-2xl border border-zinc-200">
+                                    <input type="time" value={defaultEnd} onChange={(e) => setDefaultEnd(e.target.value)} className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1 shrink-0 w-[50px] sm:w-[70px]">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
+                                <div className="flex items-center justify-center bg-zinc-50/50 px-2 py-2 rounded-2xl border border-zinc-200 h-[34px] sm:h-[38px]">
+                                    <input type="text" value={participantsCount} onChange={(e) => setParticipantsCount(e.target.value)} className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* BARRA EDICIÓN FLOTANTE */}
-                    {editingIndex !== null && shifts[editingIndex] && (
-                        <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="h-12 relative flex items-center p-1">
-                                <div className="flex-1 relative h-full bg-white/10 rounded-xl overflow-hidden self-center">
-                                    <ShiftBar shift={shifts[editingIndex]} onUpdate={(newS) => handleUpdateShift(editingIndex, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20 shadow-sm" />
-                                </div>
-                                <button onClick={() => setEditingIndex(null)} className="ml-2 w-10 h-10 flex items-center justify-center bg-white/20 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
-                                    <X size={20} strokeWidth={3} />
+                    {/* ZONA DE TABLA Y FILAS */}
+                    <div className="w-full flex flex-col flex-1 bg-white relative min-h-0">
+
+                        {/* ENCABEZADO ROJO (Esquinas superiores redondeadas) */}
+                        <div className="flex bg-[#E55353] text-white sticky top-0 z-30 rounded-t-[16px]">
+                            <div className="w-20 md:w-32 h-8 border-r border-white/10 shrink-0 flex items-center justify-center bg-white/10 group cursor-pointer hover:bg-white/20 transition-colors" onClick={() => setShowAddModal(true)}>
+                                <button className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center transition-transform group-active:scale-90 shadow-sm pointer-events-none">
+                                    <Plus size={12} strokeWidth={4} />
                                 </button>
                             </div>
+                            <div className="flex-1 relative h-8 flex">
+                                {hoursHeader.map((hour) => (
+                                    <div key={hour} className="flex-1 text-[9px] md:text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/10 last:border-r-0">
+                                        {hour}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    )}
+
+                        {/* FILAS DE EMPLEADOS */}
+                        <div className="flex-1 overflow-y-auto bg-white custom-scrollbar pb-2">
+                            {shifts.map((shift, idx) => (
+                                <div key={shift.employeeId} className={`flex h-12 md:h-14 border-b border-gray-50 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : ''}`}>
+                                    <div className="w-20 md:w-32 px-3 flex items-center gap-2 shrink-0 border-r border-gray-50 overflow-hidden group/row bg-white">
+                                        <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
+                                            {shift.name}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
+                                        <div className="absolute inset-0 flex">
+                                            {hoursHeader.map((_, i) => (
+                                                <div key={i} className="flex-1 border-r border-gray-50/50 pointer-events-none last:border-r-0" />
+                                            ))}
+                                        </div>
+                                        {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
+                                    </div>
+                                    {/* Botón Eliminar a la derecha (Como en tu imagen) */}
+                                    <div className="w-10 shrink-0 flex items-center justify-center border-l border-gray-50 bg-white">
+                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }} className="w-5 h-5 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-all active:scale-95">
+                                            <X size={12} strokeWidth={4} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* FOOTER VERDE (Totales y esquinas inferiores redondeadas) */}
+                        <div className="flex bg-[#0FA968] text-white rounded-b-[20px] shrink-0 sticky bottom-0 z-30">
+                            <div className="w-20 md:w-32 h-8 font-black text-white text-[10px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/10">
+                                TOT
+                            </div>
+                            <div className="flex-1 relative h-8 flex">
+                                {totals.map((count, i) => (
+                                    <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] transition-colors ${count > 0 ? 'text-white' : 'text-white/30'}`}>
+                                        {count > 0 ? count : ''}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="w-10 shrink-0 border-l border-white/10"></div>
+                        </div>
+
+                    </div>
                 </div>
+
+                {/* BARRA DE EDICIÓN FLOTANTE */}
+                {editingIndex !== null && shifts[editingIndex] && (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="h-12 relative flex items-center p-1 bg-white/10 rounded-2xl border border-white/20">
+                            <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
+                                <ShiftBar shift={shifts[editingIndex]} onUpdate={(newS) => handleUpdateShift(editingIndex, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20 shadow-sm" />
+                            </div>
+                            <button onClick={() => setEditingIndex(null)} className="ml-2 w-10 h-10 flex items-center justify-center bg-white/20 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
+                                <X size={20} strokeWidth={3} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODALES */}
             {showCalendarModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
-                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-4 flex items-center justify-between border-b border-white/10">
+                    <div className="bg-white rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] p-5 flex items-center justify-between border-b border-white/10">
                             <div className="flex items-center gap-3">
-                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-1.5 rounded-lg"><ChevronLeft size={20} /></button>
+                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl"><ChevronLeft size={20} /></button>
                                 <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-1.5 rounded-lg"><ChevronRight size={20} /></button>
+                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl"><ChevronRight size={20} /></button>
                             </div>
                             <button onClick={() => setShowCalendarModal(false)} className="bg-white/10 hover:bg-rose-500 text-white p-2 rounded-xl"><X size={20} /></button>
                         </div>
-                        <div className="p-4">
+                        <div className="p-5">
                             <div className="grid grid-cols-7 gap-1">
                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
                                 {generateCalendarDays().map((day, i) => (
-                                    <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-xl text-sm font-bold ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#5B8FB9] text-white' : ''}`}>{day}</button>
+                                    <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-2xl text-sm font-bold ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#36606F] text-white shadow-md' : ''}`}>{day}</button>
                                 ))}
                             </div>
                         </div>
@@ -529,16 +526,16 @@ export default function ScheduleEditorPage() {
 
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-xs overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white border-b border-white/10">
+                    <div className="bg-white rounded-[24px] w-full max-w-xs overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-6 py-5 flex justify-between items-center text-white border-b border-white/10">
                             <h3 className="text-sm font-black uppercase tracking-widest">Añadir Personal</h3>
                             <button onClick={() => setShowAddModal(false)} className="bg-white/10 hover:bg-rose-500 p-2 rounded-xl transition-all"><X size={18} /></button>
                         </div>
-                        <div className="max-h-64 overflow-y-auto p-2 grid gap-1">
+                        <div className="max-h-72 overflow-y-auto p-3 grid gap-1">
                             {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).map(profile => (
-                                <button key={profile.id} onClick={() => handleAddEmployee(profile.id)} className="flex items-center gap-3 p-3 hover:bg-emerald-50 rounded-xl transition-all text-left">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><UserPlus size={16} /></div>
-                                    <span className="font-bold text-gray-700 text-sm">{profile.first_name}</span>
+                                <button key={profile.id} onClick={() => handleAddEmployee(profile.id)} className="flex items-center gap-4 p-3 hover:bg-emerald-50 rounded-2xl transition-all text-left group">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors"><UserPlus size={18} /></div>
+                                    <span className="font-bold text-gray-800 text-sm">{profile.first_name}</span>
                                 </button>
                             ))}
                         </div>
