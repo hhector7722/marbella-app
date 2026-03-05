@@ -213,14 +213,18 @@ export default function VentasPage() {
 
             if (error) throw error;
 
-            // Agrupación y compresión de líneas del ticket
+            // Agrupación y compresión de líneas del ticket a prueba de fallos
             const groupedLines = (data || []).reduce((acc: any, line: any) => {
                 const key = `${line.articulo_nombre}-${line.precio_unidad}`;
+                // El RPC devuelve 'cantidad', pero el JSX espera 'unidades'. Lo mapeamos.
+                const qty = Number(line.cantidad ?? line.unidades ?? 0);
+                const total = Number(line.importe_total ?? 0);
+
                 if (!acc[key]) {
-                    acc[key] = { ...line, unidades: Number(line.unidades), importe_total: Number(line.importe_total) };
+                    acc[key] = { ...line, unidades: qty, importe_total: total };
                 } else {
-                    acc[key].unidades += Number(line.unidades);
-                    acc[key].importe_total += Number(line.importe_total);
+                    acc[key].unidades += qty;
+                    acc[key].importe_total += total;
                 }
                 return acc;
             }, {});
@@ -385,12 +389,21 @@ export default function VentasPage() {
                                                             </td>
                                                             <td className="p-3 md:p-4 whitespace-nowrap text-zinc-500 font-mono">
                                                                 {(() => {
-                                                                    if (ticket.hora_cierre && ticket.hora_cierre !== '00:00:00') {
+                                                                    // 1. Prioridad: Usar hora_cierre si es un formato de tiempo válido
+                                                                    if (ticket.hora_cierre && typeof ticket.hora_cierre === 'string' && ticket.hora_cierre.includes(':') && ticket.hora_cierre !== '00:00:00') {
                                                                         return ticket.hora_cierre.substring(0, 5);
                                                                     }
-                                                                    if (ticket.fecha && ticket.fecha.includes('T')) {
-                                                                        // Extrae la hora directamente del string ISO (ej. 2026-03-05T14:30:00 -> 14:30)
-                                                                        return ticket.fecha.split('T')[1].substring(0, 5);
+
+                                                                    // 2. Fallback: Extraer del objeto de fecha nativo si la hora no es 00:00
+                                                                    if (ticket.fecha) {
+                                                                        const dateObj = new Date(ticket.fecha);
+                                                                        if (!isNaN(dateObj.getTime())) {
+                                                                            const h = dateObj.getHours();
+                                                                            const m = dateObj.getMinutes();
+                                                                            if (h !== 0 || m !== 0) {
+                                                                                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                                                                            }
+                                                                        }
                                                                     }
                                                                     return '---';
                                                                 })()}
