@@ -353,11 +353,11 @@ export default function ScheduleEditorPage() {
 
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden text-gray-800">
-            {/* CONTENEDOR MAESTRO VERDE PETRÓLEO */}
-            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col flex-1 max-w-7xl mx-auto w-full p-2 sm:p-3 overflow-hidden">
+            {/* CONTENEDOR MAESTRO VERDE PETRÓLEO - SIN PADDING INTERNO y OVERFLOW HIDDEN */}
+            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col flex-1 max-w-7xl mx-auto w-full overflow-hidden relative">
 
-                {/* CABECERA (Fecha y Botones) */}
-                <div className="flex items-center justify-between px-2 pb-3 pt-1 shrink-0">
+                {/* CABECERA (Fecha y Botones) - Con padding propio */}
+                <div className="flex items-center justify-between px-4 py-3 shrink-0">
                     <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/10 px-2 py-1.5 rounded-xl transition-all">
                         <h2 className="text-[14px] md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
                             {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
@@ -382,12 +382,12 @@ export default function ScheduleEditorPage() {
                     </div>
                 </div>
 
-                {/* CONTENEDOR BLANCO MONOLÍTICO */}
-                {/* El overflow-hidden aquí es clave para que barra verde inferior pille las curvas automáticas */}
-                <div className="bg-white rounded-[24px] shadow-inner flex flex-col flex-1 w-full overflow-hidden">
+                {/* CONTENEDOR BLANCO MONOLÍTICO - SIN BORDES REDONDEADOS NI MÁRGENES */}
+                {/* Ocupa todo el ancho y el alto restante. El padre recorta las esquinas inferiores. */}
+                <div className="bg-white flex flex-col flex-1 w-full overflow-hidden">
 
-                    {/* ZONA DE INPUTS SUPERIOR */}
-                    <div className="p-4 md:p-6 w-full shrink-0">
+                    {/* ZONA DE INPUTS SUPERIOR - Con padding propio */}
+                    <div className="p-4 md:p-6 w-full shrink-0 border-b border-gray-100">
                         <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center max-w-2xl mx-auto">
                             <div className="flex flex-col gap-1 flex-1 min-w-0">
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-2">Actividad</span>
@@ -425,7 +425,7 @@ export default function ScheduleEditorPage() {
                     {/* ZONA DE TABLA Y FILAS */}
                     <div className="flex flex-col flex-1 relative min-h-0 bg-white w-full">
 
-                        {/* ENCABEZADO ROJO (Ocupa el 100% del ancho, sin esquinas redondeadas propias) */}
+                        {/* ENCABEZADO ROJO */}
                         <div className="flex w-full bg-[#E55353] text-white sticky top-0 z-30 shadow-sm">
                             <div className="w-24 md:w-32 px-3 flex items-center justify-start shrink-0 border-r border-white/20 cursor-pointer hover:bg-white/10 transition-colors group" onClick={() => setShowAddModal(true)}>
                                 <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-white truncate flex items-center gap-1.5">
@@ -439,7 +439,6 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            {/* Espacio para la columna de los botones de borrar */}
                             <div className="w-10 md:w-12 shrink-0 border-l border-white/20"></div>
                         </div>
 
@@ -447,15 +446,11 @@ export default function ScheduleEditorPage() {
                         <div className="flex-1 overflow-y-auto bg-white custom-scrollbar pb-2">
                             {shifts.map((shift, idx) => (
                                 <div key={shift.employeeId} className={`flex w-full h-12 md:h-14 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
-
-                                    {/* Columna Nombre */}
                                     <div className="w-24 md:w-32 px-3 flex items-center shrink-0 border-r border-gray-100 overflow-hidden group/row">
                                         <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
                                             {shift.name}
                                         </span>
                                     </div>
-
-                                    {/* Zona Barras Horarias */}
                                     <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
                                         <div className="absolute inset-0 flex">
                                             {hoursHeader.map((_, i) => (
@@ -464,8 +459,6 @@ export default function ScheduleEditorPage() {
                                         </div>
                                         {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
                                     </div>
-
-                                    {/* Columna Botón Eliminar (Derecha) */}
                                     <div className="w-10 md:w-12 shrink-0 flex items-center justify-center border-l border-gray-100">
                                         <button onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }} className="w-6 h-6 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-all active:scale-95">
                                             <X size={14} strokeWidth={4} />
@@ -475,7 +468,7 @@ export default function ScheduleEditorPage() {
                             ))}
                         </div>
 
-                        {/* FOOTER VERDE (Ocupa el 100% del ancho, esquinas inferiores redondeadas por el overflow del contenedor blanco) */}
+                        {/* FOOTER VERDE */}
                         <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-30">
                             <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/20">
                                 TOT
@@ -487,14 +480,13 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            {/* Espacio vacío alineado con la columna de borrar */}
                             <div className="w-10 md:w-12 shrink-0 border-l border-white/20"></div>
                         </div>
 
                     </div>
                 </div>
 
-                {/* BARRA EDICIÓN FLOTANTE (Centrada sobre la parte inferior si hay selección) */}
+                {/* BARRA EDICIÓN FLOTANTE */}
                 {editingIndex !== null && shifts[editingIndex] && (
                     <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
                         <div className="h-14 flex items-center p-1.5 bg-zinc-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10">
@@ -509,7 +501,7 @@ export default function ScheduleEditorPage() {
                 )}
             </div>
 
-            {/* MODALES REUTILIZADOS */}
+            {/* MODALES (Sin cambios) */}
             {showCalendarModal && (
                 <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
                     <div className="bg-white rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
