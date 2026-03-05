@@ -145,39 +145,20 @@ export default function NewOrderPage() {
             unit: drafts[ing.id].unit
         }));
 
-    const handleClearSupplierDrafts = async () => {
-        if (!userId || !selectedSupplier) return;
-
-        const confirms = window.confirm(`¿Estás seguro de que quieres borrar todas las cantidades del proveedor "${selectedSupplier}"?`);
+    const handleNewOrder = async () => {
+        if (!userId) return;
+        const confirms = window.confirm('¿Estás seguro de que quieres empezar un NUEVO pedido? Se borrarán todas las cantidades actuales de TODOS los proveedores.');
         if (!confirms) return;
 
         setIsProcessing(true);
         try {
-            // Get IDs of all ingredients of this supplier
-            const supplierIngredientIds = ingredients
-                .filter(ing => ing.supplier === selectedSupplier)
-                .map(ing => ing.id);
-
-            if (supplierIngredientIds.length === 0) return;
-
-            // Delete from DB
-            const { error } = await supabase.from('order_drafts').delete()
-                .eq('user_id', userId)
-                .in('ingredient_id', supplierIngredientIds);
-
+            const { error } = await supabase.from('order_drafts').delete().eq('user_id', userId);
             if (error) throw error;
-
-            // Update local state
-            setDrafts(prev => {
-                const newDrafts = { ...prev };
-                supplierIngredientIds.forEach(id => delete newDrafts[id]);
-                return newDrafts;
-            });
-
-            toast.success(`Cantidades de ${selectedSupplier} borradas`);
+            setDrafts({});
+            toast.success('Cantidades reiniciadas');
         } catch (error) {
-            console.error('Error clearing drafts:', error);
-            toast.error('Error al borrar cantidades');
+            console.error('Error clearing all drafts:', error);
+            toast.error('Error al reiniciar');
         } finally {
             setIsProcessing(false);
         }
@@ -189,47 +170,42 @@ export default function NewOrderPage() {
             return;
         }
 
-        // Validate Validation: Must have a selected supplier for the ID
         if (!selectedSupplier) {
-            toast.error('Debes seleccionar un proveedor para generar el pedido');
+            toast.error('Debes seleccionar un proveedor');
             return;
         }
 
         const targetSupplier = dbSuppliers.find(s => s.name.toLowerCase() === selectedSupplier.toLowerCase());
         if (!targetSupplier) {
-            toast.error(`El proveedor "${selectedSupplier}" no está registrado en la base de datos (Falta ID).`);
+            toast.error('Proveedor no registrado');
             return;
         }
 
         setIsProcessing(true);
         try {
-            // 1. Generate PDF (Precios eliminados en pdf-generator)
             const orderNum = `ORD-${Date.now().toString().slice(-6)}`;
-            console.log("NEW_ORDER_PAGE: Calling generateOrderPDF for", selectedSupplier);
             const blob = await generateOrderPDF({
                 supplierName: selectedSupplier,
                 items: selectedItems.map(i => ({
                     name: i.name,
                     quantity: i.quantity,
                     unit: i.unit,
-                    price: 0, // Se ignora en el PDF
-                    image: i.image_url // Pass image URL
+                    price: 0,
+                    image: i.image_url
                 })),
                 orderNumber: orderNum
             });
             setGeneratedBlob(blob);
 
-            // 2. Open Success Modal and start background upload
             setIsSummaryOpen(false);
             setIsSuccessOpen(true);
             setIsGenerating(true);
             setIsUploading(true);
 
-            // 3. Save Order Header
             const { data: order, error: orderError } = await supabase.from('purchase_orders').insert({
                 order_number: orderNum,
                 created_by: userId,
-                supplier_id: targetSupplier.id, // CRITICAL FIX: Added supplier_id
+                supplier_id: targetSupplier.id,
                 supplier_name: selectedSupplier,
                 total_items: selectedItems.length,
                 status: 'SENT'
@@ -237,49 +213,31 @@ export default function NewOrderPage() {
 
             if (orderError) throw orderError;
 
-            // 4. Save Order Items
             const orderItems = selectedItems.map(i => ({
                 purchase_order_id: order.id,
                 ingredient_id: i.id,
                 ingredient_name: i.name,
                 quantity: i.quantity,
                 unit: i.unit,
-                unit_price: 0 // No guardamos precio en pedidos
+                unit_price: 0
             }));
             await supabase.from('purchase_order_items').insert(orderItems);
 
-            // 5. Upload PDF to Storage
             const fileName = `${orderNum}.pdf`;
             const { error: uploadError } = await supabase.storage.from('orders').upload(fileName, blob);
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage.from('orders').getPublicUrl(fileName);
-
-            // 6. Update order with PDF URL
             await supabase.from('purchase_orders').update({ pdf_url: publicUrl }).eq('id', order.id);
             setPdfUrl(publicUrl);
 
-            // 7. Clear ALL Drafts FOR THE SELECTED SUPPLIER (as requested)
-            const supplierIngredientIds = ingredients
-                .filter(ing => ing.supplier === selectedSupplier)
-                .map(ing => ing.id);
-
-            await supabase.from('order_drafts').delete()
-                .eq('user_id', userId)
-                .in('ingredient_id', supplierIngredientIds);
-
-            setDrafts(prev => {
-                const NewDrafts = { ...prev };
-                supplierIngredientIds.forEach(id => delete NewDrafts[id]);
-                return NewDrafts;
-            });
-
+            // PERSISTENCE: We NO LONGER clear drafts here.
             setIsGenerating(false);
-            toast.success('Pedido procesado correctamente');
+            toast.success('Pedido registrado (cantidades conservadas)');
 
         } catch (error: any) {
             console.error('Error finalizing order:', error);
-            toast.error('Error al procesar el pedido: ' + error.message);
+            toast.error('Error: ' + error.message);
         } finally {
             setIsProcessing(false);
             setIsUploading(false);
@@ -313,96 +271,100 @@ export default function NewOrderPage() {
     }
 
     return (
-        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
+        <div className="w-full bg-[#5B8FB9] min-h-screen">
             <Toaster position="top-right" />
 
-            {/* HEADER & FILTERS */}
-            <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="relative w-full sm:max-w-xs">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Buscar ingrediente..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1] transition-all"
-                    />
-                </div>
-
-                <div className="flex gap-2 items-center relative flex-1 w-full sm:w-auto">
-                    <div className="relative w-full sm:w-auto">
-                        <button
-                            onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                            className={cn(
-                                "w-full sm:w-auto px-5 py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center justify-between sm:justify-start gap-2 border border-white/50",
-                                selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10"
-                            )}
-                        >
-                            {selectedSupplier || "Proveedor"} <ChevronDown size={14} className="text-zinc-400" />
-                        </button>
-
-                        {showSupplierPopup && (
-                            <>
-                                <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
-                                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar Proveedor</span>
-                                    </div>
-                                    <button
-                                        onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
-                                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
-                                    >
-                                        Todos {!selectedSupplier && <Check size={14} className="text-[#5E35B1]" />}
-                                    </button>
-                                    {suppliers.map(sup => (
-                                        <button
-                                            key={sup}
-                                            onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
-                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
-                                        >
-                                            {sup} {selectedSupplier === sup && <Check size={14} className="text-[#5E35B1]" />}
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
-                        )}
+            {/* STICKY HEADER (2 ROWS) */}
+            <div className="sticky top-0 z-50 bg-[#5B8FB9]/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-white/10 shadow-lg">
+                <div className="max-w-7xl mx-auto flex flex-col gap-4">
+                    {/* Row 1: Search */}
+                    <div className="relative w-full">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar ingrediente..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1] transition-all"
+                        />
                     </div>
 
-                    {/* Borrar Pedido Button */}
-                    {selectedSupplier && ingredients.some(ing => ing.supplier === selectedSupplier && (drafts[ing.id]?.quantity || 0) > 0) && (
-                        <button
-                            onClick={handleClearSupplierDrafts}
-                            className="w-full sm:w-auto px-5 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all border border-rose-200/50 flex items-center justify-center gap-2"
-                        >
-                            Borrar Pedido
-                        </button>
-                    )}
+                    {/* Row 2: Tools */}
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {/* Supplier Selector */}
+                        <div className="relative shrink-0">
+                            <button
+                                onClick={() => setShowSupplierPopup(!showSupplierPopup)}
+                                className={cn(
+                                    "px-4 py-2.5 bg-white/90 hover:bg-white rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50",
+                                    selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10 text-[#5E35B1]"
+                                )}
+                            >
+                                {selectedSupplier || "Proveedor"} <ChevronDown size={14} className="text-zinc-400" />
+                            </button>
 
-                    {/* REPOSITIONED: VER RESUMEN BUTTON AT TOP */}
-                    {totalSelected > 0 && (
+                            {showSupplierPopup && (
+                                <>
+                                    <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
+                                    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar Proveedor</span>
+                                        </div>
+                                        <button
+                                            onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
+                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
+                                        >
+                                            Todos {!selectedSupplier && <Check size={14} className="text-[#5E35B1]" />}
+                                        </button>
+                                        {suppliers.map(sup => (
+                                            <button
+                                                key={sup}
+                                                onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
+                                            >
+                                                {sup} {selectedSupplier === sup && <Check size={14} className="text-[#5E35B1]" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Nuevo Button */}
                         <button
-                            onClick={() => setIsSummaryOpen(true)}
-                            className="flex-1 sm:flex-initial bg-[#5E35B1] text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all group animate-in slide-in-from-right-4"
+                            onClick={handleNewOrder}
+                            className="shrink-0 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2"
                         >
-                            <span>Resumen ({totalSelected})</span>
-                            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            Nuevo
                         </button>
-                    )}
+
+                        {/* Tramitar Pedido (Conditional) */}
+                        {selectedItems.length > 0 && selectedSupplier && (
+                            <button
+                                onClick={() => setIsSummaryOpen(true)}
+                                className="shrink-0 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
+                            >
+                                Tramitar Pedido ({selectedItems.length})
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* PRODUCT GRID */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 pb-24">
-                {filteredIngredients.map(ing => (
-                    <OrderProductCard
-                        key={ing.id}
-                        ingredient={ing}
-                        userId={userId!}
-                        initialQuantity={drafts[ing.id]?.quantity || 0}
-                        initialUnit={drafts[ing.id]?.unit}
-                        onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
-                    />
-                ))}
+            <div className="p-6 md:p-8 max-w-7xl mx-auto">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 pb-24">
+                    {filteredIngredients.map(ing => (
+                        <OrderProductCard
+                            key={ing.id}
+                            ingredient={ing}
+                            userId={userId!}
+                            initialQuantity={drafts[ing.id]?.quantity || 0}
+                            initialUnit={drafts[ing.id]?.unit}
+                            onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
+                        />
+                    ))}
+                </div>
             </div>
 
 
@@ -425,10 +387,9 @@ export default function NewOrderPage() {
                 onDownload={handleDownload}
                 onClose={() => {
                     setIsSuccessOpen(false);
-                    router.refresh();
+                    // Persistent quantities: no router.refresh() or reset needed
                 }}
             />
         </div>
     );
 }
-

@@ -119,7 +119,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         <div className={cn(
             "flex flex-col bg-white transition-all overflow-hidden relative",
             isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-sm",
-            !isModal && quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "",
+            !isModal && quantity > 0 ? "" : "",
             !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
         )}>
             {/* Recommended Stock Badge */}
