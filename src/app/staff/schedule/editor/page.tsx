@@ -423,10 +423,10 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* ZONA DE TABLA Y FILAS */}
-                    <div className="flex flex-col flex-1 relative min-h-0 bg-white w-full">
+                    <div className="flex flex-col flex-1 relative min-h-0 bg-white w-full overflow-y-auto custom-scrollbar">
 
                         {/* ENCABEZADO ROJO */}
-                        <div className="flex w-full bg-[#E55353] text-white sticky top-0 z-30 shadow-sm">
+                        <div className="flex w-full bg-[#E55353] text-white sticky top-0 z-40 shadow-sm shrink-0">
                             <div className="w-24 md:w-32 px-3 flex items-center justify-start shrink-0 border-r border-white/20 cursor-pointer hover:bg-white/10 transition-colors group" onClick={() => setShowAddModal(true)}>
                                 <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-white truncate flex items-center gap-1.5">
                                     Trabajador <Plus size={12} className="opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -439,17 +439,22 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="w-10 md:w-12 shrink-0 border-l border-white/20"></div>
                         </div>
 
                         {/* FILAS DE EMPLEADOS */}
-                        <div className="flex-1 overflow-y-auto bg-white custom-scrollbar pb-2">
+                        <div className="flex flex-col w-full bg-white relative pb-0 z-10">
                             {shifts.map((shift, idx) => (
                                 <div key={shift.employeeId} className={`flex w-full h-12 md:h-14 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
-                                    <div className="w-24 md:w-32 px-3 flex items-center shrink-0 border-r border-gray-100 overflow-hidden group/row">
+                                    <div className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 border-r border-gray-100 overflow-hidden group/row">
                                         <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
                                             {shift.name}
                                         </span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                            className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-80 hover:opacity-100"
+                                        >
+                                            <X size={12} strokeWidth={4} />
+                                        </button>
                                     </div>
                                     <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
                                         <div className="absolute inset-0 flex">
@@ -459,17 +464,12 @@ export default function ScheduleEditorPage() {
                                         </div>
                                         {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
                                     </div>
-                                    <div className="w-10 md:w-12 shrink-0 flex items-center justify-center border-l border-gray-100">
-                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }} className="w-6 h-6 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-all active:scale-95">
-                                            <X size={14} strokeWidth={4} />
-                                        </button>
-                                    </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* FOOTER VERDE */}
-                        <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-30">
+                        <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu mb-auto shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)]">
                             <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/20">
                                 TOT
                             </div>
@@ -480,7 +480,6 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="w-10 md:w-12 shrink-0 border-l border-white/20"></div>
                         </div>
 
                     </div>
