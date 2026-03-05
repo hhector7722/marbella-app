@@ -140,9 +140,10 @@ export default function MovementsPage() {
 
     async function fetchCurrentBoxStatus() {
         try {
+            // 1. Obtenemos el contenedor de la caja y su saldo teórico (sumatorio de movimientos)
             const { data: box, error } = await supabase
                 .from('cash_boxes')
-                .select('id, current_balance, target_balance, name')
+                .select('id, current_balance, name')
                 .eq('type', 'operational')
                 .maybeSingle();
 
@@ -150,10 +151,30 @@ export default function MovementsPage() {
 
             if (box) {
                 setBoxData(box);
+
+                // 2. Consultamos el inventario físico real contado en el último arqueo
+                const { data: inventory, error: invError } = await supabase
+                    .from('cash_box_inventory')
+                    .select('denomination, quantity')
+                    .eq('box_id', box.id);
+
+                if (invError) {
+                    console.error("Error leyendo inventario de caja:", invError);
+                }
+
+                // 3. Cálculo estricto: Suma de (Denominación * Cantidad)
+                const totalFisico = inventory?.reduce((sum, item) => {
+                    return sum + (Number(item.denomination) * Number(item.quantity));
+                }, 0) || 0;
+
+                const saldoTeorico = box.current_balance || 0;
+                const diferenciaReal = totalFisico - saldoTeorico;
+
+                // 4. Inyectamos en estado atemporal
                 setCurrentBoxStatus({
-                    theoreticalBalance: box.target_balance || 0,
-                    physicalBalance: box.current_balance || 0,
-                    difference: (box.current_balance || 0) - (box.target_balance || 0),
+                    theoreticalBalance: saldoTeorico,
+                    physicalBalance: saldoTeorico, // Se pinta en la UI como "SALDO ACTUAL"
+                    difference: diferenciaReal,    // Se pinta en la UI como "DIFER. ACTUAL"
                     loading: false
                 });
             } else {
