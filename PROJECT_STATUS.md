@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-05 (Desglose de Tickets Ventas)
+**Última actualización:** 2026-03-05 (Borradores Horarios & Git Sync)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -10,7 +10,8 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ## ✅ COMPLETADO
 - [x] **Desglose de Tickets (Ticket Drill-down)**: Implementada funcionalidad de expansión ("Lazy Loading") en la tabla de Visión Tickets en `/dashboard/ventas`. Añadida la RPC `get_ticket_lines` para extracción bajo demanda de artículos, cantidades e importes. Interfaz diseñada según Arquitecto UI Kiosco con sub-tablas integradas y feedback de carga.
 - [x] **Corrección Timezone Shift (Movements & History)**: Solucionado el problema crítico de arrays vacíos en los fetch de Supabase. Se implementó un parser matemático seguro (`parseLocalSafe`) para aislar la fecha local y evitar que JavaScript nativo desfase los strings 'YYYY-MM-DD' al convertirlos a UTC. Ajustados los límites horarios de los endpoints que procesan las fechas locales en base al uso estricto del huso de España.
-- [x] **Construcción Dashboard Ventas (/dashboard/ventas)**: Implementación de panel principal de análisis de facturación, replicando estrictamente la arquitectura Marbella Premium (`bg-[#5B8FB9]`). Reutilizado el sistema de filtros (Fechas/Mes/Periodo) de `HistoryPage`, sección de KPIs de 3 bloques, y tabla estructurada con soporte para fetching reactivo desde el esquema de `tickets_marbella`.
+- [x] **Horarios: Borradores y Edición Ágil**: Implementado sistema de guardado en dos etapas (Borrador vs Oficial) y botón de eliminación rápida de personal en el editor de horarios.
+- [x] **Dashboard Ventas (/dashboard/ventas)**: Implementación de panel principal de análisis de facturación, replicando estrictamente la arquitectura Marbella Premium (`bg-[#5B8FB9]`). Reutilizado el sistema de filtros (Fechas/Mes/Periodo) de `HistoryPage`, sección de KPIs de 3 bloques, y tabla estructurada con soporte para fetching reactivo desde el esquema de `tickets_marbella`.
 - [x] **Corrección Calendario Fichajes (Staff Dashboard)**: Erradicada la generación estática/manual de días y fechas defectuosas. Se ha implementado `date-fns` (`startOfWeek`, `addDays`, `isSameDay`) forzando la semana real con Lunes como primer día, resolviendo la discrepancia del mapping del 1 de Marzo.
 - [x] **Refinamiento UI Caja Inicial (Dashboard)**: Corregida la visualización del bloque principal para mostrar el `saldo_actual` en lugar del teórico. Actualizado el indicador de diferencia para consumir directamente la columna `difference` de la tabla `cash_boxes`, con regla de display estricta (ocultar icono y mostrar check si es 0, con color dinámico). Unificado el formato numérico a estrictos 2 decimales (`.toFixed(2)`) en todo el panel y vista detallada de movimientos.
 - [x] **Mapeo de Artículos TPV (/admin/mapeo)**: Implementada nueva vista de administración para vincular productos del TPV (`bdp_articulos`) con las recetas del sistema. Incluye buscador inteligente, ajuste de factor de porción y validaciones de seguridad mediante Server Actions (RLS y DB Supabase Master rules). Interfaz diseñada según Arquitecto UI Kiosco.
