@@ -150,42 +150,19 @@ export default function MovementsPage() {
 
             if (box) {
                 setBoxData(box);
-                // Cálculo del desfase: Saldo Físico (current) - Saldo Teórico (target)
-                const diff = (box.current_balance || 0) - (box.target_balance || 0);
-
                 setCurrentBoxStatus({
                     theoreticalBalance: box.target_balance || 0,
                     physicalBalance: box.current_balance || 0,
-                    difference: diff,
+                    difference: (box.current_balance || 0) - (box.target_balance || 0),
                     loading: false
                 });
             } else {
-                // Fallback agresivo si no encuentra 'operational'
-                const { data: fallbackBox, error: fallbackError } = await supabase
-                    .from('cash_boxes')
-                    .select('id, current_balance, target_balance, name')
-                    .limit(1)
-                    .maybeSingle();
-
-                if (fallbackError) throw fallbackError;
-
-                if (fallbackBox) {
-                    setBoxData(fallbackBox);
-                    const fallbackDiff = (fallbackBox.current_balance || 0) - (fallbackBox.target_balance || 0);
-                    setCurrentBoxStatus({
-                        theoreticalBalance: fallbackBox.target_balance || 0,
-                        physicalBalance: fallbackBox.current_balance || 0,
-                        difference: fallbackDiff,
-                        loading: false
-                    });
-                } else {
-                    toast.error("ERROR: No hay cajas creadas en el sistema.");
-                    setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
-                }
+                toast.error("BLOQUEO: No se ha detectado ninguna 'Caja Operativa' en la base de datos.");
+                setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
             }
         } catch (error) {
-            console.error("Error crítico de base de datos:", error);
-            toast.error("Error conectando con la caja. Revisa la consola.");
+            console.error("Error crítico leyendo caja:", error);
+            toast.error("Error de base de datos. Revisa la consola.");
             setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
         }
     }
@@ -228,10 +205,15 @@ export default function MovementsPage() {
             }
 
             // Estadísticas para el resumen del periodo seleccionado
-            const { data: summaryData } = await supabase.rpc('get_treasury_period_summary', {
+            const { data: summaryData, error: summaryError } = await supabase.rpc('get_treasury_period_summary', {
+                p_box_id: boxData.id,
                 p_start_date: startISO,
                 p_end_date: endISO
             });
+
+            if (summaryError) {
+                console.error("Error en el RPC de resumen:", summaryError);
+            }
 
             setPeriodSummary({
                 income: summaryData?.income || 0,
@@ -353,7 +335,7 @@ export default function MovementsPage() {
     };
 
     const openAudit = async () => {
-        if (!boxData) return;
+        if (!boxData) { toast.error("Error: Caja no inicializada"); return; }
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
         const initial: Record<number, number> = {};
         data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
@@ -363,7 +345,7 @@ export default function MovementsPage() {
     };
 
     const openOut = async () => {
-        if (!boxData) return;
+        if (!boxData) { toast.error("Error: Caja no inicializada"); return; }
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
         const initial: Record<number, number> = {};
         data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
