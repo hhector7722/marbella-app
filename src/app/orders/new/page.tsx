@@ -330,21 +330,23 @@ export default function NewOrderPage() {
                             )}
                         </div>
 
-                        {/* Nuevo Button */}
-                        <button
-                            onClick={handleNewOrder}
-                            className="shrink-0 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2"
-                        >
-                            Nuevo
-                        </button>
+                        {/* Nuevo Button (Conditional) */}
+                        {selectedItems.length > 0 && selectedSupplier && (
+                            <button
+                                onClick={handleNewOrder}
+                                className="shrink-0 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
+                            >
+                                Nuevo
+                            </button>
+                        )}
 
-                        {/* Tramitar Pedido (Conditional) */}
+                        {/* Tramitar Button (Conditional) */}
                         {selectedItems.length > 0 && selectedSupplier && (
                             <button
                                 onClick={() => setIsSummaryOpen(true)}
                                 className="shrink-0 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
                             >
-                                Tramitar Pedido ({selectedItems.length})
+                                Tramitar ({selectedItems.length})
                             </button>
                         )}
                     </div>
