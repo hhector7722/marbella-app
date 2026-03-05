@@ -117,8 +117,8 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
     const renderCard = (isModal: boolean) => (
         <div className={cn(
-            "bg-white transition-all flex flex-col items-stretch overflow-hidden w-full relative",
-            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "rounded-2xl shadow-md aspect-square",
+            "flex flex-col bg-white transition-all overflow-hidden relative",
+            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-sm border border-zinc-100",
             !isModal && quantity > 0 ? "ring-2 ring-[#5E35B1] shadow-lg" : "",
             !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
         )}>
@@ -130,12 +130,16 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             )}
 
-            <div className={cn("flex flex-col", isModal ? "flex-1 min-h-0 p-6" : "p-2 flex-1 bg-white items-center justify-start")}>
-                {/* Product Image Area */}
+            {/* ZONA SUPERIOR BLANCA (Elástica) */}
+            <div className={cn(
+                "flex-1 flex flex-col items-center justify-start",
+                isModal ? "p-6" : "p-1.5 min-h-[90px]"
+            )}>
+                {/* Contenedor de Imagen Rígido */}
                 <div
                     className={cn(
-                        "w-full bg-white flex items-center justify-center overflow-hidden relative",
-                        isModal ? "h-32 mb-4 rounded-lg" : "h-12 mb-1 shrink-0"
+                        "w-full bg-white flex items-center justify-center overflow-hidden relative shrink-0",
+                        isModal ? "h-32 mb-4 rounded-lg" : "h-12 mb-1"
                     )}
                     onClick={() => {
                         if (!isModal) setShowModal(true);
@@ -155,7 +159,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Product Info */}
-                <div className={cn("flex flex-col w-full", isModal ? "mt-auto gap-1.5 items-center justify-center text-center px-1" : "items-center justify-start text-center")}>
+                <div className={cn("flex flex-col w-full items-center text-center", isModal ? "mt-auto gap-1.5 px-1" : "justify-start")}>
                     <span className={cn("font-black text-zinc-800 leading-tight w-full", isModal ? "text-sm sm:text-base px-1 truncate" : "text-[9px] min-[380px]:text-[10px] line-clamp-2")} title={ingredient.name}>
                         {ingredient.name}
                     </span>
@@ -198,48 +202,41 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             </div>
                         )
                     ) : (
-                        <span className="text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest text-center mt-0.5 w-full">
+                        <span className="text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest text-center mt-auto pt-1 w-full">
                             {isCustomUnit ? (customUnit || '?') : unit}
                         </span>
                     )}
                 </div>
             </div>
 
-            {/* Controls (Bottom Area) */}
+            {/* ZONA INFERIOR OSCURA (Rígida e inamovible) */}
             <div className={cn(
-                "bg-[#36606F] flex flex-row items-center justify-between shrink-0 shadow-inner w-full mt-auto",
-                isModal ? "px-6 py-4" : "px-2 py-1.5"
+                "bg-[#36606F] flex flex-row items-center justify-between shrink-0 w-full",
+                isModal ? "px-6 py-4" : "p-1.5"
             )}>
                 <button
                     onClick={handleDecrement}
                     disabled={quantity === 0}
                     className={cn(
-                        "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-7 sm:h-7"
+                        "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
                     )}
                 >
                     <Minus size={isModal ? 24 : 14} strokeWidth={3} />
                 </button>
 
-                <input
-                    type="number"
-                    value={quantity === 0 ? "" : quantity}
-                    onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        updateLocal(isNaN(val) ? 0 : Math.max(0, val), unit, isCustomUnit, customUnit);
-                    }}
-                    placeholder=""
-                    className={cn(
-                        "bg-transparent text-center font-black text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-                        isModal ? "w-16 sm:w-20 text-lg sm:text-2xl" : "w-8 text-[11px] tabular-nums"
-                    )}
-                />
+                <span className={cn(
+                    "font-black text-white tabular-nums px-1",
+                    isModal ? "text-lg sm:text-2xl" : "text-[11px] md:text-xs"
+                )}>
+                    {quantity === 0 ? " " : quantity}
+                </span>
 
                 <button
                     onClick={handleIncrement}
                     className={cn(
-                        "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-7 sm:h-7"
+                        "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 transition-all shrink-0 p-0",
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
                     )}
                 >
                     <Plus size={isModal ? 24 : 14} strokeWidth={3} />
