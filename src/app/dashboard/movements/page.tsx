@@ -53,11 +53,20 @@ export default function MovementsPage() {
     const supabase = createClient();
     const router = useRouter();
 
-    // Estados de Filtro
+    // 1. Estados de Filtro y UI
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
-    const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-    const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [selectedDate, setSelectedDate] = useState<string>(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
+    const [rangeStart, setRangeStart] = useState<string | null>(() => {
+        const d = startOfMonth(new Date());
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
+    const [rangeEnd, setRangeEnd] = useState<string | null>(() => {
+        const d = endOfMonth(new Date());
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
 
@@ -102,7 +111,12 @@ export default function MovementsPage() {
     });
 
     // ESTADO ATEMPORAL (No afectado por filtros)
-    const [currentBoxStatus, setCurrentBoxStatus] = useState({
+    const [currentBoxStatus, setCurrentBoxStatus] = useState<{
+        theoreticalBalance: number;
+        physicalBalance: number;
+        difference: number;
+        loading: boolean;
+    }>({
         theoreticalBalance: 0,
         physicalBalance: 0,
         difference: 0,
@@ -143,8 +157,20 @@ export default function MovementsPage() {
                     loading: false
                 });
             } else {
-                // Si no hay caja, marcamos como cargado para desbloquear la UI
-                setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
+                // FALLBACK: Si no hay caja 'operational', buscar cualquier caja
+                const { data: firstBox } = await supabase.from('cash_boxes').select('*').limit(1).maybeSingle();
+                if (firstBox) {
+                    setBoxData(firstBox);
+                    setCurrentBoxStatus({
+                        theoreticalBalance: (firstBox.current_balance || 0) - (firstBox.difference || 0),
+                        physicalBalance: firstBox.current_balance || 0,
+                        difference: firstBox.difference || 0,
+                        loading: false
+                    });
+                } else {
+                    console.warn("No se encontró ninguna caja operativa ni fallback.");
+                    setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
+                }
             }
         } catch (error) {
             console.error("Error fetching current box status:", error);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, Download, Share2, ArrowRight, FileText, Send, ImageIcon } from 'lucide-react';
+import { CheckCircle2, Download, Share2, FileText, Send, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
@@ -261,21 +261,20 @@ export function OrderSuccessModal({
                                     disabled={isCapturing || !generatedBlob || !supplierPhone}
                                     className={cn(
                                         "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                        "bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 shadow-sm"
+                                        "bg-[#7C4DBC] hover:bg-[#6A3DAA] shadow-sm"
                                     )}
                                 >
-                                    <Send size={18} className="text-[#25D366]" />
-                                    <span className="text-[8px] font-black text-[#1C9B4C] uppercase tracking-widest">Proveedor</span>
+                                    <Send size={18} className="text-white" />
+                                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Proveedor</span>
                                 </button>
                             </div>
 
                             {/* Main Action */}
                             <button
                                 onClick={onClose}
-                                className="w-full h-11 bg-[#5E35B1] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-100 hover:bg-[#4d2c91] active:scale-95 transition-all flex items-center justify-center gap-3 shrink-0"
+                                className="w-full h-11 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center shrink-0"
                             >
-                                <span>Volver al Inicio</span>
-                                <ArrowRight size={16} />
+                                Atrás
                             </button>
                         </>
                     )}
