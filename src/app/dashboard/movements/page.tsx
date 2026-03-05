@@ -235,14 +235,17 @@ export default function MovementsPage() {
             const { data: pageMoves, error: fetchError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
+                .or(`box_id.eq.${boxData?.id || 0},box_id.is.null`)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
-                .not('type', 'in', ['ADJUSTMENT', 'SWAP'])
+                .neq('type', 'ADJUSTMENT')
+                .neq('type', 'SWAP')
                 .order('created_at', { ascending: false })
                 .range(from, to);
 
             if (fetchError) {
                 console.error("Error crítico cargando movimientos:", fetchError);
+                toast.error("Error de base de datos. Revisa la consola.");
             }
 
             if (pageMoves) {
@@ -251,7 +254,7 @@ export default function MovementsPage() {
                     type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
                         (m.type === 'OUT' ? 'expense' : 'adjustment'),
                     original_type: m.type,
-                    running_balance: Number(m.running_balance)
+                    running_balance: Number(m.running_balance || 0)
                 }));
 
                 if (isInitial) {

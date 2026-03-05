@@ -351,9 +351,10 @@ export default function VentasPage() {
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <tr>
-                                                    <th className="p-3 md:p-4 rounded-tl-xl whitespace-nowrap">Fecha / Hora</th>
-                                                    <th className="p-3 md:p-4 whitespace-nowrap">Nº Ticket</th>
-                                                    <th className="p-3 md:p-4 rounded-tr-xl text-right whitespace-nowrap">Importe Total</th>
+                                                    <th className="p-3 md:p-4 rounded-tl-xl">Fecha</th>
+                                                    <th className="p-3 md:p-4">Hora</th>
+                                                    <th className="p-3 md:p-4">Documento</th>
+                                                    <th className="p-3 md:p-4 rounded-tr-xl text-right">Total</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="text-xs font-bold text-zinc-600">
@@ -366,17 +367,13 @@ export default function VentasPage() {
                                                                 expandedTicket === ticket.numero_documento && "bg-zinc-50 border-transparent shadow-sm"
                                                             )}
                                                         >
-                                                            <td className="p-3 md:p-4 whitespace-nowrap">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-zinc-900">
-                                                                        {ticket.fecha ? format(parseLocalSafe(ticket.fecha), 'dd/MM') : '---'}
-                                                                    </span>
-                                                                    <span className="text-[10px] text-zinc-400 font-mono">
-                                                                        {ticket.hora_cierre && ticket.hora_cierre !== '00:00:00'
-                                                                            ? ticket.hora_cierre.substring(0, 5)
-                                                                            : ''}
-                                                                    </span>
-                                                                </div>
+                                                            <td className="p-3 md:p-4 whitespace-nowrap text-zinc-900">
+                                                                {ticket.fecha ? format(parseLocalSafe(ticket.fecha), 'dd/MM') : '---'}
+                                                            </td>
+                                                            <td className="p-3 md:p-4 whitespace-nowrap text-zinc-500 font-mono">
+                                                                {ticket.hora_cierre && ticket.hora_cierre !== '00:00:00'
+                                                                    ? ticket.hora_cierre.substring(0, 5)
+                                                                    : ' '}
                                                             </td>
                                                             <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
                                                                 {ticket.numero_documento}
@@ -385,12 +382,12 @@ export default function VentasPage() {
                                                                 "p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap",
                                                                 (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
                                                             )}>
-                                                                {Number(ticket.total_documento || 0).toFixed(2)}€
+                                                                {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
                                                             </td>
                                                         </tr>
                                                         {expandedTicket === ticket.numero_documento && (
                                                             <tr className="bg-zinc-50/30">
-                                                                <td colSpan={3} className="p-2 md:p-4">
+                                                                <td colSpan={4} className="p-2 md:p-4">
                                                                     <div className="bg-zinc-50/50 rounded-2xl border border-zinc-100/50 p-2 md:p-4 animate-in slide-in-from-top-2 duration-200">
                                                                         {loadingLines ? (
                                                                             <div className="flex justify-center py-6">
@@ -414,16 +411,16 @@ export default function VentasPage() {
                                                                                     {ticketLines.map((line, lIdx) => (
                                                                                         <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
                                                                                             <td className="py-2 px-1 text-center tabular-nums text-zinc-400">
-                                                                                                {Number(line.cantidad).toFixed(0)}
+                                                                                                {line.unidades !== 0 ? line.unidades : ' '}
                                                                                             </td>
                                                                                             <td className="py-2 px-2 text-zinc-700">
                                                                                                 {line.articulo_nombre}
                                                                                             </td>
                                                                                             <td className="py-2 px-2 text-right tabular-nums">
-                                                                                                {Number(line.precio_unidad).toFixed(2)}€
+                                                                                                {line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}
                                                                                             </td>
                                                                                             <td className="py-2 px-1 text-right font-black tabular-nums text-emerald-600/70">
-                                                                                                {Number(line.importe_total).toFixed(2)}€
+                                                                                                {line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}
                                                                                             </td>
                                                                                         </tr>
                                                                                     ))}
