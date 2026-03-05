@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -258,47 +258,102 @@ export default function VentasPage() {
 
                         {/* FILTROS INTEGRADOS EN CABECERA */}
                         <div className="flex items-center justify-between gap-1 pb-2 relative min-h-[40px]">
-                            {/* NAVEGADOR MENSUAL PRINCIPAL (A la Izquierda) */}
-                            <div className="flex items-center gap-0.5 md:gap-1 z-10">
-                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
-                                    <ChevronLeft size={18} />
+                            {/* ZONA IZQUIERDA (Vacia para balance) */}
+                            <div className="flex-1"></div>
+
+                            {/* ZONA CENTRAL (Filtro Activo + Navegación) */}
+                            <div className="flex items-center gap-1 md:gap-2 z-10 justify-center">
+                                <button
+                                    onClick={() => {
+                                        if (filterMode === 'single') {
+                                            const prev = subDays(parseLocalSafe(selectedDate), 1);
+                                            setSelectedDate(format(prev, 'yyyy-MM-dd'));
+                                        } else {
+                                            handlePrevMonth();
+                                        }
+                                    }}
+                                    className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
+                                >
+                                    <ChevronLeft size={20} />
                                 </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[10px] sm:text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
-                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'MES'}
+
+                                <button
+                                    onClick={() => filterMode === 'range' ? setShowMonthPicker(true) : setShowCalendar('single')}
+                                    className="px-2 md:px-4 text-[11px] sm:text-[13px] md:text-[15px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center"
+                                >
+                                    {filterMode === 'single'
+                                        ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+                                        : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                            : 'Periodo')}
                                 </button>
-                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
-                                    <ChevronRight size={18} />
+
+                                <button
+                                    onClick={() => {
+                                        if (filterMode === 'single') {
+                                            const next = addDays(parseLocalSafe(selectedDate), 1);
+                                            setSelectedDate(format(next, 'yyyy-MM-dd'));
+                                        } else {
+                                            handleNextMonth();
+                                        }
+                                    }}
+                                    className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
+                                >
+                                    <ChevronRight size={20} />
                                 </button>
                             </div>
 
-                            {/* FILTROS SECUNDARIOS REDUCIDOS (A la Derecha) */}
-                            <div className="flex items-center justify-end gap-1.5 shrink-0 z-10">
-                                <button
-                                    onClick={() => {
-                                        setRangeStart(null);
-                                        setRangeEnd(null);
-                                        setShowCalendar('range');
-                                    }}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
-                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? "bg-white border-white text-zinc-800 shadow-sm"
-                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    PERIODO
-                                </button>
-                                <button
-                                    onClick={() => setShowCalendar('single')}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
-                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    FECHA
-                                </button>
+                            {/* ZONA DERECHA (Filtros Inactivos) */}
+                            <div className="flex-1 flex items-center justify-end gap-1.5 shrink-0 z-10">
+                                {filterMode === 'single' ? (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                const s = startOfMonth(new Date());
+                                                const e = endOfMonth(new Date());
+                                                setRangeStart(format(s, 'yyyy-MM-dd'));
+                                                setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                                setFilterMode('range');
+                                            }}
+                                            className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                        >
+                                            MES
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setRangeStart(null);
+                                                setRangeEnd(null);
+                                                setShowCalendar('range');
+                                            }}
+                                            className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                        >
+                                            PERIODO
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        {(!rangeStart || !rangeEnd || !isSameMonth(new Date(rangeStart), new Date(rangeEnd))) && (
+                                            <button
+                                                onClick={() => {
+                                                    const s = startOfMonth(new Date());
+                                                    const e = endOfMonth(new Date());
+                                                    setRangeStart(format(s, 'yyyy-MM-dd'));
+                                                    setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                                    setFilterMode('range');
+                                                }}
+                                                className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                            >
+                                                MES
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setShowCalendar('single')}
+                                            className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                        >
+                                            FECHA
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -351,9 +406,9 @@ export default function VentasPage() {
                         </div>
                     </div>
 
-                    {/* TABLAS */}
-                    <div className="p-4 md:p-6 bg-zinc-50/30">
-                        <div className="p-3 bg-white rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
+                    {/* TABLAS - SIN BORDE/SHADOW Y FLOTANTES */}
+                    <div className="p-3 md:p-6 bg-zinc-50/30">
+                        <div className="bg-transparent w-full">
                             {loading ? (
                                 <div className="flex justify-center items-center py-20">
                                     <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -364,116 +419,105 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto custom-scrollbar">
+                                    <div className="w-full">
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <tr>
-                                                    <th className="p-3 md:p-4 rounded-tl-xl">Fecha</th>
-                                                    <th className="p-3 md:p-4">Hora</th>
-                                                    <th className="p-3 md:p-4">Documento</th>
-                                                    <th className="p-3 md:p-4 rounded-tr-xl text-right">Total</th>
+                                                    <th className="py-3 px-2 md:px-4 rounded-tl-xl whitespace-nowrap">Hora</th>
+                                                    <th className="py-3 px-2 md:px-4 whitespace-nowrap">Documento</th>
+                                                    <th className="py-3 px-2 md:px-4 rounded-tr-xl text-right whitespace-nowrap">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="text-xs font-bold text-zinc-600">
-                                                {tickets.map((ticket, idx) => (
-                                                    <React.Fragment key={ticket.numero_documento || idx}>
-                                                        <tr
-                                                            onClick={() => handleRowClick(ticket.numero_documento)}
-                                                            className={cn(
-                                                                "group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50 last:border-0",
-                                                                expandedTicket === ticket.numero_documento && "bg-zinc-50 border-transparent shadow-sm"
-                                                            )}
-                                                        >
-                                                            <td className="p-3 md:p-4 whitespace-nowrap text-zinc-900">
-                                                                {ticket.fecha ? format(parseLocalSafe(ticket.fecha), 'dd/MM') : '---'}
-                                                            </td>
-                                                            <td className="p-3 md:p-4 whitespace-nowrap text-zinc-500 font-mono">
-                                                                {(() => {
-                                                                    try {
-                                                                        let rawTime = ticket.hora_cierre;
+                                            <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                                {tickets.map((ticket, idx) => {
+                                                    // Limpiamos los "0" al principio de "2TB0000X"
+                                                    const cleanDocNumber = ticket.numero_documento
+                                                        ? ticket.numero_documento.replace(/0+/, '')
+                                                        : '';
 
-                                                                        if (rawTime && typeof rawTime === 'string') {
-                                                                            // Si viene como formato ISO (ej. "2026-03-05T14:30:00.000Z"), lo partimos por la 'T'
-                                                                            if (rawTime.includes('T')) {
-                                                                                rawTime = rawTime.split('T')[1];
+                                                    return (
+                                                        <React.Fragment key={ticket.numero_documento || idx}>
+                                                            <tr
+                                                                onClick={() => handleRowClick(ticket.numero_documento)}
+                                                                className={cn(
+                                                                    "group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-100 last:border-0",
+                                                                    expandedTicket === ticket.numero_documento && "bg-zinc-50 border-transparent"
+                                                                )}
+                                                            >
+                                                                <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
+                                                                    {(() => {
+                                                                        try {
+                                                                            let rawTime = ticket.hora_cierre;
+                                                                            if (rawTime && typeof rawTime === 'string') {
+                                                                                if (rawTime.includes('T')) rawTime = rawTime.split('T')[1];
+                                                                                if (rawTime !== '00:00:00' && rawTime.length >= 5) return rawTime.substring(0, 5);
                                                                             }
-
-                                                                            // Ahora rawTime es seguro "14:30:00..."
-                                                                            if (rawTime !== '00:00:00' && rawTime.length >= 5) {
-                                                                                return rawTime.substring(0, 5);
+                                                                            if (ticket.fecha && ticket.fecha.includes('T')) {
+                                                                                const fTime = ticket.fecha.split('T')[1];
+                                                                                if (fTime !== '00:00:00') return fTime.substring(0, 5);
                                                                             }
-                                                                        }
-
-                                                                        // Fallback en caso de que venga vacío
-                                                                        if (ticket.fecha && ticket.fecha.includes('T')) {
-                                                                            const fTime = ticket.fecha.split('T')[1];
-                                                                            if (fTime !== '00:00:00') return fTime.substring(0, 5);
-                                                                        }
-
-                                                                        return '---';
-                                                                    } catch (e) {
-                                                                        return '---';
-                                                                    }
-                                                                })()}
-                                                            </td>
-                                                            <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
-                                                                {ticket.numero_documento}
-                                                            </td>
-                                                            <td className={cn(
-                                                                "p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap",
-                                                                (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
-                                                            )}>
-                                                                {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
-                                                            </td>
-                                                        </tr>
-                                                        {expandedTicket === ticket.numero_documento && (
-                                                            <tr className="bg-zinc-50/30">
-                                                                <td colSpan={4} className="p-2 md:p-4">
-                                                                    <div className="bg-zinc-50/50 rounded-2xl border border-zinc-100/50 p-2 md:p-4 animate-in slide-in-from-top-2 duration-200">
-                                                                        {loadingLines ? (
-                                                                            <div className="flex justify-center py-6">
-                                                                                <LoadingSpinner size="sm" className="text-[#36606F]/50" />
-                                                                            </div>
-                                                                        ) : ticketLines.length === 0 ? (
-                                                                            <div className="text-center py-4 text-[10px] font-black uppercase tracking-widest text-zinc-300">
-                                                                                No hay detalles para este ticket
-                                                                            </div>
-                                                                        ) : (
-                                                                            <table className="w-full text-left border-collapse">
-                                                                                <thead>
-                                                                                    <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-100">
-                                                                                        <th className="py-2 px-1 text-center w-12">Cant</th>
-                                                                                        <th className="py-2 px-2">Producto</th>
-                                                                                        <th className="py-2 px-2 text-right">Precio</th>
-                                                                                        <th className="py-2 px-1 text-right">Total</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody className="text-[10px] md:text-[11px] font-bold text-zinc-500">
-                                                                                    {ticketLines.map((line, lIdx) => (
-                                                                                        <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
-                                                                                            <td className="py-2 px-1 text-center tabular-nums text-zinc-400">
-                                                                                                {line.unidades !== 0 ? line.unidades : ' '}
-                                                                                            </td>
-                                                                                            <td className="py-2 px-2 text-zinc-700">
-                                                                                                {line.articulo_nombre}
-                                                                                            </td>
-                                                                                            <td className="py-2 px-2 text-right tabular-nums">
-                                                                                                {line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}
-                                                                                            </td>
-                                                                                            <td className="py-2 px-1 text-right font-black tabular-nums text-emerald-600/70">
-                                                                                                {line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    ))}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        )}
-                                                                    </div>
+                                                                            return '---';
+                                                                        } catch (e) { return '---'; }
+                                                                    })()}
+                                                                </td>
+                                                                <td className="py-3 px-2 md:px-4 font-mono text-[10px] md:text-xs text-zinc-700">
+                                                                    {cleanDocNumber}
+                                                                </td>
+                                                                <td className={cn(
+                                                                    "py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm",
+                                                                    (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
+                                                                )}>
+                                                                    {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
                                                                 </td>
                                                             </tr>
-                                                        )}
-                                                    </React.Fragment>
-                                                ))}
+                                                            {expandedTicket === ticket.numero_documento && (
+                                                                <tr className="bg-zinc-50/30">
+                                                                    <td colSpan={3} className="px-1 py-2 md:p-4">
+                                                                        <div className="bg-[#fcfcfc] rounded-2xl p-2 md:p-4 animate-in slide-in-from-top-2 duration-200">
+                                                                            {loadingLines ? (
+                                                                                <div className="flex justify-center py-6">
+                                                                                    <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                                                                </div>
+                                                                            ) : ticketLines.length === 0 ? (
+                                                                                <div className="text-center py-4 text-[10px] font-black uppercase tracking-widest text-zinc-300">
+                                                                                    No hay detalles para este ticket
+                                                                                </div>
+                                                                            ) : (
+                                                                                <table className="w-full text-left border-collapse">
+                                                                                    <thead>
+                                                                                        <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-200">
+                                                                                            <th className="py-2 px-1 text-center w-8 md:w-12">Cant</th>
+                                                                                            <th className="py-2 px-1 md:px-2">Producto</th>
+                                                                                            <th className="py-2 px-1 md:px-2 text-right">Precio</th>
+                                                                                            <th className="py-2 px-1 text-right">Total</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody className="text-[10px] md:text-[11px] font-bold text-zinc-500">
+                                                                                        {ticketLines.map((line, lIdx) => (
+                                                                                            <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
+                                                                                                <td className="py-2 px-1 text-center tabular-nums text-zinc-400">
+                                                                                                    {line.unidades !== 0 ? line.unidades : ' '}
+                                                                                                </td>
+                                                                                                <td className="py-2 px-1 md:px-2 text-zinc-700 line-clamp-1 max-w-[120px] md:max-w-none">
+                                                                                                    {line.articulo_nombre}
+                                                                                                </td>
+                                                                                                <td className="py-2 px-1 md:px-2 text-right tabular-nums">
+                                                                                                    {line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}
+                                                                                                </td>
+                                                                                                <td className="py-2 px-1 text-right font-black tabular-nums text-emerald-600/70">
+                                                                                                    {line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        ))}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
+                                                    ))}
                                             </tbody>
                                         </table>
                                     </div>
@@ -484,37 +528,37 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto custom-scrollbar">
+                                    <div className="w-full">
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <tr>
-                                                    <th className="p-3 md:p-4 rounded-tl-xl whitespace-nowrap">Producto</th>
-                                                    <th className="p-3 md:p-4 text-center whitespace-nowrap">Cantidad</th>
-                                                    <th className="p-3 md:p-4 text-center whitespace-nowrap">Precio Medio</th>
-                                                    <th className="p-3 md:p-4 rounded-tr-xl text-right whitespace-nowrap">Total</th>
+                                                    <th className="py-3 px-2 md:px-4 rounded-tl-xl whitespace-nowrap">Producto</th>
+                                                    <th className="py-3 px-1 md:px-4 text-center whitespace-nowrap">Cant</th>
+                                                    <th className="py-3 px-1 md:px-4 text-center whitespace-nowrap">Media</th>
+                                                    <th className="py-3 px-2 md:px-4 rounded-tr-xl text-right whitespace-nowrap">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="text-xs font-bold text-zinc-600">
+                                            <tbody className="text-xs font-bold text-zinc-600 bg-white">
                                                 {products.map((prod, idx) => (
                                                     <tr
                                                         key={idx}
-                                                        className="group hover:bg-zinc-50/80 transition-colors border-b border-zinc-50 last:border-0"
+                                                        className="group hover:bg-zinc-50/80 transition-colors border-b border-zinc-100 last:border-0"
                                                     >
-                                                        <td className="p-3 md:p-4 whitespace-nowrap flex items-center gap-3">
-                                                            <span className="text-[10px] font-black text-zinc-300 tabular-nums w-4 text-right">
+                                                        <td className="py-3 px-2 md:px-4 whitespace-nowrap flex items-center gap-1.5 md:gap-3">
+                                                            <span className="text-[9px] md:text-[10px] font-black text-zinc-300 tabular-nums w-3 md:w-4 text-right">
                                                                 {prod.rank}
                                                             </span>
-                                                            <span className="text-zinc-900 font-bold">
+                                                            <span className="text-zinc-900 font-bold max-w-[100px] sm:max-w-[200px] truncate text-[10px] md:text-xs">
                                                                 {prod.nombre_articulo}
                                                             </span>
                                                         </td>
-                                                        <td className="p-3 md:p-4 text-center text-[10px] md:text-xs text-zinc-500">
+                                                        <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-500">
                                                             {Number(prod.cantidad_total).toFixed(0)}
                                                         </td>
-                                                        <td className="p-3 md:p-4 text-center text-[10px] md:text-xs text-zinc-400">
+                                                        <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-400">
                                                             {Number(prod.precio_medio).toFixed(2)}€
                                                         </td>
-                                                        <td className="p-3 md:p-4 text-right font-black tabular-nums whitespace-nowrap text-emerald-500">
+                                                        <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-emerald-500 text-[11px] md:text-sm">
                                                             {Number(prod.total_ingresos).toFixed(2)}€
                                                         </td>
                                                     </tr>

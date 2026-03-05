@@ -384,10 +384,10 @@ export default function ScheduleEditorPage() {
 
                 {/* CONTENEDOR BLANCO MONOLÍTICO - SIN BORDES REDONDEADOS NI MÁRGENES */}
                 {/* Ocupa todo el ancho y el alto restante. El padre recorta las esquinas inferiores. */}
-                <div className="bg-white flex flex-col flex-1 w-full overflow-hidden">
+                <div className="flex flex-col flex-1 w-full overflow-hidden">
 
                     {/* ZONA DE INPUTS SUPERIOR - Con padding propio */}
-                    <div className="p-4 md:p-6 w-full shrink-0 border-b border-gray-100">
+                    <div className="bg-white p-4 md:p-6 w-full shrink-0 border-b border-gray-100">
                         <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center max-w-2xl mx-auto">
                             <div className="flex flex-col gap-1 flex-1 min-w-0">
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-2">Actividad</span>
@@ -423,7 +423,7 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* ZONA DE TABLA Y FILAS */}
-                    <div className="flex flex-col flex-1 relative min-h-0 bg-white w-full overflow-y-auto custom-scrollbar">
+                    <div className="flex flex-col flex-1 relative min-h-0 w-full overflow-y-auto custom-scrollbar">
 
                         {/* ENCABEZADO ROJO */}
                         <div className="flex w-full bg-[#E55353] text-white sticky top-0 z-40 shadow-sm shrink-0">
