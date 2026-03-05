@@ -212,7 +212,20 @@ export default function VentasPage() {
             });
 
             if (error) throw error;
-            setTicketLines(data || []);
+
+            // Agrupación y compresión de líneas del ticket
+            const groupedLines = (data || []).reduce((acc: any, line: any) => {
+                const key = `${line.articulo_nombre}-${line.precio_unidad}`;
+                if (!acc[key]) {
+                    acc[key] = { ...line, unidades: Number(line.unidades), importe_total: Number(line.importe_total) };
+                } else {
+                    acc[key].unidades += Number(line.unidades);
+                    acc[key].importe_total += Number(line.importe_total);
+                }
+                return acc;
+            }, {});
+
+            setTicketLines(Object.values(groupedLines));
         } catch (err) {
             console.error('Error fetching ticket lines:', err);
             toast.error("Error al cargar detalles del ticket");
@@ -372,15 +385,14 @@ export default function VentasPage() {
                                                             </td>
                                                             <td className="p-3 md:p-4 whitespace-nowrap text-zinc-500 font-mono">
                                                                 {(() => {
-                                                                    // Fallback: If hora_cierre exists, use it. Otherwise try to get HH:mm from the timestamp
-                                                                    let timeStr = ' ';
                                                                     if (ticket.hora_cierre && ticket.hora_cierre !== '00:00:00') {
-                                                                        timeStr = ticket.hora_cierre.substring(0, 5);
-                                                                    } else if (ticket.fecha) {
-                                                                        const t = format(parseLocalSafe(ticket.fecha), 'HH:mm');
-                                                                        if (t !== '00:00') timeStr = t;
+                                                                        return ticket.hora_cierre.substring(0, 5);
                                                                     }
-                                                                    return timeStr;
+                                                                    if (ticket.fecha && ticket.fecha.includes('T')) {
+                                                                        // Extrae la hora directamente del string ISO (ej. 2026-03-05T14:30:00 -> 14:30)
+                                                                        return ticket.fecha.split('T')[1].substring(0, 5);
+                                                                    }
+                                                                    return '---';
                                                                 })()}
                                                             </td>
                                                             <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
