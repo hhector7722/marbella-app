@@ -30,10 +30,10 @@ export default function VentasPage() {
     const supabase = createClient();
     const router = useRouter();
 
-    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS'>('PRODUCTOS');
+    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS'>('TICKETS');
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
-    const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
+    const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
     const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
