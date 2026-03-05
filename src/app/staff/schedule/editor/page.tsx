@@ -354,7 +354,7 @@ export default function ScheduleEditorPage() {
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-4 md:p-6 lg:p-8 text-gray-800">
             {/* CONTENEDOR MAESTRO VERDE PETRÓLEO */}
-            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col flex-1 max-w-7xl mx-auto w-full p-3 md:p-5 gap-3 md:gap-5 overflow-hidden">
+            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col max-w-7xl mx-auto w-full p-3 md:p-5 gap-3 md:gap-5 overflow-hidden mb-12">
 
                 {/* CABECERA (Fecha y Botones flotando sobre el verde) */}
                 <div className="flex items-center justify-between px-2 shrink-0">
@@ -383,7 +383,7 @@ export default function ScheduleEditorPage() {
                 </div>
 
                 {/* CONTENEDOR BLANCO UNIFICADO (Alineación perfecta de bordes) */}
-                <div className="bg-white rounded-[24px] shadow-inner flex flex-col flex-1 w-full min-h-0">
+                <div className="bg-white rounded-[24px] shadow-inner flex flex-col w-full">
 
                     {/* ZONA DE INPUTS */}
                     <div className="p-4 md:p-5 w-full shrink-0">
@@ -422,7 +422,7 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* ZONA DE TABLA Y FILAS */}
-                    <div className="w-full flex flex-col flex-1 bg-white relative min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar rounded-b-[24px]">
+                    <div className="w-full flex flex-col bg-white relative rounded-b-[24px]">
 
                         {/* ENCABEZADO ROJO (Esquinas superiores redondeadas) */}
                         <div className="flex bg-[#E55353] text-white sticky top-0 z-40 rounded-t-[16px] shrink-0">
@@ -442,7 +442,7 @@ export default function ScheduleEditorPage() {
                         </div>
 
                         {/* FILAS DE EMPLEADOS */}
-                        <div className="flex-1 bg-white pb-2 flex flex-col min-h-min">
+                        <div className="bg-white pb-2 flex flex-col">
                             {shifts.map((shift, idx) => (
                                 <div key={shift.employeeId} className={`flex h-12 md:h-14 border-b border-gray-50 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : ''}`}>
                                     <div className="w-20 md:w-32 px-3 flex items-center gap-2 shrink-0 border-r border-gray-50 overflow-hidden group/row bg-white">
@@ -469,7 +469,7 @@ export default function ScheduleEditorPage() {
                         </div>
 
                         {/* FOOTER VERDE (Totales y esquinas inferiores redondeadas) */}
-                        <div className="flex bg-[#0FA968] text-white rounded-b-[20px] shrink-0 sticky bottom-0 z-40 mt-auto">
+                        <div className="flex bg-[#0FA968] text-white rounded-b-[20px] shrink-0 sticky bottom-0 z-40">
                             <div className="w-20 md:w-32 h-8 font-black text-white text-[10px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/10">
                                 TOT
                             </div>
