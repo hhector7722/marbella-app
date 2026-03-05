@@ -186,12 +186,6 @@ export default function MovementsPage() {
     }, [selectedDate, rangeStart, rangeEnd, filterMode, typeFilter, currentBoxStatus.loading]);
 
     async function fetchFilteredMovements() {
-        if (!boxData) {
-            setLoading(false);
-            setMovements([]);
-            setPeriodSummary({ income: 0, expense: 0 });
-            return;
-        }
         setLoading(true);
         setPage(0);
         setMovements([]);
@@ -223,7 +217,6 @@ export default function MovementsPage() {
 
             // Estadísticas para el resumen del periodo seleccionado
             const { data: summaryData } = await supabase.rpc('get_treasury_period_summary', {
-                p_box_id: boxData?.id,
                 p_start_date: startISO,
                 p_end_date: endISO
             });
@@ -248,7 +241,6 @@ export default function MovementsPage() {
             const { data: pageMoves, error: fetchError } = await supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
-                .eq('box_id', boxData?.id)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .not('type', 'in', ['ADJUSTMENT', 'SWAP'])
