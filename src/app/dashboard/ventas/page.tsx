@@ -389,23 +389,31 @@ export default function VentasPage() {
                                                             </td>
                                                             <td className="p-3 md:p-4 whitespace-nowrap text-zinc-500 font-mono">
                                                                 {(() => {
-                                                                    // 1. Prioridad: Usar hora_cierre si es un formato de tiempo válido
-                                                                    if (ticket.hora_cierre && typeof ticket.hora_cierre === 'string' && ticket.hora_cierre.includes(':') && ticket.hora_cierre !== '00:00:00') {
-                                                                        return ticket.hora_cierre.substring(0, 5);
-                                                                    }
+                                                                    try {
+                                                                        let rawTime = ticket.hora_cierre;
 
-                                                                    // 2. Fallback: Extraer del objeto de fecha nativo si la hora no es 00:00
-                                                                    if (ticket.fecha) {
-                                                                        const dateObj = new Date(ticket.fecha);
-                                                                        if (!isNaN(dateObj.getTime())) {
-                                                                            const h = dateObj.getHours();
-                                                                            const m = dateObj.getMinutes();
-                                                                            if (h !== 0 || m !== 0) {
-                                                                                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                                                                        if (rawTime && typeof rawTime === 'string') {
+                                                                            // Si viene como formato ISO (ej. "2026-03-05T14:30:00.000Z"), lo partimos por la 'T'
+                                                                            if (rawTime.includes('T')) {
+                                                                                rawTime = rawTime.split('T')[1];
+                                                                            }
+
+                                                                            // Ahora rawTime es seguro "14:30:00..."
+                                                                            if (rawTime !== '00:00:00' && rawTime.length >= 5) {
+                                                                                return rawTime.substring(0, 5);
                                                                             }
                                                                         }
+
+                                                                        // Fallback en caso de que venga vacío
+                                                                        if (ticket.fecha && ticket.fecha.includes('T')) {
+                                                                            const fTime = ticket.fecha.split('T')[1];
+                                                                            if (fTime !== '00:00:00') return fTime.substring(0, 5);
+                                                                        }
+
+                                                                        return '---';
+                                                                    } catch (e) {
+                                                                        return '---';
                                                                     }
-                                                                    return '---';
                                                                 })()}
                                                             </td>
                                                             <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
