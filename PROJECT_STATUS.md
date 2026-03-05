@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-05 (Borradores Horarios & Git Sync)
+**Última actualización:** 2026-03-05 (Refinamiento UI Ventas & Git Sync)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refinamiento UI Ventas (/dashboard/ventas)**: Eliminada columna "Origen", unificada Fecha/Hora en "VISIÓN TICKETS" para mayor claridad operativa y suprimido sufijo "uds" en tabla de productos para una interfaz más limpia.
 - [x] **Refactorización Multi-Columna Pedidos (Mobile 3-Col High-Density)**: Reestructuración radical de la vista de pedidos (`/orders/new`) para soportar estrictamente 3 columnas en smartphones emulando el recetario. Se ha reconstruido el componente `OrderProductCard` con un diseño vertical ultra-compacto y arquitectura Flexbox rígida para evitar colapsos de interfaz, asegurando visibilidad total de la botonera inferior incluso en pantallas extremas.
 - [x] **Corrección Arquitectónica Tesorería (Supabase & Date Motor)**: Erradicado fallo silencioso en la consulta a la vista `v_treasury_movements_balance` mediante el uso de arrays nativos en filtros `.not('type', 'in', [...])`. Se ha blindado el motor de fechas en `/dashboard/movements` eliminando `new Date()` y forzando el uso de `parseLocalSafe`, garantizando la inmunidad total ante desfases de zona horaria (Timezone Shifts) en peticiones de fecha única.
 - [x] **Desglose de Tickets (Ticket Drill-down)**: Implementada funcionalidad de expansión ("Lazy Loading") en la tabla de Visión Tickets en `/dashboard/ventas`. Añadida la RPC `get_ticket_lines` para extracción bajo demanda de artículos, cantidades e importes. Interfaz diseñada según Arquitecto UI Kiosco con sub-tablas integradas y feedback de carga.
