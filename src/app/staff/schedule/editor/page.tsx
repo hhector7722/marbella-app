@@ -422,10 +422,10 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* ZONA DE TABLA Y FILAS */}
-                    <div className="w-full flex flex-col flex-1 bg-white relative min-h-0">
+                    <div className="w-full flex flex-col flex-1 bg-white relative min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar rounded-b-[24px]">
 
                         {/* ENCABEZADO ROJO (Esquinas superiores redondeadas) */}
-                        <div className="flex bg-[#E55353] text-white sticky top-0 z-30 rounded-t-[16px]">
+                        <div className="flex bg-[#E55353] text-white sticky top-0 z-40 rounded-t-[16px] shrink-0">
                             <div className="w-20 md:w-32 h-8 border-r border-white/10 shrink-0 flex items-center justify-center bg-white/10 group cursor-pointer hover:bg-white/20 transition-colors" onClick={() => setShowAddModal(true)}>
                                 <button className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center transition-transform group-active:scale-90 shadow-sm pointer-events-none">
                                     <Plus size={12} strokeWidth={4} />
@@ -438,10 +438,11 @@ export default function ScheduleEditorPage() {
                                     </div>
                                 ))}
                             </div>
+                            <div className="w-10 shrink-0 border-l border-white/10 bg-white/5"></div>
                         </div>
 
                         {/* FILAS DE EMPLEADOS */}
-                        <div className="flex-1 overflow-y-auto bg-white custom-scrollbar pb-2">
+                        <div className="flex-1 bg-white pb-2 flex flex-col min-h-min">
                             {shifts.map((shift, idx) => (
                                 <div key={shift.employeeId} className={`flex h-12 md:h-14 border-b border-gray-50 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : ''}`}>
                                     <div className="w-20 md:w-32 px-3 flex items-center gap-2 shrink-0 border-r border-gray-50 overflow-hidden group/row bg-white">
@@ -468,7 +469,7 @@ export default function ScheduleEditorPage() {
                         </div>
 
                         {/* FOOTER VERDE (Totales y esquinas inferiores redondeadas) */}
-                        <div className="flex bg-[#0FA968] text-white rounded-b-[20px] shrink-0 sticky bottom-0 z-30">
+                        <div className="flex bg-[#0FA968] text-white rounded-b-[20px] shrink-0 sticky bottom-0 z-40 mt-auto">
                             <div className="w-20 md:w-32 h-8 font-black text-white text-[10px] flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/10">
                                 TOT
                             </div>
