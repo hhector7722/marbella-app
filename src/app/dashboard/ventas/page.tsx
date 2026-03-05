@@ -371,9 +371,17 @@ export default function VentasPage() {
                                                                 {ticket.fecha ? format(parseLocalSafe(ticket.fecha), 'dd/MM') : '---'}
                                                             </td>
                                                             <td className="p-3 md:p-4 whitespace-nowrap text-zinc-500 font-mono">
-                                                                {ticket.hora_cierre && ticket.hora_cierre !== '00:00:00'
-                                                                    ? ticket.hora_cierre.substring(0, 5)
-                                                                    : ' '}
+                                                                {(() => {
+                                                                    // Fallback: If hora_cierre exists, use it. Otherwise try to get HH:mm from the timestamp
+                                                                    let timeStr = ' ';
+                                                                    if (ticket.hora_cierre && ticket.hora_cierre !== '00:00:00') {
+                                                                        timeStr = ticket.hora_cierre.substring(0, 5);
+                                                                    } else if (ticket.fecha) {
+                                                                        const t = format(parseLocalSafe(ticket.fecha), 'HH:mm');
+                                                                        if (t !== '00:00') timeStr = t;
+                                                                    }
+                                                                    return timeStr;
+                                                                })()}
                                                             </td>
                                                             <td className="p-3 md:p-4 font-mono text-[10px] md:text-xs">
                                                                 {ticket.numero_documento}
