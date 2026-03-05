@@ -8,6 +8,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Refactorización Multi-Columna Pedidos (Mobile 3-Col High-Density)**: Reestructuración radical de la vista de pedidos (`/orders/new`) para soportar estrictamente 3 columnas en smartphones emulando el recetario. Se ha reconstruido el componente `OrderProductCard` con un diseño vertical ultra-compacto: zona blanca con imagen de altura fija (`h-12`), tipografía de alta densidad (`text-[9px]`), unidad en mayúsculas y botones de control optimizados (`w-6`/`w-7`) para máximizar la visibilidad del nombre del producto y el flujo operativo en pantallas pequeñas.
 - [x] **Desglose de Tickets (Ticket Drill-down)**: Implementada funcionalidad de expansión ("Lazy Loading") en la tabla de Visión Tickets en `/dashboard/ventas`. Añadida la RPC `get_ticket_lines` para extracción bajo demanda de artículos, cantidades e importes. Interfaz diseñada según Arquitecto UI Kiosco con sub-tablas integradas y feedback de carga.
 - [x] **Corrección Timezone Shift (Movements & History)**: Solucionado el problema crítico de arrays vacíos en los fetch de Supabase. Se implementó un parser matemático seguro (`parseLocalSafe`) para aislar la fecha local y evitar que JavaScript nativo desfase los strings 'YYYY-MM-DD' al convertirlos a UTC. Ajustados los límites horarios de los endpoints que procesan las fechas locales en base al uso estricto del huso de España.
 - [x] **Horarios: Borradores y Edición Ágil**: Implementado sistema de guardado en dos etapas (Borrador vs Oficial) y botón de eliminación rápida de personal en el editor de horarios.
@@ -184,7 +185,8 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 - [x] **Refinamiento UI Modal Resumen Semanal (Staff)**: Eliminación de la columna "Contrato" en el footer y supresión del contorno/marco blanco exterior de la cuadrícula de días para un diseño visualmente más limpio ("Flush Layout").
 - [x] 🎨 **Refinamiento Cabeceras Dashboard**: Eliminado contorno de selección de mes y posicionado dinámico de flechas (sin cortes) en `/movements` y `/history`.
 - [x] 📊 **Refinamiento Pestañas de Ventas**: Renombradas las pestañas de `/dashboard/ventas` a "Tickets" y "Productos", estableciendo "Productos" como la vista por defecto al cargar la página.
-- [ ] Próximas integraciones de BI y alertas de stock.
+- [x] **Corrección de Carga Infinita en Tesorería (/movements)**: Resuelto el fallo crítico que bloqueaba la interfaz con un spinner infinito cuando la base de datos no devolvía una "Caja Operativa". Se ha refactorizado la inicialización para garantizar que el estado de carga siempre se resuelva (`loading: false`) y se ha corregido la sintaxis de los filtros de exclusión en la consulta de movimientos de Supabase.
+187: - [ ] Próximas integraciones de BI y alertas de stock.
 - [x] ⚡ **Optimización Carga Dashboard (Tesorería)**: Eliminada la llamada RPC `get_theoretical_balance` en el renderizado inicial del Dashboard. Ahora el sistema confía plenamente en la columna persistente `difference` de la tabla `cash_boxes`, acelerando radicalmente la carga de la vista principal ("Caja Inicial") bajo el paradigma de "Single Source of Truth" de la base de datos.
 
 ---

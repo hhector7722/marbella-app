@@ -130,12 +130,12 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             )}
 
-            <div className={cn("flex-1 flex flex-col min-h-0", isModal ? "p-6" : "p-1.5 sm:p-2")}>
+            <div className={cn("flex flex-col", isModal ? "flex-1 min-h-0 p-6" : "p-2 flex-1 bg-white items-center justify-start")}>
                 {/* Product Image Area */}
                 <div
                     className={cn(
-                        "w-full bg-white rounded-lg flex items-center justify-center overflow-hidden relative",
-                        isModal ? "h-32 mb-4" : "flex-1 min-h-0 mb-1 cursor-pointer"
+                        "w-full bg-white flex items-center justify-center overflow-hidden relative",
+                        isModal ? "h-32 mb-4 rounded-lg" : "h-12 mb-1 shrink-0"
                     )}
                     onClick={() => {
                         if (!isModal) setShowModal(true);
@@ -144,7 +144,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     {ingredient.image_url ? (
                         <img src={ingredient.image_url} className="h-full w-full object-contain" alt={ingredient.name} />
                     ) : (
-                        <Package className="text-gray-200 w-5 h-5" />
+                        <Package className="text-zinc-200 w-5 h-5" />
                     )}
 
                     {isUpdating && (
@@ -155,10 +155,11 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
 
                 {/* Product Info */}
-                <div className={cn("flex flex-col px-1 shrink-0", isModal ? "mt-auto gap-1.5 items-center justify-center text-center" : "gap-0 items-start text-left mb-0.5")}>
-                    <span className={cn("font-bold text-gray-700 leading-tight truncate w-full", isModal ? "text-sm sm:text-base" : "text-[10px]")} title={ingredient.name}>
+                <div className={cn("flex flex-col w-full", isModal ? "mt-auto gap-1.5 items-center justify-center text-center px-1" : "items-center justify-start text-center")}>
+                    <span className={cn("font-black text-zinc-800 leading-tight w-full", isModal ? "text-sm sm:text-base px-1 truncate" : "text-[9px] min-[380px]:text-[10px] line-clamp-2")} title={ingredient.name}>
                         {ingredient.name}
                     </span>
+
                     {isModal ? (
                         isCustomUnit ? (
                             <div className="flex items-center justify-center shrink-0 min-w-0 mt-0.5">
@@ -197,7 +198,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             </div>
                         )
                     ) : (
-                        <span className="text-[9px] font-medium text-gray-400 lowercase tracking-widest truncate">
+                        <span className="text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest text-center mt-0.5 w-full">
                             {isCustomUnit ? (customUnit || '?') : unit}
                         </span>
                     )}
@@ -207,17 +208,17 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
             {/* Controls (Bottom Area) */}
             <div className={cn(
                 "bg-[#36606F] flex flex-row items-center justify-between shrink-0 shadow-inner w-full mt-auto",
-                isModal ? "px-6 py-4" : "px-1.5 py-1 sm:py-1.5"
+                isModal ? "px-6 py-4" : "px-2 py-1.5"
             )}>
                 <button
                     onClick={handleDecrement}
                     disabled={quantity === 0}
                     className={cn(
                         "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-8 sm:h-8"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-7 sm:h-7"
                     )}
                 >
-                    <Minus size={isModal ? 24 : 16} strokeWidth={3} className={cn(!isModal && "w-4 h-4 sm:w-5 sm:h-5")} />
+                    <Minus size={isModal ? 24 : 14} strokeWidth={3} />
                 </button>
 
                 <input
@@ -230,7 +231,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     placeholder=""
                     className={cn(
                         "bg-transparent text-center font-black text-white outline-none shrink-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-                        isModal ? "w-16 sm:w-20 text-lg sm:text-2xl" : "w-10 sm:w-14 text-[12px] sm:text-base"
+                        isModal ? "w-16 sm:w-20 text-lg sm:text-2xl" : "w-8 text-[11px] tabular-nums"
                     )}
                 />
 
@@ -238,10 +239,10 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     onClick={handleIncrement}
                     className={cn(
                         "flex items-center justify-center bg-transparent hover:bg-white/10 text-white rounded-lg active:scale-95 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-8 sm:h-8"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 sm:w-7 sm:h-7"
                     )}
                 >
-                    <Plus size={isModal ? 24 : 16} strokeWidth={3} className={cn(!isModal && "w-4 h-4 sm:w-5 sm:h-5")} />
+                    <Plus size={isModal ? 24 : 14} strokeWidth={3} />
                 </button>
             </div>
 
@@ -253,7 +254,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         isModal ? "top-3 right-3 w-8 h-8" : "top-1.5 right-1.5 w-6 h-6 sm:w-7 sm:h-7"
                     )}
                 >
-                    <Trash2 size={isModal ? 16 : 12} className={cn(!isModal && "sm:w-4 sm:h-4")} />
+                    <Trash2 size={isModal ? 16 : 14} />
                 </button>
             )}
         </div>
