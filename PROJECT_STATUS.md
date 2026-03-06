@@ -196,6 +196,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 - [x] **Corrección de Carga Infinita en Tesorería (/movements)**: Resuelto el fallo crítico que bloqueaba la interfaz con un spinner infinito cuando la base de datos no devolvía una "Caja Operativa". Se ha refactorizado la inicialización para garantizar que el estado de carga siempre se resuelva (`loading: false`) y se ha corregido la sintaxis de los filtros de exclusión en la consulta de movimientos de Supabase.
 187: - [ ] Próximas integraciones de BI y alertas de stock.
 - [x] ⚡ **Optimización Carga Dashboard (Tesorería)**: Eliminada la llamada RPC `get_theoretical_balance` en el renderizado inicial del Dashboard. Ahora el sistema confía plenamente en la columna persistente `difference` de la tabla `cash_boxes`, acelerando radicalmente la carga de la vista principal ("Caja Inicial") bajo el paradigma de "Single Source of Truth" de la base de datos.
+- [x] ⚙️ **Estabilización de Compilador Local (Webpack)**: Sustituido el motor Turbopack por Webpack en el entorno de desarrollo (`next dev --webpack`) para unificar la resolución nativa de dependencias PDF (canvas) con el entorno de Vercel e ignorados los warnings cíclicos de jspdf/pdfjs-dist en `next.config.ts`.
 
 ---
 
