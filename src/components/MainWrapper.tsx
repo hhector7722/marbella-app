@@ -10,7 +10,7 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
     return (
         <main className={cn(
             "pt-header-safe min-h-screen transition-all duration-300",
-            !isLogin && "md:pl-20 pb-[calc(5rem+env(safe-area-inset-bottom))]"
+            !isLogin && "pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-[calc(4rem+env(safe-area-inset-bottom))]"
         )}>
             {children}
         </main>

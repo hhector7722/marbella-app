@@ -84,16 +84,11 @@ export default function BottomNavStaff() {
     };
 
     const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
-    const getClass = (path: string, isDesktop = false) => {
+    const getClass = (path: string) => {
         const active = isActive(path);
-        if (isDesktop) {
-            return active
-                ? "bg-white/20 text-white"
-                : "text-blue-200 hover:bg-white/10 hover:text-white";
-        }
         return active
-            ? "text-white scale-110 drop-shadow-md"
-            : "text-blue-200 hover:text-white";
+            ? "text-white scale-105 md:scale-110 drop-shadow-md"
+            : "text-blue-100/70 hover:text-white transition-all";
     };
 
     const isAdmin = userData?.role === 'manager' || userData?.role === 'supervisor';
@@ -106,17 +101,17 @@ export default function BottomNavStaff() {
         { name: 'Pedidos', href: '/orders/new', icon: Package },
         {
             name: 'Cuenta', href: '/profile', icon: () => (
-                <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
+                <div className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center overflow-hidden">
                     {userData?.avatar_url ? (
                         <Image
                             src={userData.avatar_url}
                             alt="Me"
-                            width={24}
-                            height={24}
-                            className="w-full h-full object-cover rounded-full"
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-cover rounded-full border border-white/20"
                         />
                     ) : (
-                        <User size={20} className="text-current" />
+                        <User size={20} className="text-current md:w-6 md:h-6" />
                     )}
                 </div>
             )
@@ -125,63 +120,27 @@ export default function BottomNavStaff() {
 
     return (
         <>
-            {/* MOBILE: Bottom Bar - same height as admin (h-20) */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
-                {staffItems.map((item) => (
-                    <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`} onClick={(e) => {
-                        if (item.name.toLowerCase() === 'pedidos') {
-                            e.preventDefault();
-                            setIsProductModalOpen(true);
-                        } else if (item.name.toLowerCase() === 'horarios') {
-                            e.preventDefault();
-                            setIsScheduleModalOpen(true);
-                        }
-                    }}>
-                        {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={20} />}
-                        <span className="text-[7.5px] font-bold mt-0.5 uppercase tracking-tighter whitespace-nowrap">{item.name}</span>
-                    </Link>
-                ))}
-            </nav>
-
-            {/* DESKTOP: Sidebar - same width as admin (w-20) */}
-            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-[#5B8FB9] flex-col items-center py-6 z-30 shadow-xl border-r border-white/10">
-                {/* Nav Items */}
-                <div className="flex-1 flex flex-col gap-2 w-full px-2">
+            {/* UNIVERSAL: Bottom Bar */}
+            <nav className="fixed bottom-0 left-0 right-0 h-14 md:h-16 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-4 md:px-12 shadow-[0_-4px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
+                <div className="max-w-5xl w-full flex justify-around items-center">
                     {staffItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 active:scale-95 ${getClass(item.href, true)}`}
-                            onClick={(e) => {
-                                if (item.name.toLowerCase() === 'pedidos') {
-                                    e.preventDefault();
-                                    setIsProductModalOpen(true);
-                                } else if (item.name.toLowerCase() === 'horarios') {
-                                    e.preventDefault();
-                                    setIsScheduleModalOpen(true);
-                                }
-                            }}
-                        >
-                            {typeof item.icon === 'function' ? (
-                                <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
-                                    {userData?.avatar_url ? (
-                                        <Image
-                                            src={userData.avatar_url}
-                                            alt="Me"
-                                            width={32}
-                                            height={32}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <User size={16} className="text-white" />
-                                    )}
-                                </div>
-                            ) : <item.icon size={20} />}
-                            <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter text-center">{item.name}</span>
+                        <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`} onClick={(e) => {
+                            if (item.name.toLowerCase() === 'pedidos') {
+                                e.preventDefault();
+                                setIsProductModalOpen(true);
+                            } else if (item.name.toLowerCase() === 'horarios') {
+                                e.preventDefault();
+                                setIsScheduleModalOpen(true);
+                            }
+                        }}>
+                            <div className="md:mb-0.5">
+                                {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={isActive(item.href) ? 20 : 18} className="md:w-6 md:h-6" />}
+                            </div>
+                            <span className="text-[7px] md:text-[9px] font-black mt-0.5 uppercase tracking-widest whitespace-nowrap">{item.name}</span>
                         </Link>
                     ))}
                 </div>
-            </aside>
+            </nav>
 
             <StaffProductModal
                 isOpen={isProductModalOpen}

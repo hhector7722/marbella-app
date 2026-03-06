@@ -146,7 +146,7 @@ export default function DashboardSwitcher({ userRole, initialView = 'staff', ini
             {/* Indicadores estilo iPhone */}
             {
                 isManager && (
-                    <div className="fixed bottom-[88px] left-0 right-0 flex justify-center gap-1 z-50 pointer-events-none">
+                    <div className="fixed bottom-[88px] left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none">
                         <div className={cn(
                             "w-1 h-1 rounded-full transition-all duration-300",
                             view === 'admin' ? "bg-white scale-110" : "bg-white/30"
