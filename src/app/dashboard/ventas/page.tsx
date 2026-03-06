@@ -260,11 +260,11 @@ export default function VentasPage() {
                             {/* TOGGLE Y FILTROS INACTIVOS */}
                             <div className="flex items-center gap-2 justify-end w-full md:w-auto shrink-0 overflow-x-auto no-scrollbar">
                                 {/* TOGGLE TICKETS/PRODUCTOS */}
-                                <div className="bg-white/10 p-1 flex gap-1 rounded-xl shrink-0">
+                                <div className="bg-white/10 p-0.5 md:p-1 flex gap-0.5 md:gap-1 rounded-xl shrink-0">
                                     <button
                                         onClick={() => setActiveTab('TICKETS')}
                                         className={cn(
-                                            "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
+                                            "px-2 md:px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
                                             activeTab === 'TICKETS' ? "bg-white text-[#36606F] shadow-sm" : "text-white/60 hover:text-white"
                                         )}
                                     >
@@ -273,7 +273,7 @@ export default function VentasPage() {
                                     <button
                                         onClick={() => setActiveTab('PRODUCTOS')}
                                         className={cn(
-                                            "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
+                                            "px-2 md:px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
                                             activeTab === 'PRODUCTOS' ? "bg-white text-[#36606F] shadow-sm" : "text-white/60 hover:text-white"
                                         )}
                                     >
@@ -292,7 +292,7 @@ export default function VentasPage() {
                                                 setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                 setFilterMode('range');
                                             }}
-                                            className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
+                                            className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                         >
                                             MES
                                         </button>
@@ -302,7 +302,7 @@ export default function VentasPage() {
                                                 setRangeEnd(null);
                                                 setShowCalendar('range');
                                             }}
-                                            className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
+                                            className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                         >
                                             PERIODO
                                         </button>
@@ -318,14 +318,14 @@ export default function VentasPage() {
                                                     setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                     setFilterMode('range');
                                                 }}
-                                                className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
+                                                className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                             >
                                                 MES
                                             </button>
                                         )}
                                         <button
                                             onClick={() => setShowCalendar('single')}
-                                            className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
+                                            className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                         >
                                             FECHA
                                         </button>
