@@ -429,15 +429,16 @@ export default function ScheduleEditorPage() {
                                         <input type="text" value={participantsCount} onChange={(e) => setParticipantsCount(e.target.value)} className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full" />
                                     </div>
                                 </div>
+                                <div className="flex items-end shrink-0 ml-1 sm:ml-2">
+                                    <button onClick={() => setShowAddModal(true)} className="h-[34px] sm:h-[38px] px-3 sm:px-4 bg-[#E55353] hover:bg-red-600 text-white rounded-2xl font-black text-[10px] sm:text-[11px] uppercase tracking-widest transition-colors flex items-center gap-1.5 shadow-sm active:scale-95">
+                                        <Plus size={14} /> <span className="hidden sm:inline">Personal</span>
+                                    </button>
+                                </div>
                             </div>
 
                             {/* ENCABEZADO ROJO */}
                             <div className="flex w-full bg-[#E55353] text-white shrink-0">
-                                <div className="w-24 md:w-32 px-3 flex items-center justify-start shrink-0 border-r border-white/20 cursor-pointer hover:bg-white/10 transition-colors group" onClick={() => setShowAddModal(true)}>
-                                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-white truncate flex items-center gap-1.5">
-                                        Trabajador <Plus size={12} className="opacity-50 group-hover:opacity-100 transition-opacity" />
-                                    </span>
-                                </div>
+                                <div className="w-24 md:w-32 shrink-0 border-r border-white/20"></div>
                                 <div className="flex-1 relative h-8 md:h-9 flex">
                                     {hoursHeader.map((hour) => (
                                         <div key={hour} className="flex-1 text-[9px] md:text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/10 last:border-r-0">
@@ -479,7 +480,7 @@ export default function ScheduleEditorPage() {
                             </div>
 
                             {/* FOOTER VERDE */}
-                            <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)]">
+                            <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] rounded-b-[32px] overflow-hidden">
                                 <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/20">
                                     TOT
                                 </div>
