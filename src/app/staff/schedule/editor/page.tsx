@@ -384,7 +384,7 @@ export default function ScheduleEditorPage() {
 
                 {/* CONTENEDOR BLANCO MONOLÍTICO - SIN BORDES REDONDEADOS NI MÁRGENES */}
                 {/* Ocupa todo el ancho y el alto restante. El padre recorta las esquinas inferiores. */}
-                <div className="flex flex-col flex-1 w-full overflow-hidden">
+                <div className="flex flex-col flex-1 w-full overflow-hidden bg-white">
 
                     {/* ZONA DE INPUTS SUPERIOR - Con padding propio */}
                     <div className="bg-white p-4 md:p-6 w-full shrink-0 border-b border-gray-100">
