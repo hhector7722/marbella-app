@@ -386,14 +386,14 @@ export default function VentasPage() {
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ventas Totales</span>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
+                        <div className="flex flex-col items-center justify-center text-center px-1">
                             <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-zinc-900">
                                 {summary.count > 0 ? summary.count : " "}
                             </span>
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Nº Tickets</span>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
+                        <div className="flex flex-col items-center justify-center text-center px-1">
                             <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-[#36606F]">
                                 {summary.avgTicket > 0 ? `${summary.avgTicket.toFixed(2)}€` : " "}
                             </span>
@@ -435,7 +435,7 @@ export default function VentasPage() {
                                                             <tr
                                                                 onClick={() => handleRowClick(ticket.numero_documento)}
                                                                 className={cn(
-                                                                    "group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-100 last:border-0",
+                                                                    "group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100",
                                                                     expandedTicket === ticket.numero_documento && "bg-zinc-50 border-transparent"
                                                                 )}
                                                             >
@@ -538,7 +538,7 @@ export default function VentasPage() {
                                                 {products.map((prod, idx) => (
                                                     <tr
                                                         key={idx}
-                                                        className="group hover:bg-zinc-50/80 transition-colors border-b border-zinc-100 last:border-0"
+                                                        className="group hover:bg-zinc-50/80 transition-colors"
                                                     >
                                                         <td className="py-3 px-2 md:px-4 whitespace-nowrap flex items-center gap-1.5 md:gap-3">
                                                             <span className="text-[9px] md:text-[10px] font-black text-zinc-300 tabular-nums w-3 md:w-4 text-right">
