@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-06 (Vista Híbrida Registros)
+**Última actualización:** 2026-03-06 (Integración "Horarios" en Menú Inferior)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,26 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Unificación Visual de Eventos No Regulares (F, E, B, P)**: Implementación de visualización consistente de iniciales para Festivos (F), Enfermedad (E), Bajas (B) y Personal (P) en todas las vistas de personal.
+  - **Unización de Datos**: Estandarización de valores internos a `holiday`, `weekend` y `adjustment` para cumplir con las constraints de la BBDD.
+  - **Vistas Actualizadas**: `/registros`, `/staff/history` y `/staff/dashboard`.
+  - **Optimización UI**: Reemplazo de horas por iniciales en burbujas de color, eliminando ruido visual en días de ausencia.
+  - **Simplificación Dashboard**: Eliminación de la tabla semanal detallada por petición del usuario para mantener el diseño compacto.
+- [x] **Redirección Dinámica de Asistencia (Manager Dashboard)**: Implementada lógica en `BottomNavStaff.tsx` para que el botón "Asistencia" redirija a `/registros` si el usuario tiene el rol de `manager`, manteniendo `/staff/history` para el personal base.
+- [x] **Refinamiento UI Tarjeta Horarios (Staff Dashboard)**: Optimización de la visualización de próximos turnos.
+  - **Posicionamiento**: Se ha bajado la sección de próximos turnos aumentando el padding superior (`pt-3`), manteniendo una distancia prudente con el borde inferior.
+  - **Densidad de Información**: Reducido el tamaño de fuente de las horas (`text-[7.5px]`) y otros elementos para permitir la visualización de los **dos siguientes turnos** en paralelo.
+  - **Layout Simétrico**: Implementado un diseño flex horizontal que distribuye los dos turnos de forma simétrica sin llegar a los bordes laterales del contenedor.
+- [x] **Integración "Horarios" en Menú Inferior (Bottom Nav)**: Añadido acceso directo global a los horarios desde la barra de navegación fija.
+  - **Ubicación Estratégica**: Posicionado a la izquierda de todo en móviles y en la parte superior del sidebar en escritorio.
+  - **Funcionalidad Directa**: Al pulsar, abre el `StaffScheduleModal` cargando los turnos publicados del usuario para el mes actual.
+  - **Sincronización de Datos**: Implementada lógica de fetching reactiva en `BottomNavStaff.tsx` para asegurar que el modal siempre tenga los datos más recientes de la base de datos `shifts`.
+- [x] **Refinamiento Estético y Funcional Horarios (Editor & Modal)**: Estabilización visual y corrección de guardado en el motor de turnos.
+  - **Diferenciación de Cabecera**: Renombrado "Part." a "Participantes" para mayor claridad.
+  - **Layout Ultra-Estable**: Fijados anchos de columna para Actividad, Inicio, Final y Participantes, asegurando alineación perfecta en una sola fila para móviles y escritorio.
+  - **Limpieza UI**: Eliminación de contornos grises y fondos sutiles, logrando un diseño "Flush" y minimalista.
+  - **Bug Fix (handleSave)**: Corregido error `ReferenceError: startTime is not defined` al guardar cambios en el editor.
+  - **Robustez**: Permitido el borrado total de campos superiores (pueden quedar vacíos sin error).
 - [x] **Vista Híbrida Calendario + Edición Ágil (/registros)**: Refactorización del layout para mantener la visibilidad del mes completo mientras se edita una semana. El calendario ahora se sitúa en la parte superior con un estado de enfoque (50% opacity) y es scrollable junto al editor semanal, garantizando el contexto mensual sin interrupciones.
 - [x] **Optimización y Unificación Modal Asistencia (AttendanceDetailModal)**: Refactorización radical del modal de detalle diario.
   - **Renombrado**: `DayDetailModal` -> `AttendanceDetailModal` para mayor consistencia arquitectónica.

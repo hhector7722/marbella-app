@@ -9,6 +9,8 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
+import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 export default function BottomNavStaff() {
     const pathname = usePathname();
@@ -19,6 +21,8 @@ export default function BottomNavStaff() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [monthShifts, setMonthShifts] = useState<any[]>([]);
 
     if (pathname === '/login') return null;
 
@@ -37,6 +41,31 @@ export default function BottomNavStaff() {
                         role: data.role || 'staff',
                         avatar_url: data.avatar_url || null
                     });
+                }
+
+                // Load shifts for the current month
+                const today = new Date();
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                const { data: realShifts } = await supabase
+                    .from('shifts')
+                    .select('start_time, end_time, activity')
+                    .eq('user_id', user.id)
+                    .eq('is_published', true)
+                    .gte('start_time', startOfMonth.toISOString())
+                    .order('start_time', { ascending: true });
+
+                if (realShifts && realShifts.length > 0) {
+                    const formattedShifts = realShifts.map(s => {
+                        const start = new Date(s.start_time);
+                        const end = new Date(s.end_time);
+                        return {
+                            date: start,
+                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            activity: s.activity || undefined
+                        };
+                    });
+                    setMonthShifts(formattedShifts);
                 }
             }
         }
@@ -68,9 +97,11 @@ export default function BottomNavStaff() {
     };
 
     const isAdmin = userData?.role === 'manager' || userData?.role === 'supervisor';
+    const userRole = (userData?.role as any) || 'staff';
 
     const staffItems: { name: string; href: string; icon: any }[] = [
-        { name: 'Asistencia', href: '/staff/history', icon: Clock },
+        { name: 'Horarios', href: '#horarios', icon: CalendarIcon },
+        { name: 'Asistencia', href: userData?.role === 'manager' ? '/registros' : '/staff/history', icon: Clock },
         { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
         { name: 'Pedidos', href: '/orders/new', icon: Package },
         {
@@ -101,6 +132,9 @@ export default function BottomNavStaff() {
                         if (item.name.toLowerCase() === 'pedidos') {
                             e.preventDefault();
                             setIsProductModalOpen(true);
+                        } else if (item.name.toLowerCase() === 'horarios') {
+                            e.preventDefault();
+                            setIsScheduleModalOpen(true);
                         }
                     }}>
                         {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={20} />}
@@ -122,6 +156,9 @@ export default function BottomNavStaff() {
                                 if (item.name.toLowerCase() === 'pedidos') {
                                     e.preventDefault();
                                     setIsProductModalOpen(true);
+                                } else if (item.name.toLowerCase() === 'horarios') {
+                                    e.preventDefault();
+                                    setIsScheduleModalOpen(true);
                                 }
                             }}
                         >
@@ -155,6 +192,14 @@ export default function BottomNavStaff() {
             <SupplierSelectionModal
                 isOpen={isSupplierModalOpen}
                 onClose={() => setIsSupplierModalOpen(false)}
+            />
+
+            <StaffScheduleModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                shifts={monthShifts}
+                userName={userData?.name}
+                userRole={userRole}
             />
         </>
     );

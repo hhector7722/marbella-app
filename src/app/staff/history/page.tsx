@@ -56,9 +56,9 @@ interface TimeLogEntry {
 // --- CONSTANTES ---
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
-    { value: 'festivo', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
-    { value: 'enfermedad', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
-    { value: 'baja', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
+    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
+    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
 ];
 
@@ -176,7 +176,15 @@ export default function HistoryPage() {
                 return;
             }
 
-            setWeeksData((data as WeekData[]) || []);
+            const formattedWeeks = ((data as any[]) || []).map((week: any) => ({
+                ...week,
+                days: week.days.map((day: any) => ({
+                    ...day,
+                    eventType: day.eventType || day.event_type || 'regular'
+                }))
+            }));
+
+            setWeeksData(formattedWeeks);
         } catch (err) {
             console.error('fetchCalendar error:', err);
         } finally {
@@ -333,8 +341,8 @@ export default function HistoryPage() {
                                                     {/* Centro: evento especial o fichajes */}
                                                     <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
                                                         {isSpecial ? (
-                                                            <div className={cn("px-2 py-1 rounded shadow-sm text-center", eventConfig.color)}>
-                                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none block pt-0.5">{eventConfig.label}</span>
+                                                            <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
+                                                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>
                                                             </div>
                                                         ) : day.hasLog ? (
                                                             <div className="flex flex-col items-center gap-0.5 w-full">
