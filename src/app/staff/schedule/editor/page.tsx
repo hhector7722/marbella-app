@@ -113,7 +113,7 @@ const ShiftBar = ({
     return (
         <div
             ref={barRef}
-            className={`absolute top-4 bottom-4 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            className={`absolute top-1.5 bottom-1.5 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
         >
@@ -454,7 +454,7 @@ export default function ScheduleEditorPage() {
                     {/* FILAS DE EMPLEADOS */}
                     <div className="flex flex-col w-full bg-white relative pb-0 z-10">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex w-full h-12 md:h-14 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
+                            <div key={shift.employeeId} className={`flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
                                 <div className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4">
                                     <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
                                         {shift.name}
@@ -480,10 +480,10 @@ export default function ScheduleEditorPage() {
 
                     {/* FOOTER VERDE */}
                     <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-30 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] rounded-b-[32px] overflow-hidden mt-1 md:mt-2">
-                        <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
+                        <div className="w-24 md:w-32 h-9 md:h-10 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
                             TOT
                         </div>
-                        <div className="flex-1 relative h-10 md:h-12 flex">
+                        <div className="flex-1 relative h-9 md:h-10 flex">
                             {totals.map((count, i) => (
                                 <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs transition-colors ${count > 0 ? 'text-white' : 'text-white/30'}`}>
                                     {count > 0 ? count : ''}
