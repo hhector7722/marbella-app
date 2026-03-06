@@ -400,14 +400,6 @@ export default function ScheduleEditorPage() {
                 <div className="sticky top-[0px] z-30 flex flex-col w-full rounded-t-[32px] shadow-sm bg-[#36606F] -mt-[1px]">
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
-                        {/* Status Indicator Floating */}
-                        <div className="absolute top-2 right-4 flex items-center gap-1.5 z-50">
-                            <div className={`w-2 h-2 rounded-full ${isDayPublished ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : (shifts.length > 0 && !hasUnsavedChanges && !isSaving ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]')}`} />
-                            <span className="text-[8px] font-black text-white/80 uppercase tracking-widest hidden sm:inline">
-                                {isDayPublished ? 'PUBLICADO' : (isSaving ? 'GUARDANDO...' : (hasUnsavedChanges ? 'SIN GUARDAR' : 'BORRADOR'))}
-                            </span>
-                        </div>
-
                         <div className="flex items-center gap-1 sm:gap-2 mt-2">
                             <button onClick={() => navigateDay(-1)} className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
                                 <ChevronLeft size={24} />
@@ -422,15 +414,20 @@ export default function ScheduleEditorPage() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-1.5 md:gap-3 mt-2">
+                        <div className="flex items-center gap-2 mt-2">
+                            {/* Movemos Botón Agregar Empleado a Cabecera */}
+                            <button onClick={() => setShowAddModal(true)} className="w-8 h-8 md:w-9 md:h-9 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
+                                <Plus size={18} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
+                            </button>
+
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className={`relative p-2 md:px-3 md:py-2 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center gap-1.5 ${isDayPublished ? 'bg-[#36606F] hover:bg-[#2a4d59] border-2 border-white' : 'bg-emerald-500 hover:bg-emerald-600 border-2 border-white'}`}
+                                className={`relative w-8 h-8 md:w-9 md:h-9 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group`}
                             >
-                                <Share2 size={18} strokeWidth={2.5} />
+                                <Share2 size={18} strokeWidth={2.5} className="text-white" />
                                 {isDayPublished && isDaySent && (
-                                    <div className="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
-                                        <Check size={12} className="text-emerald-500" strokeWidth={4} />
+                                    <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
+                                        <Check size={10} className="text-emerald-500" strokeWidth={4} />
                                     </div>
                                 )}
                             </button>
@@ -478,9 +475,7 @@ export default function ScheduleEditorPage() {
                         {/* ENCABEZADO ROJO (Ancho completo) */}
                         <div className="flex w-full bg-[#E55353] text-white shrink-0 border-b border-gray-100 rounded-t-[24px]">
                             <div className="w-24 md:w-32 px-3 flex items-center justify-center shrink-0">
-                                <button onClick={() => setShowAddModal(true)} className="w-5 h-5 md:w-6 md:h-6 bg-[#0FA968] hover:bg-emerald-600 rounded-md flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
-                                    <Plus size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
-                                </button>
+                                {/* Espacio donde antes estaba el botón de '+' */}
                             </div>
                             <div className="flex-1 relative h-8 md:h-9 flex">
                                 {hoursHeader.map((hour) => (
@@ -499,17 +494,19 @@ export default function ScheduleEditorPage() {
                     {/* FILAS DE EMPLEADOS */}
                     <div className="flex flex-col w-full bg-white relative pb-0 z-10">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
+                            <div key={shift.employeeId} className={`flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors relative ${editingIndex === idx ? 'bg-blue-50/40 z-50' : 'bg-white z-10'}`}>
                                 <div className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4">
                                     <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
                                         {shift.name}
                                     </span>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                        className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-80 hover:opacity-100"
-                                    >
-                                        <X size={12} strokeWidth={4} />
-                                    </button>
+                                    {editingIndex === idx && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                            className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-100"
+                                        >
+                                            <X size={12} strokeWidth={4} />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
                                     <div className="absolute inset-0 flex">
@@ -519,6 +516,20 @@ export default function ScheduleEditorPage() {
                                     </div>
                                     {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
                                 </div>
+
+                                {/* BARRA EDICIÓN FLOTANTE (Anclada dos filas abajo = ~72px/80px top distance) */}
+                                {editingIndex === idx && (
+                                    <div className="absolute top-[80px] md:top-[90px] left-0 right-0 z-[100] translate-y-2 pointer-events-none flex justify-center w-full px-4" onClick={(e) => e.stopPropagation()}>
+                                        <div className="w-full max-w-md pointer-events-auto h-14 flex items-center p-1.5 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
+                                                <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20" />
+                                            </div>
+                                            <button onClick={(e) => { e.stopPropagation(); setEditingIndex(null) }} className="ml-3 mr-1 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
+                                                <X size={20} strokeWidth={3} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -539,19 +550,8 @@ export default function ScheduleEditorPage() {
                 </div>
 
             </div>
-            {/* BARRA EDICIÓN FLOTANTE */}
-            {editingIndex !== null && shifts[editingIndex] && (
-                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 z-40">
-                    <div className="h-14 flex items-center p-1.5 bg-zinc-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10">
-                        <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
-                            <ShiftBar shift={shifts[editingIndex]} onUpdate={(newS) => handleUpdateShift(editingIndex, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20" />
-                        </div>
-                        <button onClick={() => setEditingIndex(null)} className="ml-3 mr-1 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
-                            <X size={20} strokeWidth={3} />
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* LA BARRA FLOTANTE GLOBAL HA SIDO TRASLADADA AL ALCANCE DE CADA FILA ARRIBA */}
+
 
             {/* MODALES */}
             {showCalendarModal && (
@@ -601,43 +601,57 @@ export default function ScheduleEditorPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowShareModal(false)}>
                     <div className="bg-white rounded-3xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                         <div className="p-6 flex flex-col gap-4">
-                            <h3 className="text-xl font-black text-gray-800 tracking-tight text-center">COMPARTIR HORARIO</h3>
-                            <p className="text-sm text-gray-500 text-center font-medium">¿Qué deseas hacer con el horario de <span className="capitalize font-bold">{date && format(new Date(date), "EEEE d", { locale: es })}</span>?</p>
-                            <div className="flex flex-col gap-3 mt-2">
-                                <button
-                                    onClick={async () => {
-                                        setShowShareModal(false);
-                                        await handleSave(false, true);
-                                    }}
-                                    className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
-                                >
-                                    <CheckCircle2 size={18} /> PUBLICAR HORARIO
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        setShowShareModal(false);
-                                        const saved = await handleSave(true, true);
-                                        if (saved) {
-                                            const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
-                                            const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
-                                            const loadToast = toast.loading('Enviando...');
-                                            try {
-                                                const res = await sendScheduleNotifications(userIds, dateFormatted);
-                                                toast.dismiss(loadToast);
-                                                if (res.success) {
-                                                    toast.success('Notificaciones enviadas');
-                                                    setIsDaySent(true);
+                            <div className="flex flex-col gap-1 text-center">
+                                <h3 className="text-xl font-black text-gray-800 tracking-tight">COMPARTIR HORARIO</h3>
+                                <div className="text-xs uppercase font-black px-3 py-1 bg-gray-100 rounded-full inline-flex self-center mt-1">
+                                    Estado: <span className={`ml-1 ${isDayPublished ? (isDaySent ? 'text-emerald-500' : 'text-[#36606F]') : 'text-orange-400'}`}>
+                                        {isDayPublished ? (isDaySent ? 'Publicado y Enviado' : 'Publicado') : 'Sin publicar'}
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-500 text-center font-medium mt-1">
+                                Gestionando el horario de <span className="capitalize font-bold">{date && format(new Date(date), "EEEE d", { locale: es })}</span>
+                            </p>
+                            <div className="flex flex-col gap-3 mt-4">
+                                {!isDayPublished && (
+                                    <button
+                                        onClick={async () => {
+                                            setShowShareModal(false);
+                                            await handleSave(false, true);
+                                        }}
+                                        className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
+                                    >
+                                        <CheckCircle2 size={18} /> PUBLICAR HORARIO
+                                    </button>
+                                )}
+
+                                {(!isDayPublished || isDayPublished) && (
+                                    <button
+                                        onClick={async () => {
+                                            setShowShareModal(false);
+                                            const saved = await handleSave(true, true);
+                                            if (saved || isDayPublished) {
+                                                const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
+                                                const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+                                                const loadToast = toast.loading('Enviando...');
+                                                try {
+                                                    const res = await sendScheduleNotifications(userIds, dateFormatted);
+                                                    toast.dismiss(loadToast);
+                                                    if (res.success) {
+                                                        toast.success('Notificaciones enviadas');
+                                                        setIsDaySent(true);
+                                                    }
+                                                } catch (e) {
+                                                    toast.dismiss(loadToast);
+                                                    toast.error('Error al enviar');
                                                 }
-                                            } catch (e) {
-                                                toast.dismiss(loadToast);
-                                                toast.error('Error al enviar');
                                             }
-                                        }
-                                    }}
-                                    className="w-full bg-[#0FA968] hover:bg-emerald-600 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
-                                >
-                                    <Send size={18} /> PUBLICAR Y ENVIAR
-                                </button>
+                                        }}
+                                        className={`w-full text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2 ${!isDayPublished ? 'bg-[#0FA968] hover:bg-emerald-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+                                    >
+                                        <Send size={18} /> {!isDayPublished ? 'PUBLICAR Y ENVIAR' : 'ENVIAR / REENVIAR NOTIFICACIONES'}
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center">
