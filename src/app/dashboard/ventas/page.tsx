@@ -248,63 +248,40 @@ export default function VentasPage() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
                     {/* CABECERA Y FILTROS */}
-                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => router.back()} className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-10 h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0">
-                                <ArrowLeft className="w-5 h-5" strokeWidth={3} />
-                            </button>
-                            <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Ventas</h1>
-                        </div>
-
-                        {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="flex items-center justify-between gap-1 pb-2 relative min-h-[40px]">
-                            {/* ZONA IZQUIERDA (Vacia para balance) */}
-                            <div className="flex-1"></div>
-
-                            {/* ZONA CENTRAL (Filtro Activo + Navegación) */}
-                            <div className="flex items-center gap-1 md:gap-2 z-10 justify-center">
-                                <button
-                                    onClick={() => {
-                                        if (filterMode === 'single') {
-                                            const prev = subDays(parseLocalSafe(selectedDate), 1);
-                                            setSelectedDate(format(prev, 'yyyy-MM-dd'));
-                                        } else {
-                                            handlePrevMonth();
-                                        }
-                                    }}
-                                    className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
-                                >
-                                    <ChevronLeft size={20} />
+                    <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => router.back()} className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-8 h-8 md:w-10 md:h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0">
+                                    <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
                                 </button>
-
-                                <button
-                                    onClick={() => filterMode === 'range' ? setShowMonthPicker(true) : setShowCalendar('single')}
-                                    className="px-2 md:px-4 text-[11px] sm:text-[13px] md:text-[15px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center"
-                                >
-                                    {filterMode === 'single'
-                                        ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
-                                        : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
-                                            : 'Periodo')}
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        if (filterMode === 'single') {
-                                            const next = addDays(parseLocalSafe(selectedDate), 1);
-                                            setSelectedDate(format(next, 'yyyy-MM-dd'));
-                                        } else {
-                                            handleNextMonth();
-                                        }
-                                    }}
-                                    className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
-                                >
-                                    <ChevronRight size={20} />
-                                </button>
+                                <h1 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
                             </div>
 
-                            {/* ZONA DERECHA (Filtros Inactivos) */}
-                            <div className="flex-1 flex items-center justify-end gap-1.5 shrink-0 z-10">
+                            {/* TOGGLE Y FILTROS INACTIVOS */}
+                            <div className="flex items-center gap-2 justify-end w-full md:w-auto shrink-0 overflow-x-auto no-scrollbar">
+                                {/* TOGGLE TICKETS/PRODUCTOS */}
+                                <div className="bg-white/10 p-1 flex gap-1 rounded-xl shrink-0">
+                                    <button
+                                        onClick={() => setActiveTab('TICKETS')}
+                                        className={cn(
+                                            "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
+                                            activeTab === 'TICKETS' ? "bg-white text-[#36606F] shadow-sm" : "text-white/60 hover:text-white"
+                                        )}
+                                    >
+                                        Tickets
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('PRODUCTOS')}
+                                        className={cn(
+                                            "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
+                                            activeTab === 'PRODUCTOS' ? "bg-white text-[#36606F] shadow-sm" : "text-white/60 hover:text-white"
+                                        )}
+                                    >
+                                        Productos
+                                    </button>
+                                </div>
+
+                                {/* FILTROS INACTIVOS */}
                                 {filterMode === 'single' ? (
                                     <>
                                         <button
@@ -315,7 +292,7 @@ export default function VentasPage() {
                                                 setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                 setFilterMode('range');
                                             }}
-                                            className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                            className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                         >
                                             MES
                                         </button>
@@ -325,7 +302,7 @@ export default function VentasPage() {
                                                 setRangeEnd(null);
                                                 setShowCalendar('range');
                                             }}
-                                            className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                            className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                         >
                                             PERIODO
                                         </button>
@@ -341,20 +318,62 @@ export default function VentasPage() {
                                                     setRangeEnd(format(e, 'yyyy-MM-dd'));
                                                     setFilterMode('range');
                                                 }}
-                                                className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                                className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                             >
                                                 MES
                                             </button>
                                         )}
                                         <button
                                             onClick={() => setShowCalendar('single')}
-                                            className="px-2 py-1 md:py-1.5 rounded-xl text-[8px] md:text-[9px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none"
+                                            className="px-3 py-1.5 rounded-xl text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
                                         >
                                             FECHA
                                         </button>
                                     </>
                                 )}
                             </div>
+                        </div>
+
+                        {/* FILTRO ACTIVO CENTRADO */}
+                        <div className="flex items-center justify-center max-w-sm mx-auto pt-1">
+                            <button
+                                onClick={() => {
+                                    if (filterMode === 'single') {
+                                        const prev = subDays(parseLocalSafe(selectedDate), 1);
+                                        setSelectedDate(format(prev, 'yyyy-MM-dd'));
+                                    } else {
+                                        handlePrevMonth();
+                                    }
+                                }}
+                                className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+
+                            <button
+                                onClick={() => filterMode === 'range' ? setShowMonthPicker(true) : setShowCalendar('single')}
+                                className="px-2 md:px-6 text-[13px] sm:text-[15px] md:text-[18px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center"
+                            >
+                                {filterMode === 'single'
+                                    ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+                                    : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                        : 'Periodo')}
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    if (filterMode === 'single') {
+                                        const next = addDays(parseLocalSafe(selectedDate), 1);
+                                        setSelectedDate(format(next, 'yyyy-MM-dd'));
+                                    } else {
+                                        handleNextMonth();
+                                    }
+                                }}
+                                className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
                         </div>
                     </div>
 
@@ -382,32 +401,8 @@ export default function VentasPage() {
                         </div>
                     </div>
 
-                    {/* TOGGLE SWITCH DE VISTAS */}
-                    <div className="px-4 md:px-6 py-2 bg-white">
-                        <div className="bg-zinc-100 p-1 rounded-xl flex gap-1 max-w-sm mx-auto md:mx-0">
-                            <button
-                                onClick={() => setActiveTab('TICKETS')}
-                                className={cn(
-                                    "flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all rounded-lg",
-                                    activeTab === 'TICKETS' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
-                                )}
-                            >
-                                Tickets
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('PRODUCTOS')}
-                                className={cn(
-                                    "flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all rounded-lg",
-                                    activeTab === 'PRODUCTOS' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
-                                )}
-                            >
-                                Productos
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* TABLAS - SIN BORDE/SHADOW Y FLOTANTES */}
-                    <div className="p-3 md:p-6 bg-zinc-50/30">
+                    {/* TABLAS */}
+                    <div className="p-4 md:p-6 bg-zinc-50/50">
                         <div className="bg-transparent w-full">
                             {loading ? (
                                 <div className="flex justify-center items-center py-20">
@@ -419,13 +414,13 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="w-full">
+                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
                                         <table className="w-full text-left border-collapse">
-                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
+                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                 <tr>
-                                                    <th className="py-3 px-2 md:px-4 rounded-tl-xl whitespace-nowrap">Hora</th>
-                                                    <th className="py-3 px-2 md:px-4 whitespace-nowrap">Documento</th>
-                                                    <th className="py-3 px-2 md:px-4 rounded-tr-xl text-right whitespace-nowrap">Total</th>
+                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Hora</th>
+                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Documento</th>
+                                                    <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="text-xs font-bold text-zinc-600 bg-white">
@@ -529,14 +524,14 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="w-full">
+                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
                                         <table className="w-full text-left border-collapse">
-                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
+                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                 <tr>
-                                                    <th className="py-3 px-2 md:px-4 rounded-tl-xl whitespace-nowrap">Producto</th>
-                                                    <th className="py-3 px-1 md:px-4 text-center whitespace-nowrap">Cant</th>
-                                                    <th className="py-3 px-1 md:px-4 text-center whitespace-nowrap">Media</th>
-                                                    <th className="py-3 px-2 md:px-4 rounded-tr-xl text-right whitespace-nowrap">Total</th>
+                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Producto</th>
+                                                    <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Cant</th>
+                                                    <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Media</th>
+                                                    <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="text-xs font-bold text-zinc-600 bg-white">
