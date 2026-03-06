@@ -8,12 +8,13 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
-- [x] **Compresión Vertical Extrema (Admin Dashboard v2)**: Todo el contenido es ahora 100% visible sin scroll al 100% de zoom en escritorio.
+- [x] **Compresión Vertical Extrema (Desktop-Only Admin Dashboard v2)**: Todo el contenido es ahora 100% visible sin scroll al 100% de zoom exclusivamente en escritorio.
   - **Headers**: Reducción de cabeceras de "Ventas" y "Horas Extras" (paddings y fuentes compactas).
   - **Layout Paralelo**: "Cajas Cambio" e "Iconos de Acción" reposicionados en un grid paralelo (7:5) para aprovechar el ancho y reducir altura.
   - **Micro-Compresión Overtime**: Filas de trabajadores y tarjetas de semana reducidas a su mínima expresión.
   - **Limpieza iPhone Style**: Eliminación de indicadores de página (dots) inferiores en vistas de escritorio.
   - **Caja Operativa**: Compresión extrema del bloque verde de tesorería.
+  - **Diseño "Borderless Premium"**: Eliminación de todos los contornos/bordes internos de las tarjetas del Admin Dashboard para una interfaz más limpia y profesional.
 - [x] **Unificación Visual de Eventos No Regulares (F, E, B, P)**: Implementación de visualización consistente de iniciales para Festivos (F), Enfermedad (E), Bajas (B) y Personal (P) en todas las vistas de personal.
   - **Unización de Datos**: Estandarización de valores internos a `holiday`, `weekend` y `adjustment` para cumplir con las constraints de la BBDD.
   - **Vistas Actualizadas**: `/registros`, `/staff/history` y `/staff/dashboard`.

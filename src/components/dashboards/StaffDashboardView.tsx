@@ -427,24 +427,24 @@ export default function StaffDashboardView() {
     const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
             onClick={onClick}
-            className="bg-white rounded-2xl p-2 lg:p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 lg:gap-3 active:scale-95 transition-all group aspect-square w-full h-full"
+            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
         >
-            <div className="w-12 h-12 lg:w-16 lg:h-16 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
+            <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
                 {img ? (
                     <Image
                         src={img}
                         alt={typeof label === 'string' ? label : 'Icon'}
-                        width={64}
-                        height={64}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-contain"
                     />
                 ) : (
-                    <div className={cn("w-12 h-12 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl flex items-center justify-center text-white shadow-sm", color)}>
-                        <Icon size={32} className="lg:w-10 lg:h-10" fill="currentColor" strokeWidth={2.5} />
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
+                        <Icon size={28} fill="currentColor" strokeWidth={2.5} />
                     </div>
                 )}
             </div>
-            <span className="text-[9px] lg:text-[11px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{label}</span>
+            <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{label}</span>
         </button>
     );
 
@@ -457,31 +457,31 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="pt-0 md:pt-0.5 animate-in fade-in duration-500">
-            <div className="px-4 md:px-6 w-full max-w-2xl lg:max-w-[650px] mx-auto space-y-2 md:space-y-3 mt-0 md:mt-1">
-                <div className="flex flex-col gap-2 md:gap-3 items-center">
-                    <div className="w-full space-y-3 md:space-y-4">
+        <div className="pt-0 md:pt-1 animate-in fade-in duration-500">
+            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 items-start">
+                    <div className="lg:col-span-2 space-y-4 md:space-y-6">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
                             <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
                                 <div className="flex items-center">
-                                    <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest leading-none text-white">
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none text-white">
                                         {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
                                     </span>
                                 </div>
-                                <Link href="/staff/history" className="text-[10px] md:text-xs font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
-                                    Historial <ArrowRight size={12} strokeWidth={3} className="md:w-3.5 md:h-3.5" />
+                                <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
+                                    Historial <ArrowRight size={10} strokeWidth={3} />
                                 </Link>
                             </div>
 
                             <div className="p-4">
 
-                                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-2 md:mb-3 relative z-0">
+                                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                     <div className="grid grid-cols-7">
                                         {weekDays.map((day, i) => (
-                                            <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[85px] md:min-h-[90px] bg-white relative">
-                                                <div className="h-5 md:h-7 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
-                                                    <span className="text-[9px] md:text-[10px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
+                                            <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                                <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
+                                                    <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                                 </div>
                                                 <div
                                                     className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white cursor-pointer hover:bg-blue-50/50 transition-colors"
@@ -490,8 +490,8 @@ export default function StaffDashboardView() {
                                                         setIsDayDetailModalOpen(true);
                                                     }}
                                                 >
-                                                    <span className={`absolute top-1 right-1 text-[8px] md:text-[10px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                    <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-0.5 mt-2 md:mt-3">
+                                                    <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                                    <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-4">
                                                         {day.eventType && day.eventType !== 'regular' ? (
                                                             <div className="flex items-center justify-center">
                                                                 <div className={cn(
@@ -550,37 +550,37 @@ export default function StaffDashboardView() {
                                     </div>
                                 </div>
 
-                                <div className="p-1.5 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-3 md:h-4 flex items-center">
-                                            <span className="font-black text-black text-[10px] md:text-base leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                        <div className="h-4 flex items-center">
+                                            <span className="font-black text-black text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
                                         </div>
-                                        <span className="text-[6px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                     </div>
 
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-3 md:h-4 flex items-center">
-                                            <span className={`font-black text-[10px] md:text-base leading-none text-red-600`}>
+                                        <div className="h-4 flex items-center">
+                                            <span className={`font-black text-[11px] md:text-xs leading-none text-red-600`}>
                                                 {formatWorked(weeklySummary.startBalance)}
                                             </span>
                                         </div>
-                                        <span className="text-[6px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-3 md:h-4 flex items-center">
-                                            <span className={`font-black text-[10px] md:text-base leading-none text-black`}>
+                                        <div className="h-4 flex items-center">
+                                            <span className={`font-black text-[11px] md:text-xs leading-none text-black`}>
                                                 {weeklySummary.currentBalance > 0 ? formatWorked(weeklySummary.currentBalance) : " "}
                                             </span>
                                         </div>
-                                        <span className="text-[6px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-3 md:h-4 flex items-center">
-                                            <span className="font-black text-[10px] md:text-base leading-none text-emerald-600">
+                                        <div className="h-4 flex items-center">
+                                            <span className="font-black text-[11px] md:text-xs leading-none text-emerald-600">
                                                 {!preferStock ? formatWorked(weeklySummary.estimatedPayout) : "0"}€
                                             </span>
                                         </div>
-                                        <span className="text-[6px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
                                     </div>
                                 </div>
 
@@ -588,12 +588,12 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div className="w-full bg-white rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col items-center text-center relative gap-1.5 md:gap-2 border border-gray-50">
+                    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
                         <button
                             onClick={openConfirmation}
                             disabled={status === 'finished' || actionLoading}
                             className={cn(
-                                "w-full h-14 md:h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
+                                "w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
                                 status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200",
                                 status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
                                 status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
@@ -601,44 +601,43 @@ export default function StaffDashboardView() {
                             {actionLoading ? (
                                 <>
                                     <LoadingSpinner size="sm" className="text-white" />
-                                    <span className="text-lg md:text-xl font-black uppercase tracking-wider">
+                                    <span className="text-xl font-black uppercase tracking-wider">
                                         {modalAction === 'in' ? 'Iniciando...' : 'Cerrando...'}
                                     </span>
                                 </>
                             ) : (
-                                <span className="text-lg md:text-xl font-black uppercase tracking-wider">
+                                <span className="text-xl font-black uppercase tracking-wider">
                                     {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
                                 </span>
                             )}
                         </button>
-                        <div className="scale-100 py-0.5 md:py-1">
-                            <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
-                        </div>
+                        <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
                     </div>
                 </div>
 
-                <div className="w-full space-y-3 md:space-y-4">
-                    <div className="grid grid-cols-2 gap-1.5 md:gap-3">
+                <div className="lg:col-span-1 space-y-4 md:space-y-6">
+                    <div className="grid grid-cols-2 gap-3">
                         {/* MINI CALENDAR HORARIOS CARD — aspect-square strict */}
                         <div
                             onClick={() => setIsScheduleModalOpen(true)}
                             className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
                         >
                             {/* Header compacto */}
-                            <div className="bg-purple-600 px-2 lg:px-3 py-1 flex items-center justify-between text-white shrink-0">
-                                <h3 className="font-black flex items-center gap-1 text-[8px] lg:text-[11px] uppercase tracking-wider">
-                                    <CalendarDays size={10} className="text-white/80 shrink-0 lg:w-3.5 lg:h-3.5" fill="currentColor" />
+                            <div className="bg-purple-600 px-2 py-1 flex items-center justify-between text-white shrink-0">
+                                <h3 className="font-black flex items-center gap-1 text-[9px] uppercase tracking-wider">
+                                    <CalendarDays size={10} className="text-white/80 shrink-0" fill="currentColor" />
                                     <span>Horarios</span>
                                 </h3>
-                                <div className="bg-white/20 rounded px-1 py-px text-[6px] lg:text-[8px] font-black">VER</div>
+                                <div className="bg-white/20 rounded px-1 py-px text-[7px] font-black">VER</div>
                             </div>
 
                             {/* Zona central: justify-between elimina hueco blanco */}
-                            <div className="flex-1 flex flex-col justify-between px-1.5 lg:px-3 pt-1 lg:pt-2 pb-3 lg:pb-4 min-h-0">
+                            {/* Zona central: justify-between elimina hueco blanco */}
+                            <div className="flex-1 flex flex-col justify-between px-1.5 pt-1.5 pb-6 min-h-0">
                                 <div>
-                                    <div className="grid grid-cols-7 mb-0.5 lg:mb-2 text-gray-300">
+                                    <div className="grid grid-cols-7 mb-0.5">
                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                            <div key={d} className="text-center text-[6px] lg:text-[10px] font-black leading-none">{d}</div>
+                                            <div key={d} className="text-center text-[6px] font-black text-gray-300 leading-none">{d}</div>
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-7">
@@ -654,9 +653,9 @@ export default function StaffDashboardView() {
                                             const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
 
                                             return (
-                                                <div key={d} className="flex items-center justify-center py-[2px] lg:py-1">
+                                                <div key={d} className="flex items-center justify-center py-[2px]">
                                                     <span className={`
-                                                            w-3 h-3 lg:w-5 lg:h-5 flex items-center justify-center rounded-full text-[7px] lg:text-[11px] leading-none transition-colors
+                                                            w-3 h-3 flex items-center justify-center rounded-full text-[7px] leading-none transition-colors
                                                             ${hasShift
                                                             ? 'bg-emerald-500 text-white font-black'
                                                             : isToday
@@ -675,23 +674,23 @@ export default function StaffDashboardView() {
                                 </div>
 
                                 {/* Próximo turno — sección inferior con mayor peso visual */}
-                                <div className="border-t border-gray-100 pt-1.5 lg:pt-3 px-1 lg:px-2 pb-0.5">
+                                <div className="border-t border-gray-100 pt-3 px-1 pb-1">
                                     {nextShifts.length === 0 ? (
-                                        <p className="text-[6px] lg:text-[9px] text-gray-300 font-bold italic text-center py-0.5">Sin turnos</p>
+                                        <p className="text-[7px] text-gray-300 font-bold italic text-center py-0.5">Sin turnos</p>
                                     ) : (
-                                        <div className="flex items-center gap-2 lg:gap-4 w-full overflow-hidden justify-between">
+                                        <div className="flex items-center gap-2 w-full overflow-hidden justify-between">
                                             {nextShifts.map((shift, idx) => (
-                                                <div key={idx} className="flex items-center gap-1 lg:gap-1.5 min-w-0 flex-1">
-                                                    <div className="flex flex-col items-center shrink-0 bg-purple-50 rounded-lg px-0.5 lg:px-1 py-0.5 lg:py-0.5 min-w-[14px] lg:min-w-[28px]">
-                                                        <span className="text-[4px] lg:text-[7px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
-                                                        <span className="text-[8px] lg:text-[12px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
+                                                <div key={idx} className="flex items-center gap-1 min-w-0 flex-1">
+                                                    <div className="flex flex-col items-center shrink-0 bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[16px]">
+                                                        <span className="text-[5px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
+                                                        <span className="text-[9px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
                                                     </div>
                                                     <div className="flex flex-col flex-1 min-w-0 gap-0">
-                                                        <span className="text-[5px] lg:text-[8px] font-black text-gray-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
-                                                        <div className="flex items-center gap-0.5 lg:gap-0.5 font-black leading-none mt-0.5">
-                                                            <span className="text-[7px] lg:text-[10px] text-emerald-600 font-bold">{shift.startTime}</span>
-                                                            <span className="text-[5px] lg:text-[7px] text-gray-300">-</span>
-                                                            <span className="text-[7px] lg:text-[10px] text-rose-500 font-bold">{shift.endTime}</span>
+                                                        <span className="text-[6px] font-black text-gray-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
+                                                        <div className="flex items-center gap-0.5 font-black leading-none mt-0.5">
+                                                            <span className="text-[7.5px] text-emerald-600 font-bold">{shift.startTime}</span>
+                                                            <span className="text-[6px] text-gray-300">-</span>
+                                                            <span className="text-[7.5px] text-rose-500 font-bold">{shift.endTime}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -703,7 +702,7 @@ export default function StaffDashboardView() {
                         </div>
 
                         {/* Iconos Flotantes - Ahora fuera de Horarios */}
-                        <div className="grid grid-cols-2 gap-1.5 md:gap-3">
+                        <div className="grid grid-cols-2 gap-2">
                             <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
                                 if (!changeBox && !operationalBox) { toast.error('Cajas no configuradas'); return; }
                                 setIsCashOptionsModalOpen(true);

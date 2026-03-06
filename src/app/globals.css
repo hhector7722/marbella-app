@@ -12,19 +12,19 @@
   }
 
   .h-header-safe {
-    height: calc(3rem + env(safe-area-inset-top));
+    height: calc(3.5rem + env(safe-area-inset-top));
   }
 
   .mt-header-safe {
-    margin-top: calc(3rem + env(safe-area-inset-top));
+    margin-top: calc(3.5rem + env(safe-area-inset-top));
   }
 
   .pt-header-safe {
-    padding-top: calc(3rem + env(safe-area-inset-top));
+    padding-top: calc(3.5rem + env(safe-area-inset-top));
   }
 
   .top-header-safe {
-    top: calc(3rem + env(safe-area-inset-top));
+    top: calc(3.5rem + env(safe-area-inset-top));
   }
 }
 
