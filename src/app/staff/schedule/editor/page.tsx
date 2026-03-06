@@ -60,6 +60,7 @@ const ShiftBar = ({
     const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
 
     const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
+        if (!allowMove) return;
         e.stopPropagation();
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         setIsDragging(true);
@@ -223,12 +224,27 @@ export default function ScheduleEditorPage() {
             }) || [];
 
             if (existingShifts && existingShifts.length > 0) {
-                if (existingShifts[0].activity) {
-                    setActivity(existingShifts[0].activity);
+                setActivity(existingShifts[0].activity || '');
+                const notesStr = existingShifts[0].notes;
+                if (notesStr) {
+                    try {
+                        const parsed = JSON.parse(notesStr);
+                        setDefaultStart(parsed.defaultStart || '');
+                        setDefaultEnd(parsed.defaultEnd || '');
+                        setParticipantsCount(parsed.participantsCount || '');
+                    } catch (e) {
+                        setDefaultStart(''); setDefaultEnd(''); setParticipantsCount('');
+                    }
+                } else {
+                    setDefaultStart(''); setDefaultEnd(''); setParticipantsCount('');
                 }
                 setIsDayPublished(existingShifts.some(s => s.is_published));
             } else {
                 setIsDayPublished(false);
+                setActivity('');
+                setDefaultStart('');
+                setDefaultEnd('');
+                setParticipantsCount('');
             }
 
             setShifts(activeShifts);
@@ -305,7 +321,7 @@ export default function ScheduleEditorPage() {
                     start_time: startDateTime.toISOString(),
                     end_time: endDateTime.toISOString(),
                     activity: activity || null,
-                    notes: null,
+                    notes: JSON.stringify({ defaultStart, defaultEnd, participantsCount }),
                     is_published: publish
                 };
             });
