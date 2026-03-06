@@ -249,38 +249,15 @@ export default function VentasPage() {
 
                     {/* CABECERA Y FILTROS */}
                     <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => router.back()} className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-8 h-8 md:w-10 md:h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0">
-                                    <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                                <button onClick={() => router.back()} className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-7 h-7 md:w-10 md:h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0">
+                                    <ArrowLeft className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} />
                                 </button>
-                                <h1 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
+                                <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
                             </div>
 
-                            {/* TOGGLE Y FILTROS INACTIVOS */}
-                            <div className="flex items-center gap-2 justify-end w-full md:w-auto shrink-0 overflow-x-auto no-scrollbar">
-                                {/* TOGGLE TICKETS/PRODUCTOS */}
-                                <div className="bg-white/10 p-0.5 md:p-1 flex gap-0.5 md:gap-1 rounded-xl shrink-0">
-                                    <button
-                                        onClick={() => setActiveTab('TICKETS')}
-                                        className={cn(
-                                            "px-2 md:px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
-                                            activeTab === 'TICKETS' ? "bg-white text-[#36606F] shadow-sm" : "text-white/60 hover:text-white"
-                                        )}
-                                    >
-                                        Tickets
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('PRODUCTOS')}
-                                        className={cn(
-                                            "px-2 md:px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all rounded-lg",
-                                            activeTab === 'PRODUCTOS' ? "bg-white text-[#36606F] shadow-sm" : "text-white/60 hover:text-white"
-                                        )}
-                                    >
-                                        Productos
-                                    </button>
-                                </div>
-
+                            <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-1">
                                 {/* FILTROS INACTIVOS */}
                                 {filterMode === 'single' ? (
                                     <>
@@ -331,6 +308,14 @@ export default function VentasPage() {
                                         </button>
                                     </>
                                 )}
+
+                                {/* TOGGLE TICKETS/PRODUCTOS (Simificado: Solo muestra el inactivo) */}
+                                <button
+                                    onClick={() => setActiveTab(activeTab === 'TICKETS' ? 'PRODUCTOS' : 'TICKETS')}
+                                    className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white text-[#36606F] shadow-sm hover:bg-zinc-50 transition-all uppercase tracking-widest outline-none shrink-0"
+                                >
+                                    {activeTab === 'TICKETS' ? 'Productos' : 'Tickets'}
+                                </button>
                             </div>
                         </div>
 
