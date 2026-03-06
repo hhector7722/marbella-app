@@ -113,7 +113,7 @@ const ShiftBar = ({
     return (
         <div
             ref={barRef}
-            className={`absolute top-2.5 bottom-2.5 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            className={`absolute top-4 bottom-4 flex items-center group transition-all z-10 touch-none overflow-hidden rounded-full ${barClass} ${allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ left: `${leftPos}%`, width: `${width}%` }}
             onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
         >
