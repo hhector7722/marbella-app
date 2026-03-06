@@ -400,11 +400,11 @@ export default function ScheduleEditorPage() {
                 <div className="sticky top-[0px] z-30 flex flex-col w-full rounded-t-[32px] shadow-sm bg-[#36606F] -mt-[1px]">
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
-                        <div className="flex items-center gap-1 sm:gap-2 mt-2">
+                        <div className="flex items-center gap-0 sm:gap-1 mt-2">
                             <button onClick={() => navigateDay(-1)} className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
                                 <ChevronLeft size={24} />
                             </button>
-                            <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/10 px-1 sm:px-2 py-1.5 rounded-xl transition-all">
+                            <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-1 group cursor-pointer hover:bg-white/10 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
                                 <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
                                     {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
                                 </h2>
@@ -414,17 +414,17 @@ export default function ScheduleEditorPage() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-1 mt-2">
                             {/* Movemos Botón Agregar Empleado a Cabecera */}
-                            <button onClick={() => setShowAddModal(true)} className="w-8 h-8 md:w-9 md:h-9 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
-                                <Plus size={18} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
+                            <button onClick={() => setShowAddModal(true)} className="w-7 h-7 md:w-8 md:h-8 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
+                                <Plus size={16} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
                             </button>
 
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className={`relative w-8 h-8 md:w-9 md:h-9 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-[#36606F]' : ''}`}
+                                className={`relative w-7 h-7 md:w-8 md:h-8 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-[#36606F]' : ''}`}
                             >
-                                <Share2 size={18} strokeWidth={2.5} className="text-white" />
+                                <Share2 size={16} strokeWidth={2.5} className="text-white" />
                                 {isDayPublished && isDaySent && (
                                     <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
                                         <Check size={10} className="text-emerald-500" strokeWidth={4} />
