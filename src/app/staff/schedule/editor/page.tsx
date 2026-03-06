@@ -10,9 +10,11 @@ import {
     ChevronRight,
     UserPlus,
     Send,
-    CheckCircle2
+    CheckCircle2,
+    Share2,
+    Check
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -148,6 +150,9 @@ export default function ScheduleEditorPage() {
 
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isDayPublished, setIsDayPublished] = useState(false);
+    const [isDaySent, setIsDaySent] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [defaultStart, setDefaultStart] = useState('');
     const [defaultEnd, setDefaultEnd] = useState('');
@@ -155,7 +160,22 @@ export default function ScheduleEditorPage() {
 
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
+
+    useEffect(() => {
+        if (!loading && hasUnsavedChanges) {
+            setIsSaving(true);
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = setTimeout(async () => {
+                await handleSave(true, isDayPublished);
+                setIsSaving(false);
+            }, 1000);
+        }
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
+    }, [shifts, activity, hasUnsavedChanges, isDayPublished, loading]);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -217,6 +237,7 @@ export default function ScheduleEditorPage() {
                 return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
             }));
             setHasUnsavedChanges(false);
+            setIsDaySent(false); // Reinicia estado "enviado" al cambiar día
         } catch (error) {
             console.error(error);
             toast.error('Error al cargar datos');
@@ -328,6 +349,17 @@ export default function ScheduleEditorPage() {
         }
     };
 
+    const navigateDay = async (direction: -1 | 1) => {
+        if (hasUnsavedChanges) {
+            await handleSave(true, isDayPublished);
+        }
+        const currentDate = new Date(`${date}T12:00:00`);
+        const newDate = direction === 1 ? addDays(currentDate, 1) : subDays(currentDate, 1);
+        const newDateStr = newDate.toISOString().split('T')[0];
+        setDate(newDateStr);
+        fetchData(newDateStr);
+    };
+
     const generateCalendarDays = () => {
         const year = calendarDate.getFullYear();
         const month = calendarDate.getMonth();
@@ -340,11 +372,13 @@ export default function ScheduleEditorPage() {
         return days;
     };
 
-    const handleSelectCalendarDate = (day: number) => {
+    const handleSelectCalendarDate = async (day: number) => {
         const year = calendarDate.getFullYear();
         const month = calendarDate.getMonth();
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        if (hasUnsavedChanges && !confirm('¿Cambiar de fecha sin guardar?')) return;
+        if (hasUnsavedChanges) {
+            await handleSave(true, isDayPublished);
+        }
         setShowCalendarModal(false);
         setDate(dateStr);
         fetchData(dateStr);
@@ -365,29 +399,40 @@ export default function ScheduleEditorPage() {
                 {/* WRAPPER STICKY GLOBAL PARA TODA LA CABECERA */}
                 <div className="sticky top-[0px] z-30 flex flex-col w-full rounded-t-[32px] shadow-sm bg-[#36606F] -mt-[1px]">
                     {/* CABECERA (Fecha y Botones) */}
-                    <div className="flex items-center justify-between px-4 py-3 shrink-0">
-                        <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/10 px-2 py-1.5 rounded-xl transition-all">
-                            <h2 className="text-[14px] md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
-                                {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
-                            </h2>
-                        </button>
+                    <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
+                        {/* Status Indicator Floating */}
+                        <div className="absolute top-2 right-4 flex items-center gap-1.5 z-50">
+                            <div className={`w-2 h-2 rounded-full ${isDayPublished ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : (shifts.length > 0 && !hasUnsavedChanges && !isSaving ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]')}`} />
+                            <span className="text-[8px] font-black text-white/80 uppercase tracking-widest hidden sm:inline">
+                                {isDayPublished ? 'PUBLICADO' : (isSaving ? 'GUARDANDO...' : (hasUnsavedChanges ? 'SIN GUARDAR' : 'BORRADOR'))}
+                            </span>
+                        </div>
 
-                        <div className="flex items-center gap-1.5 md:gap-3">
-                            {/* Status Indicator */}
-                            <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1.5 rounded-xl border border-white/5">
-                                <div className={`w-2 h-2 rounded-full ${isDayPublished ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : (shifts.length > 0 && !hasUnsavedChanges ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]')}`} />
-                                <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest hidden sm:inline">
-                                    {isDayPublished ? 'PUBLICADO' : (shifts.length > 0 && !hasUnsavedChanges ? 'BORRADOR' : 'SIN GUARDAR')}
-                                </span>
-                            </div>
-                            <button onClick={() => handleSave(false, false)} className="bg-white/10 hover:bg-white/20 text-white p-2 md:px-3 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-1.5">
-                                <Save size={16} /> <span className="hidden sm:inline">BORRADOR</span>
+                        <div className="flex items-center gap-1 sm:gap-2 mt-2">
+                            <button onClick={() => navigateDay(-1)} className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
+                                <ChevronLeft size={24} />
                             </button>
-                            <button onClick={() => handleSave(false, true)} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 md:px-3 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-1.5">
-                                <CheckCircle2 size={16} /> <span className="hidden sm:inline">CONFIRMAR</span>
+                            <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/10 px-1 sm:px-2 py-1.5 rounded-xl transition-all">
+                                <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
+                                    {date && format(new Date(date), "EEEE d 'de' MMMM", { locale: es })}
+                                </h2>
                             </button>
-                            <button onClick={handleSendNotifications} className="bg-white/10 hover:bg-white/20 text-white p-2 md:px-3 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-1.5">
-                                <Send size={16} /> <span className="hidden sm:inline">ENVIAR</span>
+                            <button onClick={() => navigateDay(1)} className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
+                                <ChevronRight size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 md:gap-3 mt-2">
+                            <button
+                                onClick={() => setShowShareModal(true)}
+                                className={`relative p-2 md:px-3 md:py-2 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center gap-1.5 ${isDayPublished ? 'bg-[#36606F] hover:bg-[#2a4d59] border-2 border-white' : 'bg-emerald-500 hover:bg-emerald-600 border-2 border-white'}`}
+                            >
+                                <Share2 size={18} strokeWidth={2.5} />
+                                {isDayPublished && isDaySent && (
+                                    <div className="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
+                                        <Check size={12} className="text-emerald-500" strokeWidth={4} />
+                                    </div>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -546,6 +591,59 @@ export default function ScheduleEditorPage() {
                                     <span className="font-bold text-gray-800 text-sm">{profile.first_name}</span>
                                 </button>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL COMPARTIR */}
+            {showShareModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowShareModal(false)}>
+                    <div className="bg-white rounded-3xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 flex flex-col gap-4">
+                            <h3 className="text-xl font-black text-gray-800 tracking-tight text-center">COMPARTIR HORARIO</h3>
+                            <p className="text-sm text-gray-500 text-center font-medium">¿Qué deseas hacer con el horario de <span className="capitalize font-bold">{date && format(new Date(date), "EEEE d", { locale: es })}</span>?</p>
+                            <div className="flex flex-col gap-3 mt-2">
+                                <button
+                                    onClick={async () => {
+                                        setShowShareModal(false);
+                                        await handleSave(false, true);
+                                    }}
+                                    className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={18} /> PUBLICAR HORARIO
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        setShowShareModal(false);
+                                        const saved = await handleSave(true, true);
+                                        if (saved) {
+                                            const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
+                                            const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+                                            const loadToast = toast.loading('Enviando...');
+                                            try {
+                                                const res = await sendScheduleNotifications(userIds, dateFormatted);
+                                                toast.dismiss(loadToast);
+                                                if (res.success) {
+                                                    toast.success('Notificaciones enviadas');
+                                                    setIsDaySent(true);
+                                                }
+                                            } catch (e) {
+                                                toast.dismiss(loadToast);
+                                                toast.error('Error al enviar');
+                                            }
+                                        }
+                                    }}
+                                    className="w-full bg-[#0FA968] hover:bg-emerald-600 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
+                                >
+                                    <Send size={18} /> PUBLICAR Y ENVIAR
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center">
+                            <button onClick={() => setShowShareModal(false)} className="text-gray-500 hover:text-gray-700 font-black tracking-widest text-xs uppercase px-6 py-2">
+                                Cancelar
+                            </button>
                         </div>
                     </div>
                 </div>
