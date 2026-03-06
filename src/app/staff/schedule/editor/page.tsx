@@ -363,7 +363,7 @@ export default function ScheduleEditorPage() {
             <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col shrink max-w-7xl mx-auto w-full relative">
 
                 {/* WRAPPER STICKY GLOBAL PARA TODA LA CABECERA */}
-                <div className="sticky top-[0px] z-[60] flex flex-col w-full rounded-t-[32px] shadow-sm bg-[#36606F] -mt-[1px]">
+                <div className="sticky top-[0px] z-30 flex flex-col w-full rounded-t-[32px] shadow-sm bg-[#36606F] -mt-[1px]">
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0">
                         <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 group cursor-pointer hover:bg-white/10 px-2 py-1.5 rounded-xl transition-all">
@@ -393,7 +393,7 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* ZONA BLANCA E INFERIOR (INPUTS + ROJA) */}
-                    <div className="flex flex-col shrink w-full bg-white relative rounded-t-3xl">
+                    <div className="flex flex-col shrink w-full bg-white relative">
                         {/* ZONA DE INPUTS SUPERIOR - Sin border-b ni shadow */}
                         <div className="p-4 md:p-6 w-full shrink-0">
                             <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center max-w-2xl mx-auto">
@@ -433,8 +433,8 @@ export default function ScheduleEditorPage() {
                         {/* ENCABEZADO ROJO (Ancho completo) */}
                         <div className="flex w-full bg-[#E55353] text-white shrink-0 border-b border-gray-100 rounded-t-[24px]">
                             <div className="w-24 md:w-32 px-3 flex items-center justify-center shrink-0">
-                                <button onClick={() => setShowAddModal(true)} className="w-6 h-6 md:w-7 md:h-7 bg-[#0FA968] hover:bg-emerald-600 rounded-lg flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
-                                    <Plus size={16} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
+                                <button onClick={() => setShowAddModal(true)} className="w-5 h-5 md:w-6 md:h-6 bg-[#0FA968] hover:bg-emerald-600 rounded-md flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
+                                    <Plus size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
                                 </button>
                             </div>
                             <div className="flex-1 relative h-8 md:h-9 flex">
@@ -479,7 +479,7 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* FOOTER VERDE */}
-                    <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] rounded-b-[32px] overflow-hidden mt-1 md:mt-2">
+                    <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-30 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] rounded-b-[32px] overflow-hidden mt-1 md:mt-2">
                         <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
                             TOT
                         </div>
@@ -496,7 +496,7 @@ export default function ScheduleEditorPage() {
             </div>
             {/* BARRA EDICIÓN FLOTANTE */}
             {editingIndex !== null && shifts[editingIndex] && (
-                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
+                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 z-40">
                     <div className="h-14 flex items-center p-1.5 bg-zinc-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10">
                         <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
                             <ShiftBar shift={shifts[editingIndex]} onUpdate={(newS) => handleUpdateShift(editingIndex, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20" />
