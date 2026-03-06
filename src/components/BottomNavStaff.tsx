@@ -70,7 +70,6 @@ export default function BottomNavStaff() {
     const isAdmin = userData?.role === 'manager' || userData?.role === 'supervisor';
 
     const staffItems: { name: string; href: string; icon: any }[] = [
-        { name: 'Horarios', href: '/staff/schedule', icon: Calendar },
         { name: 'Asistencia', href: '/staff/history', icon: Clock },
         { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
         { name: 'Pedidos', href: '/orders/new', icon: Package },

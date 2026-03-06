@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from "@/lib/utils";
-import { DayDetailModal } from '@/components/modals/DayDetailModal';
+import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import {
     format,
@@ -529,122 +529,136 @@ export default function RegistrosPage() {
                 )}
 
                 {/* --- CONTENIDO PRINCIPAL --- */}
-                <div className={cn(
-                    "flex-1 flex flex-col min-h-0 bg-white relative",
-                    viewMode === 'agile' ? "bg-zinc-50 p-4 sm:p-6" : ""
-                )}>
+                <div className="flex-1 flex flex-col min-h-0 bg-white relative overflow-y-auto no-scrollbar">
 
-                    {viewMode === 'calendar' ? (
-                        /* --- VISTA CALENDARIO GLOBAL --- */
-                        <div className="flex-1 flex flex-col overflow-hidden">
-                            <div className="grid grid-cols-7 border-b border-gray-100">
-                                {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
-                                    <div key={day} className="border-r border-gray-100 last:border-r-0">
-                                        <div className="h-6 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md">
-                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{day}</span>
+                    {/* ALWAYS SHOW CALENDAR */}
+                    <div className={cn(
+                        "flex flex-col shrink-0 transition-opacity duration-300",
+                        viewMode === 'agile' ? "opacity-50" : "opacity-100 flex-1 h-full"
+                    )}>
+                        <div className="grid grid-cols-7 border-b border-gray-100 sticky top-0 z-10">
+                            {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(day => (
+                                <div key={day} className="border-r border-gray-100 last:border-r-0">
+                                    <div className="h-6 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md">
+                                        <span className="text-[9px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{day}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className={cn(
+                            "grid grid-cols-7 gap-[1px] bg-white",
+                            viewMode === 'calendar' ? "flex-1" : "h-[300px] border-b border-gray-100"
+                        )}>
+                            {calendarDays.map((day: Date) => {
+                                const isCurrentMonth = isSameMonth(day, currentDate);
+                                let dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
+                                if (selectedWorkerId) dayLogs = dayLogs.filter(l => l.user_id === selectedWorkerId);
+
+                                const isToday = isSameDay(day, new Date());
+
+                                return (
+                                    <div
+                                        key={day.toISOString()}
+                                        onClick={() => handleDayClick(day)}
+                                        className={cn(
+                                            "relative p-0.5 sm:p-2 flex flex-col cursor-pointer transition-all border-b border-r border-gray-100 group",
+                                            !isCurrentMonth ? "bg-gray-50/50 opacity-40" : "bg-white hover:bg-blue-50/30",
+                                            isToday && "bg-emerald-50/30"
+                                        )}
+                                    >
+                                        <div className="flex justify-between items-start mb-1.5">
+                                            <span className={`
+                                            text-xs font-black flex items-center justify-center w-6 h-6 rounded-lg transition-transform group-hover:scale-110
+                                            ${isToday ? 'bg-emerald-500 text-white shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400')}
+                                        `}>
+                                                {format(day, 'd')}
+                                            </span>
+                                            {dayLogs.length > 0 && (
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 space-y-1 w-full overflow-hidden">
+                                            {dayLogs.slice(0, 4).map((log) => {
+                                                const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
+                                                const isRegular = !log.event_type || log.event_type === 'regular' || log.event_type === '';
+                                                const getInitialsPair = () => {
+                                                    let f = '?';
+                                                    let l = '';
+
+                                                    if (log.first_name && log.last_name) {
+                                                        f = log.first_name.charAt(0).toUpperCase();
+                                                        l = log.last_name.charAt(0).toUpperCase();
+                                                    } else if (log.first_name) {
+                                                        f = log.first_name.charAt(0).toUpperCase();
+                                                    } else if (log.employee_name && log.employee_name !== '?') {
+                                                        const parts = log.employee_name.trim().split(/\s+/);
+                                                        f = parts[0].charAt(0).toUpperCase();
+                                                        if (parts.length >= 2) l = parts[1].charAt(0).toUpperCase();
+                                                    }
+                                                    return { f, l };
+                                                };
+
+                                                const { f, l } = getInitialsPair();
+                                                const isComplete = !!log.clock_out;
+
+                                                return (
+                                                    <div
+                                                        key={log.id}
+                                                        title={eventConfig?.label || 'Regular'}
+                                                        className={cn(
+                                                            "flex flex-row items-center gap-[2px] w-full min-w-0 mb-0.5 p-0 overflow-visible",
+                                                            !isRegular && cn("rounded-md border p-[1px]", eventConfig?.border || 'bg-gray-50 border-gray-100')
+                                                        )}
+                                                    >
+                                                        {/* Círculo de Iniciales */}
+                                                        <div className={cn(
+                                                            "w-[14px] h-[14px] rounded-full flex items-center justify-center text-[6.5px] leading-none font-black text-white shrink-0",
+                                                            isComplete ? "bg-emerald-600" : "bg-rose-600"
+                                                        )}>
+                                                            {f}{l}
+                                                        </div>
+
+                                                        {/* Horas o Inicial del Evento */}
+                                                        <div className="flex items-center min-w-0 flex-1 whitespace-nowrap overflow-visible">
+                                                            {isRegular ? (
+                                                                <>
+                                                                    <span className="text-emerald-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
+                                                                        {format(parseISO(log.clock_in), 'H')}
+                                                                    </span>
+                                                                    <span className="text-gray-400 text-[8.5px] sm:text-[10px] leading-none shrink-0">-</span>
+                                                                    {log.clock_out && (
+                                                                        <span className="text-rose-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
+                                                                            {format(parseISO(log.clock_out), 'H')}
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <span className={cn(
+                                                                    "text-[9px] font-black leading-none px-1 rounded",
+                                                                    eventConfig?.color || "text-gray-500"
+                                                                )}>
+                                                                    {eventConfig?.initial || '?'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {dayLogs.length > 4 && (
+                                                <div className="text-[7px] font-bold text-gray-400 text-center">+ {dayLogs.length - 4} más</div>
+                                            )}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                            <div className="flex-1 grid grid-cols-7 gap-[1px] bg-white overflow-y-auto no-scrollbar">
-                                {calendarDays.map((day: Date) => {
-                                    const isCurrentMonth = isSameMonth(day, currentDate);
-                                    let dayLogs = logs.filter(r => isSameDay(parseISO(r.clock_in), day));
-                                    if (selectedWorkerId) dayLogs = dayLogs.filter(l => l.user_id === selectedWorkerId);
-
-                                    const isToday = isSameDay(day, new Date());
-
-                                    return (
-                                        <div
-                                            key={day.toISOString()}
-                                            onClick={() => handleDayClick(day)}
-                                            className={cn(
-                                                "relative p-0.5 sm:p-2 flex flex-col cursor-pointer transition-all border-b border-r border-gray-100 group",
-                                                !isCurrentMonth ? "bg-gray-50/50 opacity-40" : "bg-white hover:bg-blue-50/30",
-                                                isToday && "bg-emerald-50/30"
-                                            )}
-                                        >
-                                            <div className="flex justify-between items-start mb-1.5">
-                                                <span className={`
-                                                text-xs font-black flex items-center justify-center w-6 h-6 rounded-lg transition-transform group-hover:scale-110
-                                                ${isToday ? 'bg-emerald-500 text-white shadow-sm' : (isCurrentMonth ? 'text-gray-800' : 'text-gray-400')}
-                                            `}>
-                                                    {format(day, 'd')}
-                                                </span>
-                                                {dayLogs.length > 0 && (
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                                )}
-                                            </div>
-
-                                            <div className="flex-1 space-y-1 w-full overflow-hidden">
-                                                {dayLogs.slice(0, 4).map((log) => {
-                                                    const eventConfig = EVENT_TYPES.find(t => t.value === log.event_type);
-                                                    const isRegular = !log.event_type || log.event_type === 'regular' || log.event_type === '';
-                                                    const getInitialsPair = () => {
-                                                        let f = '?';
-                                                        let l = '';
-
-                                                        if (log.first_name && log.last_name) {
-                                                            f = log.first_name.charAt(0).toUpperCase();
-                                                            l = log.last_name.charAt(0).toUpperCase();
-                                                        } else if (log.first_name) {
-                                                            f = log.first_name.charAt(0).toUpperCase();
-                                                        } else if (log.employee_name && log.employee_name !== '?') {
-                                                            const parts = log.employee_name.trim().split(/\s+/);
-                                                            f = parts[0].charAt(0).toUpperCase();
-                                                            if (parts.length >= 2) l = parts[1].charAt(0).toUpperCase();
-                                                        }
-                                                        return { f, l };
-                                                    };
-
-                                                    const { f, l } = getInitialsPair();
-                                                    const isComplete = !!log.clock_out;
-
-                                                    return (
-                                                        <div
-                                                            key={log.id}
-                                                            title={eventConfig?.label || 'Regular'}
-                                                            className={cn(
-                                                                "flex flex-row items-center gap-[2px] w-full min-w-0 mb-0.5 p-0 overflow-visible",
-                                                                !isRegular && cn("rounded-md border p-[1px]", eventConfig?.border || 'bg-gray-50 border-gray-100')
-                                                            )}
-                                                        >
-                                                            {/* Círculo de Iniciales */}
-                                                            <div className={cn(
-                                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center text-[6.5px] leading-none font-black text-white shrink-0",
-                                                                isComplete ? "bg-emerald-600" : "bg-rose-600"
-                                                            )}>
-                                                                {f}{l}
-                                                            </div>
-
-                                                            {/* Horas */}
-                                                            <div className="flex items-center min-w-0 flex-1 whitespace-nowrap overflow-visible">
-                                                                <span className="text-emerald-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
-                                                                    {format(parseISO(log.clock_in), 'H')}
-                                                                </span>
-                                                                <span className="text-gray-400 text-[8.5px] sm:text-[10px] leading-none shrink-0">-</span>
-                                                                {log.clock_out && (
-                                                                    <span className="text-rose-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
-                                                                        {format(parseISO(log.clock_out), 'H')}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                                {dayLogs.length > 4 && (
-                                                    <div className="text-[7px] font-bold text-gray-400 text-center">+ {dayLogs.length - 4} más</div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div >
-                        </div >
-                    ) : (
-                        /* --- VISTA GESTIÓN ÁGIL (Semanal) --- */
-                        <div className="flex-1 flex flex-col gap-4 sm:gap-6 overflow-y-auto no-scrollbar">
+                    {/* CONDITIONAL AGILE EDITOR (Week Selection) */}
+                    {viewMode === 'agile' && selectedWorkerId && (
+                        <div className="p-4 sm:p-6 bg-zinc-50 border-t border-gray-100 animate-in slide-in-from-bottom-4 duration-300">
                             {/* Panel de Configuración Semanal (Compacto) */}
                             <div className="p-3 sm:p-5 bg-white rounded-2xl border border-gray-100 shadow-sm w-full mb-4">
                                 <div className="flex flex-row items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full">
@@ -794,7 +808,7 @@ export default function RegistrosPage() {
                             </div>
                         </div>
                     )}
-                </div >
+                </div>
             </div >
 
             {/* RESUMEN DIARIO */}
@@ -807,7 +821,7 @@ export default function RegistrosPage() {
             />
 
             {/* MODAL DETALLE REFINADO */}
-            <DayDetailModal
+            <AttendanceDetailModal
                 isOpen={!!selectedDate && !!detailUserId && viewMode === 'calendar'}
                 onClose={handleCloseModal}
                 date={selectedDate}

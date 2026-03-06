@@ -1,0 +1,433 @@
+'use client';
+
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
+import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
+import { Edit2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+/* ─── Constants (match editor exactly) ─────────────────── */
+const START_HOUR = 7;
+const END_HOUR = 23;
+const TOTAL_HOURS = END_HOUR - START_HOUR;
+
+const timeToPercent = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return ((hours - START_HOUR) + (minutes / 60)) / TOTAL_HOURS * 100;
+};
+
+/* ─── Read-Only ShiftBar (identical visuals, no pointer events) ── */
+const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
+    const leftPos = Math.max(0, timeToPercent(start));
+    const width = Math.max(timeToPercent(end) - leftPos, 5);
+    return (
+        <div
+            className="absolute top-1.5 bottom-1.5 flex items-center bg-emerald-100/50 rounded-full z-10 overflow-hidden touch-none"
+            style={{ left: `${leftPos}%`, width: `${width}%` }}
+        >
+            <div className="absolute left-0 top-0 bottom-0 min-w-[48px] bg-emerald-500 flex items-center justify-center shrink-0 z-20 rounded-full shadow-sm">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2">{start}</span>
+            </div>
+            <div className="flex-1 h-full" />
+            <div className="absolute right-0 top-0 bottom-0 min-w-[48px] bg-red-600 flex items-center justify-center shrink-0 z-20 rounded-full shadow-sm">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2">{end}</span>
+            </div>
+        </div>
+    );
+};
+
+/* ─── Types ─────────────────────────────────────────────── */
+interface ShiftMock { date: Date; startTime: string; endTime: string; activity?: string; }
+interface DayShiftRow { name: string; startTime: string; endTime: string; activity?: string; }
+interface Props {
+    isOpen: boolean;
+    onClose: () => void;
+    shifts: ShiftMock[];
+    userName?: string;
+    userRole?: 'staff' | 'manager' | 'supervisor';
+}
+
+/* ─── Modal ─────────────────────────────────────────────── */
+export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props) => {
+    const supabase = createClient();
+    const router = useRouter();
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
+    const [dayActivity, setDayActivity] = useState('');
+    const [eventStart, setEventStart] = useState('');
+    const [eventEnd, setEventEnd] = useState('');
+    const [eventParticipants, setEventParticipants] = useState<number | string>('');
+    const [loadingDay, setLoadingDay] = useState(false);
+
+    const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
+
+    const navigateMonth = (d: 1 | -1) =>
+        setCurrentDate(d === 1 ? addMonths(currentDate, 1) : subMonths(currentDate, 1));
+
+    const generateCalendarDays = () => {
+        const y = currentDate.getFullYear(), m = currentDate.getMonth();
+        const firstDay = new Date(y, m, 1), lastDay = new Date(y, m + 1, 0);
+        const days: (Date | null)[] = [];
+        const startPad = (firstDay.getDay() + 6) % 7;
+        for (let i = 0; i < startPad; i++) days.push(null);
+        for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(y, m, d));
+        return days;
+    };
+
+    const handleDayClick = async (day: Date) => {
+        const isManager = userRole === 'manager' || userRole === 'supervisor';
+        const personalShift = shifts.some(s => isSameDay(s.date, day));
+
+        // If not manager and no personal shift, ignore
+        if (!isManager && !personalShift) return;
+
+        const dateStr = format(day, 'yyyy-MM-dd');
+
+        setLoadingDay(true);
+        try {
+            // Local-time boundaries
+            const localStart = new Date(day); localStart.setHours(0, 0, 0, 0);
+            const localEnd = new Date(day); localEnd.setHours(23, 59, 59, 999);
+
+            // Fetch ALL shifts for the day (to check for drafts etc)
+            const { data: rawShifts, error } = await supabase
+                .from('shifts')
+                .select('start_time, end_time, activity, user_id, is_published, event_start_time, event_end_time, event_participants')
+                .gte('start_time', localStart.toISOString())
+                .lte('start_time', localEnd.toISOString())
+                .order('start_time', { ascending: true });
+
+            if (error) throw error;
+
+            // MANAGER LOGIC: 
+            // 1. No shifts at all -> Redirect
+            // 2. Has drafts -> Redirect
+            if (isManager) {
+                const hasDrafts = (rawShifts || []).some(s => s.is_published === false);
+                if (!rawShifts?.length || hasDrafts) {
+                    onClose();
+                    router.push(`/staff/schedule/editor?date=${dateStr}`);
+                    return;
+                }
+            }
+
+            // If we are here, it's either a staff with a shift OR a manager on a fully published day
+            if (!rawShifts?.length) {
+                setDayShifts([]); setDayActivity(''); setLoadingDay(false); return;
+            }
+
+            setSelectedDate(day);
+
+            // Filter to show only published ones in the read-only view
+            const publishedShifts = rawShifts.filter(s => s.is_published);
+            if (!publishedShifts.length) { setDayShifts([]); setDayActivity(''); setLoadingDay(false); return; }
+
+            // Step 2: profiles
+            const ids = [...new Set(publishedShifts.map((s: any) => s.user_id))];
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name').in('id', ids);
+            const nameMap: Record<string, string> = {};
+            (profiles || []).forEach((p: any) => { nameMap[p.id] = p.first_name || '?'; });
+
+            setDayActivity(publishedShifts[0]?.activity || '');
+            setEventStart(publishedShifts[0]?.event_start_time || '');
+            setEventEnd(publishedShifts[0]?.event_end_time || '');
+            setEventParticipants(publishedShifts[0]?.event_participants || '');
+            setDayShifts(publishedShifts.map((s: any) => ({
+                name: nameMap[s.user_id] || '?',
+                startTime: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                endTime: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                activity: s.activity || undefined,
+            })));
+            setLoadingDay(false);
+        } catch (err: any) {
+            console.error('handleDayClick full error:', err);
+            const message = err?.message || 'Error desconocido';
+            toast.error(`Error al cargar el día: ${message}`);
+            setDayShifts([]);
+        } finally {
+            setLoadingDay(false);
+        }
+    };
+
+    const handleBack = () => { setSelectedDate(null); setDayShifts([]); };
+    const handleClose = () => { setSelectedDate(null); setDayShifts([]); onClose(); };
+
+    if (!isOpen) return null;
+
+    const calendarDays = generateCalendarDays();
+    const futureShifts = shifts
+        .filter(s => s.date >= new Date(new Date().setHours(0, 0, 0, 0)) && isSameMonth(s.date, currentDate))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // TOT row — same logic as editor
+    const totals = hoursHeader.map(hour =>
+        dayShifts.filter(s => {
+            const sh = parseInt(s.startTime.split(':')[0]);
+            const eh = parseInt(s.endTime.split(':')[0]);
+            return hour >= sh && hour < eh;
+        }).length
+    );
+
+    return (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 backdrop-blur-sm animate-in fade-in" onClick={handleClose}>
+            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative flex flex-col overflow-hidden max-h-[92vh]" onClick={e => e.stopPropagation()}>
+
+                {/* ── HEADER (petrol, same style as editor) ── */}
+                <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0">
+                    {selectedDate ? (
+                        <div className="flex items-center justify-between w-full gap-2">
+                            {/* Volver al calendario */}
+                            <button onClick={handleBack} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-95 shrink-0">
+                                <ArrowLeft size={18} strokeWidth={2.5} />
+                            </button>
+
+                            {/* Contenedor central: Navegación de días */}
+                            <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
+                                {(() => {
+                                    const sorted = [...shifts].sort((a, b) => a.date.getTime() - b.date.getTime());
+                                    const idx = sorted.findIndex(s => isSameDay(s.date, selectedDate!));
+                                    const prev = idx > 0 ? sorted[idx - 1].date : null;
+                                    const next = idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1].date : null;
+
+                                    return (
+                                        <>
+                                            <button
+                                                onClick={() => prev && handleDayClick(prev)}
+                                                disabled={!prev}
+                                                className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 ${prev ? 'text-white hover:bg-white/10' : 'text-white/20 cursor-default'}`}
+                                            >
+                                                <ChevronLeft size={20} strokeWidth={2.5} />
+                                            </button>
+
+                                            <h3 className="text-[12px] font-black uppercase tracking-widest text-white truncate px-1 capitalize">
+                                                {format(selectedDate!, "EEEE d 'de' MMMM", { locale: es })}
+                                            </h3>
+
+                                            <button
+                                                onClick={() => next && handleDayClick(next)}
+                                                disabled={!next}
+                                                className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 ${next ? 'text-white hover:bg-white/10' : 'text-white/20 cursor-default'}`}
+                                            >
+                                                <ChevronRight size={20} strokeWidth={2.5} />
+                                            </button>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+
+                            {/* Botón de Edición (Solo para Managers) */}
+                            {(userRole === 'manager' || userRole === 'supervisor') && (
+                                <button
+                                    onClick={() => {
+                                        onClose();
+                                        router.push(`/staff/schedule/editor?date=${format(selectedDate!, 'yyyy-MM-dd')}`);
+                                    }}
+                                    className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-95 shrink-0"
+                                    title="Editar este día"
+                                >
+                                    <Edit2 size={16} strokeWidth={2.5} />
+                                </button>
+                            )}
+
+                            {/* Cerrar */}
+                            <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shrink-0">
+                                <X size={18} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 w-full justify-between">
+                            <div className="flex items-center">
+                                <button onClick={() => navigateMonth(-1)} className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-95 text-white">
+                                    <ChevronLeft size={22} />
+                                </button>
+                                <h3 className="text-xs font-black uppercase tracking-widest w-[130px] text-center text-white capitalize">
+                                    {format(currentDate, "MMMM yyyy", { locale: es })}
+                                </h3>
+                                <button onClick={() => navigateMonth(1)} className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-95 text-white">
+                                    <ChevronRight size={22} />
+                                </button>
+                            </div>
+                            <button onClick={handleClose} className="w-9 h-9 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md">
+                                <X size={20} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── BODY ── */}
+                {!selectedDate ? (
+                    // VISTA A: CALENDARIO MENSUAL
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                        <div className="p-4 pb-3 shrink-0 border-b border-gray-100">
+                            <div className="grid grid-cols-7 gap-1 mb-1">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                    <div key={d} className="text-center text-xs font-black text-gray-300">{d}</div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-y-0.5">
+                                {calendarDays.map((day, i) => {
+                                    if (!day) return <div key={`e-${i}`} className="aspect-square" />;
+                                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                                    const isPast = day < today;
+                                    const isToday = isSameDay(day, new Date());
+                                    const hasShift = shifts.some(s => isSameDay(s.date, day));
+                                    const isManager = userRole === 'manager' || userRole === 'supervisor';
+                                    const canClick = hasShift || isManager;
+                                    return (
+                                        <button key={i} onClick={() => handleDayClick(day)} disabled={!canClick}
+                                            className={`aspect-square flex items-center justify-center rounded-xl relative transition-all duration-150
+                                                ${canClick ? 'active:scale-95 cursor-pointer' : 'cursor-default'}`}>
+                                            {/* Círculo verde completo si tiene horario */}
+                                            <span className={`
+                                                w-7 h-7 flex items-center justify-center rounded-full text-sm font-black transition-colors
+                                                ${hasShift
+                                                    ? 'bg-emerald-500 text-white'
+                                                    : isToday
+                                                        ? 'text-blue-600'
+                                                        : isPast
+                                                            ? 'text-gray-300 font-medium'
+                                                            : 'text-gray-900 font-medium'
+                                                }
+                                            `}>
+                                                {day.getDate()}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 bg-[#fafafa]">
+                            <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3">Próximos Turnos</h4>
+                            {futureShifts.length === 0 ? (
+                                <p className="text-center text-gray-400 text-xs font-bold py-10 italic">No hay más turnos este mes.</p>
+                            ) : (
+                                <div className="flex flex-col gap-2">
+                                    {futureShifts.map((shift, idx) => (
+                                        <div key={idx} onClick={() => handleDayClick(shift.date)}
+                                            className="flex items-center gap-3 p-3 bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-purple-200 hover:shadow-md transition-all active:scale-[0.98]">
+                                            <div className="bg-purple-100 text-purple-700 rounded-xl px-3 py-2 flex flex-col items-center min-w-[46px]">
+                                                <span className="text-[8px] font-black uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
+                                                <span className="text-lg font-black leading-none mt-0.5">{shift.date.getDate()}</span>
+                                            </div>
+                                            <div className="flex flex-col flex-1 min-w-0">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-emerald-600 font-black text-sm">{shift.startTime}</span>
+                                                    <span className="text-gray-300">-</span>
+                                                    <span className="text-rose-500 font-black text-sm">{shift.endTime}</span>
+                                                </div>
+                                            </div>
+                                            <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    // VISTA B: TABLA IDÉNTICA AL EDITOR — SÓLO LECTURA
+                    <div className="flex flex-col flex-1 overflow-hidden bg-white">
+                        {loadingDay ? (
+                            <div className="flex-1 flex items-center justify-center py-20">
+                                <div className="w-8 h-8 rounded-full border-4 border-[#36606F] border-t-transparent animate-spin" />
+                            </div>
+                        ) : dayShifts.length === 0 ? (
+                            <div className="flex-1 flex items-center justify-center py-16">
+                                <p className="text-gray-400 text-sm font-bold italic">No hay turnos publicados para este día.</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Zona blanca — inputs en lectura (sin forma de edición) */}
+                                <div className="bg-white px-4 py-3 w-full shrink-0">
+                                    <div className="flex items-center gap-2 sm:gap-4 max-w-full justify-center">
+                                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad</span>
+                                            <div className="bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl flex items-center">
+                                                <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
+                                                    {dayActivity || '—'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
+                                            <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                <span className="font-black text-emerald-600 text-[11px] font-mono">{eventStart || '—'}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
+                                            <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                <span className="font-black text-rose-500 text-[11px] font-mono">{eventEnd || '—'}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Participantes</span>
+                                            <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                <span className="font-black text-zinc-800 text-[11px]">{eventParticipants || ' '}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Encabezado rojo — exacto al editor */}
+                                <div className="flex w-full bg-[#E55353] text-white shrink-0 rounded-t-[20px]">
+                                    <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-8 md:h-9" />
+                                    <div className="flex-1 relative h-8 md:h-9 flex">
+                                        {hoursHeader.map(hour => (
+                                            <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
+                                                {hour}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Filas de empleados — exactas al editor, sin eventos de puntero */}
+                                <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto">
+                                    {dayShifts.map((shift, idx) => (
+                                        <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white">
+                                            {/* Nombre */}
+                                            <div className="w-24 md:w-28 px-3 flex items-center shrink-0 overflow-hidden">
+                                                <span className="font-black text-[10px] md:text-xs truncate uppercase tracking-tight text-gray-800 select-none">
+                                                    {shift.name}
+                                                </span>
+                                            </div>
+                                            {/* Barra */}
+                                            <div className="flex-1 relative">
+                                                {/* Grid de horas de fondo */}
+                                                <div className="absolute inset-0 flex pointer-events-none">
+                                                    {hoursHeader.map((_, i) => (
+                                                        <div key={i} className="flex-1 border-r border-gray-50 last:border-r-0" />
+                                                    ))}
+                                                </div>
+                                                <ReadOnlyShiftBar start={shift.startTime} end={shift.endTime} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Footer verde TOT — exacto al editor */}
+                                <div className="flex w-full bg-[#0FA968] text-white shrink-0">
+                                    <div className="w-24 md:w-28 h-9 md:h-10 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
+                                        TOT
+                                    </div>
+                                    <div className="flex-1 h-9 md:h-10 flex">
+                                        {totals.map((count, i) => (
+                                            <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs ${count > 0 ? 'text-white' : 'text-white/30'}`}>
+                                                {count > 0 ? count : ''}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

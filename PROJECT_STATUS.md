@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-05 (Fix Esquema Caja + Editor Horarios v3)
+**Última actualización:** 2026-03-06 (Vista Híbrida Registros)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,23 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Vista Híbrida Calendario + Edición Ágil (/registros)**: Refactorización del layout para mantener la visibilidad del mes completo mientras se edita una semana. El calendario ahora se sitúa en la parte superior con un estado de enfoque (50% opacity) y es scrollable junto al editor semanal, garantizando el contexto mensual sin interrupciones.
+- [x] **Optimización y Unificación Modal Asistencia (AttendanceDetailModal)**: Refactorización radical del modal de detalle diario.
+  - **Renombrado**: `DayDetailModal` -> `AttendanceDetailModal` para mayor consistencia arquitectónica.
+  - **Compresión Vertical**: Reducción de paddings y gaps a la mitad para visualización sin scroll en móviles.
+  - **Layout Fijo**: Botonera inferior anclada (`shrink-0`) y contenido central scrollable.
+  - **Limpieza UI**: Eliminación de iconos de reloj y optimización de tamaños de fuente (HH:mm 100% visible).
+  - **Unificación**: Implementado como componente compartido único en `/staff/dashboard` y `/staff/history`.
+- [x] **Rediseño Tarjeta Horarios y Modal Expandido (Staff Dashboard)**: Sustitución de la lista básica por un "Mini-Calendario" con indicadores de turnos. Implementado el modal `StaffScheduleModal` con:
+  - **Vista A (Calendario)**: Exploración mensual con lógica de colores (verde para turnos, azul para hoy, gris/negro para pasado/futuro).
+  - **Vista B (Detalle)**: Réplica read-only del editor de horarios con navegación entre días. Solo muestra turnos **Publicados**.
+  - **Lógica de Manager**: Redirección automática al editor para días vacíos o en borrador, e inclusión de botón de edición en la cabecera para días publicados.
+- [x] **Arquitectura de Horarios Robusta (Draft & Deduplication)**: Evolución del motor de turnos para garantizar integridad y flexibilidad:
+  - **Separación de Estados**: Implementación de columnas `draft_` (`start`, `end`, `activity`, `notes`) en la tabla `shifts`. Los cambios en el editor se guardan como borradores invisibles para el personal hasta su publicación.
+  - **Deduplicación por Motor**: Añadido índice único `idx_shifts_unique_user_day` para impedir que un empleado tenga más de un turno por día.
+  - **Sincronización de Publicación**: Lógica de un clic para volcar borradores a la vista pública y notificar al equipo.
+  - **Persistencia Individual**: Recuperación total de actividad y participantes por cada turno individual.
+  - **Optimización UI**: Diseño Cupertino/Apple Human Interface con targets de 48px y arquitectura Bento Grid.
 - [x] **Blindaje Matemático y Horario en Ventas (/dashboard/ventas)**: Reemplazado el reducer de `toggleTicket` para forzar mapeos como `line.cantidad ?? line.unidades` eliminando la propagación de resultados `NaN` por desajustes del RPC. Se ha implementado también la API nativa Date JS en la extracción de la zona de tiempos (`getHours()`, `getMinutes()`), erradicando las conversiones estáticas por strings desfasados.
 - [x] **Agrupación y Render de Tickets en Ventas (/dashboard/ventas)**: Aplicada agrupación por artículo y precio en el drill-down del ticket mediante un Reducer en memoria para sumar cantidades/importes (evitando el colapso visual de listados idénticos largos). Además, se ha erradicado el uso destructivo de `parseLocalSafe` en la columna de la hora de "VISIÓN TICKETS", reescribiendo la función anónima para extraer de forma segura y directa los 5 primeros caracteres (HH:mm) del string de `hora_cierre` o en su defecto mapeando directamente desde el sufijo ISO de `fecha`, solucionando la invisibilidad permanente de las horas.
 - [x] **Corrección Crítica de fetchPage en Tesorería (/movements)**: Sustitución de `.not('type', 'in', ['ADJUSTMENT', 'SWAP'])` por encadenamiento de `.neq()` para prevenir recuelgues de Supabase JS v2. Añadido operador `.or` para incluir movimientos históricos o del TPV que no poseen `box_id` explícito asignado (`box_id.is.null`), logrando poblar correctamente la lista vacía de movimientos.

@@ -169,14 +169,15 @@ export default function ScheduleEditorPage() {
             setIsSaving(true);
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = setTimeout(async () => {
-                await handleSave(true, isDayPublished);
+                // El autoguardado NUNCA debe publicar, siempre guarda como borrador (false)
+                await handleSave(true, false);
                 setIsSaving(false);
             }, 1000);
         }
         return () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         };
-    }, [shifts, activity, defaultStart, defaultEnd, participantsCount, hasUnsavedChanges, isDayPublished, loading]);
+    }, [shifts, activity, defaultStart, defaultEnd, participantsCount, hasUnsavedChanges, loading]);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -202,9 +203,16 @@ export default function ScheduleEditorPage() {
                 .from('shifts')
                 .select('*')
                 .gte('start_time', startOfDay)
-                .lte('start_time', endOfDay);
+                .lte('start_time', endOfDay)
+                .order('created_at', { ascending: false }); // Mas nuevos primero
 
-            const shiftMap = new Map(existingShifts?.map(s => [s.user_id, s]) || []);
+            // DEDUPLICACIÓN: Mapa por user_id, quedándonos con el primero (más reciente)
+            const shiftMap = new Map();
+            existingShifts?.forEach(s => {
+                if (!shiftMap.has(s.user_id)) {
+                    shiftMap.set(s.user_id, s);
+                }
+            });
 
             const activeShifts = employees?.filter(emp => shiftMap.has(emp.id)).map(emp => {
                 const existing = shiftMap.get(emp.id);
@@ -214,31 +222,60 @@ export default function ScheduleEditorPage() {
                 if (lowerName === 'fernando') displayName = 'Fer';
                 if (lowerName === 'mamadou') displayName = 'Mamdou';
 
+                // Usamos los valores de borrador si existen, si no los publicados
+                const sTime = existing!.draft_start_time || existing!.start_time;
+                const eTime = existing!.draft_end_time || existing!.end_time;
+                const sActivity = existing!.draft_activity || existing!.activity || '';
+                const sNotes = existing!.draft_notes || existing!.notes || '{}';
+
                 return {
                     employeeId: emp.id,
                     name: displayName,
-                    start: new Date(existing!.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                    end: new Date(existing!.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    start: new Date(sTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    end: new Date(eTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    activity: sActivity,
+                    participantsCount: (() => {
+                        try {
+                            const parsed = JSON.parse(sNotes);
+                            return parsed.participantsCount || '';
+                        } catch (e) { return ''; }
+                    })(),
                     active: true
                 };
             }) || [];
 
-            if (existingShifts && existingShifts.length > 0) {
-                setActivity(existingShifts[0].activity || '');
-                const notesStr = existingShifts[0].notes;
-                if (notesStr) {
-                    try {
-                        const parsed = JSON.parse(notesStr);
-                        setDefaultStart(parsed.defaultStart || '');
-                        setDefaultEnd(parsed.defaultEnd || '');
-                        setParticipantsCount(parsed.participantsCount || '');
-                    } catch (e) {
-                        setDefaultStart(''); setDefaultEnd(''); setParticipantsCount('');
-                    }
-                } else {
-                    setDefaultStart(''); setDefaultEnd(''); setParticipantsCount('');
-                }
-                setIsDayPublished(existingShifts.some(s => s.is_published));
+            const uniqueShifts = Array.from(shiftMap.values()) as any[];
+
+            if (uniqueShifts.length > 0) {
+                // Keep the first one as day-level fallback/defaults
+                const first = uniqueShifts[0];
+                const fActivity = first.draft_activity || first.activity || '';
+                const fNotes = first.draft_notes || first.notes || '{}';
+
+                setActivity(fActivity);
+
+                let pStart = '';
+                let pEnd = '';
+                let pPart = '';
+
+                try {
+                    const parsed = JSON.parse(fNotes);
+                    pStart = parsed.defaultStart || '';
+                    pEnd = parsed.defaultEnd || '';
+                    pPart = parsed.participantsCount || '';
+                } catch (e) { }
+
+                // Fallback to actual times if notes are missing or defaults are empty
+                const fStartTime = first.draft_start_time || first.start_time;
+                const fEndTime = first.draft_end_time || first.end_time;
+                if (!pStart && fStartTime) pStart = new Date(fStartTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                if (!pEnd && fEndTime) pEnd = new Date(fEndTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+                setDefaultStart(pStart);
+                setDefaultEnd(pEnd);
+                setParticipantsCount(pPart);
+
+                setIsDayPublished(uniqueShifts.some(s => s.is_published));
             } else {
                 setIsDayPublished(false);
                 setActivity('');
@@ -281,6 +318,8 @@ export default function ScheduleEditorPage() {
             name: profile.first_name?.toLowerCase() === 'fernando' ? 'Fer' : (profile.first_name?.toLowerCase() === 'mamadou' ? 'Mamdou' : profile.first_name),
             start: defaultStart || '09:00',
             end: defaultEnd || '17:00',
+            activity: activity || '',
+            participantsCount: participantsCount || '',
             active: true
         };
         setShifts([...shifts, newShift]);
@@ -313,31 +352,88 @@ export default function ScheduleEditorPage() {
                 return false;
             }
 
+            // Paso 1: Obtener estado actual de la DB para este día
+            const startOfRange = new Date(`${date}T00:00:00`).toISOString();
+            const endOfRange = new Date(`${date}T23:59:59`).toISOString();
+
+            const { data: dbShifts } = await supabase.from('shifts')
+                .select('*')
+                .gte('start_time', startOfRange)
+                .lte('start_time', endOfRange);
+
+            const dbShiftMap = new Map(dbShifts?.map(s => [s.user_id, s]) || []);
+
+            // Paso 2: Preparar los nuevos registros
             const shiftsToInsert = activeShifts.map(shift => {
+                const existing = dbShiftMap.get(shift.employeeId);
                 const startDateTime = new Date(`${date}T${shift.start}:00`);
                 const endDateTime = new Date(`${date}T${shift.end}:00`);
-                return {
+                const isoStart = startDateTime.toISOString();
+                const isoEnd = endDateTime.toISOString();
+                const shiftActivity = shift.activity || activity || null;
+                const shiftNotes = JSON.stringify({
+                    defaultStart: shift.start || defaultStart,
+                    defaultEnd: shift.end || defaultEnd,
+                    participantsCount: shift.participantsCount || participantsCount
+                });
+
+                const data: any = {
                     user_id: shift.employeeId,
-                    start_time: startDateTime.toISOString(),
-                    end_time: endDateTime.toISOString(),
-                    activity: activity || null,
-                    notes: JSON.stringify({ defaultStart, defaultEnd, participantsCount }),
-                    is_published: publish
+                    draft_start_time: isoStart,
+                    draft_end_time: isoEnd,
+                    draft_activity: shiftActivity,
+                    draft_notes: shiftNotes,
+                    event_start_time: defaultStart || null,
+                    event_end_time: defaultEnd || null,
+                    event_participants: participantsCount ? parseInt(participantsCount) : null,
+                    is_published: publish ? true : (existing?.is_published || false),
+                    // Mantenemos start_time como ancla para el rango del día
+                    start_time: isoStart,
+                    end_time: isoEnd
                 };
+
+                // Si publicamos, sincronizamos con las columnas principales activamente
+                if (publish) {
+                    data.activity = shiftActivity;
+                    data.notes = shiftNotes;
+                    data.is_published = true;
+                } else if (existing && existing.is_published) {
+                    // Si ya está publicado, NO tocamos las columnas principales durante un autoguardado
+                    // Restauramos los valores originales de la DB para las columnas públicas
+                    data.start_time = existing.start_time;
+                    data.end_time = existing.end_time;
+                    data.activity = existing.activity;
+                    data.notes = existing.notes;
+                    data.is_published = true;
+                } else if (!existing) {
+                    // Si es totalmente nuevo, inicializamos las principales pero como borrador (is_published: false)
+                    data.activity = shiftActivity;
+                    data.notes = shiftNotes;
+                    data.is_published = false;
+                }
+
+                return data;
             });
 
-            const startOfDay = `${date}T00:00:00.000Z`;
-            const endOfDay = `${date}T23:59:59.999Z`;
+            // Borramos los turnos de los usuarios del día para re-insertar de forma limpia
+            await supabase.from('shifts')
+                .delete()
+                .gte('start_time', startOfRange)
+                .lte('start_time', endOfRange);
 
-            await supabase.from('shifts').delete().gte('start_time', startOfDay).lte('start_time', endOfDay);
             const { error } = await supabase.from('shifts').insert(shiftsToInsert);
 
             if (error) throw error;
 
             setHasUnsavedChanges(false);
-            setIsDayPublished(publish);
+            setIsDayPublished(publish || isDayPublished);
             if (!silent) toast.success(`${activeShifts.length} turno(s) guardado(s)`);
-            if (!silent) router.push('/staff/schedule');
+            if (!silent && !publish) {
+                // Si es solo guardado normal, nos quedamos en la página
+                fetchData(date);
+            } else if (!silent && publish) {
+                router.push('/staff/schedule');
+            }
             return true;
         } catch (error: any) {
             console.error(error);
@@ -455,34 +551,81 @@ export default function ScheduleEditorPage() {
                         {/* ZONA DE INPUTS SUPERIOR - Sin border-b ni shadow */}
                         <div className="p-4 md:p-6 w-full shrink-0">
                             <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center max-w-2xl mx-auto">
-                                <div className="flex flex-col gap-1 flex-1 min-w-0">
-                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-2">Actividad</span>
-                                    <div className="flex items-center bg-white px-3 py-2 rounded-2xl transition-colors">
+                                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad</span>
+                                    <div className="flex items-center bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl">
                                         <input
                                             type="text"
-                                            value={activity}
-                                            onChange={(e) => { setActivity(e.target.value); setHasUnsavedChanges(true); }}
+                                            value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (editingIndex !== null) {
+                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity: val });
+                                                } else {
+                                                    setActivity(val);
+                                                    setHasUnsavedChanges(true);
+                                                }
+                                            }}
                                             className="w-full bg-transparent text-left font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
                                             placeholder="ARTÍSTICA"
                                         />
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-1 shrink-0 w-[75px] sm:w-[90px]">
-                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Inicio</span>
-                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors">
-                                        <input type="time" value={defaultStart} onChange={(e) => { setDefaultStart(e.target.value); setHasUnsavedChanges(true); }} className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
+                                <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
+                                    <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
+                                        <input
+                                            type="time"
+                                            value={editingIndex !== null ? shifts[editingIndex].start : defaultStart}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (editingIndex !== null) {
+                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], start: val });
+                                                } else {
+                                                    setDefaultStart(val);
+                                                    setHasUnsavedChanges(true);
+                                                }
+                                            }}
+                                            className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full"
+                                        />
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-1 shrink-0 w-[75px] sm:w-[90px]">
-                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Final</span>
-                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors">
-                                        <input type="time" value={defaultEnd} onChange={(e) => { setDefaultEnd(e.target.value); setHasUnsavedChanges(true); }} className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
+                                <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
+                                    <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
+                                        <input
+                                            type="time"
+                                            value={editingIndex !== null ? shifts[editingIndex].end : defaultEnd}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (editingIndex !== null) {
+                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], end: val });
+                                                } else {
+                                                    setDefaultEnd(val);
+                                                    setHasUnsavedChanges(true);
+                                                }
+                                            }}
+                                            className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full"
+                                        />
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-1 shrink-0 w-[50px] sm:w-[70px]">
-                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
-                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors h-[34px] sm:h-[38px]">
-                                        <input type="text" value={participantsCount} onChange={(e) => { setParticipantsCount(e.target.value); setHasUnsavedChanges(true); }} className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full" />
+                                <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Participantes</span>
+                                    <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
+                                        <input
+                                            type="text"
+                                            value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (editingIndex !== null) {
+                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount: val });
+                                                } else {
+                                                    setParticipantsCount(val);
+                                                    setHasUnsavedChanges(true);
+                                                }
+                                            }}
+                                            className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -541,7 +684,7 @@ export default function ScheduleEditorPage() {
                                     <div className="absolute top-[80px] md:top-[90px] left-0 right-0 z-[100] translate-y-2 pointer-events-none flex justify-center w-full px-4" onClick={(e) => e.stopPropagation()}>
                                         <div className="w-full max-w-md pointer-events-auto h-14 flex items-center p-1.5 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
                                             <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
-                                                <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20" />
+                                                <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
                                             </div>
                                             <button onClick={(e) => { e.stopPropagation(); setEditingIndex(null) }} className="ml-3 mr-1 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
                                                 <X size={20} strokeWidth={3} />

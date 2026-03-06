@@ -10,7 +10,7 @@ import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
-import { DayDetailModal } from '@/components/modals/DayDetailModal';
+import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 
 // --- TIPOS ---
 interface DayData {
@@ -446,7 +446,7 @@ export default function HistoryPage() {
                     )}
                 </div>
 
-                <DayDetailModal
+                <AttendanceDetailModal
                     isOpen={!!editingDate}
                     onClose={() => setEditingDate(null)}
                     date={editingDate ? new Date(editingDate + 'T12:00:00') : null}

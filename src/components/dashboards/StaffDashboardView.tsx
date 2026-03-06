@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Play, Square, CalendarDays,
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
-    Info, Package,
+    Check, Info, Package,
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
     Plus, Minus, BookOpen, CalendarCheck, ExternalLink
@@ -15,11 +15,13 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
-import { DayDetailModal } from '@/components/modals/DayDetailModal';
+import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
+import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { differenceInMinutes, startOfWeek, addDays, format, isSameDay } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
@@ -86,6 +88,7 @@ export default function StaffDashboardView() {
     const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
         totalHours: 0, hoursDifference: 0, currentBalance: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
     });
+    const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
     const [currentMonthName, setCurrentMonthName] = useState('');
     const [weekNumber, setWeekNumber] = useState<number | null>(null);
@@ -102,6 +105,8 @@ export default function StaffDashboardView() {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [userName, setUserName] = useState("");
 
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
     const [operationalBox, setOperationalBox] = useState<any>(null);
@@ -151,6 +156,7 @@ export default function StaffDashboardView() {
 
             if (profile) {
                 setUserRole(profile.role as any);
+                setUserName(profile.first_name || "Personal");
                 if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
                 if (profile.overtime_cost_per_hour !== null) overtimeRate = profile.overtime_cost_per_hour;
                 if (profile.hours_balance !== undefined && profile.hours_balance !== null) historicalBalance = profile.hours_balance;
@@ -259,14 +265,14 @@ export default function StaffDashboardView() {
                 console.warn("No cash boxes found or accessible via RLS for this user.");
             }
 
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const { data: realShifts } = await supabase
                 .from('shifts')
                 .select('start_time, end_time, activity')
                 .eq('user_id', user.id)
                 .eq('is_published', true)
-                .gte('start_time', new Date().toISOString())
-                .order('start_time', { ascending: true })
-                .limit(5);
+                .gte('start_time', startOfMonth.toISOString())
+                .order('start_time', { ascending: true });
 
             if (realShifts && realShifts.length > 0) {
                 const formattedShifts: ShiftMock[] = realShifts.map(s => {
@@ -279,8 +285,12 @@ export default function StaffDashboardView() {
                         activity: s.activity || undefined
                     };
                 });
-                setNextShifts(formattedShifts);
+                setMonthShifts(formattedShifts);
+                const todayStart = new Date(today);
+                todayStart.setHours(0, 0, 0, 0);
+                setNextShifts(formattedShifts.filter(s => s.date >= todayStart).slice(0, 2));
             } else {
+                setMonthShifts([]);
                 setNextShifts([]);
             }
 
@@ -574,40 +584,81 @@ export default function StaffDashboardView() {
 
                     <div className="lg:col-span-1 space-y-4 md:space-y-6">
                         <div className="grid grid-cols-2 gap-3">
+                            {/* MINI CALENDAR HORARIOS CARD — aspect-square strict */}
                             <div
-                                onClick={() => router.push('/staff/schedule')}
-                                className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden relative min-h-[180px] cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] group/card"
+                                onClick={() => setIsScheduleModalOpen(true)}
+                                className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
                             >
-                                {/* Header Lila - Estilo Personalizado */}
-                                <div className="bg-purple-600 px-4 py-2 flex items-center text-white shrink-0">
-                                    <h3 className="font-black flex items-center gap-1.5 text-[10px] uppercase tracking-wider">
-                                        <CalendarDays size={14} className="text-white/80 shrink-0" fill="currentColor" /> <span className="truncate">Horarios</span>
+                                {/* Header compacto */}
+                                <div className="bg-purple-600 px-2 py-1 flex items-center justify-between text-white shrink-0">
+                                    <h3 className="font-black flex items-center gap-1 text-[9px] uppercase tracking-wider">
+                                        <CalendarDays size={10} className="text-white/80 shrink-0" fill="currentColor" />
+                                        <span>Horarios</span>
                                     </h3>
+                                    <div className="bg-white/20 rounded px-1 py-px text-[7px] font-black">VER</div>
                                 </div>
 
-                                <div className="p-2 py-1 flex-1 flex flex-col justify-center">
-                                    <div className="grid grid-cols-1 gap-1.5 justify-items-center">
-                                        {nextShifts.length === 0 ? (
-                                            <div className="flex items-center justify-center py-6 px-2">
-                                                <p className="text-[10px] text-gray-400 text-center font-bold italic">No tienes turnos.</p>
-                                            </div>
-                                        ) : (
-                                            nextShifts.slice(0, 2).map((shift, idx) => (
-                                                <div key={idx} className="flex items-center gap-2 p-1 transition-colors group w-full">
-                                                    <div className="bg-white p-1 rounded-xl text-gray-500 font-black text-center min-w-[36px] shadow-sm border border-gray-100 group-hover:border-purple-100 transition-colors shrink-0">
-                                                        <span className="block text-[6px] uppercase text-purple-400 mb-0.5">{shift.date.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
-                                                        <span className="leading-none text-xs text-gray-800">{shift.date.getDate()}</span>
+                                {/* Zona central: justify-between elimina hueco blanco */}
+                                {/* Zona central: justify-between elimina hueco blanco */}
+                                <div className="flex-1 flex flex-col justify-between px-1.5 pt-1.5 pb-6 min-h-0">
+                                    <div>
+                                        <div className="grid grid-cols-7 mb-0.5">
+                                            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                                <div key={d} className="text-center text-[6px] font-black text-gray-300 leading-none">{d}</div>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-7">
+                                            {Array.from({ length: (new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay() + 6) % 7 }).map((_, i) => (
+                                                <div key={`e-${i}`} />
+                                            ))}
+                                            {Array.from({ length: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() }).map((_, i) => {
+                                                const d = i + 1;
+                                                const day = new Date(new Date().getFullYear(), new Date().getMonth(), d);
+                                                const today = new Date(); today.setHours(0, 0, 0, 0);
+                                                const isToday = d === new Date().getDate() && day.getMonth() === today.getMonth();
+                                                const isPast = day < today;
+                                                const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
+
+                                                return (
+                                                    <div key={d} className="flex items-center justify-center py-[2px]">
+                                                        <span className={`
+                                                            w-3 h-3 flex items-center justify-center rounded-full text-[7px] leading-none transition-colors
+                                                            ${hasShift
+                                                                ? 'bg-emerald-500 text-white font-black'
+                                                                : isToday
+                                                                    ? 'text-blue-600 font-black'
+                                                                    : isPast
+                                                                        ? 'text-gray-300 font-medium'
+                                                                        : 'text-gray-900 font-medium'
+                                                            }
+                                                        `}>
+                                                            {d}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex flex-col gap-0 overflow-hidden items-start min-w-0">
-                                                        <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest truncate w-full">{shift.activity || 'Turno'}</span>
-                                                        <div className="flex flex-wrap items-center gap-x-1 gap-y-0 text-[10px] font-black w-full">
-                                                            <span className="text-green-600 whitespace-nowrap">{shift.startTime}</span>
-                                                            <span className="text-gray-300 font-light">-</span>
-                                                            <span className="text-red-500 whitespace-nowrap">{shift.endTime}</span>
-                                                        </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Próximo turno — sección inferior con mayor peso visual */}
+                                    <div className="border-t border-gray-100 pt-1 px-0.5">
+                                        {nextShifts.length === 0 ? (
+                                            <p className="text-[7px] text-gray-300 font-bold italic text-center py-0.5">Sin turnos</p>
+                                        ) : (
+                                            <div className="flex items-center gap-1 w-full overflow-hidden">
+                                                <div className="flex flex-col items-center shrink-0 bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[18px]">
+                                                    <span className="text-[5.5px] font-black text-purple-400 uppercase leading-none">{format(nextShifts[0].date, "MMM", { locale: es })}</span>
+                                                    <span className="text-[11px] font-black text-purple-700 leading-none">{nextShifts[0].date.getDate()}</span>
+                                                </div>
+                                                <div className="flex flex-col flex-1 min-w-0 gap-0">
+                                                    <span className="text-[6.5px] font-black text-gray-400 uppercase truncate leading-none">{nextShifts[0].activity || 'Turno'}</span>
+                                                    <div className="flex items-center gap-0.5 font-black leading-none mt-0.5">
+                                                        <span className="text-[9px] text-emerald-600 font-bold">{nextShifts[0].startTime}</span>
+                                                        <span className="text-[7px] text-gray-300">-</span>
+                                                        <span className="text-[9px] text-rose-500 font-bold">{nextShifts[0].endTime}</span>
                                                     </div>
                                                 </div>
-                                            ))
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -792,6 +843,14 @@ export default function StaffDashboardView() {
                     onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
                 />
 
+                <StaffScheduleModal
+                    isOpen={isScheduleModalOpen}
+                    onClose={() => setIsScheduleModalOpen(false)}
+                    shifts={monthShifts}
+                    userName={userName}
+                    userRole={userRole}
+                />
+
                 {/* MODAL: Cambio de Efectivo (Cambio 1) */}
 
                 {/* MODAL: Cambio de Efectivo (Cambio 1) */}
@@ -891,7 +950,7 @@ export default function StaffDashboardView() {
                     onClose={() => setIsSupplierModalOpen(false)}
                 />
 
-                <DayDetailModal
+                <AttendanceDetailModal
                     isOpen={isDayDetailModalOpen}
                     date={selectedDayDate}
                     userId={userId}
