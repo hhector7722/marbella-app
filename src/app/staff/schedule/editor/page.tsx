@@ -175,7 +175,7 @@ export default function ScheduleEditorPage() {
         return () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         };
-    }, [shifts, activity, hasUnsavedChanges, isDayPublished, loading]);
+    }, [shifts, activity, defaultStart, defaultEnd, participantsCount, hasUnsavedChanges, isDayPublished, loading]);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -392,7 +392,7 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
-        <div className="min-h-[100dvh] w-full flex flex-col bg-[#5B8FB9] p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800">
+        <div className="min-h-[100dvh] w-full flex flex-col bg-[#5B8FB9] p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800" onClick={() => setEditingIndex(null)}>
             {/* CONTENEDOR MAESTRO VERDE PETRÓLEO - SIN PADDING INTERNO */}
             <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col shrink max-w-7xl mx-auto w-full relative">
 
@@ -454,19 +454,19 @@ export default function ScheduleEditorPage() {
                                 <div className="flex flex-col gap-1 shrink-0 w-[75px] sm:w-[90px]">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Inicio</span>
                                     <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors">
-                                        <input type="time" value={defaultStart} onChange={(e) => setDefaultStart(e.target.value)} className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
+                                        <input type="time" value={defaultStart} onChange={(e) => { setDefaultStart(e.target.value); setHasUnsavedChanges(true); }} className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1 shrink-0 w-[75px] sm:w-[90px]">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Final</span>
                                     <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors">
-                                        <input type="time" value={defaultEnd} onChange={(e) => setDefaultEnd(e.target.value)} className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
+                                        <input type="time" value={defaultEnd} onChange={(e) => { setDefaultEnd(e.target.value); setHasUnsavedChanges(true); }} className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1 shrink-0 w-[50px] sm:w-[70px]">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
                                     <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors h-[34px] sm:h-[38px]">
-                                        <input type="text" value={participantsCount} onChange={(e) => setParticipantsCount(e.target.value)} className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full" />
+                                        <input type="text" value={participantsCount} onChange={(e) => { setParticipantsCount(e.target.value); setHasUnsavedChanges(true); }} className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full" />
                                     </div>
                                 </div>
                             </div>
@@ -494,9 +494,12 @@ export default function ScheduleEditorPage() {
                     {/* FILAS DE EMPLEADOS */}
                     <div className="flex flex-col w-full bg-white relative pb-0 z-10">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors relative ${editingIndex === idx ? 'bg-blue-50/40 z-50' : 'bg-white z-10'}`}>
-                                <div className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4">
-                                    <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
+                            <div key={shift.employeeId} className={`flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors relative ${editingIndex === idx ? 'bg-blue-50/40 z-50' : 'bg-white z-10'}`} onClick={(e) => { if (editingIndex === idx) e.stopPropagation(); }}>
+                                <div
+                                    className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4 cursor-pointer hover:bg-blue-50/30 transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); setEditingIndex(idx); }}
+                                >
+                                    <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1 select-none`}>
                                         {shift.name}
                                     </span>
                                     {editingIndex === idx && (
@@ -508,13 +511,13 @@ export default function ScheduleEditorPage() {
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
+                                <div className="flex-1 relative">
                                     <div className="absolute inset-0 flex">
                                         {hoursHeader.map((_, i) => (
                                             <div key={i} className="flex-1 pointer-events-none" />
                                         ))}
                                     </div>
-                                    {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
+                                    {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} allowMove={editingIndex === idx} />}
                                 </div>
 
                                 {/* BARRA EDICIÓN FLOTANTE (Anclada dos filas abajo = ~72px/80px top distance) */}
@@ -599,65 +602,63 @@ export default function ScheduleEditorPage() {
             {/* MODAL COMPARTIR */}
             {showShareModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowShareModal(false)}>
-                    <div className="bg-white rounded-3xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 flex flex-col gap-4">
+                    <div className="bg-white rounded-[24px] w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] p-4 flex items-center justify-center text-white relative">
+                            <h3 className="text-sm font-black uppercase tracking-widest">Compartir</h3>
+                        </div>
+                        <div className="p-6 flex flex-col gap-5">
                             <div className="flex flex-col gap-1 text-center">
-                                <h3 className="text-xl font-black text-gray-800 tracking-tight">COMPARTIR HORARIO</h3>
-                                <div className="text-xs uppercase font-black px-3 py-1 bg-gray-100 rounded-full inline-flex self-center mt-1">
-                                    Estado: <span className={`ml-1 ${isDayPublished ? (isDaySent ? 'text-emerald-500' : 'text-[#36606F]') : 'text-orange-400'}`}>
+                                <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase mb-1">Estado del Horario</span>
+                                <div className="text-xs uppercase font-black px-4 py-1.5 bg-gray-100 rounded-xl inline-flex self-center">
+                                    <span className={`${isDayPublished ? (isDaySent ? 'text-emerald-500' : 'text-[#36606F]') : 'text-orange-400'}`}>
                                         {isDayPublished ? (isDaySent ? 'Publicado y Enviado' : 'Publicado') : 'Sin publicar'}
                                     </span>
                                 </div>
                             </div>
-                            <p className="text-sm text-gray-500 text-center font-medium mt-1">
-                                Gestionando el horario de <span className="capitalize font-bold">{date && format(new Date(date), "EEEE d", { locale: es })}</span>
-                            </p>
-                            <div className="flex flex-col gap-3 mt-4">
-                                {!isDayPublished && (
-                                    <button
-                                        onClick={async () => {
-                                            setShowShareModal(false);
-                                            await handleSave(false, true);
-                                        }}
-                                        className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
-                                    >
-                                        <CheckCircle2 size={18} /> PUBLICAR HORARIO
-                                    </button>
-                                )}
+                            <div className="flex flex-col gap-3 mt-2">
+                                <button
+                                    onClick={async () => {
+                                        setShowShareModal(false);
+                                        await handleSave(false, true);
+                                    }}
+                                    className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={18} /> {!isDayPublished ? 'Guardar' : 'Sobreescribir'}
+                                </button>
 
-                                {(!isDayPublished || isDayPublished) && (
-                                    <button
-                                        onClick={async () => {
-                                            setShowShareModal(false);
-                                            const saved = await handleSave(true, true);
-                                            if (saved || isDayPublished) {
-                                                const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
-                                                const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
-                                                const loadToast = toast.loading('Enviando...');
-                                                try {
-                                                    const res = await sendScheduleNotifications(userIds, dateFormatted);
-                                                    toast.dismiss(loadToast);
-                                                    if (res.success) {
-                                                        toast.success('Notificaciones enviadas');
-                                                        setIsDaySent(true);
-                                                    }
-                                                } catch (e) {
-                                                    toast.dismiss(loadToast);
-                                                    toast.error('Error al enviar');
+                                <button
+                                    onClick={async () => {
+                                        setShowShareModal(false);
+                                        const saved = await handleSave(true, true);
+                                        if (saved || isDayPublished) {
+                                            const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
+                                            const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+                                            const loadToast = toast.loading('Enviando...');
+                                            try {
+                                                const res = await sendScheduleNotifications(userIds, dateFormatted);
+                                                toast.dismiss(loadToast);
+                                                if (res.success) {
+                                                    toast.success('Notificaciones enviadas');
+                                                    setIsDaySent(true);
                                                 }
+                                            } catch (e) {
+                                                toast.dismiss(loadToast);
+                                                toast.error('Error al enviar');
                                             }
-                                        }}
-                                        className={`w-full text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2 ${!isDayPublished ? 'bg-[#0FA968] hover:bg-emerald-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
-                                    >
-                                        <Send size={18} /> {!isDayPublished ? 'PUBLICAR Y ENVIAR' : 'ENVIAR / REENVIAR NOTIFICACIONES'}
-                                    </button>
-                                )}
+                                        }
+                                    }}
+                                    className={`w-full text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2 bg-[#0FA968] hover:bg-emerald-600`}
+                                >
+                                    <Send size={18} /> {!isDaySent ? 'Enviar' : 'Reenviar'}
+                                </button>
+
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="w-full bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase mt-1"
+                                >
+                                    Cancelar
+                                </button>
                             </div>
-                        </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center">
-                            <button onClick={() => setShowShareModal(false)} className="text-gray-500 hover:text-gray-700 font-black tracking-widest text-xs uppercase px-6 py-2">
-                                Cancelar
-                            </button>
                         </div>
                     </div>
                 </div>
