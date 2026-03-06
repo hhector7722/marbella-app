@@ -422,7 +422,7 @@ export default function ScheduleEditorPage() {
 
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className={`relative w-8 h-8 md:w-9 md:h-9 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group`}
+                                className={`relative w-8 h-8 md:w-9 md:h-9 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-[#36606F]' : ''}`}
                             >
                                 <Share2 size={18} strokeWidth={2.5} className="text-white" />
                                 {isDayPublished && isDaySent && (
@@ -441,7 +441,7 @@ export default function ScheduleEditorPage() {
                             <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center max-w-2xl mx-auto">
                                 <div className="flex flex-col gap-1 flex-1 min-w-0">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-2">Actividad</span>
-                                    <div className="flex items-center bg-white px-3 py-2 rounded-2xl border-2 border-zinc-100 focus-within:border-zinc-300 transition-colors">
+                                    <div className="flex items-center bg-white px-3 py-2 rounded-2xl transition-colors">
                                         <input
                                             type="text"
                                             value={activity}
@@ -453,19 +453,19 @@ export default function ScheduleEditorPage() {
                                 </div>
                                 <div className="flex flex-col gap-1 shrink-0 w-[75px] sm:w-[90px]">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Inicio</span>
-                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl border-2 border-zinc-100 focus-within:border-zinc-300 transition-colors">
+                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors">
                                         <input type="time" value={defaultStart} onChange={(e) => setDefaultStart(e.target.value)} className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1 shrink-0 w-[75px] sm:w-[90px]">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Final</span>
-                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl border-2 border-zinc-100 focus-within:border-zinc-300 transition-colors">
+                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors">
                                         <input type="time" value={defaultEnd} onChange={(e) => setDefaultEnd(e.target.value)} className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full" />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1 shrink-0 w-[50px] sm:w-[70px]">
                                     <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest text-center">Part.</span>
-                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl border-2 border-zinc-100 focus-within:border-zinc-300 transition-colors h-[34px] sm:h-[38px]">
+                                    <div className="flex items-center justify-center bg-white px-2 py-2 rounded-2xl transition-colors h-[34px] sm:h-[38px]">
                                         <input type="text" value={participantsCount} onChange={(e) => setParticipantsCount(e.target.value)} className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full" />
                                     </div>
                                 </div>
