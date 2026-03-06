@@ -352,9 +352,9 @@ export default function ScheduleEditorPage() {
     if (loading) return <div className="min-h-screen bg-[#5B8FB9]"></div>;
 
     return (
-        <div className="min-h-screen w-full flex flex-col bg-[#5B8FB9] p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden text-gray-800">
+        <div className="h-[100dvh] w-full flex flex-col bg-[#5B8FB9] p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden text-gray-800">
             {/* CONTENEDOR MAESTRO VERDE PETRÓLEO - SIN PADDING INTERNO y OVERFLOW HIDDEN */}
-            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col flex-1 max-w-7xl mx-auto w-full overflow-hidden relative">
+            <div className="bg-[#36606F] rounded-[32px] shadow-2xl flex flex-col shrink min-h-0 max-h-full max-w-7xl mx-auto w-full overflow-hidden relative">
 
                 {/* CABECERA (Fecha y Botones) - Con padding propio */}
                 <div className="flex items-center justify-between px-4 py-3 shrink-0">
@@ -384,7 +384,7 @@ export default function ScheduleEditorPage() {
 
                 {/* CONTENEDOR MONOLÍTICO - SIN BORDES REDONDEADOS NI MÁRGENES */}
                 {/* Ocupa todo el ancho y el alto restante. El padre recorta las esquinas inferiores. */}
-                <div className="flex flex-col flex-1 w-full overflow-hidden bg-[#5B8FB9]">
+                <div className="flex flex-col shrink min-h-0 w-full overflow-hidden bg-white">
 
                     {/* ZONA DE INPUTS SUPERIOR - Con padding propio */}
                     <div className="bg-white p-4 md:p-6 w-full shrink-0 border-b border-gray-100">
@@ -423,7 +423,7 @@ export default function ScheduleEditorPage() {
                     </div>
 
                     {/* ZONA DE TABLA Y FILAS */}
-                    <div className="flex flex-col flex-1 relative min-h-0 w-full overflow-y-auto custom-scrollbar">
+                    <div className="flex flex-col shrink min-h-0 relative w-full overflow-y-auto custom-scrollbar">
 
                         {/* ENCABEZADO ROJO */}
                         <div className="flex w-full bg-[#E55353] text-white sticky top-0 z-40 shadow-sm shrink-0">
@@ -469,7 +469,7 @@ export default function ScheduleEditorPage() {
                         </div>
 
                         {/* FOOTER VERDE */}
-                        <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu mb-auto shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)]">
+                        <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)]">
                             <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/20">
                                 TOT
                             </div>
