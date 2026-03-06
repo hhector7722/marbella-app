@@ -435,125 +435,124 @@ export default function ScheduleEditorPage() {
                                     </button>
                                 </div>
                             </div>
-
-                            {/* ENCABEZADO ROJO */}
-                            <div className="flex w-full bg-[#E55353] text-white shrink-0">
-                                <div className="w-24 md:w-32 shrink-0 border-r border-white/20"></div>
-                                <div className="flex-1 relative h-8 md:h-9 flex">
-                                    {hoursHeader.map((hour) => (
-                                        <div key={hour} className="flex-1 text-[9px] md:text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/10 last:border-r-0">
-                                            {hour}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ZONA DE TABLA Y FILAS */}
-                        <div className="flex flex-col relative w-full">
-
-                            {/* FILAS DE EMPLEADOS */}
-                            <div className="flex flex-col w-full bg-white relative pb-0 z-10">
-                                {shifts.map((shift, idx) => (
-                                    <div key={shift.employeeId} className={`flex w-full h-12 md:h-14 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
-                                        <div className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 border-r border-gray-100 overflow-hidden group/row">
-                                            <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
-                                                {shift.name}
-                                            </span>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                                className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-80 hover:opacity-100"
-                                            >
-                                                <X size={12} strokeWidth={4} />
-                                            </button>
-                                        </div>
-                                        <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
-                                            <div className="absolute inset-0 flex">
-                                                {hoursHeader.map((_, i) => (
-                                                    <div key={i} className="flex-1 border-r border-gray-50/50 pointer-events-none last:border-r-0" />
-                                                ))}
-                                            </div>
-                                            {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* FOOTER VERDE */}
-                            <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] rounded-b-[32px] overflow-hidden">
-                                <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/20">
-                                    TOT
-                                </div>
-                                <div className="flex-1 relative h-10 md:h-12 flex">
-                                    {totals.map((count, i) => (
-                                        <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs transition-colors ${count > 0 ? 'text-white' : 'text-white/30'}`}>
-                                            {count > 0 ? count : ''}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
-                    {/* BARRA EDICIÓN FLOTANTE */}
-                    {editingIndex !== null && shifts[editingIndex] && (
-                        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
-                            <div className="h-14 flex items-center p-1.5 bg-zinc-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10">
-                                <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
-                                    <ShiftBar shift={shifts[editingIndex]} onUpdate={(newS) => handleUpdateShift(editingIndex, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20" />
+                    {/* ENCABEZADO ROJO (Ancho completo) */}
+                    <div className="flex w-full bg-[#E55353] text-white shrink-0 border-b border-gray-100">
+                        <div className="w-24 md:w-32 px-3 flex items-center justify-start shrink-0 border-r border-white/20"></div>
+                        <div className="flex-1 relative h-8 md:h-9 flex">
+                            {hoursHeader.map((hour) => (
+                                <div key={hour} className="flex-1 text-[9px] md:text-[10px] font-black flex items-center justify-center select-none opacity-90 border-r border-white/10 last:border-r-0">
+                                    {hour}
                                 </div>
-                                <button onClick={() => setEditingIndex(null)} className="ml-3 mr-1 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
-                                    <X size={20} strokeWidth={3} />
-                                </button>
-                            </div>
+                            ))}
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                {/* MODALES (Sin cambios) */}
-                {showCalendarModal && (
-                    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
-                        <div className="bg-white rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#36606F] p-5 flex items-center justify-between border-b border-white/10">
-                                <div className="flex items-center gap-3">
-                                    <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
-                                    <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                                    <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
+                {/* ZONA DE TABLA Y FILAS */}
+                <div className="flex flex-col relative w-full">
+
+                    {/* FILAS DE EMPLEADOS */}
+                    <div className="flex flex-col w-full bg-white relative pb-0 z-10">
+                        {shifts.map((shift, idx) => (
+                            <div key={shift.employeeId} className={`flex w-full h-12 md:h-14 border-b border-gray-100 last:border-b-0 transition-colors ${editingIndex === idx ? 'bg-blue-50/40' : 'bg-white'}`}>
+                                <div className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 border-r border-gray-100 overflow-hidden group/row">
+                                    <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1`}>
+                                        {shift.name}
+                                    </span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                        className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-80 hover:opacity-100"
+                                    >
+                                        <X size={12} strokeWidth={4} />
+                                    </button>
                                 </div>
-                                <button onClick={() => setShowCalendarModal(false)} className="bg-white/10 hover:bg-rose-500 text-white p-2 rounded-xl transition-all"><X size={20} /></button>
-                            </div>
-                            <div className="p-5">
-                                <div className="grid grid-cols-7 gap-1">
-                                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
-                                    {generateCalendarDays().map((day, i) => (
-                                        <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-2xl text-sm font-bold transition-all ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#36606F] text-white shadow-md' : ''}`}>{day}</button>
-                                    ))}
+                                <div className="flex-1 relative cursor-pointer group" onClick={() => setEditingIndex(idx)}>
+                                    <div className="absolute inset-0 flex">
+                                        {hoursHeader.map((_, i) => (
+                                            <div key={i} className="flex-1 border-r border-gray-50/50 pointer-events-none last:border-r-0" />
+                                        ))}
+                                    </div>
+                                    {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} />}
                                 </div>
                             </div>
+                        ))}
+                    </div>
+
+                    {/* FOOTER VERDE */}
+                    <div className="flex w-full bg-[#0FA968] text-white shrink-0 sticky bottom-0 z-40 transform-gpu shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] rounded-b-[32px] overflow-hidden">
+                        <div className="w-24 md:w-32 h-10 md:h-12 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0 border-r border-white/20">
+                            TOT
+                        </div>
+                        <div className="flex-1 relative h-10 md:h-12 flex">
+                            {totals.map((count, i) => (
+                                <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs transition-colors ${count > 0 ? 'text-white' : 'text-white/30'}`}>
+                                    {count > 0 ? count : ''}
+                                </div>
+                            ))}
                         </div>
                     </div>
-                )}
+                </div>
 
-                {showAddModal && (
-                    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-                        <div className="bg-white rounded-[24px] w-full max-w-xs overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#36606F] px-6 py-5 flex justify-between items-center text-white border-b border-white/10">
-                                <h3 className="text-sm font-black uppercase tracking-widest">Añadir Personal</h3>
-                                <button onClick={() => setShowAddModal(false)} className="bg-white/10 hover:bg-rose-500 p-2 rounded-xl transition-all"><X size={18} /></button>
+            </div>
+            {/* BARRA EDICIÓN FLOTANTE */}
+            {editingIndex !== null && shifts[editingIndex] && (
+                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
+                    <div className="h-14 flex items-center p-1.5 bg-zinc-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10">
+                        <div className="flex-1 relative h-full rounded-xl overflow-hidden self-center">
+                            <ShiftBar shift={shifts[editingIndex]} onUpdate={(newS) => handleUpdateShift(editingIndex, newS)} allowMove={false} barClass="bg-[#5B8FB9] border border-white/20" />
+                        </div>
+                        <button onClick={() => setEditingIndex(null)} className="ml-3 mr-1 w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-rose-500 text-white transition-all active:scale-95 shrink-0">
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* MODALES */}
+            {showCalendarModal && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
+                    <div className="bg-white rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] p-5 flex items-center justify-between border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
+                                <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
                             </div>
-                            <div className="max-h-72 overflow-y-auto p-3 grid gap-1 custom-scrollbar">
-                                {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).map(profile => (
-                                    <button key={profile.id} onClick={() => handleAddEmployee(profile.id)} className="flex items-center gap-4 p-3 hover:bg-emerald-50 rounded-2xl transition-all text-left group">
-                                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors"><UserPlus size={18} /></div>
-                                        <span className="font-bold text-gray-800 text-sm">{profile.first_name}</span>
-                                    </button>
+                            <button onClick={() => setShowCalendarModal(false)} className="bg-white/10 hover:bg-rose-500 text-white p-2 rounded-xl transition-all"><X size={20} /></button>
+                        </div>
+                        <div className="p-5">
+                            <div className="grid grid-cols-7 gap-1">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
+                                {generateCalendarDays().map((day, i) => (
+                                    <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-2xl text-sm font-bold transition-all ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#36606F] text-white shadow-md' : ''}`}>{day}</button>
                                 ))}
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
+                    <div className="bg-white rounded-[24px] w-full max-w-xs overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-6 py-5 flex justify-between items-center text-white border-b border-white/10">
+                            <h3 className="text-sm font-black uppercase tracking-widest">Añadir Personal</h3>
+                            <button onClick={() => setShowAddModal(false)} className="bg-white/10 hover:bg-rose-500 p-2 rounded-xl transition-all"><X size={18} /></button>
+                        </div>
+                        <div className="max-h-72 overflow-y-auto p-3 grid gap-1 custom-scrollbar">
+                            {availableProfiles.filter(p => !shifts.some(s => s.employeeId === p.id)).map(profile => (
+                                <button key={profile.id} onClick={() => handleAddEmployee(profile.id)} className="flex items-center gap-4 p-3 hover:bg-emerald-50 rounded-2xl transition-all text-left group">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors"><UserPlus size={18} /></div>
+                                    <span className="font-bold text-gray-800 text-sm">{profile.first_name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
