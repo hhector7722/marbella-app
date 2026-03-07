@@ -457,10 +457,10 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="pt-0 md:pt-1 animate-in fade-in duration-500">
-            <div className="px-4 md:p-6 w-full max-w-6xl mx-auto space-y-4 md:space-y-6 mt-1 md:mt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 items-start">
-                    <div className="lg:col-span-2 space-y-4 md:space-y-6">
+        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-24 md:pb-32">
+            <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4 mt-1 md:mt-2">
+                <div className="flex flex-col gap-3 md:gap-4 items-center">
+                    <div className="w-full space-y-3 md:space-y-4">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
                             <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
@@ -613,31 +613,27 @@ export default function StaffDashboardView() {
                         </button>
                         <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
                     </div>
-                </div>
 
-                <div className="lg:col-span-1 space-y-4 md:space-y-6">
-                    <div className="grid grid-cols-2 gap-3">
-                        {/* MINI CALENDAR HORARIOS CARD — aspect-square strict */}
+                    <div className="w-full grid grid-cols-2 gap-3 md:gap-4">
+                        {/* MINI CALENDAR HORARIOS CARD — scaled */}
                         <div
                             onClick={() => setIsScheduleModalOpen(true)}
-                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
+                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] border border-gray-100"
                         >
                             {/* Header compacto */}
-                            <div className="bg-purple-600 px-2 py-1 flex items-center justify-between text-white shrink-0">
-                                <h3 className="font-black flex items-center gap-1 text-[9px] uppercase tracking-wider">
-                                    <CalendarDays size={10} className="text-white/80 shrink-0" fill="currentColor" />
+                            <div className="bg-purple-600 px-3 py-1.5 md:py-2 flex items-center justify-between text-white shrink-0">
+                                <h3 className="font-black flex items-center gap-1 text-[9px] md:text-xs uppercase tracking-wider">
+                                    <CalendarDays size={12} className="text-white/80 shrink-0" fill="currentColor" />
                                     <span>Horarios</span>
                                 </h3>
-                                <div className="bg-white/20 rounded px-1 py-px text-[7px] font-black">VER</div>
+                                <div className="bg-white/20 rounded px-1 py-px text-[7px] md:text-[8px] font-black">VER</div>
                             </div>
 
-                            {/* Zona central: justify-between elimina hueco blanco */}
-                            {/* Zona central: justify-between elimina hueco blanco */}
-                            <div className="flex-1 flex flex-col justify-between px-1.5 pt-1.5 pb-6 min-h-0">
+                            <div className="flex-1 flex flex-col justify-between px-2 pt-2 md:pt-3 pb-4 md:pb-6 min-h-0">
                                 <div>
-                                    <div className="grid grid-cols-7 mb-0.5">
+                                    <div className="grid grid-cols-7 mb-1">
                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                            <div key={d} className="text-center text-[6px] font-black text-gray-300 leading-none">{d}</div>
+                                            <div key={d} className="text-center text-[6px] md:text-[8px] font-black text-gray-300 leading-none">{d}</div>
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-7">
@@ -649,21 +645,13 @@ export default function StaffDashboardView() {
                                             const day = new Date(new Date().getFullYear(), new Date().getMonth(), d);
                                             const today = new Date(); today.setHours(0, 0, 0, 0);
                                             const isToday = d === new Date().getDate() && day.getMonth() === today.getMonth();
-                                            const isPast = day < today;
                                             const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
 
                                             return (
-                                                <div key={d} className="flex items-center justify-center py-[2px]">
+                                                <div key={d} className="flex items-center justify-center py-[2px] md:py-[3px]">
                                                     <span className={`
-                                                            w-3 h-3 flex items-center justify-center rounded-full text-[7px] leading-none transition-colors
-                                                            ${hasShift
-                                                            ? 'bg-emerald-500 text-white font-black'
-                                                            : isToday
-                                                                ? 'text-blue-600 font-black'
-                                                                : isPast
-                                                                    ? 'text-gray-300 font-medium'
-                                                                    : 'text-gray-900 font-medium'
-                                                        }
+                                                            w-3.5 h-3.5 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[9px] leading-none transition-colors
+                                                            ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : 'text-gray-900')}
                                                         `}>
                                                         {d}
                                                     </span>
@@ -673,24 +661,22 @@ export default function StaffDashboardView() {
                                     </div>
                                 </div>
 
-                                {/* Próximo turno — sección inferior con mayor peso visual */}
-                                <div className="border-t border-gray-100 pt-3 px-1 pb-1">
+                                <div className="border-t border-gray-100 pt-2 px-1">
                                     {nextShifts.length === 0 ? (
-                                        <p className="text-[7px] text-gray-300 font-bold italic text-center py-0.5">Sin turnos</p>
+                                        <p className="text-[7px] md:text-[9px] text-zinc-400 font-black italic text-center">Sin turnos</p>
                                     ) : (
-                                        <div className="flex items-center gap-2 w-full overflow-hidden justify-between">
-                                            {nextShifts.map((shift, idx) => (
-                                                <div key={idx} className="flex items-center gap-1 min-w-0 flex-1">
-                                                    <div className="flex flex-col items-center shrink-0 bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[16px]">
-                                                        <span className="text-[5px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
-                                                        <span className="text-[9px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
+                                        <div className="flex items-center gap-2 overflow-hidden justify-between">
+                                            {nextShifts.slice(0, 1).map((shift, idx) => (
+                                                <div key={idx} className="flex items-center gap-2 flex-1">
+                                                    <div className="flex flex-col items-center bg-purple-50 rounded-lg px-1 py-1 min-w-[24px]">
+                                                        <span className="text-[6px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
+                                                        <span className="text-[10px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
                                                     </div>
-                                                    <div className="flex flex-col flex-1 min-w-0 gap-0">
-                                                        <span className="text-[6px] font-black text-gray-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
-                                                        <div className="flex items-center gap-0.5 font-black leading-none mt-0.5">
-                                                            <span className="text-[7.5px] text-emerald-600 font-bold">{shift.startTime}</span>
-                                                            <span className="text-[6px] text-gray-300">-</span>
-                                                            <span className="text-[7.5px] text-rose-500 font-bold">{shift.endTime}</span>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[7px] font-black text-zinc-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
+                                                        <div className="flex items-center gap-1 font-black leading-none text-[8px] md:text-[10px]">
+                                                            <span className="text-emerald-600">{shift.startTime}</span>
+                                                            <span className="text-rose-500">{shift.endTime}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -701,33 +687,12 @@ export default function StaffDashboardView() {
                             </div>
                         </div>
 
-                        {/* Iconos Flotantes - Ahora fuera de Horarios */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <IOSIconBoxed img="/icons/change.png" color="bg-red-600" label="Caja" onClick={async () => {
-                                if (!changeBox && !operationalBox) { toast.error('Cajas no configuradas'); return; }
-                                setIsCashOptionsModalOpen(true);
-                            }} />
-                            <IOSIconBoxed
-                                img="/icons/recipes.png"
-                                color="bg-white"
-                                label="Recetas"
-                                onClick={() => router.push('/recipes?view=staff')}
-                            />
-                            <IOSIconBoxed
-                                img="/icons/information.png"
-                                color="bg-blue-500"
-                                label={<><span className="hidden sm:inline">Información</span><span className="inline sm:hidden">Info</span></>}
-                                onClick={() => setActiveMenu('info')}
-                            />
-                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-[#8B5E3C]" label="Productos" onClick={() => setIsProductModalOpen(true)} />
-                            {userRole === 'supervisor' && (
-                                <IOSIconBoxed
-                                    icon={Calculator}
-                                    color="bg-[#5B8FB9]"
-                                    label="Cierre"
-                                    onClick={() => setIsClosingModalOpen(true)}
-                                />
-                            )}
+                        {/* Iconos Flotantes - Now in a grid beside horarios */}
+                        <div className="grid grid-cols-2 gap-3 md:gap-4">
+                            <IOSIconBoxed img="/icons/change.png" color="bg-white" label="Caja" onClick={() => setIsCashOptionsModalOpen(true)} />
+                            <IOSIconBoxed img="/icons/recipes.png" color="bg-white" label="Recetas" onClick={() => router.push('/recipes?view=staff')} />
+                            <IOSIconBoxed img="/icons/information.png" color="bg-white" label="Info" onClick={() => setActiveMenu('info')} />
+                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-white" label="Productos" onClick={() => setIsProductModalOpen(true)} />
                         </div>
                     </div>
                 </div>
@@ -745,134 +710,136 @@ export default function StaffDashboardView() {
                 </div>
             )}
 
-            {activeMenu && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                    <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
-                        {/* Header Petrol - Estilo Modal Marbella */}
-                        <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
-                            <div className="flex items-center gap-3">
-                                {infoSubMenu && (
-                                    <button onClick={() => setInfoSubMenu(null)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                        <ArrowLeft size={18} strokeWidth={3} />
-                                    </button>
-                                )}
-                                <h3 className="text-[10px] font-black uppercase tracking-widest">
-                                    {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
-                                </h3>
+            {
+                activeMenu && (
+                    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
+                        <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
+                            {/* Header Petrol - Estilo Modal Marbella */}
+                            <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
+                                <div className="flex items-center gap-3">
+                                    {infoSubMenu && (
+                                        <button onClick={() => setInfoSubMenu(null)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                            <ArrowLeft size={18} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest">
+                                        {infoSubMenu === 'contactos' ? 'Contactos' : infoSubMenu === 'convenio' ? 'Convenio' : infoSubMenu === 'conducta' ? 'Código Conducta' : infoSubMenu === 'reservas' ? 'Reservas' : infoSubMenu === 'carta' ? 'Carta' : 'Información'}
+                                    </h3>
+                                </div>
+                                <button onClick={closeMenus} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
+                                    <X size={18} strokeWidth={3} />
+                                </button>
                             </div>
-                            <button onClick={closeMenus} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
-                                <X size={18} strokeWidth={3} />
-                            </button>
-                        </div>
 
-                        <div className="p-8 space-y-2 overflow-y-auto">
-                            {!infoSubMenu && (
-                                <div className="space-y-1">
-                                    <button onClick={() => setInfoSubMenu('contactos')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                            <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                        </div>
-                                        <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
-                                    </button>
-
-                                    <button onClick={() => setInfoSubMenu('convenio')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                            <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                        </div>
-                                        <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
-                                    </button>
-
-                                    <button onClick={() => setInfoSubMenu('conducta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                            <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                        </div>
-                                        <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
-                                    </button>
-
-                                    <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                            <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                        </div>
-                                        <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
-                                    </button>
-
-                                    <button onClick={() => setInfoSubMenu('carta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                            <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                        </div>
-                                        <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
-                                    </button>
-                                </div>
-                            )}
-                            {infoSubMenu === 'contactos' && (
-                                <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
-                                    {CONTACTS_DATA.map((c, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
-                                                <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
+                            <div className="p-8 space-y-2 overflow-y-auto">
+                                {!infoSubMenu && (
+                                    <div className="space-y-1">
+                                        <button onClick={() => setInfoSubMenu('contactos')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
-                                            <div className="flex gap-4 items-center">
-                                                <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
-                                                <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
-                                                    <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
-                                                </a>
+                                            <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
+                                        </button>
+
+                                        <button onClick={() => setInfoSubMenu('convenio')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/convenio.png" alt="Convenio" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                             </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Convenio Col·lectiu</span>
+                                        </button>
+
+                                        <button onClick={() => setInfoSubMenu('conducta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/ley.png" alt="Código de Conducta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Código de Conducta</span>
+                                        </button>
+
+                                        <button onClick={() => setInfoSubMenu('reservas')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/reservas.png" alt="Reservas" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">Reservas</span>
+                                        </button>
+
+                                        <button onClick={() => setInfoSubMenu('carta')} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                                <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                            </div>
+                                            <span className="font-bold text-sm tracking-tight text-left">La Carta</span>
+                                        </button>
+                                    </div>
+                                )}
+                                {infoSubMenu === 'contactos' && (
+                                    <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+                                        {CONTACTS_DATA.map((c, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-mono">{c.phone}</p>
+                                                </div>
+                                                <div className="flex gap-4 items-center">
+                                                    <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
+                                                    <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
+                                                        <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
+                                    <div className="flex flex-col items-center gap-6 py-4">
+                                        <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                            <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                            {(infoSubMenu === 'convenio' || infoSubMenu === 'conducta') && (
-                                <div className="flex flex-col items-center gap-6 py-4">
-                                    <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                        <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
+                                        <div className="text-center">
+                                            <p className="text-base font-black text-gray-800 mb-1">
+                                                {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
+                                            </p>
+                                            <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
+                                        </div>
+                                        <button
+                                            onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
+                                            className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                        >
+                                            <ExternalLink size={20} />
+                                            <span>Abrir Documento</span>
+                                        </button>
+                                        <a
+                                            href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
+                                            download
+                                            className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
+                                        >
+                                            Descargar PDF
+                                        </a>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-base font-black text-gray-800 mb-1">
-                                            {infoSubMenu === 'convenio' ? 'Convenio Colectivo' : 'Código de Conducta'}
-                                        </p>
-                                        <p className="text-xs text-gray-400 font-medium">Documento PDF</p>
+                                )}
+                                {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
+                                    <div className="flex flex-col items-center gap-6 py-4">
+                                        <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
+                                            {infoSubMenu === 'reservas' ? (
+                                                <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
+                                            ) : (
+                                                <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-base font-black text-gray-800 mb-1">
+                                                {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
+                                            </p>
+                                            <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
+                                        </div>
+                                        <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
+                                            <span className="text-sm">En desarrollo</span>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={() => window.open(infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf', '_blank')}
-                                        className="w-full h-14 bg-[#5B8FB9] hover:bg-[#4a7a9e] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-200"
-                                    >
-                                        <ExternalLink size={20} />
-                                        <span>Abrir Documento</span>
-                                    </button>
-                                    <a
-                                        href={infoSubMenu === 'convenio' ? '/docs/convenio.pdf' : '/docs/codigo_conducta.pdf'}
-                                        download
-                                        className="text-xs font-bold text-gray-400 hover:text-gray-600 underline transition-colors"
-                                    >
-                                        Descargar PDF
-                                    </a>
-                                </div>
-                            )}
-                            {(infoSubMenu === 'reservas' || infoSubMenu === 'carta') && (
-                                <div className="flex flex-col items-center gap-6 py-4">
-                                    <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center">
-                                        {infoSubMenu === 'reservas' ? (
-                                            <CalendarCheck size={40} className="text-amber-400" strokeWidth={1.5} />
-                                        ) : (
-                                            <BookOpen size={40} className="text-amber-400" strokeWidth={1.5} />
-                                        )}
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-base font-black text-gray-800 mb-1">
-                                            {infoSubMenu === 'reservas' ? 'Reservas' : 'Carta del Restaurante'}
-                                        </p>
-                                        <p className="text-xs text-gray-400 font-medium">Próximamente disponible</p>
-                                    </div>
-                                    <div className="w-full h-14 bg-gray-100 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-3">
-                                        <span className="text-sm">En desarrollo</span>
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <StaffProductModal
                 isOpen={isProductModalOpen}
@@ -891,27 +858,103 @@ export default function StaffDashboardView() {
             {/* MODAL: Cambio de Efectivo (Cambio 1) */}
 
             {/* MODAL: Cambio de Efectivo (Cambio 1) */}
-            {showSwapModal && changeBox && (
-                <CashChangeModal
-                    boxId={changeBox.id}
-                    boxName={changeBox.name}
-                    onClose={() => setShowSwapModal(false)}
-                    onSuccess={() => { initialize(); setShowSwapModal(false); }}
-                />
-            )}
+            {
+                showSwapModal && changeBox && (
+                    <CashChangeModal
+                        boxId={changeBox.id}
+                        boxName={changeBox.name}
+                        onClose={() => setShowSwapModal(false)}
+                        onSuccess={() => { initialize(); setShowSwapModal(false); }}
+                    />
+                )
+            }
 
             {/* MODAL: Opciones de Caja */}
-            {isCashOptionsModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4" onClick={() => setIsCashOptionsModalOpen(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
-                            <div>
-                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
-                                <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Selecciona una operación</p>
+            {
+                isCashOptionsModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4" onClick={() => setIsCashOptionsModalOpen(false)}>
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
+                                <div>
+                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
+                                    <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Selecciona una operación</p>
+                                </div>
+                                <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
                             </div>
-                            <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
+                            <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
+                                <button
+                                    onClick={() => {
+                                        if (!changeBox) {
+                                            toast.error('Caja de cambio no configurada');
+                                            return;
+                                        }
+                                        setIsCashOptionsModalOpen(false);
+                                        setShowSwapModal(true);
+                                    }}
+                                    className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                >
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                        <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
+                                    <div className="flex flex-col text-left">
+                                        <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
+                                        <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas</span>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        if (!operationalBox) {
+                                            toast.error('Caja operacional no configurada');
+                                            return;
+                                        }
+                                        setIsCashOptionsModalOpen(false);
+                                        openTreasuryModal(operationalBox, 'out');
+                                    }}
+                                    className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                >
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                        <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="w-full h-full object-contain" />
+                                    </div>
+                                    <div className="flex flex-col text-left">
+                                        <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
+                                        <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
-                        <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
+                    </div>
+                )
+            }
+
+            {/* MODAL: Salida (Compra) de Caja */}
+            {
+                cashModalMode === 'out' && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+                        <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                            <CashDenominationForm
+                                key={'out' + (selectedBox?.id || '')}
+                                type={'out'}
+                                boxName={selectedBox?.name || 'Caja Inicial'}
+                                initialCounts={{}}
+                                availableStock={boxInventoryMap}
+                                onCancel={() => setCashModalMode('none')}
+                                onSubmit={handleCashTransaction}
+                                forcePurchaseMode={true}
+                            />
+                        </div>
+                    </div>
+                )
+            }
+
+            {isCashOptionsModalOpen && (
+                <div className="fixed inset-0 bg-black/60 z-[110] backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setIsCashOptionsModalOpen(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-[#36606F] p-6 text-white text-center">
+                            <h3 className="text-lg font-black uppercase tracking-widest">Opciones de Caja</h3>
+                        </div>
+
+                        <div className="p-6 space-y-4">
                             <button
                                 onClick={() => {
                                     if (!changeBox) {
@@ -921,7 +964,7 @@ export default function StaffDashboardView() {
                                     setIsCashOptionsModalOpen(false);
                                     setShowSwapModal(true);
                                 }}
-                                className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                className="w-full bg-white border border-gray-100 shadow-sm hover:border-purple-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
                             >
                                 <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
                                     <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
@@ -939,7 +982,8 @@ export default function StaffDashboardView() {
                                         return;
                                     }
                                     setIsCashOptionsModalOpen(false);
-                                    openTreasuryModal(operationalBox, 'out');
+                                    setCashModalMode('out');
+                                    setSelectedBox(operationalBox);
                                 }}
                                 className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
                             >
@@ -956,7 +1000,6 @@ export default function StaffDashboardView() {
                 </div>
             )}
 
-            {/* MODAL: Salida (Compra) de Caja */}
             {cashModalMode === 'out' && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
@@ -994,6 +1037,19 @@ export default function StaffDashboardView() {
                 userRole={userRole}
                 onClose={() => setIsDayDetailModalOpen(false)}
                 onSuccess={() => initialize()}
+            />
+
+            <StaffProductModal
+                isOpen={isProductModalOpen}
+                onClose={() => setIsProductModalOpen(false)}
+                onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
+            />
+
+            <StaffScheduleModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                shifts={monthShifts}
+                userRole={userRole}
             />
         </div>
     );

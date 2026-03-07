@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -125,63 +126,39 @@ export default function BottomNavStaff() {
 
     return (
         <>
-            {/* MOBILE: Bottom Bar - same height as admin (h-20) */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            {/* UNIVERSAL: Bottom Bar (Scaled for Desktop) */}
+            <nav className="fixed bottom-0 left-0 right-0 h-20 md:h-24 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {staffItems.map((item) => (
-                    <Link key={item.href} href={item.href} className={`flex flex-col items-center transition-all duration-200 active:scale-95 flex-1 ${getClass(item.href)}`} onClick={(e) => {
-                        if (item.name.toLowerCase() === 'pedidos') {
-                            e.preventDefault();
-                            setIsProductModalOpen(true);
-                        } else if (item.name.toLowerCase() === 'horarios') {
-                            e.preventDefault();
-                            setIsScheduleModalOpen(true);
-                        }
-                    }}>
-                        {typeof item.icon === 'function' ? <item.icon /> : <item.icon size={20} />}
-                        <span className="text-[7.5px] font-bold mt-0.5 uppercase tracking-tighter whitespace-nowrap">{item.name}</span>
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            "flex flex-col items-center transition-all duration-200 active:scale-95 flex-1",
+                            getClass(item.href)
+                        )}
+                        onClick={(e) => {
+                            if (item.name.toLowerCase() === 'pedidos') {
+                                e.preventDefault();
+                                setIsProductModalOpen(true);
+                            } else if (item.name.toLowerCase() === 'horarios') {
+                                e.preventDefault();
+                                setIsScheduleModalOpen(true);
+                            }
+                        }}
+                    >
+                        {typeof item.icon === 'function' ? (
+                            <div className="md:scale-125">
+                                <item.icon />
+                            </div>
+                        ) : (
+                            <item.icon size={20} className="md:w-7 md:h-7" />
+                        )}
+                        <span className="text-[7.5px] md:text-[10px] font-black mt-0.5 md:mt-1.5 uppercase tracking-tighter md:tracking-widest whitespace-nowrap">
+                            {item.name}
+                        </span>
                     </Link>
                 ))}
             </nav>
-
-            {/* DESKTOP: Sidebar - same width as admin (w-20) */}
-            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-[#5B8FB9] flex-col items-center py-6 z-30 shadow-xl border-r border-white/10">
-                {/* Nav Items */}
-                <div className="flex-1 flex flex-col gap-2 w-full px-2">
-                    {staffItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex flex-col items-center py-3 rounded-xl transition-all duration-200 active:scale-95 ${getClass(item.href, true)}`}
-                            onClick={(e) => {
-                                if (item.name.toLowerCase() === 'pedidos') {
-                                    e.preventDefault();
-                                    setIsProductModalOpen(true);
-                                } else if (item.name.toLowerCase() === 'horarios') {
-                                    e.preventDefault();
-                                    setIsScheduleModalOpen(true);
-                                }
-                            }}
-                        >
-                            {typeof item.icon === 'function' ? (
-                                <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center overflow-hidden">
-                                    {userData?.avatar_url ? (
-                                        <Image
-                                            src={userData.avatar_url}
-                                            alt="Me"
-                                            width={32}
-                                            height={32}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <User size={16} className="text-white" />
-                                    )}
-                                </div>
-                            ) : <item.icon size={20} />}
-                            <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter text-center">{item.name}</span>
-                        </Link>
-                    ))}
-                </div>
-            </aside>
 
             <StaffProductModal
                 isOpen={isProductModalOpen}
