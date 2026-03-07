@@ -502,7 +502,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         <Link href="/dashboard/overtime" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
-                    <div className="p-3 md:p-2.5 space-y-2 max-h-[150px] md:max-h-[220px] overflow-y-auto no-scrollbar">
+                    <div className="p-3 md:p-2.5 space-y-2">
                         {overtimeData.length === 0 ? (
                             <div className="py-8 text-center text-gray-400 text-[10px] md:text-sm font-bold uppercase tracking-widest italic">No hay registros</div>
                         ) : (
