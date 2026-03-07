@@ -519,12 +519,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center text-white shrink-0">
                             <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Cajas Cambio</h3>
                         </div>
-                        <div className="p-2 md:p-0 py-1.5 md:py-0 flex flex-col md:flex-row flex-1 md:divide-x md:divide-zinc-100">
+                        <div className="p-2 md:p-0 py-1.5 md:py-0 flex flex-col flex-1 divide-y divide-zinc-50 md:divide-zinc-50">
                             {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
                                 const diff = box.current_balance - 300;
                                 const isOk = Math.abs(diff) < 0.01;
                                 return (
-                                    <div key={box.id} className="flex flex-row md:flex-col gap-2 md:gap-2 items-center flex-1 justify-center p-2 md:p-3">
+                                    <div key={box.id} className="flex flex-row md:flex-row gap-2 md:gap-4 items-center flex-1 justify-center p-2 md:px-6">
                                         <div className="flex-[1.2] basis-0 md:basis-auto px-1 flex flex-col items-start md:items-center">
                                             <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
                                             <span className="text-sm md:text-xl font-black text-zinc-800">
