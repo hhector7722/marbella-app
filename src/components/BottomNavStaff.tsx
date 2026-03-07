@@ -127,7 +127,7 @@ export default function BottomNavStaff() {
     return (
         <>
             {/* UNIVERSAL: Bottom Bar (Scaled for Desktop) */}
-            <nav className="fixed bottom-0 left-0 right-0 h-20 md:h-24 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <nav className="fixed bottom-0 left-0 right-0 h-20 md:h-16 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
                 {staffItems.map((item) => (
                     <Link
                         key={item.href}
@@ -147,13 +147,13 @@ export default function BottomNavStaff() {
                         }}
                     >
                         {typeof item.icon === 'function' ? (
-                            <div className="md:scale-125">
+                            <div className="md:scale-100">
                                 <item.icon />
                             </div>
                         ) : (
-                            <item.icon size={20} className="md:w-7 md:h-7" />
+                            <item.icon size={20} className="md:w-5 md:h-5" />
                         )}
-                        <span className="text-[7.5px] md:text-[10px] font-black mt-0.5 md:mt-1.5 uppercase tracking-tighter md:tracking-widest whitespace-nowrap">
+                        <span className="text-[7.5px] md:text-[9px] font-black mt-0.5 md:mt-1 uppercase tracking-tighter md:tracking-widest whitespace-nowrap">
                             {item.name}
                         </span>
                     </Link>
