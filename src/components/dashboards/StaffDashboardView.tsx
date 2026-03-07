@@ -621,7 +621,7 @@ export default function StaffDashboardView() {
                             className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
                         >
                             {/* Header compacto */}
-                            <div className="bg-purple-600 px-3 py-1.5 md:py-2 flex items-center justify-between text-white shrink-0">
+                            <div className="bg-purple-600 px-3 py-1 md:py-1.5 flex items-center justify-between text-white shrink-0">
                                 <h3 className="font-black flex items-center gap-1 text-[9px] md:text-xs uppercase tracking-wider">
                                     <CalendarDays size={12} className="text-white/80 shrink-0" fill="currentColor" />
                                     <span>Horarios</span>
@@ -629,7 +629,7 @@ export default function StaffDashboardView() {
                                 <div className="bg-white/20 rounded px-1 py-px text-[7px] md:text-[8px] font-black">VER</div>
                             </div>
 
-                            <div className="flex-1 flex flex-col justify-between px-2 pt-2 md:pt-3 pb-4 md:pb-6 min-h-0">
+                            <div className="flex-1 flex flex-col justify-between px-2 py-1.5 md:py-3 min-h-0">
                                 <div>
                                     <div className="grid grid-cols-7 mb-1">
                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
@@ -645,13 +645,14 @@ export default function StaffDashboardView() {
                                             const day = new Date(new Date().getFullYear(), new Date().getMonth(), d);
                                             const today = new Date(); today.setHours(0, 0, 0, 0);
                                             const isToday = d === new Date().getDate() && day.getMonth() === today.getMonth();
+                                            const isPast = day < today;
                                             const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
 
                                             return (
-                                                <div key={d} className="flex items-center justify-center py-[2px] md:py-[3px]">
+                                                <div key={d} className="flex items-center justify-center py-[1px] md:py-[2px]">
                                                     <span className={`
                                                             w-3.5 h-3.5 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[9px] leading-none transition-colors
-                                                            ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : 'text-gray-900')}
+                                                            ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : (isPast ? 'text-gray-300' : 'text-gray-900'))}
                                                         `}>
                                                         {d}
                                                     </span>
@@ -661,20 +662,20 @@ export default function StaffDashboardView() {
                                     </div>
                                 </div>
 
-                                <div className="border-t border-gray-100 pt-2 px-1">
+                                <div className="border-t border-gray-100 pt-1 px-1">
                                     {nextShifts.length === 0 ? (
                                         <p className="text-[7px] md:text-[9px] text-zinc-400 font-black italic text-center">Sin turnos</p>
                                     ) : (
-                                        <div className="flex items-center gap-2 overflow-hidden justify-between">
-                                            {nextShifts.slice(0, 1).map((shift, idx) => (
-                                                <div key={idx} className="flex items-center gap-2 flex-1">
-                                                    <div className="flex flex-col items-center bg-purple-50 rounded-lg px-1 py-1 min-w-[24px]">
-                                                        <span className="text-[6px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
-                                                        <span className="text-[10px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
+                                        <div className="flex items-center gap-1 overflow-hidden justify-between">
+                                            {nextShifts.slice(0, 2).map((shift, idx) => (
+                                                <div key={idx} className="flex items-center gap-1 flex-1 min-w-0">
+                                                    <div className="flex flex-col items-center bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[20px]">
+                                                        <span className="text-[5px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
+                                                        <span className="text-[9px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
                                                     </div>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[7px] font-black text-zinc-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
-                                                        <div className="flex items-center gap-1 font-black leading-none text-[8px] md:text-[10px]">
+                                                    <div className="flex flex-col gap-0 min-w-0">
+                                                        <span className="text-[6px] font-black text-zinc-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
+                                                        <div className="flex items-center gap-0.5 font-black leading-none text-[7px]">
                                                             <span className="text-emerald-600">{shift.startTime}</span>
                                                             <span className="text-rose-500">{shift.endTime}</span>
                                                         </div>
