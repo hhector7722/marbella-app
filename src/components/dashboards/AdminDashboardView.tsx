@@ -353,19 +353,24 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     return (
-        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-8">
+        <div className="pt-2 md:pt-2 animate-in fade-in duration-500 pb-8">
             <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
 
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0 relative">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Ventas</h3>
-                        </div>
-                        <div className="absolute left-1/2 -translate-x-1/2 md:scale-110">
+                    <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center justify-between text-white shrink-0">
+                        <span className="text-[10px] md:text-sm font-black uppercase tracking-wider">
+                            {format(new Date(), "d MMM yyyy", { locale: es })}
+                        </span>
+                        <div className="flex items-center justify-center">
                             <LiveClock />
                         </div>
-                        <Link href="/dashboard/history" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                        <Link
+                            href="/dashboard/history"
+                            className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest"
+                        >
+                            Ver más
+                        </Link>
                     </div>
                     <div className="p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 flex-1 items-center">
                         <div className="flex flex-col items-center justify-center text-center">
@@ -414,19 +419,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <div className="flex-[2] basis-0 grid grid-cols-3 gap-2 md:gap-2">
                                     <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1.5 transition-all active:scale-95 group">
                                         <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <Plus size={16} className="text-white" strokeWidth={4} />
+                                            <Plus size={16} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
                                     </button>
                                     <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1.5 transition-all active:scale-95 group">
                                         <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <Minus size={16} className="text-white" strokeWidth={4} />
+                                            <Minus size={16} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
                                     <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1.5 transition-all active:scale-95 group">
                                         <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <RefreshCw size={16} className="text-white" strokeWidth={4} />
+                                            <RefreshCw size={16} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                     </button>
@@ -437,7 +442,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     {Math.abs(difference || 0) < 0.01 ? (
                                         <span className="text-[9px] md:text-sm font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
                                             <Check className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} />
-                                            Caja Cuadrada
                                         </span>
                                     ) : (
                                         <span className={cn("text-[9px] md:text-sm font-black uppercase tracking-widest flex items-center gap-2", (difference || 0) < 0 ? "text-rose-500" : "text-emerald-500")}>
@@ -550,7 +554,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 className="w-8 h-8 md:w-12 md:h-12 rounded-xl flex flex-col items-center justify-center transition-all md:bg-zinc-50/50 md:p-1 md:gap-0.5 active:scale-95 group"
                                             >
                                                 <div className="w-8 h-8 md:w-8 md:h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                    <ArrowRightLeft size={16} strokeWidth={isDesktop ? 3 : 4} />
+                                                    <ArrowRightLeft size={16} strokeWidth={isDesktop ? 2.5 : 3} />
                                                 </div>
                                                 <span className="hidden md:block text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
                                             </button>
@@ -559,7 +563,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 className="w-8 h-8 md:w-12 md:h-12 rounded-xl flex flex-col items-center justify-center transition-all md:bg-zinc-50/50 md:p-1 md:gap-0.5 active:scale-95 group"
                                             >
                                                 <div className="w-8 h-8 md:w-8 md:h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                    <RefreshCw size={16} strokeWidth={isDesktop ? 3 : 4} />
+                                                    <RefreshCw size={16} strokeWidth={isDesktop ? 2.5 : 3} />
                                                 </div>
                                                 <span className="hidden md:block text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                             </button>
@@ -584,12 +588,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     else if (card.title === 'Producto') setIsProductModalOpen(true);
                                     else if (card.link) router.push(card.link);
                                 }}
-                                className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center gap-2 md:gap-4 active:scale-95 transition-all group aspect-square hover:shadow-xl hover:border-purple-100/50 border border-zinc-50"
+                                className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
                             >
-                                <div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110 p-1 md:p-0">
-                                    <Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" />
+                                <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
+                                    <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
                                 </div>
-                                <span className="text-[7px] md:text-[11px] font-black text-zinc-800 uppercase tracking-widest text-center leading-tight px-1 mt-0.5">
+                                <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 mt-0.5">
                                     {card.title}
                                 </span>
                             </button>
