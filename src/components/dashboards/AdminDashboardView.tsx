@@ -498,7 +498,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         {overtimeData.length === 0 ? (
                             <div className="py-8 text-center text-gray-400 text-[10px] md:text-sm font-bold uppercase tracking-widest italic">No hay registros</div>
                         ) : (
-                            overtimeData.slice(0, 3).map((week) => (
+                            overtimeData.slice(0, 2).map((week) => (
                                 <WeekOvertimeCard
                                     key={week.weekId}
                                     week={week}
