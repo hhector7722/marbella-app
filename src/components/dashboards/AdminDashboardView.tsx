@@ -380,7 +380,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     return (
-        <div className="pt-2 md:pt-2 animate-in fade-in duration-500 pb-8">
+        <div className="pt-5 md:pt-5 animate-in fade-in duration-500 pb-8">
             <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
 
                 {/* 1. VENTAS */}
@@ -600,22 +600,22 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                 'w-full min-h-[20px] md:min-h-[24px] h-5 md:h-6 flex items-center gap-1 px-1 rounded-md hover:bg-purple-50/50 border border-transparent hover:border-purple-100 transition-all text-left flex-shrink-0'
                                                             )}
                                                         >
-                                                            <div className="shrink-0 flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4">
+                                                            <div className="shrink-0 flex items-center justify-center w-3 h-3 md:w-3.5 md:h-3.5">
                                                                 {isFullyPaid ? (
-                                                                    <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                                                        <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" strokeWidth={4} />
+                                                                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                                                        <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
                                                                     </div>
                                                                 ) : (
-                                                                    <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                                                        <span className="text-white font-black text-[8px] leading-none">!</span>
+                                                                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                                                        <span className="text-white font-black text-[7px] leading-none">!</span>
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Sem{getISOWeek(new Date(week.weekId))}</span>
-                                                            <span className="text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase truncate min-w-0">
-                                                                {format(new Date(week.weekId), 'd MMM', { locale: es })}-{format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
+                                                            <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
+                                                            <span className="flex-1 text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase truncate min-w-0 text-center">
+                                                                {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
                                                             </span>
-                                                            <span className="ml-auto text-[9px] md:text-[10px] font-black text-zinc-900 shrink-0">
+                                                            <span className="text-[9px] md:text-[10px] font-black text-zinc-900 shrink-0">
                                                                 {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                                                             </span>
                                                         </button>
@@ -652,7 +652,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex gap-1 md:gap-1.5 shrink-0">
+                                        <div className="flex gap-1 md:gap-1.5 shrink-0 ml-2">
                                             <button
                                                 onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
                                                 className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 group"
@@ -681,7 +681,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     <div className="grid grid-cols-2 gap-3 md:gap-4">
                         {[
                             { title: 'Asistencia', img: '/icons/calendar.png', link: '/registros' },
-                            { title: 'Mano obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
+                            { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
                             { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
                             { title: 'Producto', img: '/icons/suppliers.png', link: '/ingredients' },
                         ].map((card, i) => (
