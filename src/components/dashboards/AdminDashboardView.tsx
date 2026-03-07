@@ -9,7 +9,7 @@ import {
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
     PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check,
-    Coins, Landmark, AlertTriangle, RotateCcw
+    Coins, Landmark, AlertTriangle, RotateCcw, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 import CashClosingModal from '@/components/CashClosingModal';
@@ -17,12 +17,12 @@ import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
-import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
+import { getISOWeek, format, addDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
 import Image from 'next/image';
-import { togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
+import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -182,6 +182,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
     const [isDesktop, setIsDesktop] = useState(false);
+    // Horas extras: vista mensual + modal semana
+    const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
+    const [overtimeWeeksData, setOvertimeWeeksData] = useState<any[]>([]);
+    const [overtimeLoading, setOvertimeLoading] = useState(false);
+    const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
 
     useEffect(() => {
         setIsDesktop(window.innerWidth >= 768);
@@ -251,22 +256,44 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
 
+    // Fetch overtime por mes para la vista calendario + semanas
+    useEffect(() => {
+        const start = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
+        const end = format(endOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
+        let cancelled = false;
+        setOvertimeLoading(true);
+        getOvertimeData(start, end).then((result) => {
+            if (!cancelled && result?.weeksResult) setOvertimeWeeksData(result.weeksResult);
+        }).catch(() => {
+            if (!cancelled) setOvertimeWeeksData([]);
+        }).finally(() => {
+            if (!cancelled) setOvertimeLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [overtimeViewMonth]);
+
     const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
+        setOvertimeWeeksData(prev => prev.map(w => w.weekId === weekId
+            ? { ...w, staff: w.staff?.map((s: any) => s.id === staffId ? { ...s, isPaid: newStatus } : s) }
+            : w));
         try {
-            const weekData = overtimeData.find(w => w.weekId === weekId);
+            const weekData = overtimeData.find(w => w.weekId === weekId) || overtimeWeeksData.find(w => w.weekId === weekId);
             const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
             const result = await togglePaidStatus(staffId, weekId, newStatus, {
-                totalHours: staffData?.hours || 0,
-                overtimeHours: staffData?.hours || 0
+                totalHours: staffData?.hours ?? staffData?.totalHours ?? 0,
+                overtimeHours: staffData?.hours ?? staffData?.overtimeHours ?? 0
             });
             if (!result.success) throw new Error("Error updating paid status");
             toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
             console.error(error);
             setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
+            setOvertimeWeeksData(prev => prev.map(w => w.weekId === weekId
+                ? { ...w, staff: w.staff?.map((s: any) => s.id === staffId ? { ...s, isPaid: !newStatus } : s) }
+                : w));
             toast.error("Error al actualizar pago");
         }
     };
@@ -484,7 +511,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     ))}
                 </div>
 
-                {/* 3. HORAS EXTRAS */}
+                {/* 3. HORAS EXTRAS — Vista mensual: calendario + semanas */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
                         <div className="flex items-center gap-2">
@@ -501,22 +528,86 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         <Link href="/dashboard/overtime" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
-                    <div className="p-3 md:p-2.5 space-y-2">
-                        {overtimeData.length === 0 ? (
-                            <div className="py-8 text-center text-gray-400 text-[10px] md:text-sm font-bold uppercase tracking-widest italic">No hay registros</div>
-                        ) : (
-                            overtimeData.slice(0, 2).map((week) => (
-                                <WeekOvertimeCard
-                                    key={week.weekId}
-                                    week={week}
-                                    paidStatus={paidStatus}
-                                    onToggleWeek={toggleWeek}
-                                    onTogglePaid={togglePaid}
-                                    onTogglePreferStock={togglePreferStock}
-                                    onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
-                                />
-                            ))
-                        )}
+                    <div className="p-3 md:p-2.5">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                            <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1.5 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes anterior">
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <span className="text-xs md:text-sm font-black uppercase tracking-wider text-zinc-800 min-w-[100px] text-center">
+                                {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
+                            </span>
+                            <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1.5 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes siguiente">
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex gap-3">
+                            {/* Calendario del mes */}
+                            <div className="shrink-0 grid grid-cols-7 gap-[2px] text-center">
+                                {(() => {
+                                    const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
+                                    const end = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
+                                    const days = eachDayOfInterval({ start, end });
+                                    const today = new Date();
+                                    return days.map((day) => {
+                                        const inMonth = isSameMonth(day, overtimeViewMonth);
+                                        const isToday = isSameDay(day, today);
+                                        return (
+                                            <div
+                                                key={day.getTime()}
+                                                className={cn(
+                                                    'w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[10px] md:text-[11px] font-bold',
+                                                    !inMonth && 'text-zinc-300',
+                                                    inMonth && !isToday && 'text-zinc-600',
+                                                    isToday && 'bg-blue-500 text-white'
+                                                )}
+                                            >
+                                                {format(day, 'd')}
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                            {/* Lista de semanas del mes */}
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                                {overtimeLoading ? (
+                                    <div className="py-4 flex items-center justify-center"><LoadingSpinner size="sm" className="text-purple-500" /></div>
+                                ) : overtimeWeeksData.length === 0 ? (
+                                    <div className="py-4 text-center text-gray-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest italic">No hay semanas</div>
+                                ) : (
+                                    overtimeWeeksData.map((week) => {
+                                        const isFullyPaid = week.staff?.every((s: any) => (s.totalCost ?? s.amount ?? 0) < 0.05 || s.isPaid);
+                                        const weekTotal = week.totalAmount ?? week.total ?? 0;
+                                        return (
+                                            <button
+                                                key={week.weekId}
+                                                type="button"
+                                                onClick={() => setWeekDetailModal({ week })}
+                                                className="w-full flex items-center gap-2 p-2 rounded-xl hover:bg-purple-50/50 border border-transparent hover:border-purple-100 transition-all text-left"
+                                            >
+                                                <div className="shrink-0 flex items-center justify-center">
+                                                    {isFullyPaid ? (
+                                                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                                            <span className="text-white font-black text-[10px] leading-none">!</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-[9px] font-black text-zinc-500 uppercase shrink-0">Sem {getISOWeek(new Date(week.weekId))}</span>
+                                                <span className="text-[9px] font-bold text-zinc-500 uppercase truncate">
+                                                    {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
+                                                </span>
+                                                <span className="ml-auto text-sm font-black text-zinc-900 shrink-0">
+                                                    {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                                </span>
+                                            </button>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -731,6 +822,35 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             )}
 
             <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} initialTotalSales={liveTickets.total} initialTicketsCount={liveTickets.count} />
+            {/* Modal semana: trabajadores + importe + checkbox; clic en nombre abre WorkerWeeklyHistoryModal */}
+            {weekDetailModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="bg-purple-600 px-4 py-3 flex items-center justify-between text-white shrink-0">
+                            <h3 className="text-sm font-black uppercase tracking-wider">
+                                Sem {getISOWeek(new Date(weekDetailModal.week.weekId))} — {format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM', { locale: es })}
+                            </h3>
+                            <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="p-4 overflow-y-auto flex-1 space-y-2">
+                            {(weekDetailModal.week.staff ?? []).filter((s: any) => (s.totalCost ?? s.amount ?? 0) > 0.05).map((s: any) => (
+                                <StaffOvertimeRow
+                                    key={s.id}
+                                    staff={{ ...s, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
+                                    weekId={weekDetailModal.week.weekId}
+                                    isPaid={paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid}
+                                    onTogglePaid={togglePaid}
+                                    onTogglePreferStock={togglePreferStock}
+                                    onClick={() => setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId })}
+                                />
+                            ))}
+                            {(!weekDetailModal.week.staff || weekDetailModal.week.staff.filter((s: any) => (s.totalCost ?? s.amount ?? 0) > 0.05).length === 0) && (
+                                <p className="text-center text-zinc-400 text-xs font-bold uppercase tracking-widest py-4">Sin importes esta semana</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
             <WorkerWeeklyHistoryModal isOpen={!!selectedHistory} onClose={() => setSelectedHistory(null)} workerId={selectedHistory?.workerId || ''} weekStart={selectedHistory?.weekId || ''} />
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
 
