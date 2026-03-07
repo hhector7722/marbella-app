@@ -8,6 +8,11 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Ajustes Smartphone Staff Dashboard**: Optimización de la interfaz táctil para smartphones.
+  - **Fichaje**: La tarjeta de "Entrada/Salida" ahora ocupa el ancho completo de la página en móviles para facilitar el acceso.
+  - **Horarios**: Eliminado el borde blanco exterior de la tarjeta de horarios para un diseño más limpio ("Borderless Premium").
+  - **Importe Semanal**: Implementada la regla Zero-Display en el campo "Importe" del resumen semanal, ocultando tanto el valor como el símbolo "€" cuando el saldo es cero.
+  - **Optimización de Espacio**: Reducido el padding inferior de la página (`pb-10`) para eliminar el exceso de fondo azul tras las tarjetas.
 - [x] **Compresión Vertical Extrema (Desktop-Only Admin Dashboard v2)**: Todo el contenido es ahora 100% visible sin scroll al 100% de zoom exclusivamente en escritorio.
   - **Headers**: Reducción de cabeceras de "Ventas" y "Horas Extras" (paddings y fuentes compactas).
   - **Layout Paralelo**: "Cajas Cambio" e "Iconos de Acción" reposicionados en un grid paralelo (7:5) para aprovechar el ancho y reducir altura.

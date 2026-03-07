@@ -457,7 +457,7 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-24 md:pb-32">
+        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-10 md:pb-32">
             <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4 mt-1 md:mt-2">
                 <div className="flex flex-col gap-3 md:gap-4 items-center">
                     <div className="w-full space-y-3 md:space-y-4">
@@ -577,7 +577,7 @@ export default function StaffDashboardView() {
                                     <div className="flex flex-col items-center flex-1">
                                         <div className="h-4 flex items-center">
                                             <span className="font-black text-[11px] md:text-xs leading-none text-emerald-600">
-                                                {!preferStock ? formatWorked(weeklySummary.estimatedPayout) : "0"}€
+                                                {formatMoney(weeklySummary.estimatedPayout)}
                                             </span>
                                         </div>
                                         <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
@@ -588,7 +588,7 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
+                    <div className="w-full bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
                         <button
                             onClick={openConfirmation}
                             disabled={status === 'finished' || actionLoading}
@@ -618,7 +618,7 @@ export default function StaffDashboardView() {
                         {/* MINI CALENDAR HORARIOS CARD — scaled */}
                         <div
                             onClick={() => setIsScheduleModalOpen(true)}
-                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98] border border-gray-100"
+                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
                         >
                             {/* Header compacto */}
                             <div className="bg-purple-600 px-3 py-1.5 md:py-2 flex items-center justify-between text-white shrink-0">
