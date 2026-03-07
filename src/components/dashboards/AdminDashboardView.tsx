@@ -511,102 +511,120 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     ))}
                 </div>
 
-                {/* 3. HORAS EXTRAS — Vista mensual: calendario + semanas */}
+                {/* 3. HORAS EXTRAS — Vista mensual: calendario + semanas (1 fila derecha = 1 fila calendario) */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                             <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             {currentUserEmail === 'hhector7722@gmail.com' && (
                                 <button
                                     onClick={handleRecalculate}
                                     disabled={isRecalculating}
-                                    className="ml-4 p-2 hover:bg-white/10 rounded-lg transition-all active:scale-95"
+                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-all active:scale-95"
                                 >
-                                    {isRecalculating ? <LoadingSpinner size="sm" /> : <RotateCcw size={18} className="text-white" />}
+                                    {isRecalculating ? <LoadingSpinner size="sm" /> : <RotateCcw size={14} className="text-white" />}
                                 </button>
                             )}
                         </div>
                         <Link href="/dashboard/overtime" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
-                    <div className="p-3 md:p-2.5">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                            <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1.5 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes anterior">
-                                <ChevronLeft className="w-5 h-5" />
+                    <div className="p-2 md:p-2">
+                        <div className="flex items-center justify-center gap-1.5 mb-1">
+                            <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes anterior">
+                                <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-xs md:text-sm font-black uppercase tracking-wider text-zinc-800 min-w-[100px] text-center">
+                            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-zinc-800 min-w-[80px] text-center">
                                 {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
                             </span>
-                            <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1.5 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes siguiente">
-                                <ChevronRight className="w-5 h-5" />
+                            <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes siguiente">
+                                <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
-                        <div className="flex gap-3">
-                            {/* Calendario del mes */}
-                            <div className="shrink-0 grid grid-cols-7 gap-[2px] text-center">
-                                {(() => {
-                                    const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
-                                    const end = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
-                                    const days = eachDayOfInterval({ start, end });
-                                    const today = new Date();
-                                    return days.map((day) => {
-                                        const inMonth = isSameMonth(day, overtimeViewMonth);
-                                        const isToday = isSameDay(day, today);
-                                        return (
-                                            <div
-                                                key={day.getTime()}
-                                                className={cn(
-                                                    'w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[10px] md:text-[11px] font-bold',
-                                                    !inMonth && 'text-zinc-300',
-                                                    inMonth && !isToday && 'text-zinc-600',
-                                                    isToday && 'bg-blue-500 text-white'
-                                                )}
-                                            >
-                                                {format(day, 'd')}
-                                            </div>
-                                        );
-                                    });
-                                })()}
-                            </div>
-                            {/* Lista de semanas del mes */}
-                            <div className="flex-1 min-w-0 space-y-1.5">
-                                {overtimeLoading ? (
-                                    <div className="py-4 flex items-center justify-center"><LoadingSpinner size="sm" className="text-purple-500" /></div>
-                                ) : overtimeWeeksData.length === 0 ? (
-                                    <div className="py-4 text-center text-gray-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest italic">No hay semanas</div>
-                                ) : (
-                                    overtimeWeeksData.map((week) => {
-                                        const isFullyPaid = week.staff?.every((s: any) => (s.totalCost ?? s.amount ?? 0) < 0.05 || s.isPaid);
-                                        const weekTotal = week.totalAmount ?? week.total ?? 0;
-                                        return (
-                                            <button
-                                                key={week.weekId}
-                                                type="button"
-                                                onClick={() => setWeekDetailModal({ week })}
-                                                className="w-full flex items-center gap-2 p-2 rounded-xl hover:bg-purple-50/50 border border-transparent hover:border-purple-100 transition-all text-left"
-                                            >
-                                                <div className="shrink-0 flex items-center justify-center">
-                                                    {isFullyPaid ? (
-                                                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                                            <span className="text-white font-black text-[10px] leading-none">!</span>
-                                                        </div>
-                                                    )}
+                        <div className="flex gap-2">
+                            {/* Calendario: filas de 7 días */}
+                            {(() => {
+                                const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
+                                const end = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
+                                const days = eachDayOfInterval({ start, end });
+                                const today = new Date();
+                                const currentWeekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                                const rows: Date[][] = [];
+                                for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7));
+                                const rowWeekIds = rows.map(row => row[0] ? format(row[0], 'yyyy-MM-dd') : '');
+                                return (
+                                    <>
+                                        <div className="shrink-0 flex flex-col gap-[2px]">
+                                            {rows.map((rowDays, rowIndex) => (
+                                                <div key={rowIndex} className="grid grid-cols-7 gap-[2px]">
+                                                    {rowDays.map((day) => {
+                                                        const inMonth = isSameMonth(day, overtimeViewMonth);
+                                                        const isToday = isSameDay(day, today);
+                                                        return (
+                                                            <div
+                                                                key={day.getTime()}
+                                                                className={cn(
+                                                                    'w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold',
+                                                                    !inMonth && 'text-zinc-300',
+                                                                    inMonth && !isToday && 'text-zinc-600',
+                                                                    isToday && 'bg-blue-500 text-white'
+                                                                )}
+                                                            >
+                                                                {format(day, 'd')}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                                <span className="text-[9px] font-black text-zinc-500 uppercase shrink-0">Sem {getISOWeek(new Date(week.weekId))}</span>
-                                                <span className="text-[9px] font-bold text-zinc-500 uppercase truncate">
-                                                    {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
-                                                </span>
-                                                <span className="ml-auto text-sm font-black text-zinc-900 shrink-0">
-                                                    {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                                                </span>
-                                            </button>
-                                        );
-                                    })
-                                )}
-                            </div>
+                                            ))}
+                                        </div>
+                                        {/* Una fila por fila de calendario; semana en curso nunca se muestra */}
+                                        <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
+                                            {rowWeekIds.map((weekId, rowIndex) => {
+                                                    if (overtimeLoading) {
+                                                        return <div key={rowIndex} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
+                                                    }
+                                                    if (weekId === currentWeekStart) {
+                                                        return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
+                                                    }
+                                                    const week = overtimeWeeksData.find((w: any) => w.weekId === weekId);
+                                                    if (!week) {
+                                                        return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
+                                                    }
+                                                    const isFullyPaid = week.staff?.every((s: any) => (s.totalCost ?? s.amount ?? 0) < 0.05 || s.isPaid);
+                                                    const weekTotal = week.totalAmount ?? week.total ?? 0;
+                                                    return (
+                                                        <button
+                                                            key={week.weekId}
+                                                            type="button"
+                                                            onClick={() => setWeekDetailModal({ week })}
+                                                            className={cn(
+                                                                'w-full min-h-[20px] md:min-h-[24px] h-5 md:h-6 flex items-center gap-1 px-1 rounded-md hover:bg-purple-50/50 border border-transparent hover:border-purple-100 transition-all text-left flex-shrink-0'
+                                                            )}
+                                                        >
+                                                            <div className="shrink-0 flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4">
+                                                                {isFullyPaid ? (
+                                                                    <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                                                        <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" strokeWidth={4} />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                                                        <span className="text-white font-black text-[8px] leading-none">!</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Sem{getISOWeek(new Date(week.weekId))}</span>
+                                                            <span className="text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase truncate min-w-0">
+                                                                {format(new Date(week.weekId), 'd MMM', { locale: es })}-{format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
+                                                            </span>
+                                                            <span className="ml-auto text-[9px] md:text-[10px] font-black text-zinc-900 shrink-0">
+                                                                {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -826,7 +844,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             {weekDetailModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-purple-600 px-4 py-3 flex items-center justify-between text-white shrink-0">
+                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
                             <h3 className="text-sm font-black uppercase tracking-wider">
                                 Sem {getISOWeek(new Date(weekDetailModal.week.weekId))} — {format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM', { locale: es })}
                             </h3>
