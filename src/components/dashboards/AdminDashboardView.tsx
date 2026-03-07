@@ -358,9 +358,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-[#36606F] px-6 py-2.5 md:py-1.5 flex justify-between items-center text-white shrink-0 relative">
+                    <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0 relative">
                         <div className="flex items-center gap-3">
-                            <h3 className="text-sm md:text-xl font-black uppercase tracking-wider">Ventas</h3>
+                            <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Ventas</h3>
                         </div>
                         <div className="absolute left-1/2 -translate-x-1/2 md:scale-110">
                             <LiveClock />
@@ -487,9 +487,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 3. HORAS EXTRAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-purple-600 px-6 py-2.5 md:py-1 flex justify-between items-center text-white shrink-0">
+                    <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-sm md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
+                            <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             {currentUserEmail === 'hhector7722@gmail.com' && (
                                 <button
                                     onClick={handleRecalculate}

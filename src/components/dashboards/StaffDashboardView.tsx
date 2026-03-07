@@ -463,9 +463,9 @@ export default function StaffDashboardView() {
                     <div className="w-full space-y-3 md:space-y-4">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                            <div className="bg-[#36606F] px-6 py-3 flex justify-between items-center text-white shrink-0">
+                            <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
                                 <div className="flex items-center">
-                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none text-white">
+                                    <span className="text-[10px] md:text-sm font-black uppercase tracking-widest leading-none text-white">
                                         {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
                                     </span>
                                 </div>
@@ -621,8 +621,8 @@ export default function StaffDashboardView() {
                             className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
                         >
                             {/* Header compacto */}
-                            <div className="bg-purple-600 px-3 py-1 md:py-1.5 flex items-center justify-between text-white shrink-0">
-                                <h3 className="font-black flex items-center gap-1 text-[9px] md:text-xs uppercase tracking-wider">
+                            <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex items-center justify-between text-white shrink-0">
+                                <h3 className="font-black flex items-center gap-1 text-[10px] md:text-sm uppercase tracking-wider">
                                     <CalendarDays size={12} className="text-white/80 shrink-0" fill="currentColor" />
                                     <span>Horarios</span>
                                 </h3>
