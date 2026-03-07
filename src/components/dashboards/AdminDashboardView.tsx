@@ -404,19 +404,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     </div>
                                 </button>
                                 <div className="flex-[2] basis-0 grid grid-cols-3 gap-2 md:gap-2">
-                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-0.5 transition-all active:scale-95 group">
+                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1.5 transition-all active:scale-95 group">
                                         <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <Plus size={16} className="text-white" strokeWidth={4} />
                                         </div>
                                         <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-0.5 transition-all active:scale-95 group">
+                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1.5 transition-all active:scale-95 group">
                                         <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <Minus size={16} className="text-white" strokeWidth={4} />
                                         </div>
                                         <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-0.5 transition-all active:scale-95 group">
+                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1.5 transition-all active:scale-95 group">
                                         <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <RefreshCw size={16} className="text-white" strokeWidth={4} />
                                         </div>
@@ -519,13 +519,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center text-white shrink-0">
                             <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Cajas Cambio</h3>
                         </div>
-                        <div className="p-2 md:p-3 py-1.5 md:py-2 space-y-2 md:space-y-2 flex-1 flex flex-col justify-center">
+                        <div className="p-2 md:p-0 py-1.5 md:py-0 flex flex-col md:flex-row flex-1 md:divide-x md:divide-zinc-100">
                             {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
                                 const diff = box.current_balance - 300;
                                 const isOk = Math.abs(diff) < 0.01;
                                 return (
-                                    <div key={box.id} className="flex flex-row gap-2 items-center">
-                                        <div className="flex-[1.2] basis-0 px-1 flex flex-col">
+                                    <div key={box.id} className="flex flex-row md:flex-col gap-2 md:gap-2 items-center flex-1 justify-center p-2 md:p-3">
+                                        <div className="flex-[1.2] basis-0 md:basis-auto px-1 flex flex-col items-start md:items-center">
                                             <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
                                             <span className="text-sm md:text-xl font-black text-zinc-800">
                                                 {box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}
