@@ -457,9 +457,9 @@ export default function StaffDashboardView() {
     );
 
     return (
-        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-10 md:pb-32">
+        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-8 md:pb-32">
             <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4 mt-1 md:mt-2">
-                <div className="flex flex-col gap-3 md:gap-4 items-center">
+                <div className="flex flex-col gap-4 md:gap-4 items-center">
                     <div className="w-full space-y-3 md:space-y-4">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
@@ -674,7 +674,6 @@ export default function StaffDashboardView() {
                                                         <span className="text-[9px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
                                                     </div>
                                                     <div className="flex flex-col gap-0 min-w-0">
-                                                        <span className="text-[6px] font-black text-zinc-400 uppercase truncate leading-none">{shift.activity || 'Turno'}</span>
                                                         <div className="flex items-center gap-0.5 font-black leading-none text-[7px]">
                                                             <span className="text-emerald-600">{shift.startTime}</span>
                                                             <span className="text-rose-500">{shift.endTime}</span>
