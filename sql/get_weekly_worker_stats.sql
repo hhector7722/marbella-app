@@ -1,8 +1,10 @@
 -- =================================================================
--- RPC: get_weekly_worker_stats (V3 Final - UTC Fixed)
+-- RPC: get_weekly_worker_stats (V4 - Semana completa invariante por rango)
 -- Centraliza la agregación de horas, redondeo y cálculo de costes.
 -- Soporta filtrado por usuario en origen para máxima eficiencia.
--- FIX: Fuerza la evaluación de fechas en UTC para evitar saltos de semana.
+-- FIX CRÍTICO: Las semanas que tocan [p_start_date, p_end_date] se agregan
+-- por SEMANA COMPLETA (lunes-domingo). Así la misma semana devuelve siempre
+-- el mismo total aunque se llame con febrero o con marzo (evita 1013€ vs 1204€).
 -- =================================================================
 
 CREATE OR REPLACE FUNCTION public.get_weekly_worker_stats(
@@ -14,16 +16,19 @@ RETURNS jsonb AS $$
 DECLARE
     v_result jsonb;
 BEGIN
-    -- 1. CTE para agrupar logs por semana y usuario con redondeo CENTRALIZADO
-    -- FIX CRÍTICO: Se evalúa clock_in en UTC antes del casteo a ::date
-    WITH weekly_user_logs AS (
+    -- 0. Semanas cuyo intervalo [lunes, domingo] toca el rango pedido (solo listado)
+    WITH weeks_in_range AS (
+        SELECT DISTINCT date_trunc('week', d::timestamp)::date AS week_start
+        FROM generate_series(p_start_date, p_end_date, '1 day'::interval) AS d
+    ),
+    -- 1. Agregar por semana y usuario: SUMAR TODA LA SEMANA, no solo días en [p_start, p_end]
+    weekly_user_logs AS (
         SELECT 
-            date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date as week_start,
+            date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date AS week_start,
             user_id,
-            SUM(public.fn_round_marbella_hours(total_hours)) as week_logs_sum
+            SUM(public.fn_round_marbella_hours(total_hours)) AS week_logs_sum
         FROM public.time_logs
-        WHERE (clock_in AT TIME ZONE 'Europe/Madrid')::date >= p_start_date 
-          AND (clock_in AT TIME ZONE 'Europe/Madrid')::date <= p_end_date
+        WHERE date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date IN (SELECT week_start FROM weeks_in_range)
           AND total_hours IS NOT NULL
           AND (p_user_id IS NULL OR user_id = p_user_id)
         GROUP BY 1, 2
