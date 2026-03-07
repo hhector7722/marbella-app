@@ -85,10 +85,13 @@ export function OrderSuccessModal({
                 return;
             }
 
+            // Fallback: sin Web Share API o en PC — enviar URL del PDF en el texto
+            const linkTexto = pdfUrl || 'Descarga el PDF desde el botón "Descargar" de la app.';
+            const mensaje = `Hola, adjunto el nuevo pedido de Bar La Marbella. Puedes descargarlo o revisarlo aquí: ${linkTexto}`;
             const cleanPhone = supplierPhone.replace(/\D/g, '');
             const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
-            const message = encodeURIComponent('Adjunto pedido. Gracias.');
-            window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+            const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
+            window.open(whatsappUrl, '_blank');
         } catch (error) {
             console.error('Error WhatsApp:', error);
             toast.error('Error al abrir WhatsApp.');
