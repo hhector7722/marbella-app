@@ -481,7 +481,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-purple-600 px-6 py-2.5 md:py-1.5 flex justify-between items-center text-white shrink-0">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-sm md:text-base font-black uppercase tracking-wider">Horas Extras</h2>
+                            <h2 className="text-sm md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                             {currentUserEmail === 'hhector7722@gmail.com' && (
                                 <button
                                     onClick={handleRecalculate}
