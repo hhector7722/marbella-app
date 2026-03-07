@@ -398,29 +398,29 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <button onClick={() => router.push('/dashboard/movements')} className="flex-[1.2] basis-0 px-4 py-3 md:py-2.5 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95">
                                     <div className="flex flex-col items-start leading-none gap-1">
                                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                        <span className="text-lg md:text-xl font-black">
+                                        <span className="text-lg md:text-lg font-black">
                                             {Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}
                                         </span>
                                     </div>
                                 </button>
-                                <div className="flex-[2] basis-0 grid grid-cols-3 gap-2 md:gap-3">
-                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-1.5 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1 transition-all active:scale-95 group">
-                                        <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <Plus size={18} className="text-white" strokeWidth={4} />
+                                <div className="flex-[2] basis-0 grid grid-cols-3 gap-2 md:gap-2">
+                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-0.5 transition-all active:scale-95 group">
+                                        <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                            <Plus size={16} className="text-white" strokeWidth={4} />
                                         </div>
-                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
+                                        <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-1.5 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1 transition-all active:scale-95 group">
-                                        <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <Minus size={18} className="text-white" strokeWidth={4} />
+                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-0.5 transition-all active:scale-95 group">
+                                        <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                            <Minus size={16} className="text-white" strokeWidth={4} />
                                         </div>
-                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
+                                        <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-1.5 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1 transition-all active:scale-95 group">
-                                        <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <RefreshCw size={18} className="text-white" strokeWidth={4} />
+                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-1 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-0.5 transition-all active:scale-95 group">
+                                        <div className="w-8 h-8 md:w-7.5 md:h-7.5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                            <RefreshCw size={16} className="text-white" strokeWidth={4} />
                                         </div>
-                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
+                                        <span className="text-[8px] md:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                     </button>
                                 </div>
                             </div>
@@ -526,8 +526,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 return (
                                     <div key={box.id} className="flex flex-row gap-2 items-center">
                                         <div className="flex-[1.2] basis-0 px-1 flex flex-col">
-                                            <span className="text-[7px] md:text-[10px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
-                                            <span className="text-sm md:text-2xl font-black text-zinc-800">
+                                            <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
+                                            <span className="text-sm md:text-xl font-black text-zinc-800">
                                                 {box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}
                                             </span>
                                             {!isOk && (
@@ -539,15 +539,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <div className="flex gap-1 md:gap-2">
                                             <button
                                                 onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-xl shadow-sm hover:scale-110 transition-transform active:scale-95 text-white"
+                                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-blue-500 rounded-xl shadow-sm hover:scale-110 transition-transform active:scale-95 text-white"
                                             >
-                                                <ArrowRightLeft size={18} strokeWidth={4} />
+                                                <ArrowRightLeft size={16} strokeWidth={4} />
                                             </button>
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'audit')}
-                                                className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center bg-orange-500 rounded-xl shadow-sm hover:scale-110 transition-transform active:scale-95 text-white"
+                                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-orange-500 rounded-xl shadow-sm hover:scale-110 transition-transform active:scale-95 text-white"
                                             >
-                                                <RefreshCw size={18} strokeWidth={4} />
+                                                <RefreshCw size={16} strokeWidth={4} />
                                             </button>
                                         </div>
                                     </div>
