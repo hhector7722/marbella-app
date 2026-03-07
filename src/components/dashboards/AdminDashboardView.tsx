@@ -181,6 +181,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     });
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        setIsDesktop(window.innerWidth >= 768);
+        const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const getUser = async () => {
@@ -536,18 +544,24 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex gap-1 md:gap-2">
+                                        <div className="flex gap-2 md:gap-3">
                                             <button
                                                 onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-blue-500 rounded-xl shadow-sm hover:scale-110 transition-transform active:scale-95 text-white"
+                                                className="w-8 h-8 md:w-12 md:h-12 rounded-xl flex flex-col items-center justify-center transition-all md:bg-zinc-50/50 md:p-1 md:gap-0.5 active:scale-95 group"
                                             >
-                                                <ArrowRightLeft size={16} strokeWidth={4} />
+                                                <div className="w-8 h-8 md:w-8 md:h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                    <ArrowRightLeft size={16} strokeWidth={isDesktop ? 3 : 4} />
+                                                </div>
+                                                <span className="hidden md:block text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
                                             </button>
                                             <button
                                                 onClick={() => openTreasuryModal(box, 'audit')}
-                                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-orange-500 rounded-xl shadow-sm hover:scale-110 transition-transform active:scale-95 text-white"
+                                                className="w-8 h-8 md:w-12 md:h-12 rounded-xl flex flex-col items-center justify-center transition-all md:bg-zinc-50/50 md:p-1 md:gap-0.5 active:scale-95 group"
                                             >
-                                                <RefreshCw size={16} strokeWidth={4} />
+                                                <div className="w-8 h-8 md:w-8 md:h-8 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                    <RefreshCw size={16} strokeWidth={isDesktop ? 3 : 4} />
+                                                </div>
+                                                <span className="hidden md:block text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                             </button>
                                         </div>
                                     </div>
