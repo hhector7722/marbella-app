@@ -572,10 +572,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 }}
                                 className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center gap-2 md:gap-4 active:scale-95 transition-all group aspect-square hover:shadow-xl hover:border-purple-100/50 border border-zinc-50"
                             >
-                                <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 p-1 md:p-0">
+                                <div className="w-10 h-10 md:w-16 md:h-16 flex items-center justify-center transition-transform group-hover:scale-110 p-1 md:p-0">
                                     <Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" />
                                 </div>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-800 uppercase tracking-widest text-center leading-tight px-1 mt-0.5">
+                                <span className="text-[7px] md:text-[11px] font-black text-zinc-800 uppercase tracking-widest text-center leading-tight px-1 mt-0.5">
                                     {card.title}
                                 </span>
                             </button>
