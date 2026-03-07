@@ -1,98 +1,75 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
+import { NextResponse } from 'next/server';
 
-// Configuración obligatoria para que PDF.js funcione en el servidor (Node.js)
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+export async function POST(req: Request) {
+    try {
+        // 1. Validación del Token de Google Apps Script
+        const authHeader = req.headers.get('authorization');
+        if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-// Cliente con Service Role Key para ignorar RLS en la subida inicial
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! 
-);
+        // 2. Cliente Supabase en Runtime (Service Role para saltar RLS en la subida)
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
 
-export async function POST(req: NextRequest) {
-  try {
-    // 1. Validación de seguridad con Token Secreto
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        // 3. Recepción del payload crudo
+        const body = await req.json();
+        const { fileBase64, filename, codigo_empleado, mes, year } = body;
+
+        const has = (v: unknown) => v != null && String(v).trim() !== '';
+        if (!has(fileBase64) || !has(filename) || !has(codigo_empleado) || !has(mes) || !has(year)) {
+            return NextResponse.json({ error: 'Faltan parámetros requeridos (fileBase64, filename, codigo_empleado, mes, year)' }, { status: 400 });
+        }
+
+        // 4. Validar que el perfil existe en BDP
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('codigo_empleado', codigo_empleado)
+            .single();
+
+        if (profileError || !profile) {
+            return NextResponse.json({ error: `Empleado con código ${codigo_empleado} no encontrado.` }, { status: 404 });
+        }
+
+        // 5. Decodificar Base64 y subir a Supabase Storage
+        const buffer = Buffer.from(fileBase64, 'base64');
+        const filePath = `${codigo_empleado}/${year}/${mes}_${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('nominas')
+            .upload(filePath, buffer, {
+                contentType: 'application/pdf',
+                upsert: true
+            });
+
+        if (uploadError) throw uploadError;
+
+        // 6. Generar URL Pública y guardar referencia en BD
+        const { data: { publicUrl } } = supabase.storage.from('nominas').getPublicUrl(filePath);
+
+        const { error: dbError } = await supabase
+            .from('employee_documents')
+            .insert({
+                user_id: profile.id,
+                codigo_empleado,
+                tipo: 'nomina',
+                mes,
+                year: Number(year),
+                filename,
+                storage_path: filePath,
+                public_url: publicUrl
+            });
+
+        if (dbError) throw dbError;
+
+        return NextResponse.json({ success: true, message: 'Nómina procesada' });
+
+    } catch (error: any) {
+        console.error('Webhook Error Crítico:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    const { fileBase64, fileName, mesAnio } = await req.json();
-    const pdfBuffer = Buffer.from(fileBase64, 'base64');
-
-    // 2. Lectura del PDF (Extracción de texto puro)
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBuffer) });
-    const pdf = await loadingTask.promise;
-    let fullText = '';
-    
-    // Recorremos las páginas (normalmente las nóminas son de 1 sola página)
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      fullText += content.items.map((item: any) => item.str).join(' ');
-    }
-
-    // 3. Identificación por DNI (Regex para España)
-    const dniMatch = fullText.match(/\b[XYZ]?\d{7,8}[A-Z]\b/i);
-    
-    if (!dniMatch) {
-      // Si no hay DNI, registramos el error en la tabla de excepciones
-      await supabase.from('nominas_excepciones').insert({ 
-        file_name: fileName, 
-        error_log: 'DNI no encontrado físicamente en el PDF' 
-      });
-      return NextResponse.json({ error: 'DNI no detectado' }, { status: 400 });
-    }
-
-    const dniExtraido = dniMatch[0].toUpperCase();
-
-    // 4. Buscar el UUID del empleado en tu base de datos
-    // AJUSTA AQUÍ: Si tu tabla de empleados no se llama 'profiles', cámbialo.
-    const { data: empleado, error: empError } = await supabase
-      .from('profiles') 
-      .select('id')
-      .eq('dni', dniExtraido)
-      .single();
-
-    if (empError || !empleado) {
-      await supabase.from('nominas_excepciones').insert({ 
-        file_name: fileName, 
-        error_log: `El DNI ${dniExtraido} no existe en la tabla de empleados.` 
-      });
-      return NextResponse.json({ error: 'Empleado no registrado' }, { status: 404 });
-    }
-
-    // 5. Subida al Storage Privado
-    // Formato de ruta: UUID_EMPLEADO/MM-YYYY_NombreOriginal.pdf
-    const storagePath = `${empleado.id}/${mesAnio}_${fileName}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('nominas_privado')
-      .upload(storagePath, pdfBuffer, { 
-        contentType: 'application/pdf',
-        upsert: true 
-      });
-
-    if (uploadError) throw uploadError;
-
-    // 6. Registro final en la tabla de nóminas
-    const { error: dbError } = await supabase
-      .from('nominas')
-      .insert({
-        empleado_id: empleado.id,
-        mes_anio: mesAnio,
-        file_path: storagePath
-      });
-
-    if (dbError) throw dbError;
-
-    console.log(`✅ Nómina asignada correctamente al DNI: ${dniExtraido}`);
-    return NextResponse.json({ success: true, dni: dniExtraido });
-
-  } catch (error: any) {
-    console.error('Error Crítico Webhook:', error.message);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
-  }
 }
