@@ -33,7 +33,7 @@ BEGIN
           AND (p_user_id IS NULL OR user_id = p_user_id)
         GROUP BY 1, 2
     ),
-    -- 2. CTE para unir con perfiles y snapshots
+    -- 2. CTE para unir con perfiles y snapshots (override semanal: guardar horas esta semana)
     staff_stats AS (
         SELECT 
             wl.week_start,
@@ -41,7 +41,7 @@ BEGIN
             p.first_name || ' ' || COALESCE(p.last_name, '') as name,
             p.role,
             p.overtime_cost_per_hour as over_price,
-            p.prefer_stock_hours as prefer_stock,
+            COALESCE(s.prefer_stock_hours_override, p.prefer_stock_hours, false) as prefer_stock,
             COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0) as limit_hours,
             wl.week_logs_sum,
             COALESCE(s.is_paid, false) as is_paid,
