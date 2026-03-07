@@ -345,21 +345,21 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     return (
-        <div className="pt-0 md:pt-4 animate-in fade-in duration-500 pb-32">
-            <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-3">
+        <div className="pt-0 md:pt-2 animate-in fade-in duration-500 pb-8">
+            <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
 
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-[#36606F] px-6 py-2.5 md:py-3 flex justify-between items-center text-white shrink-0 relative">
+                    <div className="bg-[#36606F] px-6 py-2.5 md:py-1.5 flex justify-between items-center text-white shrink-0 relative">
                         <div className="flex items-center gap-3">
                             <h3 className="text-sm md:text-xl font-black uppercase tracking-wider">Ventas</h3>
                         </div>
-                        <div className="absolute left-1/2 -translate-x-1/2 md:scale-150">
+                        <div className="absolute left-1/2 -translate-x-1/2 md:scale-110">
                             <LiveClock />
                         </div>
                         <Link href="/dashboard/history" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
-                    <div className="p-3 md:p-4 grid grid-cols-3 gap-2 md:gap-4 flex-1 items-center">
+                    <div className="p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 flex-1 items-center">
                         <div className="flex flex-col items-center justify-center text-center">
                             <PremiumCountUp
                                 value={liveTickets.total}
@@ -391,36 +391,36 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </div>
 
                 {/* 2. CAJA INICIAL */}
-                <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-3 pb-1.5")}>
+                <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-2 pb-1")}>
                     {boxes.filter(b => b.type === 'operational').map(box => (
                         <div key={box.id} className="flex flex-col h-full">
                             <div className="flex flex-row gap-2 md:gap-3 mb-3">
-                                <button onClick={() => router.push('/dashboard/movements')} className="flex-[1.2] basis-0 px-4 py-3 md:py-4 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95">
+                                <button onClick={() => router.push('/dashboard/movements')} className="flex-[1.2] basis-0 px-4 py-3 md:py-2.5 rounded-2xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center justify-between text-white active:scale-95">
                                     <div className="flex flex-col items-start leading-none gap-1">
                                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Caja Inicial</span>
-                                        <span className="text-lg md:text-2xl font-black">
+                                        <span className="text-lg md:text-xl font-black">
                                             {Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}
                                         </span>
                                     </div>
                                 </button>
                                 <div className="flex-[2] basis-0 grid grid-cols-3 gap-2 md:gap-3">
-                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-2 transition-all active:scale-95 group">
-                                        <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-2 md:p-1.5 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1 transition-all active:scale-95 group">
+                                        <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <Plus size={18} className="text-white" strokeWidth={4} />
                                         </div>
-                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
+                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-2 transition-all active:scale-95 group">
-                                        <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-2 md:p-1.5 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1 transition-all active:scale-95 group">
+                                        <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <Minus size={18} className="text-white" strokeWidth={4} />
                                         </div>
-                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
+                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-2 transition-all active:scale-95 group">
-                                        <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-2 md:p-1.5 rounded-xl flex flex-col items-center justify-center gap-2 md:gap-1 transition-all active:scale-95 group">
+                                        <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <RefreshCw size={18} className="text-white" strokeWidth={4} />
                                         </div>
-                                        <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
+                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                     </button>
                                 </div>
                             </div>
@@ -479,7 +479,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 3. HORAS EXTRAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-purple-600 px-6 py-2.5 md:py-3 flex justify-between items-center text-white shrink-0">
+                    <div className="bg-purple-600 px-6 py-2.5 md:py-2 flex justify-between items-center text-white shrink-0">
                         <div className="flex items-center gap-2">
                             <h2 className="text-sm md:text-xl font-black uppercase tracking-wider">Horas Extras</h2>
                             {currentUserEmail === 'hhector7722@gmail.com' && (
@@ -494,7 +494,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         <Link href="/dashboard/overtime" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
-                    <div className="p-3 md:p-4 space-y-2 max-h-[300px] md:max-h-[350px] overflow-y-auto no-scrollbar">
+                    <div className="p-3 md:p-2.5 space-y-2 max-h-[150px] md:max-h-[220px] overflow-y-auto no-scrollbar">
                         {overtimeData.length === 0 ? (
                             <div className="py-8 text-center text-gray-400 text-[10px] md:text-sm font-bold uppercase tracking-widest italic">No hay registros</div>
                         ) : (
@@ -516,10 +516,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 {/* 4. CAJAS CAMBIO + ICONOS */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        <div className="bg-[#36606F] px-4 py-2 flex items-center text-white shrink-0">
+                        <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center text-white shrink-0">
                             <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Cajas Cambio</h3>
                         </div>
-                        <div className="p-2 md:p-4 py-1.5 md:py-3 space-y-2 md:space-y-4 flex-1 flex flex-col justify-center">
+                        <div className="p-2 md:p-3 py-1.5 md:py-2 space-y-2 md:space-y-2 flex-1 flex flex-col justify-center">
                             {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
                                 const diff = box.current_balance - 300;
                                 const isOk = Math.abs(diff) < 0.01;
@@ -572,10 +572,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 }}
                                 className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center gap-2 md:gap-4 active:scale-95 transition-all group aspect-square hover:shadow-xl hover:border-purple-100/50 border border-zinc-50"
                             >
-                                <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-110 p-1 md:p-0">
+                                <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 p-1 md:p-0">
                                     <Image src={card.img} alt={card.title} width={64} height={64} priority={true} className="w-full h-full object-contain" />
                                 </div>
-                                <span className="text-[7px] md:text-[9px] font-black text-zinc-800 uppercase tracking-widest text-center leading-tight px-1 mt-1">
+                                <span className="text-[7px] md:text-[8px] font-black text-zinc-800 uppercase tracking-widest text-center leading-tight px-1 mt-0.5">
                                     {card.title}
                                 </span>
                             </button>
