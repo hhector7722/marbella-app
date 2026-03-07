@@ -589,7 +589,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                     if (!week) {
                                                         return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
                                                     }
-                                                    const isFullyPaid = week.staff?.every((s: any) => (s.totalCost ?? s.amount ?? 0) < 0.05 || s.isPaid);
+                                                    const isFullyPaid = week.staff?.every((s: any) => {
+                                                        const cost = (s.totalCost ?? s.amount ?? 0);
+                                                        return cost < 0.05 || !!s.isPaid || s.preferStock === true;
+                                                    });
                                                     const weekTotal = week.totalAmount ?? week.total ?? 0;
                                                     return (
                                                         <button
@@ -851,7 +854,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-4 overflow-y-auto flex-1 space-y-2">
-                            {(weekDetailModal.week.staff ?? []).filter((s: any) => (s.totalCost ?? s.amount ?? 0) > 0.05).map((s: any) => (
+                            {(weekDetailModal.week.staff ?? []).filter((s: any) => {
+                                const cost = (s.totalCost ?? s.amount ?? 0);
+                                return cost > 0.05 && s.preferStock !== true;
+                            }).map((s: any) => (
                                 <StaffOvertimeRow
                                     key={s.id}
                                     staff={{ ...s, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
