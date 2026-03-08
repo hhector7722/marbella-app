@@ -697,7 +697,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     else if (card.title === 'Producto') setIsProductModalOpen(true);
                                     else if (card.link) router.push(card.link);
                                 }}
-                                className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
+                                className="bg-white rounded-none p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
                             >
                                 <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
                                     <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
