@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function confirmarMapeoAction(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   const lineId = formData.get('lineId') as string
   const supplierId = formData.get('supplierId') as string
