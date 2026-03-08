@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -59,9 +60,9 @@ interface Props {
 /* ─── Modal ─────────────────────────────────────────────── */
 export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: propsUserId }: Props) => {
     const supabase = createClient();
-    const router = useRouter();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
     const [dayActivity, setDayActivity] = useState('');
     const [eventStart, setEventStart] = useState('');
@@ -163,8 +164,13 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
         }
     };
 
-    const handleBack = () => { setSelectedDate(null); setDayShifts([]); };
-    const handleClose = () => { setSelectedDate(null); setDayShifts([]); onClose(); };
+    const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
+    const handleClose = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); onClose(); };
+
+    const exitEditModeAndRefresh = () => {
+        setEditModeForDate(null);
+        if (selectedDate) handleDayClick(selectedDate);
+    };
 
     if (!isOpen) return null;
 
@@ -184,8 +190,21 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 backdrop-blur-sm animate-in fade-in" onClick={handleClose}>
-            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative flex flex-col overflow-hidden max-h-[92vh]" onClick={e => e.stopPropagation()}>
+            <div className={cn('bg-white w-full rounded-3xl shadow-2xl relative flex flex-col overflow-hidden max-h-[92vh]', editModeForDate ? 'max-w-4xl' : 'max-w-lg')} onClick={e => e.stopPropagation()}>
 
+                {/* ── MODO EDICIÓN: editor embebido (reutiliza su cabecera, sin cabecera extra) ── */}
+                {editModeForDate ? (
+                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                        <ScheduleDayEditor
+                            initialDate={editModeForDate}
+                            onClose={exitEditModeAndRefresh}
+                            onSuccess={exitEditModeAndRefresh}
+                            onRequestCloseModal={handleClose}
+                            embedded
+                        />
+                    </div>
+                ) : (
+                <>
                 {/* ── HEADER (petrol, same style as editor) ── */}
                 <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0">
                     {selectedDate ? (
@@ -213,7 +232,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                             </button>
 
                                             <h3 className="text-[12px] font-black uppercase tracking-widest text-white truncate px-1 capitalize">
-                                                {format(selectedDate!, "EEEE d 'de' MMMM", { locale: es })}
+                                                {format(selectedDate!, "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')}
                                             </h3>
 
                                             <button
@@ -228,13 +247,11 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                 })()}
                             </div>
 
-                            {/* Botón de Edición (Solo para Managers) */}
+                            {/* Botón de Edición (Solo para Managers): abre editor dentro del modal */}
                             {(userRole === 'manager' || userRole === 'supervisor') && (
                                 <button
-                                    onClick={() => {
-                                        onClose();
-                                        router.push(`/staff/schedule/editor?date=${format(selectedDate!, 'yyyy-MM-dd')}`);
-                                    }}
+                                    type="button"
+                                    onClick={() => setEditModeForDate(format(selectedDate!, 'yyyy-MM-dd'))}
                                     className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-95 shrink-0"
                                     title="Editar este día"
                                 >
@@ -371,7 +388,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Participantes</span>
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
                                             <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                 <span className="font-black text-zinc-800 text-[11px]">{eventParticipants || ' '}</span>
                                             </div>
@@ -431,6 +448,8 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                             </>
                         )}
                     </div>
+                )}
+                </>
                 )}
             </div>
         </div>
