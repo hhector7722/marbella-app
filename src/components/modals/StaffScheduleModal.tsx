@@ -29,7 +29,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
-                background: 'linear-gradient(90deg, #10b981 0%, #34d399 25%, #6ee7b7 45%, #86efac 52%, #fca5a5 58%, #f87171 72%, #ef4444 100%)',
+                background: 'linear-gradient(90deg, #059669 0%, #10b981 25%, #34d399 50%, #6ee7b7 75%, #a7f3d0 100%)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
         >
