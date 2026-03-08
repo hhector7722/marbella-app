@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-06 (Universal Bottom Nav & 100% Zoom Squeeze)
+**Última actualización:** 2026-03-08 (Motor Albaranes Cognitivos)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -247,6 +247,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 187: - [ ] Próximas integraciones de BI y alertas de stock.
 - [x] ⚡ **Optimización Carga Dashboard (Tesorería)**: Eliminada la llamada RPC `get_theoretical_balance` en el renderizado inicial del Dashboard. Ahora el sistema confía plenamente en la columna persistente `difference` de la tabla `cash_boxes`, acelerando radicalmente la carga de la vista principal ("Caja Inicial") bajo el paradigma de "Single Source of Truth" de la base de datos.
 - [x] ⚙️ **Estabilización de Compilador Local (Webpack)**: Sustituido el motor Turbopack por Webpack en el entorno de desarrollo (`next dev --webpack`) para unificar la resolución nativa de dependencias PDF (canvas) con el entorno de Vercel e ignorados los warnings cíclicos de jspdf/pdfjs-dist en `next.config.ts`.
+- [x] 📋 **Motor de Albaranes Cognitivos (Esquema DB)**: Integración del esquema físico para albaranes y mapeo proveedor–ingrediente, respetando `suppliers.id` BIGINT e `ingredients.id` UUID. Añadida columna `suppliers.email_domains` (TEXT[]). Creadas tablas: `supplier_item_mappings` (diccionario nombre PDF → ingrediente, factor de conversión, último precio), `purchase_invoices` (cabecera: proveedor, número, fecha, total, file_path, status) y `purchase_invoice_lines` (líneas crudas del PDF: original_name, cantidades, precios, mapped_ingredient_id, status). RLS habilitado y políticas para `authenticated` y `service_role` en las tres tablas nuevas. Migración: `supabase/migrations/20260308_purchase_invoices_cognitive.sql` y script standalone en `sql/purchase_invoices_cognitive_schema.sql`.
 
 ---
 
