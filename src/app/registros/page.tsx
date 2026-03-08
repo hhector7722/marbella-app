@@ -646,9 +646,9 @@ export default function RegistrosPage() {
                                                             ) : (
                                                                 <span className={cn(
                                                                     "text-[9px] font-black leading-none px-1 rounded",
-                                                                    eventConfig?.color || "text-gray-500"
+                                                                    eventConfig?.showCross ? "text-red-600" : (eventConfig?.color || "text-gray-500")
                                                                 )}>
-                                                                    {eventConfig?.showCross ? '' : (eventConfig?.initial || '?')}
+                                                                    {eventConfig?.showCross ? `${f}${l}` : (eventConfig?.initial || '?')}
                                                                 </span>
                                                             )}
                                                         </div>
