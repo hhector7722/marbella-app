@@ -42,6 +42,11 @@ interface PurchaseInvoice {
     suppliers?: { id: number; name: string } | null;
 }
 
+// INTERFAZ AUXILIAR: Define la forma cruda que devuelve el JOIN de Supabase
+interface RawInvoiceResponse extends Omit<PurchaseInvoice, 'purchase_invoice_lines' | 'suppliers'> {
+    suppliers: { id: number; name: string } | { id: number; name: string }[] | null;
+}
+
 interface Ingredient {
     id: string;
     name: string;
@@ -59,7 +64,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
     const [loadingAlbaranes, setLoadingAlbaranes] = useState(false);
     const [linkingLineId, setLinkingLineId] = useState<string | null>(null);
     
-    // CORRECCIÓN: Permitir undefined para manejar selecciones vacías
+    // Permitir undefined para manejar selecciones vacías sin coerción a 0
     const [selectedSupplierPerInvoice, setSelectedSupplierPerInvoice] = useState<Record<string, number | undefined>>({});
 
     const fetchAlbaranes = useCallback(async () => {
@@ -84,10 +89,13 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
 
             if (invError) throw invError;
 
+            // Casting estricto indicando la forma real de los datos crudos
+            const rawInvoices = (invData as unknown) as RawInvoiceResponse[];
+
             const { data: linesData, error: linesError } = await supabase
                 .from('purchase_invoice_lines')
                 .select('*')
-                .in('invoice_id', (invData || []).map((i: PurchaseInvoice) => i.id));
+                .in('invoice_id', (rawInvoices || []).map((i) => i.id));
 
             if (linesError) throw linesError;
 
@@ -98,8 +106,10 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                 return acc;
             }, {});
 
-            const invoicesWithLines: PurchaseInvoice[] = (invData || []).map((inv: PurchaseInvoice) => ({
+            // Formateamos los datos crudos a la interfaz final y limpia
+            const invoicesWithLines: PurchaseInvoice[] = (rawInvoices || []).map((inv) => ({
                 ...inv,
+                suppliers: Array.isArray(inv.suppliers) ? inv.suppliers[0] : inv.suppliers,
                 purchase_invoice_lines: linesByInvoice[inv.id] || [],
             }));
 
@@ -300,7 +310,6 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
                                                             </label>
                                                             <select
                                                                 value={selectedSupplierPerInvoice[inv.id] ?? ''}
-                                                                // CORRECCIÓN: Evitar coerción a 0 en selecciones vacías
                                                                 onChange={(e) =>
                                                                     setSelectedSupplierPerInvoice((prev) => ({
                                                                         ...prev,
