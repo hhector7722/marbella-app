@@ -112,10 +112,30 @@ export async function POST(req: Request) {
             throw uploadError;
         }
 
+        // 4.5. Búsqueda de Coincidencia de Proveedor (Automatización)
+        let matchedSupplierId = null;
+        if (aiData.proveedor) {
+            // Buscamos los primeros 10 caracteres del proveedor extraído
+            const searchTerm = aiData.proveedor.substring(0, 10).trim();
+            if (searchTerm.length > 0) {
+                const { data: supplierMatch, error: supplierError } = await supabase
+                    .from('suppliers')
+                    .select('id')
+                    .ilike('name', `%${searchTerm}%`)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (supplierMatch && !supplierError) {
+                    matchedSupplierId = supplierMatch.id;
+                }
+            }
+        }
+
         // 5. Inserción de la Cabecera de la Factura
         const { data: invoice, error: invoiceError } = await supabase
             .from('purchase_invoices')
             .insert({
+                supplier_id: matchedSupplierId,
                 invoice_number: aiData.numero_factura ?? 'DESCONOCIDO',
                 invoice_date: aiData.fecha ?? d.toISOString().split('T')[0],
                 total_amount: aiData.total ?? 0,
