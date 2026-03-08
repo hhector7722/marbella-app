@@ -19,7 +19,7 @@ const timeToPercent = (timeStr: string) => {
     return ((hours - START_HOUR) + (minutes / 60)) / TOTAL_HOURS * 100;
 };
 
-/* ─── Read-Only ShiftBar con colores difuminados (gradiente) ── */
+/* ─── Read-Only ShiftBar: barra completa en gradiente difuminado ── */
 const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     const leftPos = Math.max(0, timeToPercent(start));
     const width = Math.max(timeToPercent(end) - leftPos, 5);
@@ -29,22 +29,16 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
-                background: 'linear-gradient(90deg, rgb(16 185 129) 0%, rgb(52 211 153) 40%, rgb(248 113 113) 60%, rgb(220 38 38) 100%)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                background: 'linear-gradient(90deg, #10b981 0%, #34d399 20%, #6ee7b7 35%, #fcd34d 50%, #fb923c 65%, #f87171 80%, #ef4444 100%)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
         >
-            <div
-                className="absolute left-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20 rounded-l-full"
-                style={{ background: 'linear-gradient(135deg, rgb(16 185 129), rgb(5 150 105))', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)' }}
-            >
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2 drop-shadow-sm">{start}</span>
+            <div className="absolute left-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{start}</span>
             </div>
             <div className="flex-1 h-full min-w-0" />
-            <div
-                className="absolute right-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20 rounded-r-full"
-                style={{ background: 'linear-gradient(135deg, rgb(185 28 28), rgb(220 38 38))', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)' }}
-            >
-                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2 drop-shadow-sm">{end}</span>
+            <div className="absolute right-0 top-0 bottom-0 min-w-[48px] flex items-center justify-center shrink-0 z-20">
+                <span className="text-[9px] font-black text-white pointer-events-none select-none px-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{end}</span>
             </div>
         </div>
     );
