@@ -4,7 +4,6 @@ import React from 'react';
 import { X, Clock, User } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 interface DaySummaryModalProps {
     isOpen: boolean;
@@ -50,10 +49,8 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: Da
                     ) : (
                         <div className="space-y-2">
                             {logs.map((log) => {
-                                const isComplete = !!log.clock_out;
                                 const firstName = log.first_name || log.employee_name || '?';
                                 const lastName = log.last_name || '';
-                                const initials = (firstName.charAt(0) + (lastName.charAt(0) || '')).toUpperCase();
 
                                 return (
                                     <button
@@ -61,14 +58,6 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: Da
                                         onClick={() => onSelectLog(log.user_id)}
                                         className="w-full bg-zinc-50 hover:bg-zinc-100/80 active:scale-[0.98] transition-all p-3 rounded-2xl border border-zinc-100 flex items-center gap-3 group"
                                     >
-                                        {/* Avatar/Initial */}
-                                        <div className={cn(
-                                            "w-10 h-10 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0 shadow-sm transition-transform group-hover:scale-105",
-                                            isComplete ? "bg-emerald-600" : "bg-rose-600"
-                                        )}>
-                                            {initials}
-                                        </div>
-
                                         {/* Name & Times */}
                                         <div className="flex-1 flex flex-col items-start min-w-0">
                                             <span className="text-[11px] font-black text-zinc-800 uppercase tracking-tight truncate w-full text-left">
