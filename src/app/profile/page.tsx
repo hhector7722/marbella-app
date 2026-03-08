@@ -9,15 +9,16 @@ import Image from 'next/image';
 import {
     User, Phone, CreditCard, FileText, Copy, Check,
     Briefcase, Hash, Euro, FileClock, Mail,
-    CheckCircle2, ArrowLeft, Settings, LogOut, Lock, ChevronRight, Receipt
+    CheckCircle2, ArrowLeft, Settings, LogOut, Lock, ChevronRight, Receipt, Calendar, Clock
 } from 'lucide-react';
+import { formatDisplayValue } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
 import DocumentManager from '@/components/DocumentManager';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 
-// Definimos la interfaz basada en los datos
+// Definimos la interfaz basada en los datos (incl. campos laborales para vista manager)
 interface UserProfile {
     id: string;
     first_name: string;
@@ -27,8 +28,11 @@ interface UserProfile {
     dni: string | null;
     ss_number: string | null;
     bank_account: string | null; // IBAN
-    contract_hours: number | null;
-    overtime_rate: number | null;
+    contract_hours?: number | null;
+    overtime_rate?: number | null;
+    contracted_hours_weekly?: number | null;
+    hours_balance?: number | null;
+    prefer_stock_hours?: boolean | null;
     role: string;
     avatar_url: string | null;
 }
@@ -158,54 +162,107 @@ function ProfileContent() {
     );
 
     const fullName = `${profile.first_name} ${profile.last_name || ''}`;
-    const initials = `${profile.first_name.charAt(0)}${profile.last_name?.charAt(0) || ''}`;
+
+    const viewingOtherProfile = isManager && !!targetId && currentUser?.id !== profile.id;
+    type ViewMode = 'staff' | 'manager-self' | 'manager-employee';
+    const viewMode: ViewMode = !isManager
+        ? 'staff'
+        : viewingOtherProfile
+            ? 'manager-employee'
+            : 'manager-self';
+
+    const showAccountSection = !viewingOtherProfile;
 
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
-                    {/* ENCABEZADO CORPORATIVO SÓLIDO */}
-                    <div className="bg-[#36606F] p-5 pt-10 text-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none"></div>
-
-                        <div className="relative z-10 flex flex-col items-center text-center">
-                            <div className="w-20 h-20 rounded-[1.5rem] bg-white p-1 shadow-2xl mb-4 relative group transform -rotate-3 hover:rotate-0 transition-transform duration-500">
-                                <div className="w-full h-full rounded-[1.2rem] bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
-                                    {profile.avatar_url ? (
-                                        <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
-                                    ) : (
-                                        <img src="/icons/profile.png" alt={fullName} className="w-full h-full object-cover" />
-                                    )}
+                    {/* ENCABEZADO: variante por viewMode */}
+                    {viewMode === 'staff' && (
+                        <div className="bg-[#36606F] p-4 pt-8 text-white relative overflow-hidden shrink-0">
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-white p-1 shadow-xl mb-3 flex-shrink-0">
+                                    <div className="w-full h-full rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
+                                        {profile.avatar_url ? (
+                                            <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
+                                        ) : (
+                                            <img src="/icons/profile.png" alt={fullName} className="w-full h-full object-cover" />
+                                        )}
+                                    </div>
                                 </div>
+                                <h1 className="text-base font-black uppercase tracking-tight px-2">{fullName}</h1>
+                                <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>
                             </div>
-
-                            <h1 className="text-lg font-black uppercase tracking-tight mb-0 px-2 whitespace-nowrap overflow-visible">
-                                {fullName}
-                            </h1>
                         </div>
+                    )}
 
-                        {/* Removí la flecha de volver por solicitud del usuario */}
-
-                        {isManager && (
+                    {viewMode === 'manager-self' && (
+                        <div className="bg-[#36606F] p-5 pt-10 text-white relative overflow-hidden shrink-0">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                                <div className="w-20 h-20 rounded-[1.5rem] bg-white p-1 shadow-2xl mb-4 relative flex-shrink-0">
+                                    <div className="w-full h-full rounded-[1.2rem] bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
+                                        {profile.avatar_url ? (
+                                            <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
+                                        ) : (
+                                            <img src="/icons/profile.png" alt={fullName} className="w-full h-full object-cover" />
+                                        )}
+                                    </div>
+                                </div>
+                                <h1 className="text-lg font-black uppercase tracking-tight mb-0 px-2">{fullName}</h1>
+                            </div>
                             <button
                                 onClick={() => setIsEditModalOpen(true)}
-                                className="absolute top-5 right-5 w-12 h-12 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                                className="absolute top-5 right-5 w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
                             >
                                 <Settings size={20} />
                             </button>
-                        )}
+                            {currentUser?.id === 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6' && (
+                                <button
+                                    onClick={() => router.push('/dashboard/ledger')}
+                                    className="absolute top-5 left-5 h-12 min-h-[48px] px-4 flex items-center gap-2 justify-center bg-[#5B8FB9] shadow-xl shadow-blue-900/20 rounded-xl hover:bg-blue-400 border border-white/20 transition-all text-white active:scale-90"
+                                >
+                                    <Receipt size={18} strokeWidth={2.5} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Facturas</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
 
-                        {currentUser?.id === 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6' && (
+                    {viewMode === 'manager-employee' && (
+                        <div className="bg-[#36606F] p-5 pt-12 text-white relative overflow-hidden shrink-0">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
                             <button
-                                onClick={() => router.push('/dashboard/ledger')}
-                                className="absolute top-5 left-5 h-12 px-4 flex items-center gap-2 justify-center bg-[#5B8FB9] shadow-xl shadow-blue-900/20 rounded-xl hover:bg-blue-400 border border-white/20 transition-all text-white active:scale-90"
+                                onClick={() => router.push('/dashboard')}
+                                className="absolute top-5 left-5 min-h-[48px] h-12 px-4 flex items-center gap-2 justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
                             >
-                                <Receipt size={18} strokeWidth={2.5} />
-                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Facturas</span>
+                                <ArrowLeft size={18} strokeWidth={2.5} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Plantilla</span>
                             </button>
-                        )}
-                    </div>
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="absolute top-5 right-5 w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
+                            >
+                                <Settings size={20} />
+                            </button>
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                                <div className="w-20 h-20 rounded-[1.5rem] bg-white p-1 shadow-2xl mb-3 flex-shrink-0">
+                                    <div className="w-full h-full rounded-[1.2rem] bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
+                                        {profile.avatar_url ? (
+                                            <Image src={profile.avatar_url} alt={fullName} fill className="object-cover" />
+                                        ) : (
+                                            <img src="/icons/profile.png" alt={fullName} className="w-full h-full object-cover" />
+                                        )}
+                                    </div>
+                                </div>
+                                <h1 className="text-lg font-black uppercase tracking-tight mb-1 px-2">{fullName}</h1>
+                                <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
+                                    {profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* SECCIONES BENTO DE ALTA DENSIDAD */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -261,6 +318,49 @@ function ProfileContent() {
                             />
                         </div>
 
+                        {/* Grupo 2b: Datos laborales (solo vista Manager → Ficha empleado) */}
+                        {viewMode === 'manager-employee' && (
+                            <div className="p-6 border-t border-gray-100">
+                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Datos laborales</h2>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Clock size={16} className="text-[#36606F]" />
+                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Horas contrato/sem</span>
+                                        </div>
+                                        <p className="text-gray-800 font-black text-sm">
+                                            {formatDisplayValue(profile.contracted_hours_weekly ?? 0) === ' ' ? '\u00A0' : `${profile.contracted_hours_weekly}`}
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Briefcase size={16} className="text-[#36606F]" />
+                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Banco horas</span>
+                                        </div>
+                                        <p className="text-gray-800 font-black text-sm">
+                                            {formatDisplayValue(profile.hours_balance ?? 0) === ' ' ? '\u00A0' : `${profile.hours_balance}`}
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10 col-span-2 sm:col-span-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <FileClock size={16} className="text-[#36606F]" />
+                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Preferir bolsa</span>
+                                        </div>
+                                        <p className="text-gray-800 font-black text-sm">
+                                            {profile.prefer_stock_hours ? 'Sí' : 'No'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="/registros"
+                                    className="mt-4 flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57] transition-all active:scale-[0.98]"
+                                >
+                                    <Calendar size={18} strokeWidth={2.5} />
+                                    Ver en Registros
+                                </a>
+                            </div>
+                        )}
+
                         {/* Grupo 3: Documentación Estilo Premium */}
                         <div className="p-8">
                             <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Documentación Oficial</h2>
@@ -306,44 +406,46 @@ function ProfileContent() {
                             )}
                         </div>
 
-                        {/* Grupo 4: Configuración de Cuenta (Nueva sección migrada) */}
-                        <div className="p-8 border-t border-gray-100 bg-gray-50/30">
-                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Configuración de Cuenta</h2>
+                        {/* Grupo 4: Configuración de Cuenta (solo cuando es el propio perfil) */}
+                        {showAccountSection && (
+                            <div className="p-8 border-t border-gray-100 bg-gray-50/30 shrink-0">
+                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Configuración de Cuenta</h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button
-                                    onClick={handleChangePassword}
-                                    className="w-full flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all group active:scale-[0.98]"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
-                                            <Lock size={20} strokeWidth={2.5} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button
+                                        onClick={handleChangePassword}
+                                        className="w-full min-h-[48px] flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all group active:scale-[0.98]"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
+                                                <Lock size={20} strokeWidth={2.5} />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-0.5">Seguridad</p>
+                                                <p className="text-gray-800 font-black text-xs tracking-tight">Cambiar Contraseña</p>
+                                            </div>
                                         </div>
-                                        <div className="text-left">
-                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-0.5">Seguridad</p>
-                                            <p className="text-gray-800 font-black text-xs tracking-tight">Cambiar Contraseña</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight size={16} className="text-gray-300 group-hover:text-[#36606F] transition-colors" />
-                                </button>
+                                        <ChevronRight size={16} className="text-gray-300 group-hover:text-[#36606F] transition-colors shrink-0" />
+                                    </button>
 
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full flex items-center justify-between p-5 bg-white border border-rose-50 rounded-3xl shadow-sm hover:shadow-md hover:bg-rose-50 transition-all group active:scale-[0.98]"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-rose-500/10 p-3 rounded-2xl text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
-                                            <LogOut size={20} strokeWidth={2.5} />
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full min-h-[48px] flex items-center justify-between p-5 bg-white border border-rose-50 rounded-3xl shadow-sm hover:shadow-md hover:bg-rose-50 transition-all group active:scale-[0.98]"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-rose-500/10 p-3 rounded-2xl text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
+                                                <LogOut size={20} strokeWidth={2.5} />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-[10px] text-rose-300 font-black uppercase tracking-[0.15em] mb-0.5">Sesión</p>
+                                                <p className="text-rose-600 font-black text-xs tracking-tight">Cerrar Sesión Corporativa</p>
+                                            </div>
                                         </div>
-                                        <div className="text-left">
-                                            <p className="text-[10px] text-rose-300 font-black uppercase tracking-[0.15em] mb-0.5">Sesión</p>
-                                            <p className="text-rose-600 font-black text-xs tracking-tight">Cerrar Sesión Corporativa</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight size={16} className="text-rose-200 group-hover:text-rose-500 transition-colors" />
-                                </button>
+                                        <ChevronRight size={16} className="text-rose-200 group-hover:text-rose-500 transition-colors shrink-0" />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {isEditModalOpen && (
