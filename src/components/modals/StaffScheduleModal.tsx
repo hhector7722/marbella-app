@@ -374,53 +374,53 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                     </div>
                                 </div>
 
-                                {/* Encabezado rojo — exacto al editor */}
-                                <div className="flex w-full bg-[#E55353] text-white shrink-0 rounded-t-[20px]">
-                                    <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-8 md:h-9" />
-                                    <div className="flex-1 relative h-8 md:h-9 flex">
-                                        {hoursHeader.map(hour => (
-                                            <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
-                                                {hour}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Filas de empleados — exactas al editor, sin eventos de puntero */}
-                                <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto">
-                                    {dayShifts.map((shift, idx) => (
-                                        <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white">
-                                            {/* Nombre */}
-                                            <div className="w-24 md:w-28 px-3 flex items-center shrink-0 overflow-hidden">
-                                                <span className="font-black text-[10px] md:text-xs truncate uppercase tracking-tight text-gray-800 select-none">
-                                                    {shift.name}
-                                                </span>
-                                            </div>
-                                            {/* Barra */}
-                                            <div className="flex-1 relative">
-                                                {/* Grid de horas de fondo */}
-                                                <div className="absolute inset-0 flex pointer-events-none">
-                                                    {hoursHeader.map((_, i) => (
-                                                        <div key={i} className="flex-1 border-r border-gray-50 last:border-r-0" />
-                                                    ))}
+                                {/* Tabla con contorno blanco y sombra, sin bordes entre columnas */}
+                                <div className="rounded-2xl border border-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">
+                                    {/* Encabezado rojo */}
+                                    <div className="flex w-full bg-[#E55353] text-white shrink-0">
+                                        <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-8 md:h-9" />
+                                        <div className="flex-1 relative h-8 md:h-9 flex">
+                                            {hoursHeader.map(hour => (
+                                                <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
+                                                    {hour}
                                                 </div>
-                                                <ReadOnlyShiftBar start={shift.startTime} end={shift.endTime} />
-                                            </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* Footer verde TOT — exacto al editor */}
-                                <div className="flex w-full bg-[#0FA968] text-white shrink-0">
-                                    <div className="w-24 md:w-28 h-9 md:h-10 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
-                                        TOT
                                     </div>
-                                    <div className="flex-1 h-9 md:h-10 flex">
-                                        {totals.map((count, i) => (
-                                            <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs ${count > 0 ? 'text-white' : 'text-white/30'}`}>
-                                                {count > 0 ? count : ''}
+
+                                    {/* Filas de empleados — sin bordes laterales entre columnas */}
+                                    <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto">
+                                        {dayShifts.map((shift, idx) => (
+                                            <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white">
+                                                <div className="w-24 md:w-28 px-3 flex items-center shrink-0 overflow-hidden">
+                                                    <span className="font-black text-[10px] md:text-xs truncate uppercase tracking-tight text-gray-800 select-none">
+                                                        {shift.name}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-1 relative">
+                                                    <div className="absolute inset-0 flex pointer-events-none">
+                                                        {hoursHeader.map((_, i) => (
+                                                            <div key={i} className="flex-1" />
+                                                        ))}
+                                                    </div>
+                                                    <ReadOnlyShiftBar start={shift.startTime} end={shift.endTime} />
+                                                </div>
                                             </div>
                                         ))}
+                                    </div>
+
+                                    {/* Footer verde TOT */}
+                                    <div className="flex w-full bg-[#0FA968] text-white shrink-0 rounded-b-2xl">
+                                        <div className="w-24 md:w-28 h-9 md:h-10 font-black text-white text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
+                                            TOT
+                                        </div>
+                                        <div className="flex-1 h-9 md:h-10 flex">
+                                            {totals.map((count, i) => (
+                                                <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs ${count > 0 ? 'text-white' : 'text-white/30'}`}>
+                                                    {count > 0 ? count : ''}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </>
