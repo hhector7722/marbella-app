@@ -50,6 +50,7 @@ type TimeLog = {
     employee_name?: string;
     first_name?: string;
     last_name?: string;
+    clock_out_manual?: boolean;
 };
 
 type EditingLog = {
@@ -60,6 +61,7 @@ type EditingLog = {
     out_time: string;
     event_type: string;
     is_deleted?: boolean;
+    clock_out_manual?: boolean;
 };
 
 // --- CONSTANTES ---
@@ -232,7 +234,8 @@ export default function RegistrosPage() {
                             in_time: log ? format(parseISO(log.clock_in), 'HH:mm') : '',
                             out_time: log?.clock_out ? format(parseISO(log.clock_out), 'HH:mm') : '',
                             event_type: log?.event_type || 'regular',
-                            is_deleted: !log
+                            is_deleted: !log,
+                            clock_out_manual: log?.clock_out_manual === true
                         };
                     });
                     setModalLogs(agileLogs);
@@ -278,7 +281,8 @@ export default function RegistrosPage() {
             event_type: l.event_type || 'regular',
             first_name: l.first_name,
             last_name: l.last_name,
-            employee_name: l.employee_name
+            employee_name: l.employee_name,
+            clock_out_manual: l.clock_out_manual === true
         }));
 
         setModalLogs(editableLogs);
@@ -601,7 +605,8 @@ export default function RegistrosPage() {
                                                 };
 
                                                 const { f, l } = getInitialsPair();
-                                                const isComplete = !!log.clock_out;
+                                                // Círculo rojo si no hay salida o si la salida es manual (olvidó fichar)
+                                                const isComplete = !!log.clock_out && !log.clock_out_manual;
 
                                                 return (
                                                     <div
@@ -629,8 +634,14 @@ export default function RegistrosPage() {
                                                                     </span>
                                                                     <span className="text-gray-400 text-[8.5px] sm:text-[10px] leading-none shrink-0">-</span>
                                                                     {log.clock_out && (
-                                                                        <span className="text-rose-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter">
-                                                                            {format(parseISO(log.clock_out), 'H')}
+                                                                        <span
+                                                                            className={cn(
+                                                                                "text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter",
+                                                                                log.clock_out_manual ? "text-rose-600" : "text-rose-600"
+                                                                            )}
+                                                                            title={log.clock_out_manual ? 'Salida no registrada (olvidó fichar)' : undefined}
+                                                                        >
+                                                                            {log.clock_out_manual ? 'No registrada' : format(parseISO(log.clock_out), 'H')}
                                                                         </span>
                                                                     )}
                                                                 </>
