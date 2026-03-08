@@ -527,7 +527,9 @@ export default function StaffDashboardView() {
                                                                 <div className="h-3 flex items-center justify-center w-full">
                                                                     {day.hasLog && day.clockOut ? (
                                                                         day.clock_out_show_no_registrada ? (
-                                                                            <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" title="Salida no registrada (olvidó fichar)" />
+                                                                            <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
+                                                                                <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
+                                                                            </span>
                                                                         ) : (
                                                                             <>
                                                                                 <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
