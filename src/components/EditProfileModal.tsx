@@ -18,7 +18,7 @@ interface EditProfileModalProps {
         bank_account: string | null;
         phone: string | null;
         email: string;
-        prefer_stock_hours?: boolean;
+        prefer_stock_hours?: boolean | null;
     };
 }
 
