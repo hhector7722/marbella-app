@@ -432,9 +432,9 @@ export default function StaffDashboardView() {
     const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
             onClick={onClick}
-            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
+            className="bg-white rounded-2xl p-2 md:p-3 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-2 active:scale-95 transition-all group aspect-square w-full h-full min-h-0"
         >
-            <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
+            <div className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
                 {img ? (
                     <Image
                         src={img}
@@ -444,12 +444,12 @@ export default function StaffDashboardView() {
                         className="w-full h-full object-contain"
                     />
                 ) : (
-                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
-                        <Icon size={28} fill="currentColor" strokeWidth={2.5} />
+                    <div className={cn("w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
+                        <Icon size={28} fill="currentColor" strokeWidth={2.5} className="w-6 h-6 md:w-8 md:h-8" />
                     </div>
                 )}
             </div>
-            <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5">{label}</span>
+            <span className="text-[9px] md:text-[11px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">{label}</span>
         </button>
     );
 
@@ -566,37 +566,37 @@ export default function StaffDashboardView() {
                                     </div>
                                 </div>
 
-                                <div className="p-2 md:p-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                                <div className="p-2 md:p-3 flex items-center justify-between gap-1 md:gap-2 overflow-x-auto no-scrollbar">
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 flex items-center">
-                                            <span className="font-black text-black text-[11px] md:text-xs leading-none">{formatWorked(weeklySummary.totalHours)}</span>
+                                        <div className="h-4 md:h-5 flex items-center">
+                                            <span className="font-black text-black text-[11px] md:text-sm leading-none">{formatWorked(weeklySummary.totalHours)}</span>
                                         </div>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                     </div>
 
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 flex items-center">
-                                            <span className={`font-black text-[11px] md:text-xs leading-none text-red-600`}>
+                                        <div className="h-4 md:h-5 flex items-center">
+                                            <span className={`font-black text-[11px] md:text-sm leading-none text-red-600`}>
                                                 {formatWorked(weeklySummary.startBalance)}
                                             </span>
                                         </div>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 flex items-center">
-                                            <span className={`font-black text-[11px] md:text-xs leading-none text-black`}>
+                                        <div className="h-4 md:h-5 flex items-center">
+                                            <span className={`font-black text-[11px] md:text-sm leading-none text-black`}>
                                                 {weeklySummary.currentBalance > 0 ? formatWorked(weeklySummary.currentBalance) : " "}
                                             </span>
                                         </div>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
+                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
                                     </div>
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 flex items-center">
-                                            <span className="font-black text-[11px] md:text-xs leading-none text-emerald-600">
+                                        <div className="h-4 md:h-5 flex items-center">
+                                            <span className="font-black text-[11px] md:text-sm leading-none text-emerald-600">
                                                 {formatMoney(weeklySummary.estimatedPayout)}
                                             </span>
                                         </div>
-                                        <span className="text-[7px] md:text-[8px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
+                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
                                     </div>
                                 </div>
 
@@ -604,30 +604,32 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div className="w-full bg-white rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-4">
+                    <div className="w-full bg-white rounded-2xl p-4 md:p-3 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-2">
                         <button
                             onClick={openConfirmation}
                             disabled={status === 'finished' || actionLoading}
                             className={cn(
-                                "w-full h-16 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
-                                status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200",
+                                "w-full h-16 md:h-8 rounded-2xl md:rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
+                                status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white",
                                 status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
                                 status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
                             )}>
                             {actionLoading ? (
                                 <>
                                     <LoadingSpinner size="sm" className="text-white" />
-                                    <span className="text-xl font-black uppercase tracking-wider">
+                                    <span className="text-xl md:text-sm font-black uppercase tracking-wider">
                                         {modalAction === 'in' ? 'Iniciando...' : 'Cerrando...'}
                                     </span>
                                 </>
                             ) : (
-                                <span className="text-xl font-black uppercase tracking-wider">
+                                <span className="text-xl md:text-sm font-black uppercase tracking-wider">
                                     {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
                                 </span>
                             )}
                         </button>
-                        <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
+                        <div className="w-full">
+                            <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
+                        </div>
                     </div>
 
                     <div className="w-full grid grid-cols-2 gap-3 md:gap-4">
@@ -637,19 +639,19 @@ export default function StaffDashboardView() {
                             className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
                         >
                             {/* Header compacto */}
-                            <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex items-center justify-between text-white shrink-0">
+                            <div className="bg-purple-600 px-4 py-1.5 md:py-2 flex items-center justify-between text-white shrink-0">
                                 <h3 className="font-black flex items-center gap-1 text-[10px] md:text-sm uppercase tracking-wider">
-                                    <CalendarDays size={12} className="text-white/80 shrink-0" fill="currentColor" />
+                                    <CalendarDays size={12} className="text-white/80 shrink-0 md:w-4 md:h-4" fill="currentColor" />
                                     <span>Horarios</span>
                                 </h3>
-                                <div className="bg-white/20 rounded px-1 py-px text-[7px] md:text-[8px] font-black">VER</div>
+                                <div className="bg-white/20 rounded px-1 py-px text-[7px] md:text-[9px] font-black">VER</div>
                             </div>
 
-                            <div className="flex-1 flex flex-col justify-between px-2 py-1.5 md:py-3 min-h-0">
+                            <div className="flex-1 flex flex-col justify-between px-2 py-1.5 md:py-3 md:px-3 min-h-0">
                                 <div>
-                                    <div className="grid grid-cols-7 mb-1">
+                                    <div className="grid grid-cols-7 mb-1 md:mb-1.5">
                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                            <div key={d} className="text-center text-[6px] md:text-[8px] font-black text-gray-300 leading-none">{d}</div>
+                                            <div key={d} className="text-center text-[6px] md:text-[9px] font-black text-gray-300 leading-none">{d}</div>
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-7">
@@ -665,7 +667,7 @@ export default function StaffDashboardView() {
                                             const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
 
                                             return (
-                                                <div key={d} className="flex items-center justify-center py-[1px] md:py-[2px]">
+                                                <div key={d} className="flex items-center justify-center py-[1px] md:py-0.5">
                                                     <span className={`
                                                             w-3.5 h-3.5 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[9px] leading-none transition-colors
                                                             ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : (isPast ? 'text-gray-300' : 'text-gray-900'))}
@@ -678,19 +680,19 @@ export default function StaffDashboardView() {
                                     </div>
                                 </div>
 
-                                <div className="border-t border-gray-100 pt-1 px-1">
+                                <div className="border-t border-gray-100 pt-1 px-1 md:pt-2 md:px-1">
                                     {nextShifts.length === 0 ? (
-                                        <p className="text-[7px] md:text-[9px] text-zinc-400 font-black italic text-center">Sin turnos</p>
+                                        <p className="text-[7px] md:text-[10px] text-zinc-400 font-black italic text-center">Sin turnos</p>
                                     ) : (
-                                        <div className="flex items-center gap-1 overflow-hidden justify-between">
+                                        <div className="flex items-center gap-1 overflow-hidden justify-between md:gap-2">
                                             {nextShifts.slice(0, 2).map((shift, idx) => (
-                                                <div key={idx} className="flex items-center gap-1 flex-1 min-w-0">
-                                                    <div className="flex flex-col items-center bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[20px]">
-                                                        <span className="text-[5px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
-                                                        <span className="text-[9px] font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
+                                                <div key={idx} className="flex items-center gap-1 md:gap-1.5 flex-1 min-w-0">
+                                                    <div className="flex flex-col items-center bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[20px] md:min-w-[24px]">
+                                                        <span className="text-[5px] md:text-[8px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
+                                                        <span className="text-[9px] md:text-xs font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
                                                     </div>
                                                     <div className="flex flex-col gap-0 min-w-0">
-                                                        <div className="flex items-center gap-0.5 font-black leading-none text-[7px]">
+                                                        <div className="flex items-center gap-0.5 font-black leading-none text-[7px] md:text-[10px]">
                                                             <span className="text-emerald-600">{shift.startTime}</span>
                                                             <span className="text-rose-500">{shift.endTime}</span>
                                                         </div>

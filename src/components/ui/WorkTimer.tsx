@@ -70,8 +70,8 @@ const WorkTimer = memo(function WorkTimer({ clockIn, status, totalHours }: WorkT
 
     if (status === 'idle') {
         return (
-            <div className="w-full h-12 md:h-16 rounded-2xl bg-gray-50 border-2 border-gray-100 flex items-center justify-center">
-                <span className="text-[10px] text-gray-400 text-center uppercase font-bold tracking-tight">
+            <div className="w-full h-12 md:h-8 rounded-2xl md:rounded-xl bg-gray-50 border-2 md:border border-gray-100 flex items-center justify-center">
+                <span className="text-[10px] md:text-xs text-gray-400 text-center uppercase font-bold tracking-tight">
                     No has fichado hoy
                 </span>
             </div>
@@ -79,9 +79,9 @@ const WorkTimer = memo(function WorkTimer({ clockIn, status, totalHours }: WorkT
     }
 
     return (
-        <div className="w-full h-12 md:h-16 bg-gray-900 rounded-2xl border-2 md:border-4 border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="w-full h-12 md:h-8 bg-gray-900 rounded-2xl md:rounded-xl border-2 md:border border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
             <span
-                className={`${digitalFont.className} text-3xl md:text-4xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}
+                className={`${digitalFont.className} text-3xl md:text-2xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}
                 style={{ fontVariantNumeric: 'tabular-nums' }}
             >
                 {display}

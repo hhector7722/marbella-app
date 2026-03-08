@@ -9,7 +9,7 @@ import {
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
     PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check,
-    Coins, Landmark, AlertTriangle, RotateCcw, ChevronLeft, ChevronRight
+    Coins, Landmark, AlertTriangle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 import CashClosingModal from '@/components/CashClosingModal';
@@ -381,7 +381,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     return (
-        <div className="pt-5 md:pt-5 animate-in fade-in duration-500 pb-8">
+        <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
             <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
 
                 {/* 1. VENTAS */}
@@ -452,19 +452,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     )}
                                 </div>
                                 <div className="flex gap-1 md:gap-1.5 shrink-0">
-                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 group">
+                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
                                         <div className="w-6 h-6 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <Plus size={12} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 group">
+                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
                                         <div className="w-6 h-6 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <Minus size={12} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 group">
+                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
                                         <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <RefreshCw size={12} className="text-white" strokeWidth={2.5} />
                                         </div>
@@ -515,18 +515,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 {/* 3. HORAS EXTRAS — Vista mensual: calendario + semanas (1 fila derecha = 1 fila calendario) */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
-                        <div className="flex items-center gap-1.5">
-                            <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
-                            {currentUserEmail === 'hhector7722@gmail.com' && (
-                                <button
-                                    onClick={handleRecalculate}
-                                    disabled={isRecalculating}
-                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-all active:scale-95"
-                                >
-                                    {isRecalculating ? <LoadingSpinner size="sm" /> : <RotateCcw size={14} className="text-white" />}
-                                </button>
-                            )}
-                        </div>
+                        <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
                         <Link href="/dashboard/overtime" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
                     <div className="p-2 md:p-2">
@@ -542,7 +531,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             </button>
                         </div>
                         <div className="flex gap-2">
-                            {/* Calendario: filas de 7 días */}
                             {(() => {
                                 const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
                                 const end = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
@@ -577,34 +565,35 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </div>
                                             ))}
                                         </div>
-                                        {/* Una fila por fila de calendario; semana en curso nunca se muestra */}
                                         <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
                                             {rowWeekIds.map((weekId, rowIndex) => {
-                                                    if (overtimeLoading) {
-                                                        return <div key={rowIndex} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
-                                                    }
-                                                    if (weekId === currentWeekStart) {
-                                                        return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
-                                                    }
-                                                    const week = overtimeWeeksData.find((w: any) => w.weekId === weekId);
-                                                    if (!week) {
-                                                        return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 md:min-h-[24px] flex-shrink-0" aria-hidden />;
-                                                    }
-                                                    const isFullyPaid = week.staff?.every((s: any) => {
-                                                        const cost = (s.totalCost ?? s.amount ?? 0);
-                                                        return cost < 0.05 || !!s.isPaid || s.preferStock === true;
-                                                    });
-                                                    const weekTotal = week.totalAmount ?? week.total ?? 0;
-                                                    return (
-                                                        <button
-                                                            key={week.weekId}
-                                                            type="button"
-                                                            onClick={() => setWeekDetailModal({ week })}
-                                                            className={cn(
-                                                                'w-full min-h-[20px] md:min-h-[24px] h-5 md:h-6 flex items-center gap-1 px-1 rounded-md hover:bg-purple-50/50 border border-transparent hover:border-purple-100 transition-all text-left flex-shrink-0'
-                                                            )}
-                                                        >
-                                                            <div className="shrink-0 flex items-center justify-center w-3 h-3 md:w-3.5 md:h-3.5">
+                                                if (overtimeLoading) {
+                                                    return <div key={rowIndex} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
+                                                }
+                                                if (weekId === currentWeekStart) {
+                                                    return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
+                                                }
+                                                const week = overtimeWeeksData.find((w: any) => w.weekId === weekId);
+                                                if (!week) {
+                                                    return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
+                                                }
+                                                const isFullyPaid = week.staff?.every((s: any) => {
+                                                    const cost = (s.totalCost ?? s.amount ?? 0);
+                                                    return cost < 0.05 || !!s.isPaid || s.preferStock === true;
+                                                });
+                                                const weekTotal = week.totalAmount ?? week.total ?? 0;
+                                                return (
+                                                    <button
+                                                        key={week.weekId}
+                                                        type="button"
+                                                        onClick={() => setWeekDetailModal({ week })}
+                                                        className={cn(
+                                                            'w-full h-5 md:h-6 flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
+                                                            'bg-transparent border-0 hover:bg-purple-50/50'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center gap-1 shrink-0 w-20 md:w-24">
+                                                            <div className="shrink-0 flex items-center justify-center w-6 md:w-7">
                                                                 {isFullyPaid ? (
                                                                     <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
                                                                         <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
@@ -616,15 +605,16 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                 )}
                                                             </div>
                                                             <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
-                                                            <span className="flex-1 text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase truncate min-w-0 text-center">
-                                                                {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
-                                                            </span>
-                                                            <span className="text-[9px] md:text-[10px] font-black text-zinc-900 shrink-0">
-                                                                {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                                                            </span>
-                                                        </button>
-                                                    );
-                                                })}
+                                                        </div>
+                                                        <span className="flex-1 text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase truncate min-w-0 text-left pl-8 md:pl-10">
+                                                            {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
+                                                        </span>
+                                                        <span className="text-[9px] md:text-[10px] font-black text-zinc-900 shrink-0 w-9 md:w-11 text-right">
+                                                            {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </>
                                 );
@@ -633,56 +623,67 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
                 </div>
 
-                {/* 4. CAJAS CAMBIO + ICONOS */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center text-white shrink-0">
-                            <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Cajas Cambio</h3>
-                        </div>
-                        <div className="p-1.5 md:p-2 py-1 flex flex-col flex-1 divide-y divide-zinc-50">
-                            {boxes.filter(b => b.type === 'change').slice(0, 2).map((box, idx) => {
-                                const diff = box.current_balance - 300;
-                                const isOk = Math.abs(diff) < 0.01;
-                                return (
-                                    <div key={box.id} className="flex flex-row gap-2 items-center justify-between py-1.5 md:py-2 md:px-4">
-                                        <div className="px-1 flex flex-col items-start md:items-center min-w-0">
-                                            <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider text-zinc-400">Cambio {idx + 1}</span>
-                                            <span className="text-sm md:text-lg font-black text-zinc-800">
-                                                {box.current_balance > 0.005 ? `${box.current_balance.toFixed(2)}€` : " "}
-                                            </span>
-                                            {!isOk && (
-                                                <span className={cn("text-[8px] md:text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
-                                                    {diff > 0.005 ? `+${diff.toFixed(2)}€` : (Math.abs(diff) > 0.005 ? `${diff.toFixed(2)}€` : " ")}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-1 md:gap-1.5 shrink-0 ml-2">
-                                            <button
-                                                onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 group"
-                                            >
-                                                <div className="w-6 h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                    <ArrowRightLeft size={12} strokeWidth={2.5} />
+                {/* 4. CAJAS CAMBIO (dos contenedores) + ICONOS — misma altura que iconos, contenido centrado */}
+                <div className="grid grid-cols-2 gap-4 items-stretch">
+                    <div className="flex flex-col gap-4 min-h-0">
+                        {(() => {
+                            const changeBoxes = boxes.filter(b => b.type === 'change').slice(0, 2);
+                            const formatEur = (v: number) => (v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ");
+                            return (
+                                <>
+                                    {["Caja cambio 1", "Caja cambio 2"].map((title, idx) => {
+                                        const box = changeBoxes[idx];
+                                        if (!box) return null;
+                                        const diff = box.current_balance - 300;
+                                        const isOk = Math.abs(diff) < 0.01;
+                                        return (
+                                            <div key={box.id} className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden flex-1 min-h-0">
+                                                <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center text-white shrink-0">
+                                                    <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">{title}</h3>
                                                 </div>
-                                                <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
-                                            </button>
-                                            <button
-                                                onClick={() => openTreasuryModal(box, 'audit')}
-                                                className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 group"
-                                            >
-                                                <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                    <RefreshCw size={12} strokeWidth={2.5} />
+                                                <div className="flex-1 flex items-center justify-center min-h-0 p-2">
+                                                    <div className="flex flex-row gap-2 items-center justify-center md:px-4 w-full">
+                                                        <div className="px-1 flex flex-col items-start md:items-center min-w-0">
+                                                            <span className="text-sm md:text-lg font-black text-zinc-800">
+                                                                {formatEur(box.current_balance)}
+                                                            </span>
+                                                            {!isOk && Math.abs(diff) > 0.005 && (
+                                                                <span className={cn("text-[8px] md:text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
+                                                                    {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex gap-1 md:gap-1.5 shrink-0 ml-4 md:ml-5">
+                                                            <button
+                                                                onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
+                                                                className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group"
+                                                            >
+                                                                <div className="w-6 h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                                    <ArrowRightLeft size={12} strokeWidth={2.5} />
+                                                                </div>
+                                                                <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => openTreasuryModal(box, 'audit')}
+                                                                className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group"
+                                                            >
+                                                                <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                                    <RefreshCw size={12} strokeWidth={2.5} />
+                                                                </div>
+                                                                <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            );
+                        })()}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 min-h-0">
                         {[
                             { title: 'Asistencia', img: '/icons/calendar.png', link: '/registros' },
                             { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
@@ -711,7 +712,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
             </div> {/* Close max-w-2xl */}
 
-            {/* MODALS SIBLING TO CONTENT */}
             {cashModalMode !== 'none' && (
                 <>
                     {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit' || cashModalMode === 'inventory') && (
