@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
 import DocumentManager from '@/components/DocumentManager';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
+import NominasModal from '@/components/NominasModal';
 
 // Definimos la interfaz basada en los datos
 interface UserProfile {
@@ -46,6 +47,7 @@ function ProfileContent() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeDocTab, setActiveDocTab] = useState<'contract' | 'payroll' | null>(null);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isNominasOpen, setIsNominasOpen] = useState(false);
 
     useEffect(() => {
         fetchInitialData();
@@ -292,7 +294,7 @@ function ProfileContent() {
                                     </button>
 
                                     <button
-                                        onClick={() => setActiveDocTab('payroll')}
+                                        onClick={() => setIsNominasOpen(true)}
                                         className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
                                     >
                                         <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
@@ -359,6 +361,11 @@ function ProfileContent() {
                             onClose={() => setIsPasswordModalOpen(false)}
                         />
                     )}
+
+                    <NominasModal
+                        isOpen={isNominasOpen}
+                        onClose={() => setIsNominasOpen(false)}
+                    />
 
                 </div>
             </div>
