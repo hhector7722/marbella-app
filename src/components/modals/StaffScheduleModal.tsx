@@ -409,14 +409,14 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                         ))}
                                     </div>
 
-                                    {/* Footer TOT — fondo blanco, texto gris */}
+                                    {/* Footer Total — fondo blanco, texto gris claro descriptivo */}
                                     <div className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
-                                        <div className="w-24 md:w-28 h-9 md:h-10 font-black text-gray-600 text-[10px] md:text-xs flex items-center justify-center uppercase tracking-widest shrink-0">
-                                            TOT
+                                        <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
+                                            Total
                                         </div>
                                         <div className="flex-1 h-9 md:h-10 flex">
                                             {totals.map((count, i) => (
-                                                <div key={i} className={`flex-1 flex items-center justify-center font-black text-[10px] md:text-xs ${count > 0 ? 'text-gray-600' : 'text-gray-300'}`}>
+                                                <div key={i} className={`flex-1 flex items-center justify-center font-semibold text-[10px] md:text-xs ${count > 0 ? 'text-gray-400' : 'text-gray-300'}`}>
                                                     {count > 0 ? count : ''}
                                                 </div>
                                             ))}
