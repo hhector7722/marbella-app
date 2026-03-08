@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, Cross, Check, Plus, Trash2, Save, Users, ChevronDown
+    Calendar, X, Check, Plus, Trash2, Save, Users, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -373,7 +373,7 @@ export default function HistoryPage() {
                                                     <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
                                                         {isSpecial ? (
                                                             <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
-                                                                {eventConfig.showCross ? <Cross size={14} strokeWidth={3} className="text-white" /> : <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>}
+                                                                {eventConfig.showCross ? <X size={14} strokeWidth={2.5} className="text-white" /> : <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>}
                                                             </div>
                                                         ) : day.hasLog ? (
                                                             <div className="flex flex-col items-center gap-0.5 w-full">

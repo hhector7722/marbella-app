@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronLeft, ChevronRight, Trash2, Plus, ArrowLeft, ArrowRight as ArrowRightIcon, Save, Filter, X, Cross, Calendar as CalendarIcon, LayoutGrid, Coins, Landmark, ArrowLeftCircle, Check } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Trash2, Plus, ArrowLeft, ArrowRight as ArrowRightIcon, Save, Filter, X, Calendar as CalendarIcon, LayoutGrid, Coins, Landmark, ArrowLeftCircle, Check } from 'lucide-react';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -623,7 +623,7 @@ export default function RegistrosPage() {
                                                             "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0",
                                                             eventConfig?.showCross ? "bg-red-600 text-white" : (isComplete ? "bg-emerald-600 text-white text-[6.5px] leading-none font-black" : "bg-rose-600 text-white text-[6.5px] leading-none font-black")
                                                         )}>
-                                                            {eventConfig?.showCross ? <Cross size={8} strokeWidth={3} /> : `${f}${l}`}
+                                                            {eventConfig?.showCross ? <X size={8} strokeWidth={2.5} className="text-white" /> : `${f}${l}`}
                                                         </div>
 
                                                         {/* Horas o Inicial del Evento */}

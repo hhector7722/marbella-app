@@ -501,17 +501,22 @@ export default function StaffDashboardView() {
                                                             <div className="flex items-center justify-center">
                                                                 <div className={cn(
                                                                     "w-5 h-5 rounded-full shadow-sm flex items-center justify-center leading-none",
-                                                                    day.eventType === 'holiday' ? 'bg-red-500 text-white' :
-                                                                        day.eventType === 'weekend' ? 'bg-yellow-400 text-white' :
-                                                                            day.eventType === 'adjustment' ? 'bg-orange-500 text-white' :
-                                                                                day.eventType === 'personal' ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'
+                                                                    day.eventType === 'no_registered' ? 'bg-red-600 text-white' :
+                                                                        day.eventType === 'holiday' ? 'bg-red-500 text-white' :
+                                                                            day.eventType === 'weekend' ? 'bg-yellow-400 text-white' :
+                                                                                day.eventType === 'adjustment' ? 'bg-orange-500 text-white' :
+                                                                                    day.eventType === 'personal' ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'
                                                                 )}>
-                                                                    <span className="text-[9px] font-black">
-                                                                        {day.eventType === 'holiday' ? 'F' :
-                                                                            day.eventType === 'weekend' ? 'E' :
-                                                                                day.eventType === 'adjustment' ? 'B' :
-                                                                                    day.eventType === 'personal' ? 'P' : '?'}
-                                                                    </span>
+                                                                    {day.eventType === 'no_registered' ? (
+                                                                        <X size={12} strokeWidth={2.5} className="text-white shrink-0" />
+                                                                    ) : (
+                                                                        <span className="text-[9px] font-black">
+                                                                            {day.eventType === 'holiday' ? 'F' :
+                                                                                day.eventType === 'weekend' ? 'E' :
+                                                                                    day.eventType === 'adjustment' ? 'B' :
+                                                                                        day.eventType === 'personal' ? 'P' : '?'}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         ) : (
