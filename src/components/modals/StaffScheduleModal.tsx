@@ -29,7 +29,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
-                background: '#51dda8',
+                background: '#34d399',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
         >
