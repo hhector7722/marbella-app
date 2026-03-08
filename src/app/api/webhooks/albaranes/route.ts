@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         }
 
         // 2. Extracción Cognitiva (API Nativa de Gemini - Zero Dependency)
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
         const geminiPrompt = `
         Eres un auditor contable de hostelería. Analiza este albarán o factura en PDF y extrae los datos.
         IMPORTANTE: Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta, sin texto adicional ni bloques de código markdown:
