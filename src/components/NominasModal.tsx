@@ -78,24 +78,24 @@ export default function NominasModal({ isOpen, onClose }: NominasModalProps) {
         }
         setDownloadingId(row.id);
         try {
+            // 1. Descarga silenciosa del archivo a la memoria local (Blob)
             const { data, error } = await supabase.storage
                 .from('nominas')
-                .createSignedUrl(row.storage_path, 60);
+                .download(row.storage_path);
 
-            if (error) {
-                toast.error('Error al generar el enlace de descarga');
-                setDownloadingId(null);
-                return;
-            }
+            if (error) throw error;
 
-            if (data?.signedUrl) {
-                window.open(data.signedUrl, '_blank');
-            } else {
-                toast.error('No se pudo generar el enlace');
-            }
+            // 2. Crear una URL local invisible (tipo blob:...)
+            const blobUrl = URL.createObjectURL(data);
+
+            // 3. Abrir en el visor nativo del dispositivo (Previsualización limpia)
+            window.open(blobUrl, '_blank');
+
+            // 4. Limpiar la memoria del dispositivo tras 10 segundos
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
         } catch (err) {
-            console.error('Download error:', err);
-            toast.error('Error al descargar');
+            console.error('Error previsualizando nómina:', err);
+            toast.error('No se pudo cargar el documento.');
         } finally {
             setDownloadingId(null);
         }
