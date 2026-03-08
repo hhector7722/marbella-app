@@ -55,10 +55,13 @@ export async function POST(req: Request) {
             .from('employee_documents')
             .insert({
                 user_id: profile.id,
-                type: 'payroll',
-                file_name: filename,
-                file_path: filePath,
-                period: `${mes} ${year}`
+                codigo_empleado: codigo_empleado,
+                tipo: 'nomina',
+                mes: mes,
+                year: Number(year),
+                filename: filename,
+                storage_path: filePath,
+                public_url: publicUrl
             });
 
         if (dbError) throw dbError;
