@@ -80,6 +80,7 @@ export default function StaffDashboardView() {
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
+    const [userEmail, setUserEmail] = useState<string>('');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
 
@@ -142,6 +143,7 @@ export default function StaffDashboardView() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             setUserId(user.id);
+            setUserEmail(user.email ?? '');
 
             let contractHours = 40;
             let overtimeRate = 0;
@@ -375,14 +377,16 @@ export default function StaffDashboardView() {
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
             } catch (geoError: any) {
                 console.error("Geo error:", geoError);
-                if (userRole !== 'manager') {
+                const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
+                if (!exemptLocation) {
                     toast.error(geoError.message || "Ubicación necesaria para fichar");
                     setActionLoading(false);
                     return;
                 }
             }
 
-            if (userRole !== 'manager' && distance !== null && distance > MAX_DISTANCE_METERS) {
+            const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
+            if (!exemptLocation && distance !== null && distance > MAX_DISTANCE_METERS) {
                 toast.error(`Estás demasiado lejos del local (${Math.round(distance)}m)`);
                 setActionLoading(false);
                 return;

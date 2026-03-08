@@ -63,6 +63,7 @@ export default function StaffDashboard() {
     const [userId, setUserId] = useState<string | null>(null);
     const [userName, setUserName] = useState('');
     const [userRole, setUserRole] = useState<'staff' | 'manager'>('staff');
+    const [userEmail, setUserEmail] = useState<string>('');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
     const [elapsedTime, setElapsedTime] = useState('00:00');
@@ -118,6 +119,7 @@ export default function StaffDashboard() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { console.error("No usuario"); return; }
             setUserId(user.id);
+            setUserEmail(user.email ?? '');
 
             const { data: profile } = await supabase.from('profiles')
                 .select('first_name, role, contracted_hours_weekly')
@@ -260,7 +262,8 @@ export default function StaffDashboard() {
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
             } catch (geoError: any) {
                 console.error("Geo error:", geoError);
-                if (userRole !== 'manager') {
+                const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
+                if (!exemptLocation) {
                     // Rollback
                     setStatus(prevStatus);
                     toast.error(geoError.message || "Ubicación necesaria para fichar");
@@ -269,7 +272,8 @@ export default function StaffDashboard() {
                 }
             }
 
-            if (userRole !== 'manager' && distance !== null && distance > MAX_DISTANCE_METERS) {
+            const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
+            if (!exemptLocation && distance !== null && distance > MAX_DISTANCE_METERS) {
                 // Rollback
                 setStatus(prevStatus);
                 toast.error(`Estás demasiado lejos del local (${Math.round(distance)}m)`);

@@ -56,9 +56,10 @@ export default function TimeTracker() {
             let lng: number | null = null;
             let distance: number | null = null;
 
-            // Obtener rol (aquí es más simple, solo para geofencing básico)
+            // Obtener rol y exención por email (geofencing)
             const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             const isAdmin = profile?.role === 'manager';
+            const exemptLocation = isAdmin || (user.email?.toLowerCase() === 'marbellaremote@gmail.com');
 
             try {
                 const pos = await getCurrentPosition();
@@ -66,14 +67,14 @@ export default function TimeTracker() {
                 lng = pos.coords.longitude;
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
             } catch (geoError: any) {
-                if (!isAdmin) {
+                if (!exemptLocation) {
                     toast.error(geoError.message || "Ubicación necesaria para fichar");
                     setLoading(false);
                     return;
                 }
             }
 
-            if (!isAdmin && distance !== null && distance > MAX_DISTANCE_METERS) {
+            if (!exemptLocation && distance !== null && distance > MAX_DISTANCE_METERS) {
                 toast.error(`Estás demasiado lejos (${Math.round(distance)}m)`);
                 setLoading(false);
                 return;
