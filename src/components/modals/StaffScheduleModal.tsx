@@ -48,10 +48,11 @@ interface Props {
     shifts: ShiftMock[];
     userName?: string;
     userRole?: 'staff' | 'manager' | 'supervisor';
+    userId?: string | null;
 }
 
 /* ─── Modal ─────────────────────────────────────────────── */
-export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props) => {
+export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: propsUserId }: Props) => {
     const supabase = createClient();
     const router = useRouter();
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -79,21 +80,12 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
     };
 
     const handleDayClick = async (day: Date) => {
-        const isManager = userRole === 'manager' || userRole === 'supervisor';
-        const personalShift = shifts.some(s => isSameDay(s.date, day));
-
-        // If not manager and no personal shift, ignore
-        if (!isManager && !personalShift) return;
-
-        const dateStr = format(day, 'yyyy-MM-dd');
-
         setLoadingDay(true);
+        setSelectedDate(day);
         try {
-            // Local-time boundaries
-            const localStart = new Date(day); localStart.setHours(0, 0, 0, 0);
-            const localEnd = new Date(day); localEnd.setHours(23, 59, 59, 999);
+            const localStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
+            const localEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
 
-            // Fetch ALL shifts for the day (to check for drafts etc)
             const { data: rawShifts, error } = await supabase
                 .from('shifts')
                 .select('start_time, end_time, activity, user_id, is_published, event_start_time, event_end_time, event_participants')
@@ -103,30 +95,44 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
 
             if (error) throw error;
 
-            // MANAGER LOGIC: 
-            // 1. No shifts at all -> Redirect
-            // 2. Has drafts -> Redirect
-            if (isManager) {
-                const hasDrafts = (rawShifts || []).some(s => s.is_published === false);
-                if (!rawShifts?.length || hasDrafts) {
-                    onClose();
-                    router.push(`/staff/schedule/editor?date=${dateStr}`);
+            if (!rawShifts?.length) {
+                setDayShifts([]);
+                setDayActivity('');
+                setEventStart('');
+                setEventEnd('');
+                setEventParticipants('');
+                setLoadingDay(false);
+                return;
+            }
+
+            // Solo turnos publicados para la tabla (todos los trabajadores del día)
+            const publishedShifts = rawShifts.filter((s: any) => s.is_published);
+            if (!publishedShifts.length) {
+                setDayShifts([]);
+                setDayActivity('');
+                setEventStart('');
+                setEventEnd('');
+                setEventParticipants('');
+                setLoadingDay(false);
+                return;
+            }
+
+            // Staff (no manager): solo ver tabla los días que él tenga turno; si hay turnos pero no es su día → "Sin turno"
+            const isManager = userRole === 'manager' || userRole === 'supervisor';
+            if (!isManager) {
+                const uid = propsUserId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
+                const userHasShiftThisDay = uid && publishedShifts.some((s: any) => s.user_id === uid);
+                if (!userHasShiftThisDay) {
+                    setDayShifts([]);
+                    setDayActivity('');
+                    setEventStart('');
+                    setEventEnd('');
+                    setEventParticipants('');
+                    setLoadingDay(false);
                     return;
                 }
             }
 
-            // If we are here, it's either a staff with a shift OR a manager on a fully published day
-            if (!rawShifts?.length) {
-                setDayShifts([]); setDayActivity(''); setLoadingDay(false); return;
-            }
-
-            setSelectedDate(day);
-
-            // Filter to show only published ones in the read-only view
-            const publishedShifts = rawShifts.filter(s => s.is_published);
-            if (!publishedShifts.length) { setDayShifts([]); setDayActivity(''); setLoadingDay(false); return; }
-
-            // Step 2: profiles
             const ids = [...new Set(publishedShifts.map((s: any) => s.user_id))];
             const { data: profiles } = await supabase.from('profiles').select('id, first_name').in('id', ids);
             const nameMap: Record<string, string> = {};
@@ -142,12 +148,11 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
                 endTime: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                 activity: s.activity || undefined,
             })));
-            setLoadingDay(false);
         } catch (err: any) {
             console.error('handleDayClick full error:', err);
-            const message = err?.message || 'Error desconocido';
-            toast.error(`Error al cargar el día: ${message}`);
+            toast.error(err?.message || 'Error al cargar el día');
             setDayShifts([]);
+            setDayActivity('');
         } finally {
             setLoadingDay(false);
         }
@@ -185,20 +190,19 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
                                 <ArrowLeft size={18} strokeWidth={2.5} />
                             </button>
 
-                            {/* Contenedor central: Navegación de días */}
+                            {/* Navegación por todos los días (flechas día anterior / siguiente) */}
                             <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
                                 {(() => {
-                                    const sorted = [...shifts].sort((a, b) => a.date.getTime() - b.date.getTime());
-                                    const idx = sorted.findIndex(s => isSameDay(s.date, selectedDate!));
-                                    const prev = idx > 0 ? sorted[idx - 1].date : null;
-                                    const next = idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1].date : null;
-
+                                    const prevDay = new Date(selectedDate!);
+                                    prevDay.setDate(prevDay.getDate() - 1);
+                                    const nextDay = new Date(selectedDate!);
+                                    nextDay.setDate(nextDay.getDate() + 1);
                                     return (
                                         <>
                                             <button
-                                                onClick={() => prev && handleDayClick(prev)}
-                                                disabled={!prev}
-                                                className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 ${prev ? 'text-white hover:bg-white/10' : 'text-white/20 cursor-default'}`}
+                                                type="button"
+                                                onClick={() => handleDayClick(prevDay)}
+                                                className="w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 text-white hover:bg-white/10"
                                             >
                                                 <ChevronLeft size={20} strokeWidth={2.5} />
                                             </button>
@@ -208,9 +212,9 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
                                             </h3>
 
                                             <button
-                                                onClick={() => next && handleDayClick(next)}
-                                                disabled={!next}
-                                                className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 ${next ? 'text-white hover:bg-white/10' : 'text-white/20 cursor-default'}`}
+                                                type="button"
+                                                onClick={() => handleDayClick(nextDay)}
+                                                className="w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 text-white hover:bg-white/10"
                                             >
                                                 <ChevronRight size={20} strokeWidth={2.5} />
                                             </button>
@@ -275,13 +279,9 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
                                     const isPast = day < today;
                                     const isToday = isSameDay(day, new Date());
                                     const hasShift = shifts.some(s => isSameDay(s.date, day));
-                                    const isManager = userRole === 'manager' || userRole === 'supervisor';
-                                    const canClick = hasShift || isManager;
                                     return (
-                                        <button key={i} onClick={() => handleDayClick(day)} disabled={!canClick}
-                                            className={`aspect-square flex items-center justify-center rounded-xl relative transition-all duration-150
-                                                ${canClick ? 'active:scale-95 cursor-pointer' : 'cursor-default'}`}>
-                                            {/* Círculo verde completo si tiene horario */}
+                                        <button key={i} type="button" onClick={() => handleDayClick(day)}
+                                            className="aspect-square flex items-center justify-center rounded-xl relative transition-all duration-150 active:scale-95 cursor-pointer hover:bg-white/50">
                                             <span className={`
                                                 w-7 h-7 flex items-center justify-center rounded-full text-sm font-black transition-colors
                                                 ${hasShift
@@ -337,8 +337,8 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole }: Props)
                                 <div className="w-8 h-8 rounded-full border-4 border-[#36606F] border-t-transparent animate-spin" />
                             </div>
                         ) : dayShifts.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center py-16">
-                                <p className="text-gray-400 text-sm font-bold italic">No hay turnos publicados para este día.</p>
+                            <div className="flex-1 flex items-center justify-center py-16 px-4">
+                                <p className="text-zinc-500 text-sm font-black uppercase tracking-wider">Sin turno</p>
                             </div>
                         ) : (
                             <>

@@ -40,7 +40,7 @@ const CONTACTS_DATA = [
 type WorkStatus = 'idle' | 'working' | 'finished';
 
 interface DailyLog {
-    date: Date; dayName: string; dayNumber: number; hasLog: boolean; clockIn: string; clockOut: string; totalHours: number; extraHours: number; isToday: boolean; eventType?: string;
+    date: Date; dayName: string; dayNumber: number; hasLog: boolean; clockIn: string; clockOut: string; totalHours: number; extraHours: number; isToday: boolean; eventType?: string; clock_out_show_no_registrada?: boolean;
 }
 
 interface WeeklySummary {
@@ -207,10 +207,10 @@ export default function StaffDashboardView() {
                 p_contracted_hours: effContract
             });
 
-            // Fetch logs for the week to get event_type (RPC doesn't return it)
+            // Fetch logs for the week to get event_type and clock_out_show_no_registrada (RPC doesn't return them)
             const { data: weekLogs } = await supabase
                 .from('time_logs')
-                .select('clock_in, event_type')
+                .select('clock_in, event_type, clock_out_show_no_registrada')
                 .eq('user_id', user.id)
                 .gte('clock_in', weekStart.toISOString())
                 .lte('clock_in', addDays(weekStart, 7).toISOString());
@@ -226,7 +226,8 @@ export default function StaffDashboardView() {
                     dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
                     dayNumber: parseInt(format(d, 'd'), 10),
                     isToday: isSameDay(d, today),
-                    eventType: dayLog?.event_type || day.eventType || day.event_type || 'regular'
+                    eventType: dayLog?.event_type || day.eventType || day.event_type || 'regular',
+                    clock_out_show_no_registrada: dayLog?.clock_out_show_no_registrada === true
                 };
             });
             setWeekDays(daysStructure);
@@ -527,7 +528,9 @@ export default function StaffDashboardView() {
                                                                     {day.hasLog && day.clockOut ? (
                                                                         <>
                                                                             <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none" title={day.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}>
+                                                                                {day.clock_out_show_no_registrada ? 'No registrada' : day.clockOut}
+                                                                            </span>
                                                                         </>
                                                                     ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
                                                                 </div>
@@ -857,6 +860,7 @@ export default function StaffDashboardView() {
                 shifts={monthShifts}
                 userName={userName}
                 userRole={userRole}
+                userId={userId}
             />
 
             {/* MODAL: Cambio de Efectivo (Cambio 1) */}
@@ -1054,6 +1058,7 @@ export default function StaffDashboardView() {
                 onClose={() => setIsScheduleModalOpen(false)}
                 shifts={monthShifts}
                 userRole={userRole}
+                userId={userId}
             />
         </div>
     );

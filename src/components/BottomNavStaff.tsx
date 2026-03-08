@@ -18,7 +18,7 @@ export default function BottomNavStaff() {
     const router = useRouter();
     const supabase = createClient();
 
-    const [userData, setUserData] = useState<{ name: string; role: string; avatar_url: string | null } | null>(null);
+    const [userData, setUserData] = useState<{ id: string; name: string; role: string; avatar_url: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -38,6 +38,7 @@ export default function BottomNavStaff() {
                     .single();
                 if (data) {
                     setUserData({
+                        id: user.id,
                         name: data.first_name || 'Empleado',
                         role: data.role || 'staff',
                         avatar_url: data.avatar_url || null
@@ -177,6 +178,7 @@ export default function BottomNavStaff() {
                 shifts={monthShifts}
                 userName={userData?.name}
                 userRole={userRole}
+                userId={userData?.id}
             />
         </>
     );

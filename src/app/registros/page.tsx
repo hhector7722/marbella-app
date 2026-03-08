@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronLeft, ChevronRight, Trash2, Plus, ArrowLeft, ArrowRight as ArrowRightIcon, Save, Filter, X, Calendar as CalendarIcon, LayoutGrid, Coins, Landmark, ArrowLeftCircle, Check } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Trash2, Plus, ArrowLeft, ArrowRight as ArrowRightIcon, Save, Filter, X, Cross, Calendar as CalendarIcon, LayoutGrid, Coins, Landmark, ArrowLeftCircle, Check } from 'lucide-react';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -50,7 +50,7 @@ type TimeLog = {
     employee_name?: string;
     first_name?: string;
     last_name?: string;
-    clock_out_manual?: boolean;
+    clock_out_show_no_registrada?: boolean;
 };
 
 type EditingLog = {
@@ -61,7 +61,7 @@ type EditingLog = {
     out_time: string;
     event_type: string;
     is_deleted?: boolean;
-    clock_out_manual?: boolean;
+    clock_out_show_no_registrada?: boolean;
 };
 
 // --- CONSTANTES ---
@@ -74,6 +74,7 @@ const EVENT_TYPES = [
     { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
     { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
+    { value: 'no_registered', label: 'No registrado', initial: '', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
 ];
 
 // --- LÓGICA DE NEGOCIO: REDONDEO 20/40 ---
@@ -235,7 +236,7 @@ export default function RegistrosPage() {
                             out_time: log?.clock_out ? format(parseISO(log.clock_out), 'HH:mm') : '',
                             event_type: log?.event_type || 'regular',
                             is_deleted: !log,
-                            clock_out_manual: log?.clock_out_manual === true
+                            clock_out_show_no_registrada: log?.clock_out_show_no_registrada === true
                         };
                     });
                     setModalLogs(agileLogs);
@@ -282,7 +283,7 @@ export default function RegistrosPage() {
             first_name: l.first_name,
             last_name: l.last_name,
             employee_name: l.employee_name,
-            clock_out_manual: l.clock_out_manual === true
+            clock_out_show_no_registrada: l.clock_out_show_no_registrada === true
         }));
 
         setModalLogs(editableLogs);
@@ -605,8 +606,8 @@ export default function RegistrosPage() {
                                                 };
 
                                                 const { f, l } = getInitialsPair();
-                                                // Círculo rojo si no hay salida o si la salida es manual (olvidó fichar)
-                                                const isComplete = !!log.clock_out && !log.clock_out_manual;
+                                                // Verde solo si hay salida y no está marcado "No registrada". Rojo (iniciales) si no hay salida o clock_out_show_no_registrada. Cruz solo para tipo no_registered.
+                                                const isComplete = !!log.clock_out && !log.clock_out_show_no_registrada;
 
                                                 return (
                                                     <div
@@ -617,12 +618,12 @@ export default function RegistrosPage() {
                                                             !isRegular && cn("rounded-md border p-[1px]", eventConfig?.border || 'bg-gray-50 border-gray-100')
                                                         )}
                                                     >
-                                                        {/* Círculo de Iniciales */}
+                                                        {/* Círculo: cruz roja solo para no_registered; resto = iniciales (verde completo, rojo incompleto o "No registrada") */}
                                                         <div className={cn(
-                                                            "w-[14px] h-[14px] rounded-full flex items-center justify-center text-[6.5px] leading-none font-black text-white shrink-0",
-                                                            isComplete ? "bg-emerald-600" : "bg-rose-600"
+                                                            "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0",
+                                                            eventConfig?.showCross ? "bg-red-600 text-white" : (isComplete ? "bg-emerald-600 text-white text-[6.5px] leading-none font-black" : "bg-rose-600 text-white text-[6.5px] leading-none font-black")
                                                         )}>
-                                                            {f}{l}
+                                                            {eventConfig?.showCross ? <Cross size={8} strokeWidth={3} /> : `${f}${l}`}
                                                         </div>
 
                                                         {/* Horas o Inicial del Evento */}
@@ -635,13 +636,10 @@ export default function RegistrosPage() {
                                                                     <span className="text-gray-400 text-[8.5px] sm:text-[10px] leading-none shrink-0">-</span>
                                                                     {log.clock_out && (
                                                                         <span
-                                                                            className={cn(
-                                                                                "text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter",
-                                                                                log.clock_out_manual ? "text-rose-600" : "text-rose-600"
-                                                                            )}
-                                                                            title={log.clock_out_manual ? 'Salida no registrada (olvidó fichar)' : undefined}
+                                                                            className="text-rose-600 text-[8.5px] sm:text-[10px] font-bold leading-none shrink-0 tracking-tighter"
+                                                                            title={log.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}
                                                                         >
-                                                                            {log.clock_out_manual ? 'No registrada' : format(parseISO(log.clock_out), 'H')}
+                                                                            {log.clock_out_show_no_registrada ? 'No registrada' : format(parseISO(log.clock_out), 'H')}
                                                                         </span>
                                                                     )}
                                                                 </>
@@ -650,7 +648,7 @@ export default function RegistrosPage() {
                                                                     "text-[9px] font-black leading-none px-1 rounded",
                                                                     eventConfig?.color || "text-gray-500"
                                                                 )}>
-                                                                    {eventConfig?.initial || '?'}
+                                                                    {eventConfig?.showCross ? '' : (eventConfig?.initial || '?')}
                                                                 </span>
                                                             )}
                                                         </div>

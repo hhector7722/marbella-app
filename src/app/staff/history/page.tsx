@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, Check, Plus, Trash2, Save, Users, ChevronDown
+    Calendar, X, Cross, Check, Plus, Trash2, Save, Users, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 
 // --- TIPOS ---
@@ -20,6 +21,7 @@ interface DayData {
     hasLog: boolean;
     clockIn: string | null;
     clockOut: string | null;
+    clock_out_show_no_registrada?: boolean;
     totalHours: number;
     extraHours: number;
     eventType: string;
@@ -60,6 +62,7 @@ const EVENT_TYPES = [
     { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
     { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
+    { value: 'no_registered', label: 'No registrado', initial: '', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
 ];
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -164,23 +167,51 @@ export default function HistoryPage() {
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
             // p_month es 1-indexed en PostgreSQL
-            const { data, error } = await supabase.rpc('get_monthly_timesheet', {
-                p_user_id: targetUserId,
-                p_year: filterYear,
-                p_month: filterMonth + 1,
-            });
+            const [rpcResult, logsResult] = await Promise.all([
+                supabase.rpc('get_monthly_timesheet', {
+                    p_user_id: targetUserId,
+                    p_year: filterYear,
+                    p_month: filterMonth + 1,
+                }),
+                // La RPC no devuelve clock_out_show_no_registrada: obtenerlo de time_logs y fusionar por día
+                (() => {
+                    const start = new Date(filterYear, filterMonth, 1);
+                    const end = new Date(filterYear, filterMonth + 1, 0);
+                    end.setHours(23, 59, 59, 999);
+                    return supabase
+                        .from('time_logs')
+                        .select('clock_in, clock_out_show_no_registrada')
+                        .eq('user_id', targetUserId)
+                        .gte('clock_in', start.toISOString())
+                        .lte('clock_in', end.toISOString());
+                })(),
+            ]);
 
+            const { data, error } = rpcResult;
             if (error) {
                 console.error('Error fetching calendar:', error);
                 setWeeksData([]);
                 return;
             }
 
+            if (logsResult.error) {
+                console.error('Error fetching clock_out_show_no_registrada:', logsResult.error);
+                toast.warning('No se pudieron cargar los indicadores de salida no registrada.');
+            }
+
+            // Mapa fecha (YYYY-MM-DD) -> mostrar "No registrada"
+            const noRegistradaByDate: Record<string, boolean> = {};
+            (logsResult.data || []).forEach((log: { clock_in: string; clock_out_show_no_registrada?: boolean }) => {
+                const dateKey = format(new Date(log.clock_in), 'yyyy-MM-dd');
+                if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
+            });
+
             const formattedWeeks = ((data as any[]) || []).map((week: any) => ({
                 ...week,
                 days: week.days.map((day: any) => ({
                     ...day,
-                    eventType: day.eventType || day.event_type || 'regular'
+                    eventType: day.eventType || day.event_type || 'regular',
+                    clock_out_show_no_registrada: noRegistradaByDate[day.date] === true
                 }))
             }));
 
@@ -342,7 +373,7 @@ export default function HistoryPage() {
                                                     <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
                                                         {isSpecial ? (
                                                             <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
-                                                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>
+                                                                {eventConfig.showCross ? <Cross size={14} strokeWidth={3} className="text-white" /> : <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>}
                                                             </div>
                                                         ) : day.hasLog ? (
                                                             <div className="flex flex-col items-center gap-0.5 w-full">
@@ -356,7 +387,9 @@ export default function HistoryPage() {
                                                                     {day.clockOut ? (
                                                                         <>
                                                                             <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none" title={day.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}>
+                                                                                {day.clock_out_show_no_registrada ? 'No registrada' : day.clockOut}
+                                                                            </span>
                                                                         </>
                                                                     ) : day.isToday ? (
                                                                         <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />

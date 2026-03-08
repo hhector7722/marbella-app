@@ -336,7 +336,8 @@ export async function updateWeeklyWorkerConfig(
                     clock_in: clockInStr,
                     clock_out: clockOutStr,
                     total_hours: totalHours || null,
-                    event_type: log.event_type
+                    event_type: log.event_type,
+                    clock_out_show_no_registrada: log.clock_out_show_no_registrada === true
                 };
 
                 if (log.id) {

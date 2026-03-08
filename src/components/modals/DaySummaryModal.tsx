@@ -71,10 +71,10 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: Da
                                                 </span>
                                             </div>
                                             <span className="text-zinc-300 text-[8px]">-</span>
-                                            <div className="flex items-center gap-0.5">
+                                            <div className="flex items-center gap-0.5" title={log.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}>
                                                 <div className="w-1 h-1 rounded-full bg-rose-500" />
-                                                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                                                    {log.out_time || '--:--'}
+                                                <span className={log.clock_out_show_no_registrada ? 'text-rose-600 font-bold text-[10px] uppercase' : 'text-[10px] font-mono font-bold text-zinc-500 uppercase'}>
+                                                    {log.clock_out_show_no_registrada ? 'No registrada' : (log.out_time || '--:--')}
                                                 </span>
                                             </div>
                                         </div>

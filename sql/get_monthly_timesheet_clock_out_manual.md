@@ -1,0 +1,4 @@
+-- Para /staff/history: la RPC get_monthly_timesheet debe incluir en cada día:
+-- - clock_out_manual (boolean): salida introducida manualmente (olvidó fichar).
+-- - clock_out_show_no_registrada (boolean): cuando true, el front muestra "No registrada" en lugar de la hora.
+-- Asegúrate de leer time_logs.clock_out_manual y time_logs.clock_out_show_no_registrada y devolverlos en el objeto de cada día.

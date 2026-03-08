@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertTriangle } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
@@ -23,6 +23,7 @@ const EVENT_TYPES = [
     { value: 'weekend', label: 'Enfermedad', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
     { value: 'adjustment', label: 'Baja', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
+    { value: 'no_registered', label: 'No registrado', color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50', showCross: true },
 ];
 
 export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, onSuccess }: AttendanceDetailModalProps) {
@@ -65,7 +66,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                 out_time: l.clock_out ? format(parseISO(l.clock_out), 'HH:mm') : '',
                 event_type: l.event_type || 'regular',
                 is_deleted: false,
-                clock_out_manual: l.clock_out_manual === true
+                clock_out_show_no_registrada: l.clock_out_show_no_registrada === true
             })) || [];
 
             setLogs(rawLogs);
@@ -130,7 +131,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                     event_type: l.event_type,
                     is_deleted: l.is_deleted,
                     ...(l.total_hours_override !== undefined && l.total_hours_override !== null && { total_hours_override: l.total_hours_override }),
-                    clock_out_manual: l.clock_out_manual === true
+                    clock_out_show_no_registrada: l.clock_out_show_no_registrada === true
                 };
             });
 
@@ -228,14 +229,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         </div>
                                         <div className="bg-zinc-50 rounded-xl py-1.5 pl-2 pr-1 border border-zinc-100 relative overflow-hidden">
                                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-rose-500" />
-                                            <span className="text-[6px] font-black text-rose-600 uppercase tracking-widest block flex items-center gap-1">
-                                                Salida
-                                                {log.clock_out_manual && (
-                                                    <span className="text-amber-600" title="Salida manual (olvidó fichar)">
-                                                        <AlertTriangle size={8} />
-                                                    </span>
-                                                )}
-                                            </span>
+                                            <span className="text-[6px] font-black text-rose-600 uppercase tracking-widest block">Salida</span>
                                             {isManager ? (
                                                 <input
                                                     type="time"
@@ -244,28 +238,21 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                     className="text-[13px] font-black text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-full leading-tight"
                                                 />
                                             ) : (
-                                                <span className="text-[13px] font-black text-gray-800 tracking-tight block">
-                                                    {log.out_time || ' '}
-                                                    {log.clock_out_manual && log.out_time && (
-                                                        <span className="inline-flex items-center gap-0.5 ml-0.5 text-amber-600" title="Salida indicada manualmente (olvidó fichar)">
-                                                            <AlertTriangle size={10} />
-                                                        </span>
-                                                    )}
-                                                </span>
+                                                <span className="text-[13px] font-black text-gray-800 tracking-tight block">{log.out_time || ' '}</span>
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Olvidó fichar salida: solo manager y tipo regular */}
-                                    {isManager && log.event_type === 'regular' && (
-                                        <label className="flex items-center gap-2 mt-1.5 py-1.5 px-2 rounded-xl bg-amber-50 border border-amber-100 cursor-pointer">
+                                    {/* Un solo checkbox: mostrar "No registrada" en listados cuando tú lo decidas (p. ej. olvidó fichar salida) */}
+                                    {isManager && log.event_type === 'regular' && log.out_time && (
+                                        <label className="flex items-center gap-2 mt-1.5 py-1.5 px-2 rounded-xl bg-zinc-50 border border-zinc-100 cursor-pointer">
                                             <input
                                                 type="checkbox"
-                                                checked={log.clock_out_manual === true}
-                                                onChange={(e) => updateLog(0, 'clock_out_manual', e.target.checked)}
-                                                className="rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                                                checked={log.clock_out_show_no_registrada === true}
+                                                onChange={(e) => updateLog(0, 'clock_out_show_no_registrada', e.target.checked)}
+                                                className="rounded border-zinc-300 text-rose-600 focus:ring-rose-500"
                                             />
-                                            <span className="text-[9px] font-bold text-amber-800">Olvidó fichar salida</span>
+                                            <span className="text-[9px] font-bold text-zinc-700">Mostrar &quot;No registrada&quot; en listados</span>
                                         </label>
                                     )}
 
