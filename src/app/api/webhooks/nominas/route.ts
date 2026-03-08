@@ -48,9 +48,7 @@ export async function POST(req: Request) {
 
         if (uploadError) throw uploadError;
 
-        // 6. Generar URL Pública y guardar referencia en BD
-        const { data: { publicUrl } } = supabase.storage.from('nominas').getPublicUrl(filePath);
-
+        // 6. Guardar referencia en BD (Sin publicUrl porque el bucket es privado)
         const { error: dbError } = await supabase
             .from('employee_documents')
             .insert({
@@ -60,8 +58,7 @@ export async function POST(req: Request) {
                 mes: mes,
                 year: Number(year),
                 filename: filename,
-                storage_path: filePath,
-                public_url: publicUrl
+                storage_path: filePath
             });
 
         if (dbError) throw dbError;
