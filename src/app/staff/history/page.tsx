@@ -382,15 +382,17 @@ export default function HistoryPage() {
                                                                     <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
                                                                     <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
                                                                 </div>
-                                                                {/* Salida */}
-                                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                                {/* Salida: si "no registrada" → solo cruz roja centrada; si no → punto + hora */}
+                                                                <div className="h-3 flex items-center justify-center w-full">
                                                                     {day.clockOut ? (
-                                                                        <>
-                                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none" title={day.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}>
-                                                                                {day.clock_out_show_no_registrada ? 'No registrada' : day.clockOut}
-                                                                            </span>
-                                                                        </>
+                                                                        day.clock_out_show_no_registrada ? (
+                                                                            <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" title="Salida no registrada (olvidó fichar)" />
+                                                                        ) : (
+                                                                            <>
+                                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                            </>
+                                                                        )
                                                                     ) : day.isToday ? (
                                                                         <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
                                                                     ) : null}

@@ -524,15 +524,17 @@ export default function StaffDashboardView() {
                                                                         </>
                                                                     ) : null}
                                                                 </div>
-                                                                <div className="h-3 flex items-center justify-center gap-1">
+                                                                <div className="h-3 flex items-center justify-center w-full">
                                                                     {day.hasLog && day.clockOut ? (
-                                                                        <>
-                                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none" title={day.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}>
-                                                                                {day.clock_out_show_no_registrada ? 'No registrada' : day.clockOut}
-                                                                            </span>
-                                                                        </>
-                                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></div> : null)}
+                                                                        day.clock_out_show_no_registrada ? (
+                                                                            <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" title="Salida no registrada (olvidó fichar)" />
+                                                                        ) : (
+                                                                            <>
+                                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                            </>
+                                                                        )
+                                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" /> : null)}
                                                                 </div>
                                                             </>
                                                         )}
