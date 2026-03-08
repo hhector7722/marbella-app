@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X, Clock, User } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { X, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface DaySummaryModalProps {
@@ -56,33 +56,27 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: Da
                                     <button
                                         key={log.id}
                                         onClick={() => onSelectLog(log.user_id)}
-                                        className="w-full bg-zinc-50 hover:bg-zinc-100/80 active:scale-[0.98] transition-all p-3 rounded-2xl border border-zinc-100 flex items-center gap-3 group"
+                                        className="w-full bg-zinc-50 hover:bg-zinc-100/80 active:scale-[0.98] transition-all px-3 py-2 rounded-2xl border border-zinc-100 flex items-center gap-2 group"
                                     >
-                                        {/* Name & Times */}
-                                        <div className="flex-1 flex flex-col items-start min-w-0">
-                                            <span className="text-[11px] font-black text-zinc-800 uppercase tracking-tight truncate w-full text-left">
-                                                {firstName} {lastName}
-                                            </span>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <div className="flex items-center gap-1">
-                                                    <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                                    <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                                                        {log.in_time || '--:--'}
-                                                    </span>
-                                                </div>
-                                                <span className="text-zinc-300 text-[8px]">-</span>
-                                                <div className="flex items-center gap-1">
-                                                    <div className="w-1 h-1 rounded-full bg-rose-500" />
-                                                    <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                                                        {log.out_time || '--:--'}
-                                                    </span>
-                                                </div>
+                                        {/* Name */}
+                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-tight truncate flex-1 min-w-0 text-left">
+                                            {firstName} {lastName}
+                                        </span>
+                                        {/* Times (same row, right of name) */}
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <div className="flex items-center gap-0.5">
+                                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
+                                                    {log.in_time || '--:--'}
+                                                </span>
                                             </div>
-                                        </div>
-
-                                        {/* Action Icon */}
-                                        <div className="w-8 h-8 rounded-xl bg-white border border-zinc-100 flex items-center justify-center text-zinc-300 group-hover:text-[#36606F] group-hover:border-[#36606F]/20 transition-colors">
-                                            <User size={14} />
+                                            <span className="text-zinc-300 text-[8px]">-</span>
+                                            <div className="flex items-center gap-0.5">
+                                                <div className="w-1 h-1 rounded-full bg-rose-500" />
+                                                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
+                                                    {log.out_time || '--:--'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </button>
                                 );
