@@ -335,6 +335,75 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
     );
 }
 
+/** Desplegable con búsqueda integrada: al abrir, arriba un input para filtrar y debajo la lista */
+function IngredientCombobox({ ingredients, value, onChange }: { ingredients: Ingredient[]; value: string; onChange: (id: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const filtered = search.trim()
+        ? ingredients.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()))
+        : ingredients;
+    const displayName = value ? ingredients.find((i) => i.id === value)?.name ?? '' : '';
+
+    useEffect(() => {
+        if (!open) return;
+        const handle = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handle);
+        return () => document.removeEventListener('mousedown', handle);
+    }, [open]);
+
+    return (
+        <div ref={containerRef} className="relative w-full min-h-[32px]">
+            <button
+                type="button"
+                onClick={() => { setOpen((o) => !o); if (!open) setSearch(''); }}
+                className="w-full flex items-center justify-between gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs bg-white min-h-[32px] text-left hover:border-zinc-300"
+            >
+                <span className={cn('truncate', !displayName && 'text-zinc-400')}>{displayName || 'Seleccionar ingrediente'}</span>
+                <ChevronDown size={14} className={cn('text-zinc-400 shrink-0 transition-transform', open && 'rotate-180')} />
+            </button>
+            {open && (
+                <div className="absolute z-50 left-0 right-0 top-full mt-0.5 rounded-lg border border-zinc-200 bg-white shadow-lg overflow-hidden">
+                    <div className="p-1.5 border-b border-zinc-100 bg-zinc-50">
+                        <input
+                            type="text"
+                            placeholder="Escribe para buscar..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            className="w-full px-2 py-1.5 rounded border border-zinc-200 text-xs bg-white"
+                            autoFocus
+                        />
+                    </div>
+                    <ul className="max-h-[200px] overflow-y-auto py-0.5">
+                        {filtered.length === 0 ? (
+                            <li className="px-3 py-2 text-xs text-zinc-500">Sin resultados</li>
+                        ) : (
+                            filtered.slice(0, 100).map((ing) => (
+                                <li key={ing.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { onChange(ing.id); setOpen(false); setSearch(''); }}
+                                        className={cn(
+                                            'w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-100',
+                                            value === ing.id && 'bg-[#36606F]/10 text-[#36606F] font-medium'
+                                        )}
+                                    >
+                                        {ing.name}
+                                    </button>
+                                </li>
+                            ))
+                        )}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function LineMappingRow({
     line,
     invoiceId,
@@ -352,8 +421,6 @@ function LineMappingRow({
 }) {
     const [ingredientId, setIngredientId] = useState('');
     const [conversionFactor, setConversionFactor] = useState(1);
-    const [search, setSearch] = useState('');
-    const filtered = search.trim() ? ingredients.filter((i) => i.name.toLowerCase().includes(search.toLowerCase())) : ingredients;
 
     return (
         <tr className="border-b border-zinc-100 last:border-0 align-middle">
@@ -364,28 +431,7 @@ function LineMappingRow({
                 <span className="text-xs font-black text-emerald-600">{line.unit_price != null ? `${Number(line.unit_price).toFixed(2)} €` : '—'}</span>
             </td>
             <td className="py-1.5 pr-2 align-middle">
-                <div className="flex items-center gap-1.5 min-h-[32px]">
-                    <div className="relative flex-1 min-w-0 shrink">
-                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder="Buscar..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-7 pr-1.5 py-1.5 rounded-lg border border-zinc-200 text-xs bg-white min-h-[32px]"
-                        />
-                    </div>
-                    <select
-                        value={ingredientId}
-                        onChange={(e) => setIngredientId(e.target.value)}
-                        className="flex-1 min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs bg-white min-h-[32px] max-w-[140px]"
-                    >
-                        <option value="">Seleccionar</option>
-                        {filtered.slice(0, 80).map((ing) => (
-                            <option key={ing.id} value={ing.id}>{ing.name}</option>
-                        ))}
-                    </select>
-                </div>
+                <IngredientCombobox ingredients={ingredients} value={ingredientId} onChange={setIngredientId} />
             </td>
             <td className="py-1.5 pr-2 align-middle">
                 <input
