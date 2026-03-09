@@ -79,7 +79,7 @@ export function OrderSuccessModal({
                 await navigator.share({
                     files: [file],
                     title: 'Pedido Bar La Marbella',
-                    text: 'Adjunto pedido. Gracias.'
+                    text: 'Adjunto pedido. Por favor, enviad el albarán a marbellaremote@gmail.com. Gracias.'
                 });
                 setIsCapturing(false);
                 return;
@@ -87,7 +87,7 @@ export function OrderSuccessModal({
 
             // Fallback: sin Web Share API o en PC — enviar URL del PDF en el texto
             const linkTexto = pdfUrl || 'Descarga el PDF desde el botón "Descargar" de la app.';
-            const mensaje = `Hola, adjunto el nuevo pedido de Bar La Marbella. Puedes descargarlo o revisarlo aquí: ${linkTexto}`;
+            const mensaje = `Hola, adjunto el nuevo pedido de Bar La Marbella. Podéis descargarlo o revisarlo aquí: ${linkTexto}. Por favor, enviad el albarán a marbellaremote@gmail.com. Gracias.`;
             const cleanPhone = supplierPhone.replace(/\D/g, '');
             const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
             const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
