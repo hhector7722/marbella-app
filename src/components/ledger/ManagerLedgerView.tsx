@@ -40,7 +40,7 @@ export default function ManagerLedgerView() {
 
             const { data, error } = await supabase
                 .from('manager_ledger')
-                .select(`id, movement_type, amount, concept, date, created_by, profiles(full_name)`)
+                .select(`id, movement_type, amount, concept, date, created_by, profiles(full_name, first_name, last_name)`)
                 .order('date', { ascending: false });
 
             if (error) throw error;
@@ -217,7 +217,9 @@ export default function ManagerLedgerView() {
                                                             })()}
                                                         </span>
                                                         <span className="hidden sm:inline text-zinc-300 shrink-0">•</span>
-                                                        <span className="text-[9px] md:text-[10px] font-black uppercase text-zinc-400 truncate">{log.profiles?.full_name || 'Manager'}</span>
+                                                        <span className="text-[9px] md:text-[10px] font-black uppercase text-zinc-400 truncate">
+                                                            {log.profiles?.full_name || [log.profiles?.first_name, log.profiles?.last_name].filter(Boolean).join(' ').trim() || 'Manager'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>

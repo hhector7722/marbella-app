@@ -4,18 +4,26 @@ import { revalidatePath } from 'next/cache'
 
 export async function confirmarMapeoAction(formData: FormData) {
   const supabase = await createClient()
-  
+
   const lineId = formData.get('lineId') as string
-  const supplierId = formData.get('supplierId') as string
+  const supplierIdRaw = formData.get('supplierId') as string | null
   const originalName = formData.get('originalName') as string
   const ingredientId = formData.get('ingredientId') as string
   const conversionFactor = parseFloat(formData.get('conversionFactor') as string || '1')
+
+  // Validar supplier_id antes de parseInt (evitar NaN)
+  const supplierIdParsed = supplierIdRaw != null && supplierIdRaw.trim() !== ''
+    ? parseInt(supplierIdRaw, 10)
+    : null
+  if (supplierIdParsed != null && (isNaN(supplierIdParsed) || supplierIdParsed < 0)) {
+    throw new Error('ID de proveedor inválido')
+  }
 
   // 1. Crear el mapeo permanente para el futuro
   const { error: mapError } = await supabase
     .from('supplier_item_mappings')
     .upsert({
-      supplier_id: parseInt(supplierId),
+      supplier_id: supplierIdParsed,
       supplier_item_name: originalName,
       ingredient_id: ingredientId,
       conversion_factor: conversionFactor

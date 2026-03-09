@@ -254,99 +254,97 @@ export async function updateWeeklyWorkerConfig(
             if (snapshotError) throw snapshotError;
         }
 
-        // 3. Process logs if provided
+        // 3. Process logs: batch delete + single upsert (escalabilidad)
         if (updates.logs && updates.logs.length > 0) {
-            for (const log of updates.logs as any[]) {
-                if (log.is_deleted && log.id) {
-                    await supabase.from('time_logs').delete().eq('id', log.id);
-                    continue;
-                }
-                if (log.is_deleted) continue;
+            const logs = updates.logs as any[];
 
-                let clockInStr = '';
-                let clockOutStr = null;
-                let totalHours = 0;
+            // 3a. Batch delete de registros marcados como eliminados
+            const idsToDelete = logs.filter((l) => l.is_deleted && l.id).map((l) => l.id);
+            if (idsToDelete.length > 0) {
+                const { error: delErr } = await supabase.from('time_logs').delete().in('id', idsToDelete);
+                if (delErr) throw delErr;
+            }
 
-                // Preferir las fechas procesadas en cliente que ya traen corrección de TimeZone
-                if (log.inTimeIso) {
-                    clockInStr = log.inTimeIso;
-                } else if (log.in_time) {
-                    // Fallback de retrocompatibilidad
-                    const [inH, inM] = log.in_time.split(':').map(Number);
-                    const clockInFallback = new Date(log.date + "T00:00:00");
-                    clockInFallback.setHours(inH, inM, 0, 0);
-                    clockInStr = clockInFallback.toISOString();
-                } else if (log.event_type !== 'regular') {
-                    // Si no hay hora de entrada pero es un evento especial, asignamos 09:00 por defecto
-                    const clockInFallback = new Date(log.date + "T00:00:00");
-                    clockInFallback.setHours(9, 0, 0, 0);
-                    clockInStr = clockInFallback.toISOString();
-                }
+            // 3b. Construir payloads para upsert masivo (excluir eliminados)
+            const payloads = logs
+                .filter((log) => !log.is_deleted)
+                .map((log) => {
+                    let clockInStr = '';
+                    let clockOutStr: string | null = null;
+                    let totalHours = 0;
 
-                if (log.event_type !== 'regular') {
-                    totalHours = 8;
-                    if (log.outTimeIso) {
-                        clockOutStr = log.outTimeIso;
-                    } else if (log.out_time) {
-                        const [outH, outM] = log.out_time.split(':').map(Number);
-                        const dOutFallback = new Date(log.date + "T00:00:00");
-                        dOutFallback.setHours(outH, outM, 0, 0);
-                        clockOutStr = dOutFallback.toISOString();
-                    } else {
-                        // Si no hay hora de salida pero es un evento especial, asignamos 8 horas después (17:00)
-                        const dOutFallback = new Date(clockInStr);
-                        dOutFallback.setHours(dOutFallback.getHours() + 8);
-                        clockOutStr = dOutFallback.toISOString();
-                    }
-                } else if (log.total_hours_override !== undefined) {
-                    // SI HAY OVERRIDE MANUAL (desde el modal de detalle), lo respetamos
-                    totalHours = log.total_hours_override;
-                    if (log.outTimeIso) {
-                        clockOutStr = log.outTimeIso;
-                    } else if (log.out_time) {
-                        const [outH, outM] = log.out_time.split(':').map(Number);
-                        const dOutFallback = new Date(log.date + "T00:00:00");
-                        dOutFallback.setHours(outH, outM, 0, 0);
-                        clockOutStr = dOutFallback.toISOString();
-                    }
-                } else if (log.outTimeIso || log.out_time) {
-                    if (log.outTimeIso) {
-                        clockOutStr = log.outTimeIso;
-                    } else {
-                        const [outH, outM] = log.out_time.split(':').map(Number);
-                        const dOutFallback = new Date(log.date + "T00:00:00");
-                        dOutFallback.setHours(outH, outM, 0, 0);
-                        clockOutStr = dOutFallback.toISOString();
+                    if (log.inTimeIso) {
+                        clockInStr = log.inTimeIso;
+                    } else if (log.in_time) {
+                        const [inH, inM] = log.in_time.split(':').map(Number);
+                        const clockInFallback = new Date(log.date + "T00:00:00");
+                        clockInFallback.setHours(inH, inM, 0, 0);
+                        clockInStr = clockInFallback.toISOString();
+                    } else if (log.event_type !== 'regular') {
+                        const clockInFallback = new Date(log.date + "T00:00:00");
+                        clockInFallback.setHours(9, 0, 0, 0);
+                        clockInStr = clockInFallback.toISOString();
                     }
 
-                    // Simple rounding for immediate total_hours
-                    const clockIn = new Date(clockInStr);
-                    const dOut = new Date(clockOutStr);
-                    const diff = (dOut.getTime() - clockIn.getTime()) / (1000 * 60);
-                    const hTotal = Math.floor(diff / 60);
-                    const mTotal = diff % 60;
-                    let fraction = 0;
-                    if (mTotal > 20) fraction = 0.5;
-                    if (mTotal > 50) fraction = 1.0;
-                    totalHours = Math.max(0, hTotal + fraction);
-                }
+                    if (log.event_type !== 'regular') {
+                        totalHours = 8;
+                        if (log.outTimeIso) clockOutStr = log.outTimeIso;
+                        else if (log.out_time) {
+                            const [outH, outM] = log.out_time.split(':').map(Number);
+                            const dOutFallback = new Date(log.date + "T00:00:00");
+                            dOutFallback.setHours(outH, outM, 0, 0);
+                            clockOutStr = dOutFallback.toISOString();
+                        } else {
+                            const dOutFallback = new Date(clockInStr);
+                            dOutFallback.setHours(dOutFallback.getHours() + 8);
+                            clockOutStr = dOutFallback.toISOString();
+                        }
+                    } else if (log.total_hours_override !== undefined) {
+                        totalHours = log.total_hours_override;
+                        if (log.outTimeIso) clockOutStr = log.outTimeIso;
+                        else if (log.out_time) {
+                            const [outH, outM] = log.out_time.split(':').map(Number);
+                            const dOutFallback = new Date(log.date + "T00:00:00");
+                            dOutFallback.setHours(outH, outM, 0, 0);
+                            clockOutStr = dOutFallback.toISOString();
+                        }
+                    } else if (log.outTimeIso || log.out_time) {
+                        if (log.outTimeIso) {
+                            clockOutStr = log.outTimeIso;
+                        } else {
+                            const [outH, outM] = log.out_time.split(':').map(Number);
+                            const dOutFallback = new Date(log.date + "T00:00:00");
+                            dOutFallback.setHours(outH, outM, 0, 0);
+                            clockOutStr = dOutFallback.toISOString();
+                        }
+                        const clockIn = new Date(clockInStr);
+                        const dOut = new Date(clockOutStr!);
+                        const diff = (dOut.getTime() - clockIn.getTime()) / (1000 * 60);
+                        const hTotal = Math.floor(diff / 60);
+                        const mTotal = diff % 60;
+                        let fraction = 0;
+                        if (mTotal > 20) fraction = 0.5;
+                        if (mTotal > 50) fraction = 1.0;
+                        totalHours = Math.max(0, hTotal + fraction);
+                    }
 
-                const logPayload = {
-                    user_id: userId,
-                    clock_in: clockInStr,
-                    clock_out: clockOutStr,
-                    total_hours: totalHours || null,
-                    event_type: log.event_type,
-                    clock_out_show_no_registrada: log.clock_out_show_no_registrada === true
-                };
+                    const payload: Record<string, unknown> = {
+                        user_id: userId,
+                        clock_in: clockInStr,
+                        clock_out: clockOutStr,
+                        total_hours: totalHours || null,
+                        event_type: log.event_type,
+                        clock_out_show_no_registrada: log.clock_out_show_no_registrada === true
+                    };
+                    if (log.id) payload.id = log.id;
+                    return payload;
+                });
 
-                if (log.id) {
-                    const { error: updateErr } = await supabase.from('time_logs').update(logPayload).eq('id', log.id);
-                    if (updateErr) throw updateErr;
-                } else {
-                    const { error: insertErr } = await supabase.from('time_logs').insert([logPayload]);
-                    if (insertErr) throw insertErr;
-                }
+            if (payloads.length > 0) {
+                const { error: upsertErr } = await supabase
+                    .from('time_logs')
+                    .upsert(payloads, { onConflict: 'id' });
+                if (upsertErr) throw upsertErr;
             }
         }
 

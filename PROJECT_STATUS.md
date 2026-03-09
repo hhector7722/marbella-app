@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-09 (Alineación Supabase + Propagación)
+**Última actualización:** 2026-03-19 (Plan de Saneamiento Crítico)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,12 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Plan de Saneamiento Crítico (2026-03-19)**: Ejecutado según auditoría AUDIT_MAPEO_REALIDAD.md.
+  - **SQL (20260319_sanitation_critical.sql)**: Columna generada `profiles.full_name`; trigger `sync_profile_role_to_auth` para inyectar `role` en JWT (`auth.users.raw_app_meta_data`); RLS restrictivo en `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines` (solo manager/admin).
+  - **Código legacy eliminado**: Ruta `/api/ai-tools-executor` borrada (referenciaba `time_entries` inexistente).
+  - **Refactor updateWeeklyWorkerConfig**: Bucle de updates/inserts individuales sustituido por batch delete + upsert masivo en `time_logs`.
+  - **ManagerLedgerView**: Consulta usa `profiles(full_name, first_name, last_name)` con fallback en UI.
+  - **albaranes.ts**: Validación de `supplier_id` antes de `parseInt` para evitar NaN.
 - [x] **Alineación Supabase y Propagación de Snapshots**: Sincronización total entre código local y base de datos remota.
   - `fix_snapshots_propagation.sql` actualizado para coincidir con Supabase: soporte `prefer_stock_hours_override`, arrastre de crédito según prefer_stock de la **semana anterior**, sincronización `profiles.hours_balance` con lógica "no acumula + positivo = 0".
   - `rpc_recalculate_all_balances` refactorizado para delegar en `fn_recalc_and_propagate_snapshots` (Single Source of Truth). Migración `20260318_rpc_recalculate_delegate_fn_recalc.sql` aplicada.
