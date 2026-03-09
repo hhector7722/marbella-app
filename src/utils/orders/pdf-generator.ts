@@ -249,6 +249,13 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
         }
     });
 
+    // --- FOOTER: Albarán reminder ---
+    const reminderY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Por favor, enviad el albarán a marbellaremote@gmail.com. Gracias.', margin, reminderY);
+
     console.log("PDF GENERATOR V9.0: Cleanup Complete");
     return doc.output('blob');
 }
