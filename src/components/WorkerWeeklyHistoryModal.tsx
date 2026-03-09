@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
-import { format, isSameDay, addDays, parseISO, startOfWeek } from 'date-fns';
+import { format, isSameDay, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn, calculateRoundedHours } from '@/lib/utils'; // Import shared rounding logic
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 // --- TYPES ---
@@ -84,13 +84,12 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 setWorkerName(`${profile.first_name} ${profile.last_name || ''}`);
             }
 
-            // 2. Define Date Range (UTC boundaries for Consistency)
             const mondayDate = parseISO(weekStart);
             const sundayDate = addDays(mondayDate, 6);
             const mondayISO = weekStart;
             const sundayISO = format(sundayDate, 'yyyy-MM-dd');
 
-            // 3. Fetch SSOT Statistics from RPC
+            // 2. Fetch SSOT Statistics (totales del footer)
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
                 p_start_date: mondayISO,
                 p_end_date: sundayISO,
@@ -101,25 +100,42 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
             const rpcWeek = rpcData?.weeksResult?.[0];
             const rpcStaff = rpcWeek?.staff?.[0];
-            const effContractForGrid = rpcStaff?.contracted_hours_weekly ?? 0;
 
-            // 4. Fetch precise grid with accumulated logics resolved 
-            const { data: gridDays } = await supabase.rpc('get_worker_weekly_log_grid', {
+            // 3. Fetch grid days from get_monthly_timesheet (misma fuente que /staff/history — extraHours correctos)
+            const year = mondayDate.getFullYear();
+            const month = mondayDate.getMonth() + 1; // 1-indexed for PostgreSQL
+
+            const { data: timesheetData, error: tsError } = await supabase.rpc('get_monthly_timesheet', {
                 p_user_id: workerId,
-                p_start_date: mondayISO,
-                p_contracted_hours: effContractForGrid
+                p_year: year,
+                p_month: month
             });
 
-            // 5. Build presentation array
-            const weekDays: DailyLog[] = (gridDays || []).map((day: any) => ({
-                ...day,
-                date: new Date(day.date),
-                dayName: format(new Date(day.date), 'EEE', { locale: es }).toUpperCase().slice(0, 3),
-                dayNumber: new Date(day.date).getDate(),
-                isToday: isSameDay(new Date(day.date), new Date())
-            }));
+            if (tsError) throw tsError;
 
-            // 6. Set Final State from RPC (SSOT)
+            const weeks = (timesheetData || []) as Array<{ startDate: string; days: Array<{ date: string; hasLog: boolean; clockIn: string | null; clockOut: string | null; totalHours: number; extraHours: number }>; summary?: any }>;
+            const targetWeek = weeks.find((w) => {
+                const ws = typeof w.startDate === 'string' ? w.startDate : (w.startDate as string)?.split?.('T')?.[0];
+                return ws === weekStart;
+            });
+
+            const rawDays = targetWeek?.days || [];
+
+            // 4. Build presentation array (formato unificado con /staff/history)
+            const weekDays: DailyLog[] = rawDays.map((day: any) => {
+                const d = new Date(day.date);
+                return {
+                    ...day,
+                    date: d,
+                    dayName: format(d, 'EEE', { locale: es }).toUpperCase().slice(0, 3),
+                    dayNumber: d.getDate(),
+                    isToday: isSameDay(d, new Date()),
+                    clockIn: day.clockIn ?? '',
+                    clockOut: day.clockOut ?? ''
+                };
+            });
+
+            // 5. Set Final State (totales de get_weekly_worker_stats, días de get_monthly_timesheet)
             if (rpcStaff) {
                 setWeekData({
                     weekNumber: parseInt(format(mondayDate, 'w')),
@@ -132,8 +148,25 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                         estimatedValue: rpcStaff.totalCost ?? 0,
                         finalBalance: rpcStaff.overtimeHours ?? 0,
                         isPaid: rpcStaff.isPaid ?? false,
-                        contractedHours: effContractForGrid ?? 0,
+                        contractedHours: 0,
                         startBalance: rpcStaff.pendingBalance ?? 0
+                    }
+                });
+            } else if (targetWeek && weekDays.length > 0) {
+                const s = targetWeek.summary;
+                setWeekData({
+                    weekNumber: parseInt(format(mondayDate, 'w')),
+                    startDate: mondayDate,
+                    endDate: sundayDate,
+                    days: weekDays,
+                    summary: {
+                        totalHours: s?.totalHours ?? 0,
+                        weeklyBalance: s?.weeklyBalance ?? 0,
+                        estimatedValue: s?.estimatedValue ?? 0,
+                        finalBalance: s?.finalBalance ?? 0,
+                        isPaid: s?.isPaid ?? false,
+                        contractedHours: 0,
+                        startBalance: s?.startBalance ?? 0
                     }
                 });
             }
