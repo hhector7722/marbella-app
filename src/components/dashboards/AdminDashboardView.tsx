@@ -866,7 +866,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     <div className="flex flex-col gap-3 md:gap-4 min-h-0 aspect-square md:aspect-auto md:min-h-0">
                         <div className="flex flex-col gap-3 md:gap-4 flex-1 min-h-0 max-w-[85%] md:max-w-none w-full h-full self-center md:self-stretch">
                         {(() => {
-                            const changeBoxes = boxes.filter(b => b.type === 'change').slice(0, 2);
+                            // Orden explícito por nombre: Cambio 1 → idx 0, Cambio 2 → idx 1 (independencia total entre cajas)
+                            const changeBoxes = boxes
+                                .filter(b => b.type === 'change')
+                                .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                                .slice(0, 2);
                             const formatEur = (v: number) => (v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ");
                             return (
                                 <>

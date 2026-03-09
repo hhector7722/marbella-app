@@ -94,7 +94,12 @@ export async function getDashboardData() {
     let difference = 0;
 
     if (allBoxes) {
-        const sorted = allBoxes.sort((a, b) => a.type === 'operational' ? -1 : 1);
+        // Orden: Caja Operativa primero, luego Cambio 1 y Cambio 2 por nombre (NUNCA invertir entre cajas cambio)
+        const sorted = [...allBoxes].sort((a, b) => {
+            if (a.type === 'operational' && b.type !== 'operational') return -1;
+            if (a.type !== 'operational' && b.type === 'operational') return 1;
+            return (a.name || '').localeCompare(b.name || '');
+        });
         boxes = sorted;
         const opBox = sorted.find(b => b.type === 'operational');
         if (opBox) {

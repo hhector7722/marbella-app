@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-19 (Plan de Saneamiento Crítico)
+**Última actualización:** 2026-03-09 (Fix Arqueo Cajas Cambio Independientes)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Fix Arqueo Cajas Cambio Independientes (2026-03-09)**: Corregido bug crítico donde el arqueo de Caja Cambio 2 actualizaba también Caja Cambio 1 (y viceversa). Causa raíz: el `sort` en `get-dashboard-data.ts` invertía el orden de las cajas de cambio al comparar dos elementos tipo `change`. Solución: orden explícito (operacional primero, luego por `name`) en get-dashboard-data y orden defensivo por nombre en AdminDashboardView para garantizar que "Caja cambio 1" → Cambio 1 y "Caja cambio 2" → Cambio 2. Las tres cajas (operativa, cambio 1, cambio 2) son ahora totalmente independientes.
 - [x] **Plan de Saneamiento Crítico (2026-03-19)**: Ejecutado según auditoría AUDIT_MAPEO_REALIDAD.md.
   - **SQL (20260319_sanitation_critical.sql)**: Columna generada `profiles.full_name`; trigger `sync_profile_role_to_auth` para inyectar `role` en JWT (`auth.users.raw_app_meta_data`); RLS restrictivo en `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines` (solo manager/admin).
   - **Código legacy eliminado**: Ruta `/api/ai-tools-executor` borrada (referenciaba `time_entries` inexistente).
