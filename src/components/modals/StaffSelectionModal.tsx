@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ChevronRight } from 'lucide-react';
+import { X } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -53,7 +53,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             <div
                 className={cn(
                     "bg-white rounded-[2rem] shadow-2xl w-full overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]",
-                    variant === 'profile-list' ? 'max-w-lg' : 'max-w-md'
+                    variant === 'profile-list' ? 'max-w-xl' : 'max-w-md'
                 )}
                 onClick={e => e.stopPropagation()}
             >
@@ -74,41 +74,37 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     {children}
 
                     {variant === 'profile-list' ? (
-                        /* Lista tipo ficha perfil: avatar, nombre completo, rol, chevron. Targets táctiles 48px+ */
-                        <ul className="space-y-1">
+                        /* Iconos flotantes en 3–4 columnas: avatar circular, nombre debajo. Targets táctiles 48px+ */
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                             {filteredEmployees.map((emp) => {
                                 const fullName = `${emp.first_name} ${emp.last_name || ''}`.trim();
                                 return (
-                                    <li key={emp.id}>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                onSelect(emp);
-                                                onClose();
-                                            }}
-                                            className="w-full min-h-[56px] flex items-center gap-4 p-3 rounded-2xl border border-zinc-100 hover:bg-[#36606F]/5 hover:border-[#36606F]/20 transition-all active:scale-[0.99] text-left"
-                                        >
-                                            <div className="w-12 h-12 rounded-xl bg-zinc-100 flex items-center justify-center overflow-hidden shrink-0 border border-zinc-100">
-                                                {emp.avatar_url ? (
-                                                    <Image src={emp.avatar_url} alt={fullName} width={48} height={48} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <img src="/icons/profile.png" alt="" className="w-10 h-10 object-contain opacity-70" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-black text-zinc-800 truncate uppercase tracking-tight">{fullName || 'Sin nombre'}</p>
-                                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                                                    {roleLabel(emp.role)}
-                                                </span>
-                                            </div>
-                                            <div className="shrink-0 w-10 h-10 flex items-center justify-center text-zinc-300">
-                                                <ChevronRight size={20} strokeWidth={2.5} />
-                                            </div>
-                                        </button>
-                                    </li>
+                                    <button
+                                        key={emp.id}
+                                        type="button"
+                                        onClick={() => {
+                                            onSelect(emp);
+                                            onClose();
+                                        }}
+                                        className="group flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/20 hover:bg-[#36606F]/5 transition-all active:scale-[0.98] min-h-[48px]"
+                                    >
+                                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center overflow-hidden shrink-0 border-2 border-zinc-100 group-hover:border-[#36606F]/30 transition-colors shadow-inner">
+                                            {emp.avatar_url ? (
+                                                <Image src={emp.avatar_url} alt={fullName} width={64} height={64} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <img src="/icons/profile.png" alt="" className="w-10 h-10 sm:w-12 sm:h-12 object-contain opacity-70" />
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] sm:text-xs font-black text-zinc-800 leading-tight truncate w-full text-center uppercase tracking-tight">
+                                            {fullName || 'Sin nombre'}
+                                        </p>
+                                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                                            {roleLabel(emp.role)}
+                                        </span>
+                                    </button>
                                 );
                             })}
-                        </ul>
+                        </div>
                     ) : (
                         <div className="grid grid-cols-4 gap-2">
                             {filteredEmployees.map((emp) => (

@@ -117,31 +117,28 @@ function ProfileContent() {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
-    // Componente interno para filas de datos mejorado para el estilo corporativo
-    const ProfileDataRow = ({ icon: Icon, label, value, action, isCopyable }: any) => (
-        <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/80 transition-all group">
-            <div className="flex items-center gap-5 overflow-hidden">
-                <div className="bg-[#5B8FB9]/10 p-3 rounded-2xl text-[#5B8FB9] group-hover:bg-[#5B8FB9] group-hover:text-white transition-all duration-300">
-                    <Icon size={22} strokeWidth={2.5} />
+    // Tarjeta tipo dashboard: icono, etiqueta, valor. Amable de leer.
+    const DashboardCard = ({ icon: Icon, label, value, action, isCopyable }: { icon: any; label: string; value: string | null; action?: React.ReactNode; isCopyable?: boolean }) => (
+        <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-[#36606F]/15 transition-all group min-h-[100px]">
+            <div className="flex items-center justify-between">
+                <div className="bg-[#36606F]/10 p-2.5 rounded-xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                    <Icon size={20} strokeWidth={2.5} />
                 </div>
-                <div className="truncate">
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-1">{label}</p>
-                    <p className="text-gray-800 font-bold text-sm md:text-base truncate tracking-tight">{value || 'No definido'}</p>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3 pl-2 shrink-0">
                 {isCopyable && value && (
                     <button
                         onClick={() => copyToClipboard(value, label)}
-                        className="text-gray-400 hover:text-[#5B8FB9] w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-[#5B8FB9]/10 transition-all active:scale-90"
+                        className="text-zinc-400 hover:text-[#36606F] w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[#36606F]/10 transition-all active:scale-90"
                         title={`Copiar ${label}`}
                     >
-                        {copiedField === label ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
+                        {copiedField === label ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
                     </button>
                 )}
-                {action}
             </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mb-1">{label}</p>
+                <p className="text-zinc-800 font-bold text-sm leading-snug break-words">{value || '—'}</p>
+            </div>
+            {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
         </div>
     );
 
@@ -175,7 +172,7 @@ function ProfileContent() {
 
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
-            <div className="max-w-xl mx-auto">
+            <div className="max-w-2xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* ENCABEZADO: variante por viewMode */}
@@ -264,89 +261,86 @@ function ProfileContent() {
                         </div>
                     )}
 
-                    {/* SECCIONES BENTO DE ALTA DENSIDAD */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {/* DASHBOARD: Grid de tarjetas, toda la info visible y amable */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
 
-                        {/* Grupo 1: Datos Identificativos */}
-                        <div className="divide-y divide-gray-50">
-                            <ProfileDataRow
+                        {/* Grid principal: Datos identificativos + Contacto */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <DashboardCard
                                 icon={Hash}
                                 label="DNI / NIE"
                                 value={profile.dni}
                                 isCopyable
                             />
-                            <ProfileDataRow
+                            <DashboardCard
                                 icon={CreditCard}
                                 label="Cuenta Bancaria (IBAN)"
                                 value={profile.bank_account}
                                 isCopyable
                             />
-                        </div>
-
-                        {/* Grupo 2: Contacto */}
-                        <div className="divide-y divide-gray-50 border-t border-gray-100">
-                            <ProfileDataRow
+                            <DashboardCard
                                 icon={Mail}
                                 label="Email"
                                 value={profile.email}
                                 isCopyable
                             />
-                            <ProfileDataRow
+                            <DashboardCard
                                 icon={Phone}
                                 label="Teléfono Móvil"
                                 value={profile.phone}
+                                isCopyable={!!profile.phone}
                                 action={profile.phone && (
-                                    <div className="flex gap-4 items-center">
+                                    <>
                                         <a
                                             href={`tel:${profile.phone.replace(/\D/g, '').startsWith('34') ? '+' + profile.phone.replace(/\D/g, '') : '+34' + profile.phone.replace(/\D/g, '')}`}
-                                            className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"
+                                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all active:scale-95"
                                             title="Llamar"
                                         >
-                                            <Phone size={22} />
+                                            <Phone size={18} strokeWidth={2.5} />
                                         </a>
                                         <a
                                             href={`https://wa.me/${profile.phone.replace(/\D/g, '').startsWith('34') ? profile.phone.replace(/\D/g, '') : '34' + profile.phone.replace(/\D/g, '')}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="transition-all hover:scale-110 active:scale-95"
+                                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500/10 hover:bg-emerald-500 transition-all active:scale-95"
                                             title="WhatsApp"
                                         >
-                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={22} height={22} className="object-contain" />
                                         </a>
-                                    </div>
+                                    </>
                                 )}
                             />
                         </div>
 
-                        {/* Grupo 2b: Datos laborales (solo vista Manager → Ficha empleado) */}
+                        {/* Datos laborales (solo vista Manager → Ficha empleado) */}
                         {viewMode === 'manager-employee' && (
-                            <div className="p-6 border-t border-gray-100">
-                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Datos laborales</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Clock size={16} className="text-[#36606F]" />
-                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Horas contrato/sem</span>
+                            <div>
+                                <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Datos laborales</h2>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5 hover:shadow-md hover:border-[#36606F]/15 transition-all">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Clock size={18} className="text-[#36606F]" />
+                                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas contrato/sem</span>
                                         </div>
-                                        <p className="text-gray-800 font-black text-sm">
+                                        <p className="text-zinc-800 font-black text-base">
                                             {formatDisplayValue(profile.contracted_hours_weekly ?? 0) === ' ' ? '\u00A0' : `${profile.contracted_hours_weekly}`}
                                         </p>
                                     </div>
-                                    <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Briefcase size={16} className="text-[#36606F]" />
-                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Banco horas</span>
+                                    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5 hover:shadow-md hover:border-[#36606F]/15 transition-all">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Briefcase size={18} className="text-[#36606F]" />
+                                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Banco horas</span>
                                         </div>
-                                        <p className="text-gray-800 font-black text-sm">
+                                        <p className="text-zinc-800 font-black text-base">
                                             {formatDisplayValue(profile.hours_balance ?? 0) === ' ' ? '\u00A0' : `${profile.hours_balance}`}
                                         </p>
                                     </div>
-                                    <div className="bg-[#36606F]/5 rounded-2xl p-4 border border-[#36606F]/10 col-span-2 sm:col-span-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <FileClock size={16} className="text-[#36606F]" />
-                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Preferir bolsa</span>
+                                    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5 hover:shadow-md hover:border-[#36606F]/15 transition-all col-span-2 sm:col-span-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <FileClock size={18} className="text-[#36606F]" />
+                                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Preferir bolsa</span>
                                         </div>
-                                        <p className="text-gray-800 font-black text-sm">
+                                        <p className="text-zinc-800 font-black text-base">
                                             {profile.prefer_stock_hours ? 'Sí' : 'No'}
                                         </p>
                                     </div>
@@ -361,9 +355,9 @@ function ProfileContent() {
                             </div>
                         )}
 
-                        {/* Grupo 3: Documentación Estilo Premium */}
-                        <div className="p-8">
-                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Documentación Oficial</h2>
+                        {/* Documentación Oficial */}
+                        <div>
+                            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Documentación Oficial</h2>
 
                             {activeDocTab ? (
                                 <div className="animate-in slide-in-from-bottom-2 duration-300">
@@ -385,20 +379,20 @@ function ProfileContent() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         onClick={() => setActiveDocTab('contract')}
-                                        className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                        className="min-h-[120px] flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/30 transition-all group active:scale-[0.98]"
                                     >
-                                        <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
-                                            <FileText size={24} />
+                                        <div className="bg-[#36606F]/10 p-4 rounded-2xl text-[#36606F] mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                            <FileText size={28} strokeWidth={2} />
                                         </div>
                                         <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Contrato</span>
                                     </button>
 
                                     <button
                                         onClick={() => setIsNominasOpen(true)}
-                                        className="aspect-square flex flex-col items-center justify-center p-6 bg-[#36606F]/5 rounded-[2rem] border-2 border-dashed border-[#36606F]/10 hover:bg-white hover:border-[#36606F] hover:shadow-xl transition-all group active:scale-95"
+                                        className="min-h-[120px] flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/30 transition-all group active:scale-[0.98]"
                                     >
-                                        <div className="bg-white p-4 rounded-2xl text-[#36606F] shadow-sm mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
-                                            <Euro size={24} />
+                                        <div className="bg-[#36606F]/10 p-4 rounded-2xl text-[#36606F] mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                            <Euro size={28} strokeWidth={2} />
                                         </div>
                                         <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Nóminas</span>
                                     </button>
@@ -406,42 +400,42 @@ function ProfileContent() {
                             )}
                         </div>
 
-                        {/* Grupo 4: Configuración de Cuenta (solo cuando es el propio perfil) */}
+                        {/* Configuración de Cuenta (solo cuando es el propio perfil) */}
                         {showAccountSection && (
-                            <div className="p-8 border-t border-gray-100 bg-gray-50/30 shrink-0">
-                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Configuración de Cuenta</h2>
+                            <div>
+                                <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Configuración de Cuenta</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <button
                                         onClick={handleChangePassword}
-                                        className="w-full min-h-[48px] flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all group active:scale-[0.98]"
+                                        className="w-full min-h-[56px] flex items-center justify-between p-5 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/20 transition-all group active:scale-[0.98]"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all duration-300">
+                                            <div className="bg-[#36606F]/10 p-3 rounded-xl text-[#36606F] group-hover:bg-[#36606F] group-hover:text-white transition-all">
                                                 <Lock size={20} strokeWidth={2.5} />
                                             </div>
                                             <div className="text-left">
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-0.5">Seguridad</p>
-                                                <p className="text-gray-800 font-black text-xs tracking-tight">Cambiar Contraseña</p>
+                                                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mb-0.5">Seguridad</p>
+                                                <p className="text-zinc-800 font-black text-sm tracking-tight">Cambiar Contraseña</p>
                                             </div>
                                         </div>
-                                        <ChevronRight size={16} className="text-gray-300 group-hover:text-[#36606F] transition-colors shrink-0" />
+                                        <ChevronRight size={18} className="text-zinc-300 group-hover:text-[#36606F] transition-colors shrink-0" />
                                     </button>
 
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full min-h-[48px] flex items-center justify-between p-5 bg-white border border-rose-50 rounded-3xl shadow-sm hover:shadow-md hover:bg-rose-50 transition-all group active:scale-[0.98]"
+                                        className="w-full min-h-[56px] flex items-center justify-between p-5 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all group active:scale-[0.98]"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="bg-rose-500/10 p-3 rounded-2xl text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
+                                            <div className="bg-rose-500/10 p-3 rounded-xl text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all">
                                                 <LogOut size={20} strokeWidth={2.5} />
                                             </div>
                                             <div className="text-left">
-                                                <p className="text-[10px] text-rose-300 font-black uppercase tracking-[0.15em] mb-0.5">Sesión</p>
-                                                <p className="text-rose-600 font-black text-xs tracking-tight">Cerrar Sesión Corporativa</p>
+                                                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mb-0.5">Sesión</p>
+                                                <p className="text-rose-600 font-black text-sm tracking-tight">Cerrar Sesión</p>
                                             </div>
                                         </div>
-                                        <ChevronRight size={16} className="text-rose-200 group-hover:text-rose-500 transition-colors shrink-0" />
+                                        <ChevronRight size={18} className="text-rose-200 group-hover:text-rose-500 transition-colors shrink-0" />
                                     </button>
                                 </div>
                             </div>
