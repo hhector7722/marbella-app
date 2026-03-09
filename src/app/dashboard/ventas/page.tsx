@@ -463,11 +463,11 @@ export default function VentasPage() {
                                                                                     No hay detalles para este ticket
                                                                                 </div>
                                                                             ) : (
-                                                                                <table className="w-full text-left border-collapse">
+                                                                                <table className="w-full text-left border-collapse table-fixed">
                                                                                     <thead>
                                                                                         <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-200">
                                                                                             <th className="py-2 px-1 text-center w-8 md:w-12">Cant</th>
-                                                                                            <th className="py-2 px-1 md:px-2">Producto</th>
+                                                                                            <th className="py-2 px-1 md:px-2 w-[45%]">Producto</th>
                                                                                             <th className="py-2 px-1 md:px-2 text-right">Precio</th>
                                                                                             <th className="py-2 px-1 text-right">Total</th>
                                                                                         </tr>
@@ -478,7 +478,7 @@ export default function VentasPage() {
                                                                                                 <td className="py-2 px-1 text-center tabular-nums text-zinc-400">
                                                                                                     {line.unidades !== 0 ? line.unidades : ' '}
                                                                                                 </td>
-                                                                                                <td className="py-2 px-1 md:px-2 text-zinc-700 line-clamp-1 max-w-[120px] md:max-w-none">
+                                                                                                <td className="py-2 px-1 md:px-2 text-zinc-700 min-w-0 truncate">
                                                                                                     {line.articulo_nombre}
                                                                                                 </td>
                                                                                                 <td className="py-2 px-1 md:px-2 text-right tabular-nums">

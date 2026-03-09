@@ -571,7 +571,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         );
                     })()}
                     <div className={cn("overflow-hidden transition-all duration-300 shrink-0", isSalesExpanded ? "opacity-100" : "h-0 opacity-0")}>
-                        <div className="pt-1 pb-1 px-1 space-y-1 max-h-[200px] md:max-h-[280px] overflow-y-auto no-scrollbar">
+                        <div className={cn("pt-1 pb-1 px-1 space-y-1 overflow-y-auto no-scrollbar transition-all duration-300", expandedTicket ? "max-h-[500px] md:max-h-[70vh]" : "max-h-[200px] md:max-h-[280px]")}>
                             {loadingSalesTickets ? (
                                 <div className="flex justify-center py-8">
                                     <LoadingSpinner size="sm" className="text-[#36606F]/50" />
@@ -626,11 +626,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                         ) : ticketLines.length === 0 ? (
                                                                             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 text-center py-2">Sin detalles</p>
                                                                         ) : (
-                                                                            <table className="w-full text-left border-collapse">
+                                                                            <table className="w-full text-left border-collapse table-fixed">
                                                                                 <thead>
                                                                                     <tr className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-200">
                                                                                         <th className="py-1.5 px-1 text-center w-8">Cant</th>
-                                                                                        <th className="py-1.5 px-1 md:px-2">Producto</th>
+                                                                                        <th className="py-1.5 px-1 md:px-2 w-[45%]">Producto</th>
                                                                                         <th className="py-1.5 px-1 text-right">Precio</th>
                                                                                         <th className="py-1.5 px-1 text-right">Total</th>
                                                                                     </tr>
@@ -639,7 +639,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                                     {ticketLines.map((line, lIdx) => (
                                                                                         <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
                                                                                             <td className="py-1.5 px-1 text-center tabular-nums text-zinc-400">{line.unidades !== 0 ? line.unidades : ' '}</td>
-                                                                                            <td className="py-1.5 px-1 md:px-2 text-zinc-700 line-clamp-1 max-w-[100px] md:max-w-none">{line.articulo_nombre}</td>
+                                                                                            <td className="py-1.5 px-1 md:px-2 text-zinc-700 min-w-0 truncate">{line.articulo_nombre}</td>
                                                                                             <td className="py-1.5 px-1 text-right tabular-nums">{line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}</td>
                                                                                             <td className="py-1.5 px-1 text-right font-black tabular-nums text-emerald-600/70">{line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}</td>
                                                                                         </tr>
