@@ -6,7 +6,6 @@ import { X } from 'lucide-react';
 import { format, isSameDay, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 // --- TYPES ---
@@ -45,16 +44,13 @@ interface WorkerWeeklyHistoryModalProps {
     weekStart: string; // ISO Date string (yyyy-MM-dd) of the Monday
 }
 
-// --- VISUAL HELPERS ---
-const formatNumber = (val: number | undefined | null) => {
+// --- VISUAL HELPERS (idénticos a /staff/dashboard) ---
+const formatValue = (val: number | undefined | null) => {
     if (val === undefined || val === null || isNaN(Number(val))) return ' ';
     const n = Number(val);
     if (Math.abs(n) < 0.1) return ' ';
-    const rounded = Math.round(n * 2) / 2;
-    return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    return Math.round(n).toString();
 };
-const formatValue = (val: number) => formatNumber(val);
-const formatBalance = (val: number) => formatNumber(val);
 const formatMoney = (val: number) => {
     if (Math.abs(val) < 0.1) return " ";
     return `${val.toFixed(0)}€`;
@@ -204,85 +200,71 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-stone-50/80 w-fit">
-                            {/* Days Grid */}
-                            <div className="grid grid-cols-7 border-b border-gray-200/80">
+                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                            {/* Days Grid — fotocopia de /staff/dashboard */}
+                            <div className="grid grid-cols-7">
                                 {weekData.days.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-200/80 last:border-r-0 min-h-[90px] bg-white/90 relative">
-                                        <div className="h-4 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
-                                            <span className="text-[8px] font-bold text-white uppercase tracking-wider block truncate px-0.5">{day.dayName}</span>
+                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[110px] bg-white relative">
+                                        <div className="h-7 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
+                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
-                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0">
-                                            <span className={`absolute top-1 right-1 text-[8px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-
-                                            <div className="flex-1 flex flex-col justify-center gap-0.5 w-full pb-1 mt-3">
-                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                    {day.hasLog && (
-                                                        <>
-                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0"></div>
-                                                            <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                    {day.hasLog && day.clockOut && (
-                                                        <>
-                                                            <div className="w-1 h-1 rounded-full bg-red-500 shrink-0"></div>
-                                                            <span className="text-[8px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                        </>
-                                                    )}
-                                                </div>
+                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
+                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                            <div className="flex-1 flex flex-col justify-center gap-1 w-full">
+                                                {day.hasLog ? (
+                                                    <>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
+                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                        </div>
+                                                        {day.clockOut && (
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
+                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (<span className="text-gray-200 text-xs text-center">-</span>)}
                                             </div>
-
-                                            <div className="w-full space-y-0 pt-0.5 min-h-[22px]">
-                                                {day.hasLog && day.totalHours > 0 ? (
-                                                    <div className="flex justify-between items-center text-[7px] text-gray-400 h-2.5">
-                                                        <span className="ml-0.5">H</span>
-                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.totalHours)}</span>
+                                            <div className="w-full mt-auto space-y-0.5 pt-1">
+                                                {day.hasLog && day.totalHours > 0 && (
+                                                    <div className="flex justify-between items-end text-[8px] text-gray-400 border-t border-gray-50 pt-1">
+                                                        <span>Horas</span><span className="font-bold text-gray-800">{day.totalHours > 0.05 ? day.totalHours.toFixed(0) : ' '}</span>
                                                     </div>
-                                                ) : <div className="h-2.5" />}
-                                                {day.extraHours > 0.1 ? (
-                                                    <div className="flex justify-between items-center text-[7px] text-gray-400 h-2.5">
-                                                        <span className="ml-0.5">Ex</span>
-                                                        <span className="font-bold text-gray-800 pr-1">{formatNumber(day.extraHours)}</span>
+                                                )}
+                                                {day.extraHours > 0 && (
+                                                    <div className="flex justify-between items-end text-[8px] text-gray-400">
+                                                        <span>Extras</span><span className="font-bold text-gray-800">{day.extraHours.toFixed(0)}</span>
                                                     </div>
-                                                ) : <div className="h-2.5" />}
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                        </div>
 
-                            {/* Summary Footer: cada celda valor + etiqueta alineados */}
-                            <div className="p-3 grid grid-cols-5 gap-0 bg-white/90 border-t border-gray-200/80">
-                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
-                                    <span className="font-black text-gray-800 text-xs leading-none">{formatValue(weekData.summary.totalHours)}</span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Horas</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
-                                    <span className={`font-black text-xs leading-none ${weekData.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {formatBalance(weekData.summary.weeklyBalance)}
-                                    </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Balance</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
-                                    <span className={`font-black text-xs leading-none ${weekData.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {formatBalance(weekData.summary.startBalance)}
-                                    </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Pendiente</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
-                                    <span className={`font-black text-xs leading-none ${weekData.summary.finalBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                                        {weekData.summary.finalBalance > 0 ? formatBalance(weekData.summary.finalBalance) : " "}
-                                    </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">H Extras</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center min-w-[52px]">
-                                    <span className="font-black text-xs leading-none text-green-600">
-                                        {weekData.summary.estimatedValue > 0 ? formatMoney(weekData.summary.estimatedValue) : " "}
-                                    </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Importe</span>
-                                </div>
+                        {/* Footer totales — fotocopia de /staff/dashboard (Horas, Extras, Pendiente, Importe) */}
+                        <div className="p-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                <span className="font-black text-gray-800 text-sm">{formatValue(weekData.summary.totalHours)}</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Horas</span>
+                            </div>
+                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                <span className="font-black text-sm text-blue-600">{formatValue(weekData.summary.weeklyBalance)}</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Extras</span>
+                            </div>
+                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                <span className={`font-black text-sm ${(weekData.summary.startBalance ?? 0) > 0 ? 'text-green-600' :
+                                    (weekData.summary.startBalance ?? 0) < 0 ? 'text-red-500' : 'text-gray-400'
+                                    }`}>
+                                    {formatValue(weekData.summary.startBalance)}
+                                </span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Pendiente</span>
+                            </div>
+                            <div className="flex flex-col items-center px-4 shrink-0">
+                                <span className="font-black text-sm text-green-600">{formatMoney(weekData.summary.estimatedValue)}</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Importe</span>
                             </div>
                         </div>
                     ) : (
