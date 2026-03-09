@@ -498,7 +498,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <LiveClock />
                         </div>
                         <Link
-                            href="/dashboard/ventas"
+                            href="/dashboard/history"
                             className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest shrink-0"
                         >
                             Ver más
