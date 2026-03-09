@@ -231,10 +231,10 @@ export default function HistoryPage() {
 
 
                 {/* ── CONTENIDO PRINCIPAL DEL CALENDARIO UNIFICADO ── */}
-                <div className="bg-white rounded-[20px] shadow-xl overflow-visible animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
-                    <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between min-h-[52px]">
+                    <div className="bg-[#36606F] rounded-t-2xl px-4 py-2.5 flex items-center justify-between min-h-[52px]">
                         {/* Izquierda: Mes y Flechas (Agrupado y Cercano) */}
                         <div className="flex items-center gap-1">
                             <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
