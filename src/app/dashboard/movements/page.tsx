@@ -140,41 +140,19 @@ export default function MovementsPage() {
 
     async function fetchCurrentBoxStatus() {
         try {
-            // 1. Obtenemos el contenedor de la caja y su saldo teórico (sumatorio de movimientos)
-            const { data: box, error } = await supabase
-                .from('cash_boxes')
-                .select('id, current_balance, name')
-                .eq('type', 'operational')
-                .maybeSingle();
+            // Todo calculado en DB (RPC): saldo teórico, físico, diferencia — sin cálculo en frontend
+            const { data: statusRows, error } = await supabase.rpc('get_operational_box_status');
 
             if (error) throw error;
 
-            if (box) {
-                setBoxData(box);
+            const status = Array.isArray(statusRows) ? statusRows[0] : statusRows;
+            if (status?.box_id != null) {
+                setBoxData({ id: status.box_id, current_balance: status.theoretical_balance, name: status.box_name ?? '' });
 
-                // 2. Consultamos el inventario físico real contado en el último arqueo
-                const { data: inventory, error: invError } = await supabase
-                    .from('cash_box_inventory')
-                    .select('denomination, quantity')
-                    .eq('box_id', box.id);
-
-                if (invError) {
-                    console.error("Error leyendo inventario de caja:", invError);
-                }
-
-                // 3. Cálculo estricto: Suma de (Denominación * Cantidad)
-                const totalFisico = inventory?.reduce((sum, item) => {
-                    return sum + (Number(item.denomination) * Number(item.quantity));
-                }, 0) || 0;
-
-                const saldoTeorico = box.current_balance || 0;
-                const diferenciaReal = totalFisico - saldoTeorico;
-
-                // 4. Inyectamos en estado atemporal
                 setCurrentBoxStatus({
-                    theoreticalBalance: saldoTeorico,
-                    physicalBalance: saldoTeorico, // Se pinta en la UI como "SALDO ACTUAL"
-                    difference: diferenciaReal,    // Se pinta en la UI como "DIFER. ACTUAL"
+                    theoreticalBalance: Number(status.theoretical_balance ?? 0),
+                    physicalBalance: Number(status.theoretical_balance ?? 0),
+                    difference: Number(status.difference ?? 0),
                     loading: false
                 });
             } else {
