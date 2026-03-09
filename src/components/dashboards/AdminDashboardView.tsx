@@ -828,20 +828,30 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
             <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} initialTotalSales={liveTickets.total} initialTicketsCount={liveTickets.count} />
             {/* Modal semana: trabajadores + importe + checkbox; clic en nombre abre WorkerWeeklyHistoryModal */}
-            {weekDetailModal && (
+            {weekDetailModal && (() => {
+                const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
+                    const cost = (s.totalCost ?? s.amount ?? 0);
+                    return cost > 0.05 && s.preferStock !== true;
+                });
+                const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
+                const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
+                return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between text-white shrink-0">
-                            <h3 className="text-sm font-black uppercase tracking-wider">
-                                Sem {getISOWeek(new Date(weekDetailModal.week.weekId))} — {format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM', { locale: es })}
-                            </h3>
-                            <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+                        <div className="bg-[#36606F] px-4 py-3 flex flex-col gap-0.5 shrink-0">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-black uppercase tracking-wider text-white">Semana {weekNum}</h3>
+                                <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"><X className="w-5 h-5" /></button>
+                            </div>
+                            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{periodStr}</span>
                         </div>
                         <div className="p-4 overflow-y-auto flex-1 space-y-2">
-                            {(weekDetailModal.week.staff ?? []).filter((s: any) => {
-                                const cost = (s.totalCost ?? s.amount ?? 0);
-                                return cost > 0.05 && s.preferStock !== true;
-                            }).map((s: any) => (
+                            <div className="flex items-center justify-between py-2 px-3 bg-zinc-50 rounded-xl border border-zinc-100 mb-1">
+                                <span className="text-xs font-black text-zinc-700 uppercase tracking-wider">Total</span>
+                                <span className="text-sm font-black text-zinc-900">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
+                            </div>
+                            {weekStaff.map((s: any) => (
                                 <StaffOvertimeRow
                                     key={s.id}
                                     staff={{ ...s, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
@@ -852,13 +862,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     onClick={() => setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId })}
                                 />
                             ))}
-                            {(!weekDetailModal.week.staff || weekDetailModal.week.staff.filter((s: any) => (s.totalCost ?? s.amount ?? 0) > 0.05).length === 0) && (
+                            {weekStaff.length === 0 && (
                                 <p className="text-center text-zinc-400 text-xs font-bold uppercase tracking-widest py-4">Sin importes esta semana</p>
                             )}
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
             <WorkerWeeklyHistoryModal isOpen={!!selectedHistory} onClose={() => setSelectedHistory(null)} workerId={selectedHistory?.workerId || ''} weekStart={selectedHistory?.weekId || ''} />
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
 
