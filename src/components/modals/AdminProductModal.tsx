@@ -281,14 +281,14 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                                                 <span className="font-black text-emerald-600 shrink-0">{inv.total_amount != null ? `${Number(inv.total_amount).toFixed(2)} €` : '—'}</span>
                                             </button>
                                             {isExpanded && (
-                                                <div className="border-t border-zinc-100 p-3 space-y-3 bg-zinc-50/50">
+                                                <div className="border-t border-zinc-100 p-3 bg-zinc-50/50">
                                                     {!inv.supplier_id && (
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 mb-3 py-1.5">
                                                             <label className="text-[10px] font-bold text-zinc-500 uppercase shrink-0">Proveedor:</label>
                                                             <select
                                                                 value={selectedSupplierPerInvoice[inv.id] ?? ''}
                                                                 onChange={(e) => setSelectedSupplierPerInvoice((prev) => ({ ...prev, [inv.id]: e.target.value ? Number(e.target.value) : undefined }))}
-                                                                className="flex-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm bg-white"
+                                                                className="flex-1 min-w-0 rounded-lg border border-zinc-200 px-2 py-1 text-xs bg-white"
                                                             >
                                                                 <option value="">Selecciona proveedor</option>
                                                                 {suppliers.map((s) => (
@@ -297,14 +297,14 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
                                                             </select>
                                                         </div>
                                                     )}
-                                                    <table className="w-full text-left border-collapse">
+                                                    <table className="w-full text-left border-collapse table-fixed">
                                                         <thead>
                                                             <tr className="text-[9px] font-black uppercase text-zinc-500 border-b border-zinc-200">
-                                                                <th className="pb-1.5 pr-2">Artículo (PDF)</th>
-                                                                <th className="pb-1.5 pr-2 w-20 text-right">P. unit.</th>
-                                                                <th className="pb-1.5 pr-2">Ingrediente</th>
-                                                                <th className="pb-1.5 pr-2 w-16">Factor</th>
-                                                                <th className="pb-1.5 w-20"></th>
+                                                                <th className="py-1.5 pr-2 w-[28%] text-left">Artículo (PDF)</th>
+                                                                <th className="py-1.5 pr-2 w-[12%] text-right">P. unit.</th>
+                                                                <th className="py-1.5 pr-2 w-[36%]">Ingrediente</th>
+                                                                <th className="py-1.5 pr-2 w-[10%]">Factor</th>
+                                                                <th className="py-1.5 w-[14%]"></th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -356,34 +356,53 @@ function LineMappingRow({
     const filtered = search.trim() ? ingredients.filter((i) => i.name.toLowerCase().includes(search.toLowerCase())) : ingredients;
 
     return (
-        <tr className="border-b border-zinc-100 last:border-0 align-top">
-            <td className="py-2 pr-2">
-                <span className="text-xs font-medium text-zinc-800 block max-w-[140px] truncate" title={line.original_name}>{line.original_name}</span>
+        <tr className="border-b border-zinc-100 last:border-0 align-middle">
+            <td className="py-1.5 pr-2 align-middle">
+                <span className="text-xs font-medium text-zinc-800 truncate block" title={line.original_name}>{line.original_name}</span>
             </td>
-            <td className="py-2 pr-2 text-right">
+            <td className="py-1.5 pr-2 text-right align-middle whitespace-nowrap">
                 <span className="text-xs font-black text-emerald-600">{line.unit_price != null ? `${Number(line.unit_price).toFixed(2)} €` : '—'}</span>
             </td>
-            <td className="py-2 pr-2">
-                <div className="relative">
-                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400" />
-                    <input type="text" placeholder="Buscar ingrediente..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-7 pr-2 py-1 rounded-lg border border-zinc-200 text-xs bg-white" />
-                    <select value={ingredientId} onChange={(e) => setIngredientId(e.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 px-2 py-1 text-xs bg-white max-h-24">
+            <td className="py-1.5 pr-2 align-middle">
+                <div className="flex items-center gap-1.5 min-h-[32px]">
+                    <div className="relative flex-1 min-w-0 shrink">
+                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full pl-7 pr-1.5 py-1.5 rounded-lg border border-zinc-200 text-xs bg-white min-h-[32px]"
+                        />
+                    </div>
+                    <select
+                        value={ingredientId}
+                        onChange={(e) => setIngredientId(e.target.value)}
+                        className="flex-1 min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs bg-white min-h-[32px] max-w-[140px]"
+                    >
                         <option value="">Seleccionar</option>
-                        {filtered.slice(0, 50).map((ing) => (
+                        {filtered.slice(0, 80).map((ing) => (
                             <option key={ing.id} value={ing.id}>{ing.name}</option>
                         ))}
                     </select>
                 </div>
             </td>
-            <td className="py-2 pr-2">
-                <input type="number" min={0.0001} step={0.01} value={conversionFactor} onChange={(e) => setConversionFactor(Number(e.target.value) || 1)} className="w-full rounded-lg border border-zinc-200 px-2 py-1 text-xs bg-white w-14" />
+            <td className="py-1.5 pr-2 align-middle">
+                <input
+                    type="number"
+                    min={0.0001}
+                    step={0.01}
+                    value={conversionFactor}
+                    onChange={(e) => setConversionFactor(Number(e.target.value) || 1)}
+                    className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-xs bg-white min-h-[32px] max-w-[64px]"
+                />
             </td>
-            <td className="py-2">
+            <td className="py-1.5 align-middle">
                 <button
                     type="button"
                     disabled={!ingredientId || supplierId == null || linking}
                     onClick={() => onEnlazar(line.id, invoiceId, supplierId ?? null, line.original_name, ingredientId, conversionFactor)}
-                    className="rounded-lg bg-[#36606F] text-white text-[10px] font-bold px-2 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#2d4d59] active:scale-95 min-h-[32px]"
+                    className="rounded-lg bg-[#36606F] text-white text-[10px] font-bold px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#2d4d59] active:scale-95 min-h-[32px] w-full"
                 >
                     {linking ? '...' : 'Enlazar'}
                 </button>
