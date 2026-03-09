@@ -537,7 +537,7 @@ export default function StaffDashboard() {
                                 <h3 className="font-bold text-gray-700 flex items-center gap-2 text-xs">
                                     <CalendarDays size={16} className="text-purple-500" /> Horarios
                                 </h3>
-                                <Link href="/staff/schedule" className="text-[10px] font-bold text-purple-500 hover:underline">Ver más</Link>
+                                <Link href="/staff/schedule" className="text-[8px] font-bold text-purple-500 hover:underline">Ver más</Link>
                             </div>
                             <div className="space-y-2 flex-1 overflow-y-auto">
                                 {nextShifts.length === 0 ? (

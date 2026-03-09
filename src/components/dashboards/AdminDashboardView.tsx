@@ -392,7 +392,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         <Link
                             href="/dashboard/history"
-                            className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest"
+                            className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest"
                         >
                             Ver más
                         </Link>
@@ -478,7 +478,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         Movimientos
                                         <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
                                     </button>
-                                    <Link href="/dashboard/movements" className="text-[8px] md:text-[9px] font-black text-[#5B8FB9] bg-zinc-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-0.5 uppercase">
+                                    <Link href="/dashboard/movements" className="text-[7px] md:text-[8px] font-black text-[#5B8FB9] bg-zinc-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-0.5 uppercase">
                                         Ver más <ArrowRight className="w-2.5 h-2.5" />
                                     </Link>
                                 </div>
@@ -516,7 +516,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
                         <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
-                        <Link href="/dashboard/overtime" className="text-[10px] md:text-sm font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                        <Link href="/dashboard/overtime" className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
                     <div className="p-2 md:p-2">
                         <div className="flex items-center justify-center gap-1.5 mb-1">

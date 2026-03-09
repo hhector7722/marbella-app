@@ -644,7 +644,7 @@ export default function StaffDashboardView() {
                                     <CalendarDays size={12} className="text-white/80 shrink-0 md:w-4 md:h-4" fill="currentColor" />
                                     <span>Horarios</span>
                                 </h3>
-                                <div className="bg-white/20 rounded px-1 py-px text-[7px] md:text-[9px] font-black">VER</div>
+                                <div className="bg-white/20 rounded px-1 py-px text-[6px] md:text-[7px] font-black">VER</div>
                             </div>
 
                             <div className="flex-1 flex flex-col justify-between px-2 py-1.5 md:py-3 md:px-3 min-h-0">
