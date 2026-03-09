@@ -10,6 +10,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 interface NominasModalProps {
     isOpen: boolean;
     onClose: () => void;
+    /** ID del perfil cuyas nóminas mostrar. Si no se pasa, usa el usuario logueado (propio perfil). */
+    targetUserId?: string;
 }
 
 interface NominaRow {
@@ -23,7 +25,7 @@ interface NominaRow {
     created_at?: string;
 }
 
-export default function NominasModal({ isOpen, onClose }: NominasModalProps) {
+export default function NominasModal({ isOpen, onClose, targetUserId }: NominasModalProps) {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [nominas, setNominas] = useState<NominaRow[]>([]);
@@ -42,11 +44,13 @@ export default function NominasModal({ isOpen, onClose }: NominasModalProps) {
                     setLoading(false);
                     return;
                 }
+                // Si targetUserId viene (manager viendo ficha empleado), usar ese; si no, el propio usuario
+                const effectiveUserId = targetUserId ?? user.id;
 
                 const { data, error } = await supabase
                     .from('employee_documents')
                     .select('id, user_id, tipo, mes, year, filename, storage_path, created_at')
-                    .eq('user_id', user.id)
+                    .eq('user_id', effectiveUserId)
                     .eq('tipo', 'nomina')
                     .order('created_at', { ascending: false });
 
@@ -69,7 +73,7 @@ export default function NominasModal({ isOpen, onClose }: NominasModalProps) {
         };
 
         fetchNominas();
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, targetUserId]);
 
     const handleDownload = async (row: NominaRow) => {
         if (!row.storage_path) {
@@ -125,7 +129,7 @@ export default function NominasModal({ isOpen, onClose }: NominasModalProps) {
                 {/* Header */}
                 <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/50">
                     <h2 className="text-base font-black text-[#36606F] uppercase tracking-wider">
-                        Mis nóminas
+                        {targetUserId ? 'Nóminas del empleado' : 'Mis nóminas'}
                     </h2>
                     <button
                         type="button"
@@ -149,7 +153,9 @@ export default function NominasModal({ isOpen, onClose }: NominasModalProps) {
                             <div className="bg-zinc-100 p-4 rounded-2xl text-zinc-400 mb-3">
                                 <FileText size={32} strokeWidth={1.5} />
                             </div>
-                            <p className="text-zinc-500 font-medium">No tienes nóminas disponibles</p>
+                            <p className="text-zinc-500 font-medium">
+                                {targetUserId ? 'Este empleado no tiene nóminas disponibles' : 'No tienes nóminas disponibles'}
+                            </p>
                         </div>
                     ) : (
                         <ul className="space-y-2">

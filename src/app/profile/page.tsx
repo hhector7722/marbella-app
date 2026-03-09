@@ -467,6 +467,7 @@ function ProfileContent() {
                     <NominasModal
                         isOpen={isNominasOpen}
                         onClose={() => setIsNominasOpen(false)}
+                        targetUserId={viewingOtherProfile ? profile.id : undefined}
                     />
 
                 </div>
