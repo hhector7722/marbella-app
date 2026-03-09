@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
@@ -22,6 +22,7 @@ import { getISOWeek, format, addDays, startOfWeek, parseISO, startOfMonth, endOf
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
+import { BUSINESS_HOURS } from '@/lib/constants';
 import Image from 'next/image';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
@@ -156,6 +157,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [loading, setLoading] = useState(!initialData);
     const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
     const [liveTickets, setLiveTickets] = useState(initialData?.liveTickets || { total: 0, count: 0 });
+    const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>(initialData?.salesChartData || Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
+    const [isSalesExpanded, setIsSalesExpanded] = useState(false);
+    const [salesTickets, setSalesTickets] = useState<any[]>([]);
+    const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
+    const [ticketLines, setTicketLines] = useState<any[]>([]);
+    const [loadingTicketLines, setLoadingTicketLines] = useState(false);
+    const [loadingSalesTickets, setLoadingSalesTickets] = useState(false);
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
     const [boxes, setBoxes] = useState<any[]>(initialData?.boxes || []);
     const [boxMovements, setBoxMovements] = useState<any[]>(initialData?.boxMovements || []);
@@ -234,6 +242,44 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
+    const fetchHourlySales = async () => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        try {
+            const { data, error } = await supabase.rpc('get_hourly_sales', {
+                p_start_date: todayStr,
+                p_end_date: todayStr
+            });
+            if (!error && data && data.length > 0) {
+                const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+                data.forEach((r: { hora: number; total: number }) => {
+                    const h = Number(r.hora);
+                    if (h >= 0 && h < 24) hourly[h] = { hora: h, total: Number(r.total) || 0 };
+                });
+                setSalesChartData(hourly);
+                return;
+            }
+            const { data: tickets } = await supabase
+                .from('tickets_marbella')
+                .select('hora_cierre, total_documento')
+                .gte('fecha', todayStr)
+                .lte('fecha', todayStr);
+            const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+            (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
+                let hour = 12;
+                const raw = t.hora_cierre;
+                if (raw && typeof raw === 'string') {
+                    const part = raw.includes('T') ? raw.split('T')[1] : raw;
+                    const match = part?.match(/^(\d{1,2})/);
+                    if (match) hour = Math.min(23, Math.max(0, parseInt(match[1], 10)));
+                }
+                hourly[hour].total += Number(t.total_documento) || 0;
+            });
+            setSalesChartData(hourly);
+        } catch {
+            setSalesChartData(Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
+        }
+    };
+
     useEffect(() => {
         if (!initialData) fetchData();
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -250,6 +296,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     total: prev.total + newTotal,
                     count: prev.count + (newTotal > 0 ? 1 : (newTotal < 0 ? -1 : 0))
                 }));
+                fetchHourlySales();
             })
             .subscribe();
         return () => { supabase.removeChannel(channel); };
@@ -320,6 +367,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             if (data) {
                 setDailyStats(data.dailyStats);
                 setLiveTickets(data.liveTickets);
+                setSalesChartData(data.salesChartData || []);
                 setBoxes(data.boxes);
                 setBoxMovements(data.boxMovements);
                 setTheoreticalBalance(data.theoreticalBalance || 0);
@@ -364,6 +412,65 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         } catch (e: any) { toast.error(e.message); } finally { setIsRecalculating(false); }
     }
 
+    useEffect(() => {
+        if (!isSalesExpanded) return;
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        let cancelled = false;
+        setLoadingSalesTickets(true);
+        supabase
+            .from('tickets_marbella')
+            .select('numero_documento, fecha, hora_cierre, total_documento')
+            .gte('fecha', todayStr)
+            .lte('fecha', todayStr)
+            .order('fecha', { ascending: false })
+            .order('hora_cierre', { ascending: false })
+            .limit(20)
+            .then(({ data, error }) => {
+                if (!cancelled) {
+                    if (error) {
+                        console.warn('Error fetching sales tickets:', error);
+                        setSalesTickets([]);
+                    } else {
+                        setSalesTickets(data || []);
+                    }
+                    setLoadingSalesTickets(false);
+                }
+            });
+        return () => { cancelled = true; };
+    }, [isSalesExpanded]);
+
+    const toggleTicket = async (numero_documento: string) => {
+        if (expandedTicket === numero_documento) {
+            setExpandedTicket(null);
+            return;
+        }
+        setExpandedTicket(numero_documento);
+        setLoadingTicketLines(true);
+        setTicketLines([]);
+        try {
+            const { data, error } = await supabase.rpc('get_ticket_lines', { p_numero_documento: numero_documento });
+            if (error) throw error;
+            const groupedLines = (data || []).reduce((acc: any, line: any) => {
+                const key = `${line.articulo_nombre}-${line.precio_unidad}`;
+                const qty = Number(line.cantidad ?? line.unidades ?? 0);
+                const total = Number(line.importe_total ?? 0);
+                if (!acc[key]) {
+                    acc[key] = { ...line, unidades: qty, importe_total: total };
+                } else {
+                    acc[key].unidades += qty;
+                    acc[key].importe_total += total;
+                }
+                return acc;
+            }, {});
+            setTicketLines(Object.values(groupedLines));
+        } catch (err) {
+            console.error('Error fetching ticket lines:', err);
+            toast.error('Error al cargar detalles del ticket');
+        } finally {
+            setLoadingTicketLines(false);
+        }
+    };
+
     const openTreasuryModal = async (box: any, mode: CashModalMode) => {
         setSelectedBox(box);
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
@@ -386,27 +493,33 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center justify-between text-white shrink-0">
-                        <div className="flex items-center justify-center">
+                    <div className="bg-[#36606F] px-4 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
+                        <div className="shrink-0">
                             <LiveClock />
                         </div>
                         <Link
-                            href="/dashboard/history"
-                            className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest"
+                            href="/dashboard/ventas"
+                            className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest shrink-0"
                         >
                             Ver más
                         </Link>
                     </div>
-                    <div className="p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 flex-1 items-center">
-                        <div className="flex flex-col items-center justify-center text-center">
+                    <div className={cn("p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 items-center shrink-0 transition-all duration-300", isSalesExpanded ? "pb-1" : "pb-0")}>
+                        <button
+                            onClick={() => setIsSalesExpanded(!isSalesExpanded)}
+                            className="flex flex-col items-center justify-center text-center min-h-[48px] w-full rounded-xl hover:bg-zinc-50/50 active:scale-[0.98] transition-all cursor-pointer group"
+                        >
                             <PremiumCountUp
                                 value={liveTickets.total}
                                 suffix="€"
                                 decimals={2}
                                 className="text-lg md:text-3xl font-black text-black leading-none"
                             />
-                            <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ventas</span>
-                        </div>
+                            <span className="flex items-center justify-center gap-1 mt-1">
+                                <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Ventas</span>
+                                <ChevronDown className={cn("w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600 transition-transform duration-200 shrink-0", isSalesExpanded && "rotate-180")} />
+                            </span>
+                        </button>
                         <div className="flex flex-col items-center justify-center text-center">
                             <PremiumCountUp
                                 value={liveTickets.total > 0 ? liveTickets.total / 1.10 : 0}
@@ -424,6 +537,127 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 className="text-lg md:text-3xl font-black text-blue-600 leading-none"
                             />
                             <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span>
+                        </div>
+                    </div>
+                    {/* Gráfica en parte inferior, por encima del contenido desplegable */}
+                    {(() => {
+                        const { start: hStart, end: hEnd } = BUSINESS_HOURS;
+                        const chartData = salesChartData.filter(d => d.hora >= hStart && d.hora <= hEnd);
+                        const max = Math.max(...chartData.map(d => d.total), 0);
+                        const min = Math.min(...chartData.map(d => d.total), 0);
+                        const hasCurve = max > 0 && max !== min;
+                        if (!hasCurve) return null;
+                        const numPoints = hEnd - hStart + 1;
+                        return (
+                            <div className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2">
+                                <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 text-[#36606F] block" preserveAspectRatio="none">
+                                    <path
+                                        d={(() => {
+                                            const pts = chartData.map((d, i) => {
+                                                const x = (i / (numPoints - 1 || 1)) * 120;
+                                                const y = 22 - (d.total / max) * 18;
+                                                return `${x},${y}`;
+                                            });
+                                            return `M ${pts.join(' L ')}`;
+                                        })()}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </div>
+                        );
+                    })()}
+                    <div className={cn("overflow-hidden transition-all duration-300 shrink-0", isSalesExpanded ? "opacity-100" : "h-0 opacity-0")}>
+                        <div className="pt-1 pb-1 px-1 space-y-1 max-h-[200px] md:max-h-[280px] overflow-y-auto no-scrollbar">
+                            {loadingSalesTickets ? (
+                                <div className="flex justify-center py-8">
+                                    <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                </div>
+                            ) : salesTickets.length === 0 ? (
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 italic px-2 py-6 text-center">Sin tickets hoy</p>
+                            ) : (
+                                <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-[#36606F] text-white text-[8px] md:text-[9px] font-black uppercase tracking-wider">
+                                            <tr>
+                                                <th className="py-2 px-2 md:px-3">Hora</th>
+                                                <th className="py-2 px-2 md:px-3">Doc</th>
+                                                <th className="py-2 px-2 md:px-3 text-right">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-[10px] md:text-xs font-bold text-zinc-600">
+                                            {salesTickets.map((ticket, idx) => {
+                                                const cleanDoc = ticket.numero_documento?.replace(/0+/, '') || '';
+                                                const rawTime = ticket.hora_cierre;
+                                                let hora = '---';
+                                                if (rawTime && typeof rawTime === 'string') {
+                                                    const t = rawTime.includes('T') ? rawTime.split('T')[1] : rawTime;
+                                                    if (t && t !== '00:00:00' && t.length >= 5) hora = t.substring(0, 5);
+                                                } else if (ticket.fecha?.includes?.('T')) {
+                                                    const f = ticket.fecha.split('T')[1];
+                                                    if (f && f !== '00:00:00') hora = f.substring(0, 5);
+                                                }
+                                                return (
+                                                    <React.Fragment key={ticket.numero_documento || idx}>
+                                                        <tr
+                                                            onClick={() => toggleTicket(ticket.numero_documento)}
+                                                            className={cn(
+                                                                "cursor-pointer hover:bg-zinc-50 transition-colors active:bg-zinc-100",
+                                                                expandedTicket === ticket.numero_documento && "bg-zinc-50"
+                                                            )}
+                                                        >
+                                                            <td className="py-2 px-2 md:px-3 font-mono text-zinc-500">{hora}</td>
+                                                            <td className="py-2 px-2 md:px-3 font-mono text-zinc-700">{cleanDoc}</td>
+                                                            <td className={cn("py-2 px-2 md:px-3 text-right font-black tabular-nums", (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600")}>
+                                                                {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
+                                                            </td>
+                                                        </tr>
+                                                        {expandedTicket === ticket.numero_documento && (
+                                                            <tr className="bg-zinc-50/50">
+                                                                <td colSpan={3} className="px-2 py-2 md:px-3 md:py-3">
+                                                                    <div className="bg-[#fcfcfc] rounded-xl p-2 md:p-3 animate-in slide-in-from-top-2 duration-200">
+                                                                        {loadingTicketLines ? (
+                                                                            <div className="flex justify-center py-4">
+                                                                                <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                                                            </div>
+                                                                        ) : ticketLines.length === 0 ? (
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 text-center py-2">Sin detalles</p>
+                                                                        ) : (
+                                                                            <table className="w-full text-left border-collapse">
+                                                                                <thead>
+                                                                                    <tr className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-200">
+                                                                                        <th className="py-1.5 px-1 text-center w-8">Cant</th>
+                                                                                        <th className="py-1.5 px-1 md:px-2">Producto</th>
+                                                                                        <th className="py-1.5 px-1 text-right">Precio</th>
+                                                                                        <th className="py-1.5 px-1 text-right">Total</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="text-[9px] md:text-[10px] font-bold text-zinc-500">
+                                                                                    {ticketLines.map((line, lIdx) => (
+                                                                                        <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
+                                                                                            <td className="py-1.5 px-1 text-center tabular-nums text-zinc-400">{line.unidades !== 0 ? line.unidades : ' '}</td>
+                                                                                            <td className="py-1.5 px-1 md:px-2 text-zinc-700 line-clamp-1 max-w-[100px] md:max-w-none">{line.articulo_nombre}</td>
+                                                                                            <td className="py-1.5 px-1 text-right tabular-nums">{line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}</td>
+                                                                                            <td className="py-1.5 px-1 text-right font-black tabular-nums text-emerald-600/70">{line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}</td>
+                                                                                        </tr>
+                                                                                    ))}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -514,22 +748,26 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 3. HORAS EXTRAS — Vista mensual: calendario + semanas (1 fila derecha = 1 fila calendario) */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
-                        <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">Horas Extras</h2>
-                        <Link href="/dashboard/overtime" className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
-                    </div>
-                    <div className="p-2 md:p-2">
-                        <div className="flex items-center justify-center gap-1.5 mb-1">
-                            <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes anterior">
+                    <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0 relative">
+                        <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">
+                            <span className="md:hidden">H. EXTRAS</span>
+                            <span className="hidden md:inline">Horas Extras</span>
+                        </h2>
+                        {/* Mes + flechas en cabecera, centrados (móvil y escritorio) */}
+                        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+                            <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-500 text-white/90 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center" aria-label="Mes anterior">
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-zinc-800 min-w-[80px] text-center">
+                            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white min-w-[70px] md:min-w-[80px] text-center">
                                 {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
                             </span>
-                            <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0" aria-label="Mes siguiente">
+                            <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-500 text-white/90 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center" aria-label="Mes siguiente">
                                 <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
+                        <Link href="/dashboard/overtime" className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                    </div>
+                    <div className="p-2 md:p-2">
                         <div className="flex gap-2">
                             {(() => {
                                 const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
@@ -625,7 +863,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 4. CAJAS CAMBIO (dos contenedores) + ICONOS — misma altura que iconos, contenido centrado */}
                 <div className="grid grid-cols-2 gap-4 items-stretch">
-                    <div className="flex flex-col gap-4 min-h-0">
+                    <div className="flex flex-col gap-3 md:gap-4 min-h-0 aspect-square md:aspect-auto md:min-h-0">
+                        <div className="flex flex-col gap-3 md:gap-4 flex-1 min-h-0 max-w-[85%] md:max-w-none w-full h-full self-center md:self-stretch">
                         {(() => {
                             const changeBoxes = boxes.filter(b => b.type === 'change').slice(0, 2);
                             const formatEur = (v: number) => (v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ");
@@ -638,39 +877,39 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         const isOk = Math.abs(diff) < 0.01;
                                         return (
                                             <div key={box.id} className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden flex-1 min-h-0">
-                                                <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex items-center text-white shrink-0">
-                                                    <h3 className="text-[10px] md:text-sm font-black uppercase tracking-wider">{title}</h3>
+                                                <div className="bg-[#36606F] px-2 md:px-4 py-1 md:py-1.5 flex items-center justify-start text-white shrink-0">
+                                                    <h3 className="text-[9px] md:text-sm font-black uppercase tracking-wider truncate">{title}</h3>
                                                 </div>
-                                                <div className="flex-1 flex items-center justify-center min-h-0 p-2">
-                                                    <div className="flex flex-row gap-2 items-center justify-center md:px-4 w-full">
-                                                        <div className="px-1 flex flex-col items-start md:items-center min-w-0">
+                                                <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-2">
+                                                    <div className="flex flex-row gap-2 md:gap-2 items-center justify-between md:justify-center md:px-4 w-full">
+                                                        <div className="px-0.5 md:px-1 flex flex-col items-start min-w-0 mr-4 md:mr-0">
                                                             <span className="text-sm md:text-lg font-black text-zinc-800">
                                                                 {formatEur(box.current_balance)}
                                                             </span>
                                                             {!isOk && Math.abs(diff) > 0.005 && (
-                                                                <span className={cn("text-[8px] md:text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
+                                                                <span className={cn("text-[7px] md:text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
                                                                     {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="flex gap-1 md:gap-1.5 shrink-0 ml-4 md:ml-5">
+                                                        <div className="flex gap-1 md:gap-1 shrink-0 -translate-x-2 md:translate-x-0 md:ml-5">
                                                             <button
                                                                 onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                                className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group"
+                                                                className="bg-zinc-50/50 p-1.5 md:p-1.5 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-2 transition-all active:scale-95 group translate-x-1 md:translate-x-0"
                                                             >
-                                                                <div className="w-6 h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                                    <ArrowRightLeft size={12} strokeWidth={2.5} />
+                                                                <div className="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                                    <ArrowRightLeft size={10} strokeWidth={2.5} />
                                                                 </div>
-                                                                <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
+                                                                <span className="text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
                                                             </button>
                                                             <button
                                                                 onClick={() => openTreasuryModal(box, 'audit')}
-                                                                className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group"
+                                                                className="bg-zinc-50/50 p-1.5 md:p-1.5 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-2 transition-all active:scale-95 group"
                                                             >
-                                                                <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                                    <RefreshCw size={12} strokeWidth={2.5} />
+                                                                <div className="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                                    <RefreshCw size={10} strokeWidth={2.5} />
                                                                 </div>
-                                                                <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
+                                                                <span className="text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
                                                             </button>
                                                         </div>
                                                     </div>
@@ -681,9 +920,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 </>
                             );
                         })()}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 md:gap-4 min-h-0">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 min-h-0 self-start md:self-stretch">
                         {[
                             { title: 'Asistencia', img: '/icons/calendar.png', link: '/registros' },
                             { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
@@ -699,7 +939,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 }}
                                 className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full min-h-0"
                             >
-                                <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
+                                <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-none">
                                     <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
                                 </div>
                                 <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">

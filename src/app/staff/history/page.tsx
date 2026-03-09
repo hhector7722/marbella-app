@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+/* eslint-disable @next/next/no-img-element */
+
+import React, { useCallback, useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, Check, Plus, Trash2, Save, Users, ChevronDown
+    Calendar, X, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
@@ -45,16 +46,6 @@ interface WeekData {
     summary: WeekSummary;
 }
 
-interface TimeLogEntry {
-    id?: string;
-    date: string;
-    clock_in: string;
-    clock_out: string;
-    event_type: string;
-    isNew?: boolean;
-    toDelete?: boolean;
-}
-
 // --- CONSTANTES ---
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
@@ -81,25 +72,17 @@ const fmtMoney = (val: number): string => {
     return val < 0 ? `-${str}€` : `${str}€`;
 };
 
-const fmtBalance = (val: number): string => {
-    if (!val || Math.abs(val) < 0.05) return '';
-    const rounded = Math.round(val * 2) / 2;
-    const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
-    return val > 0 ? `+${str}` : str;
-};
-
 const getMonthLabel = (year: number, month: number) =>
     new Date(year, month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
-// --- LÓGICA ROUNDING (solo usada en saveEdits del modal de edición) ---
-const applyRoundingRule = (totalMinutes: number): number => {
-    if (totalMinutes <= 0) return 0;
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    if (m <= 20) return h;
-    if (m <= 50) return h + 0.5;
-    return h + 1;
+type Employee = { id: string; first_name: string; last_name: string };
+
+type MonthlyTimesheetRpcDay = Omit<DayData, 'eventType' | 'clock_out_show_no_registrada'> & {
+    eventType?: string;
+    event_type?: string;
+    clock_out_show_no_registrada?: boolean;
 };
+type MonthlyTimesheetRpcWeek = Omit<WeekData, 'days'> & { days: MonthlyTimesheetRpcDay[] };
 
 export default function HistoryPage() {
     const supabase = createClient();
@@ -109,53 +92,47 @@ export default function HistoryPage() {
     // Auth & Rol
     const [userRole, setUserRole] = useState<string>('staff');
     const [currentUserId, setCurrentUserId] = useState<string>('');
-    const [employees, setEmployees] = useState<{ id: string; first_name: string; last_name: string }[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
 
-    // Filtros de mes
-    const [showFilter, setShowFilter] = useState(false);
-    const [isFilterActive, setIsFilterActive] = useState(false);
     const [filterYear, setFilterYear] = useState(new Date().getFullYear());
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); // 0-indexed
 
-    // Edición (Manager)
-    const [editingWeek, setEditingWeek] = useState<WeekData | null>(null);
     const [editingDate, setEditingDate] = useState<string | null>(null);
-    const [editEntries, setEditEntries] = useState<TimeLogEntry[]>([]);
-    const [savingEdit, setSavingEdit] = useState(false);
 
-    useEffect(() => { initUser(); }, []);
-    useEffect(() => {
-        if (currentUserId) fetchCalendar();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth]);
-
-    async function initUser() {
+    const initUser = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         setCurrentUserId(user.id);
         setSelectedEmployeeId(user.id);
 
-        const { data: profile } = await supabase.from('profiles')
+        const { data: profile } = await supabase
+            .from('profiles')
             .select('role')
-            .eq('id', user.id).single();
+            .eq('id', user.id)
+            .single();
 
-        if (profile) {
-            setUserRole(profile.role);
-        }
+        if (profile) setUserRole(profile.role);
 
         if (profile?.role === 'manager') {
-            const { data: emps } = await supabase.from('profiles')
+            const { data: emps } = await supabase
+                .from('profiles')
                 .select('id, first_name, last_name')
                 .order('first_name');
-            setEmployees((emps || []).filter((e: any) => {
+
+            setEmployees((emps || []).filter((e: Employee) => {
                 const name = (e.first_name || '').trim().toLowerCase();
                 return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
             }));
         }
+    }, [supabase]);
 
-    }
+    useEffect(() => { void initUser(); }, [initUser]);
+    useEffect(() => {
+        if (currentUserId) fetchCalendar();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth]);
 
     // Modal Success Handler
     const handleModalSuccess = () => {
@@ -206,13 +183,13 @@ export default function HistoryPage() {
                 if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
             });
 
-            const formattedWeeks = ((data as any[]) || []).map((week: any) => ({
+            const formattedWeeks: WeekData[] = (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => ({
                 ...week,
-                days: week.days.map((day: any) => ({
+                days: week.days.map((day) => ({
                     ...day,
-                    eventType: day.eventType || day.event_type || 'regular',
-                    clock_out_show_no_registrada: noRegistradaByDate[day.date] === true
-                }))
+                    eventType: day.eventType ?? day.event_type ?? 'regular',
+                    clock_out_show_no_registrada: noRegistradaByDate[day.date] === true,
+                })),
             }));
 
             setWeeksData(formattedWeeks);
@@ -222,19 +199,6 @@ export default function HistoryPage() {
             setLoading(false);
         }
     }
-
-    const applyFilter = () => {
-        setIsFilterActive(true);
-        setShowFilter(false);
-        // El useEffect ya disparará fetchCalendar con los nuevos valores
-    };
-
-    const clearFilter = () => {
-        const now = new Date();
-        setFilterYear(now.getFullYear());
-        setFilterMonth(now.getMonth());
-        setIsFilterActive(false);
-    };
 
     const nextMonth = () => {
         if (filterMonth === 11) {
@@ -254,12 +218,6 @@ export default function HistoryPage() {
         }
     };
 
-    // --- EDICIÓN: Manager ---
-    const openEdit = (week: WeekData, specificDate?: string) => {
-        setEditingDate(specificDate || null);
-    };
-
-
     const isManager = userRole === 'manager';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
     const selectedEmployeeName = viewingOther
@@ -273,7 +231,7 @@ export default function HistoryPage() {
 
 
                 {/* ── CONTENIDO PRINCIPAL DEL CALENDARIO UNIFICADO ── */}
-                <div className="bg-white rounded-[20px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+                <div className="bg-white rounded-[20px] shadow-xl overflow-visible animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
                     <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between min-h-[52px]">
@@ -329,164 +287,186 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-12 p-4 bg-zinc-50/50">
-                            {weeksData.map((week, idx) => (
-                                <div key={week.weekNumber} className="relative bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] flex flex-col">
-
-                                    {/* FILA 1: Cabecera de Días (Roja) */}
-                                    <div className="grid grid-cols-7 border-b border-gray-100 relative z-10 rounded-t-2xl overflow-hidden">
-                                        {DAY_HEADERS.map(d => (
-                                            <div key={d} className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md border-r border-white/30 last:border-r-0">
-                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{d}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* FILA 2: Días */}
-                                    <div className="grid grid-cols-7 border-b border-gray-100">
-                                        {week.days.map((day, di) => {
-                                            const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
-                                            const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
-
-                                            // Lógica Zero-Display
-                                            const hFormatted = fmtHours(day.totalHours);
-                                            const exFormatted = fmtHours(day.extraHours);
-
-                                            return (
-                                                <div
-                                                    key={di}
-                                                    onClick={() => openEdit(week, day.date)}
-                                                    className={cn(
-                                                        "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1 cursor-pointer hover:bg-zinc-50 transition-colors",
-                                                        day.isToday && "bg-blue-50/10"
-                                                    )}
-                                                >
-                                                    {/* Número de día superior derecha */}
-                                                    <span className={cn(
-                                                        "absolute top-1 right-1 text-[9px] font-bold",
-                                                        day.isToday ? "text-blue-600" : "text-gray-400"
-                                                    )}>
-                                                        {day.dayNumber}
-                                                    </span>
-
-                                                    {/* Centro: evento especial o fichajes */}
-                                                    <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
-                                                        {isSpecial ? (
-                                                            <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
-                                                                {eventConfig.showCross ? <X size={14} strokeWidth={2.5} className="text-white" /> : <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>}
-                                                            </div>
-                                                        ) : day.hasLog ? (
-                                                            <div className="flex flex-col items-center gap-0.5 w-full">
-                                                                {/* Entrada */}
-                                                                <div className="h-3 flex items-center justify-center gap-1">
-                                                                    <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
-                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                </div>
-                                                                {/* Salida: si "no registrada" → solo cruz roja centrada; si no → punto + hora */}
-                                                                <div className="h-3 flex items-center justify-center w-full">
-                                                                    {day.clockOut ? (
-                                                                        day.clock_out_show_no_registrada ? (
-                                                                            <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
-                                                                                <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
-                                                                            </span>
-                                                                        ) : (
-                                                                            <>
-                                                                                <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                            </>
-                                                                        )
-                                                                    ) : day.isToday ? (
-                                                                        <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
-                                                                    ) : null}
-                                                                </div>
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
-
-                                                    {/* Pie: H y Ex en miniatura, Zero-Display */}
-                                                    {!isSpecial && (
-                                                        <div className="w-full space-y-0 mt-0.5 min-h-[20px]">
-                                                            {day.hasLog && hFormatted ? (
-                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                    <span className="ml-0.5">H</span>
-                                                                    <span className="font-bold text-gray-800 pr-1">{hFormatted}</span>
-                                                                </div>
-                                                            ) : <div className="h-3" />}
-                                                            {exFormatted ? (
-                                                                <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                    <span className="ml-0.5">Ex</span>
-                                                                    <span className="font-bold text-gray-800 pr-1">{exFormatted}</span>
-                                                                </div>
-                                                            ) : <div className="h-3" />}
+                        <div className="p-4 bg-zinc-50/50">
+                            {/* Calendario mensual continuo (semanas pegadas) */}
+                            <div className="bg-white rounded-2xl overflow-visible border border-zinc-100 shadow-[0_6px_20px_rgba(0,0,0,0.18)]">
+                                {weeksData.map((week, idx) => (
+                                    <div
+                                        key={week.weekNumber}
+                                        className={cn(
+                                            "relative overflow-visible",
+                                            idx !== 0 && "border-t-2 border-zinc-200"
+                                        )}
+                                    >
+                                        {/* Cabecera de días (roja) SOLO una vez, al inicio del mes */}
+                                        {idx === 0 && (
+                                            <div className="rounded-t-2xl overflow-hidden">
+                                                <div className="grid grid-cols-7 border-b border-gray-100">
+                                                    {DAY_HEADERS.map((d) => (
+                                                        <div
+                                                            key={d}
+                                                            className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
+                                                        >
+                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">
+                                                                {d}
+                                                            </span>
                                                         </div>
-                                                    )}
+                                                    ))}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                            </div>
+                                        )}
 
-                                    {/* FILA 3: Resumen Semanal */}
-                                    <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10 rounded-b-2xl overflow-hidden">
-                                        {/* ZONA IZQUIERDA (Fija) */}
-                                        <div className="w-16 pl-3 shrink-0 flex items-center h-full">
-                                            <span className="font-black text-[7px] uppercase leading-none text-zinc-600">
-                                                SEMANA {week.weekNumber}
-                                            </span>
+                                        {/* FILA: Días (sin cabecera de LUN-DOM) */}
+                                        <div className="grid grid-cols-7 border-b border-gray-100">
+                                            {week.days.map((day, di) => {
+                                                const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
+                                                const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
+
+                                                // Lógica Zero-Display
+                                                const hFormatted = fmtHours(day.totalHours);
+                                                const exFormatted = fmtHours(day.extraHours);
+
+                                                return (
+                                                    <div
+                                                        key={di}
+                                                        onClick={() => setEditingDate(day.date)}
+                                                        className={cn(
+                                                            "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1 cursor-pointer hover:bg-zinc-50 transition-colors",
+                                                            day.isToday && "bg-blue-50/10"
+                                                        )}
+                                                    >
+                                                        {/* Número de día superior derecha */}
+                                                        <span
+                                                            className={cn(
+                                                                "absolute top-1 right-1 text-[9px] font-bold",
+                                                                day.isToday ? "text-blue-600" : "text-gray-400"
+                                                            )}
+                                                        >
+                                                            {day.dayNumber}
+                                                        </span>
+
+                                                        {/* Centro: evento especial o fichajes */}
+                                                        <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
+                                                            {isSpecial ? (
+                                                                <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
+                                                                    {eventConfig.showCross ? (
+                                                                        <X size={14} strokeWidth={2.5} className="text-white" />
+                                                                    ) : (
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>
+                                                                    )}
+                                                                </div>
+                                                            ) : day.hasLog ? (
+                                                                <div className="flex flex-col items-center gap-0.5 w-full">
+                                                                    {/* Entrada */}
+                                                                    <div className="h-3 flex items-center justify-center gap-1">
+                                                                        <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
+                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                    </div>
+                                                                    {/* Salida: si "no registrada" → solo cruz roja centrada; si no → punto + hora */}
+                                                                    <div className="h-3 flex items-center justify-center w-full">
+                                                                        {day.clockOut ? (
+                                                                            day.clock_out_show_no_registrada ? (
+                                                                                <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
+                                                                                    <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
+                                                                                </span>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                                </>
+                                                                            )
+                                                                        ) : day.isToday ? (
+                                                                            <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
+                                                                        ) : null}
+                                                                    </div>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+
+                                                        {/* Pie: H y Ex en miniatura, Zero-Display */}
+                                                        {!isSpecial && (
+                                                            <div className="w-full space-y-0 mt-0.5 min-h-[20px]">
+                                                                {day.hasLog && hFormatted ? (
+                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                        <span className="ml-0.5">H</span>
+                                                                        <span className="font-bold text-gray-800 pr-1">{hFormatted}</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="h-3" />
+                                                                )}
+                                                                {exFormatted ? (
+                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                                        <span className="ml-0.5">Ex</span>
+                                                                        <span className="font-bold text-gray-800 pr-1">{exFormatted}</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="h-3" />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
 
-                                        {/* ZONA DERECHA (Grid de valores desplazado a la izquierda para el sello) */}
-                                        <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
-                                            {/* COL 1: HORAS */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-black block">
-                                                    {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
+                                        {/* FILA: Resumen Semanal (integrada) */}
+                                        <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
+                                            {/* ZONA IZQUIERDA (Fija) */}
+                                            <div className="w-16 pl-3 shrink-0 flex items-center h-full">
+                                                <span className="font-black text-[7px] uppercase leading-none text-zinc-600">
+                                                    SEMANA {week.weekNumber}
                                                 </span>
-                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
                                             </div>
 
-                                            {/* COL 2: PENDIENTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span
-                                                    className="text-[9px] font-black leading-none text-red-600 block"
-                                                >
-                                                    {Math.abs(week.summary.startBalance ?? 0) > 0.05
-                                                        ? `${Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '')}`
-                                                        : " "}
-                                                </span>
-                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
-                                            </div>
+                                            {/* ZONA DERECHA (Grid de valores desplazado a la izquierda para el sello) */}
+                                            <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
+                                                {/* COL 1: HORAS */}
+                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                                    <span className="text-[9px] font-black leading-none text-black block">
+                                                        {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
+                                                    </span>
+                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
+                                                </div>
 
-                                            {/* COL 3: EXTRAS */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-black block">
-                                                    {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
-                                                </span>
-                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
-                                            </div>
+                                                {/* COL 2: PENDIENTE */}
+                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                                    <span className="text-[9px] font-black leading-none text-red-600 block">
+                                                        {Math.abs(week.summary.startBalance ?? 0) > 0.05
+                                                            ? `${Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '')}`
+                                                            : " "}
+                                                    </span>
+                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                                                </div>
 
-                                            {/* COL 4: IMPORTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span
-                                                    className="text-[9px] font-black leading-none text-emerald-600 block"
-                                                >
-                                                    {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
-                                                </span>
-                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                                                {/* COL 3: EXTRAS */}
+                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                                    <span className="text-[9px] font-black leading-none text-black block">
+                                                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
+                                                    </span>
+                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
+                                                </div>
+
+                                                {/* COL 4: IMPORTE */}
+                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                                    <span className="text-[9px] font-black leading-none text-emerald-600 block">
+                                                        {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
+                                                    </span>
+                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Sello PAGADO dinámico anclado al contenedor semanal */}
-                                    {week.summary.isPaid && (
-                                        <img
-                                            src="/sello/pagado.png"
-                                            alt="PAGADO"
-                                            className="absolute bottom-0 right-0 w-[72px] h-auto rotate-[0deg] z-30 pointer-events-none drop-shadow-xl -mt-1 md:w-20"
-                                            style={{ transform: 'translate(10%, 15%) rotate(-15deg)' }}
-                                        />
-                                    )}
-                                </div>
-                            ))}
+                                        {/* Sello PAGADO dinámico anclado a la semana */}
+                                        {week.summary.isPaid && (
+                                            <img
+                                                src="/sello/pagado.png"
+                                                alt="PAGADO"
+                                                className="absolute -bottom-2 -right-2 w-[64px] h-auto z-30 pointer-events-none drop-shadow-xl md:w-[72px]"
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -496,7 +476,7 @@ export default function HistoryPage() {
                     onClose={() => setEditingDate(null)}
                     date={editingDate ? new Date(editingDate + 'T12:00:00') : null}
                     userId={selectedEmployeeId || currentUserId}
-                    userRole={userRole as any}
+                    userRole={userRole}
                     onSuccess={handleModalSuccess}
                 />
 

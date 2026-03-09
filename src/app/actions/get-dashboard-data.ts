@@ -8,18 +8,57 @@ export async function getDashboardData() {
     const supabase = await createClient();
     const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-    // 1. Parallel Fetching of Core Data
+    // 1. Parallel Fetching of Core Data (ventas por hora del día actual)
+    const chartPromise = (async () => {
+        try {
+            const { data, error } = await supabase.rpc('get_hourly_sales', {
+                p_start_date: todayStr,
+                p_end_date: todayStr
+            });
+            if (!error && data && data.length > 0) {
+                const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+                data.forEach((r: { hora: number; total: number }) => {
+                    const h = Number(r.hora);
+                    if (h >= 0 && h < 24) hourly[h] = { hora: h, total: Number(r.total) || 0 };
+                });
+                return hourly;
+            }
+            // Fallback: fetch tickets directly and aggregate by hour
+            const { data: tickets } = await supabase
+                .from('tickets_marbella')
+                .select('hora_cierre, total_documento')
+                .gte('fecha', todayStr)
+                .lte('fecha', todayStr);
+            const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+            (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
+                let hour = 12;
+                const raw = t.hora_cierre;
+                if (raw && typeof raw === 'string') {
+                    const part = raw.includes('T') ? raw.split('T')[1] : raw;
+                    const match = part?.match(/^(\d{1,2})/);
+                    if (match) hour = Math.min(23, Math.max(0, parseInt(match[1], 10)));
+                }
+                hourly[hour].total += Number(t.total_documento) || 0;
+            });
+            return hourly;
+        } catch {
+            return Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+        }
+    })();
     const [
         { data: salesStats },
+        salesChartDataRaw,
         { data: lastClose },
         { data: allBoxes },
         { data: allProfiles }
     ] = await Promise.all([
         supabase.rpc('get_daily_sales_stats', { target_date: todayStr }),
+        chartPromise,
         supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single(),
         supabase.from('cash_boxes').select('*').order('name'),
         supabase.from('profiles').select('*')
     ]);
+    const salesChartData = Array.isArray(salesChartDataRaw) ? salesChartDataRaw : Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
 
 
     // --- PROCESS LABOR COST (Daily Stats) ---
@@ -119,6 +158,10 @@ export async function getDashboardData() {
     return {
         dailyStats,
         liveTickets: { total: salesStats?.total_ventas || 0, count: salesStats?.recuento_tickets || 0 },
+        salesChartData: salesChartData.map((r: { hora: number; total: number }) => ({
+            hora: Number(r.hora),
+            total: Number(r.total) || 0
+        })),
         boxes,
         boxMovements,
         theoreticalBalance,

@@ -203,9 +203,9 @@ export default function MovementsPage() {
                 endISO = e.toISOString();
             }
 
-            // Estadísticas para el resumen del periodo seleccionado
+            // Estadísticas para el resumen del periodo (p_box_id null = todas las cajas)
             const { data: summaryData, error: summaryError } = await supabase.rpc('get_treasury_period_summary', {
-                p_box_id: boxData.id,
+                p_box_id: boxData?.id ?? null,
                 p_start_date: startISO,
                 p_end_date: endISO
             });
@@ -214,9 +214,11 @@ export default function MovementsPage() {
                 console.error("Error en el RPC de resumen:", summaryError);
             }
 
+            // RPC devuelve TABLE → array de filas; tomar primera fila
+            const row = Array.isArray(summaryData) ? summaryData[0] : summaryData;
             setPeriodSummary({
-                income: summaryData?.income || 0,
-                expense: summaryData?.expense || 0,
+                income: Number(row?.income ?? 0),
+                expense: Number(row?.expense ?? 0),
             });
 
             // Obtener la primera página
@@ -231,16 +233,18 @@ export default function MovementsPage() {
             const from = pageIndex * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
 
-            const { data: pageMoves, error: fetchError } = await supabase
+            // [FIX] Sin filtro box_id: mostrar TODOS los movimientos (operacional, cambio, históricos sin caja)
+            const q = supabase
                 .from('v_treasury_movements_balance')
                 .select('*')
-                .or(`box_id.eq.${boxData?.id || 0},box_id.is.null`)
                 .gte('created_at', startISO)
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .order('created_at', { ascending: false })
                 .range(from, to);
+
+            const { data: pageMoves, error: fetchError } = await q;
 
             if (fetchError) {
                 console.error("Error crítico cargando movimientos:", fetchError);

@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-09 (Lista Plantilla tipo Perfil)
+**Última actualización:** 2026-03-09 (Alineación Supabase + Propagación)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -8,6 +8,10 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 ---
 
 ## ✅ COMPLETADO
+- [x] **Alineación Supabase y Propagación de Snapshots**: Sincronización total entre código local y base de datos remota.
+  - `fix_snapshots_propagation.sql` actualizado para coincidir con Supabase: soporte `prefer_stock_hours_override`, arrastre de crédito según prefer_stock de la **semana anterior**, sincronización `profiles.hours_balance` con lógica "no acumula + positivo = 0".
+  - `rpc_recalculate_all_balances` refactorizado para delegar en `fn_recalc_and_propagate_snapshots` (Single Source of Truth). Migración `20260318_rpc_recalculate_delegate_fn_recalc.sql` aplicada.
+  - `get_worker_weekly_log_grid` y `get_weekly_worker_stats` verificados: coinciden con remoto. Constraint `time_logs_event_type_check` incluye `no_registered`.
 - [x] **Refinamiento Vista Profile por Rol**: Diferenciación de aspecto y contenido de `/profile` según quién visualiza.
   - **Staff**: Vista "Mi cuenta" con cabecera compacta, sin botón Editar ni Facturas; DocumentManager en solo lectura; sección Configuración de Cuenta (contraseña, cerrar sesión).
   - **Manager (propio perfil)**: Mismo layout con botón Editar, Facturas (si user maestro) y DocumentManager con subir/borrar.
@@ -225,7 +229,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
 - [x] **Refinamiento Historial Staff (Eventos Especiales)**: Ocultación de horas por defecto para eventos no regulares (Baja, Festivo, Enfermedad, Personal), mostrando únicamente el texto identificativo centrado y con el color correspondiente para un diseño más limpio ("Zero-Display").
 - [x] **Creación Simplificada de Ingredientes**: Modificación en `/ingredients` y `CreateIngredientModal` para que solo el nombre sea el campo estrictamente requerido. Resolviendo el fallo bloqueante `NaN` al mandar un precio vacío.
 - [x] 🔄 **Navegación Rápida en Ingredientes**: Incorporadas flechas de navegación laterales flotantes en el modal de edición (`/ingredients`), permitiendo cambiar de producto sin cerrar la vista modal.
-- [x] 📅 **Rediseño Calendario Mensual Unificado (/staff/history)**: Refactorización radical con arquitectura "Frontend Tonto". Eliminada toda lógica de negocio del cliente (redondeo, bucles while, snapshots, `WeeklyCard`, paginación). El frontend ahora consume exclusivamente la RPC `get_monthly_timesheet(p_user_id, p_year, p_month)`. Nueva UI: calendario grid mensual (grid-cols-7) con header rojo LUN-DOM, celdas de día con puntos verde/rojo de fichaje y métricas H/Ex, y banda de resumen semanal `bg-[#36606F]` con 4 KPIs.
+- [x] 📅 **Rediseño Calendario Mensual Unificado (/staff/history)**: Refactorización radical con arquitectura "Frontend Tonto". Eliminada toda lógica de negocio del cliente (redondeo, bucles while, snapshots, `WeeklyCard`, paginación). El frontend ahora consume exclusivamente la RPC `get_monthly_timesheet(p_user_id, p_year, p_month)`. Nueva UI: **calendario mensual continuo** (semanas pegadas en un único contenedor), cabecera roja de días **solo en la primera fila** (LUN-DOM), celdas de día con puntos verde/rojo de fichaje y métricas H/Ex, y **resumen semanal integrado** bajo cada fila (4 KPIs).
 - [x] **📅 Estilo Unificado de Fecha**: Se ha implementado un estilo premium para todos los campos de fecha en modales: las **tarjetas de input** de fecha ahora tienen fondo azul vibrante (blue-600) y fuente blanca, manteniendo las cabeceras en el color petróleo original (#36606F). (Afecta a `CashDenominationForm`, `CashClosingModal` y `StaffHistoryPage`).
 - [x] **💸 Modal de Opciones de Caja (Staff)**: Añadido un modal intermedio al pulsar el botón "Caja" en el dashboard de staff que permite elegir entre "Cambio" y "Compra". Incluye iconos de marca (`change.png`, `shipment.png`) y títulos simplificados.
 - [x] **🛒 Refactorización Modo Compra**: Redistribución total de campos. Fecha y Concepto comparten fila superior; Precio, Entregado y Cambio comparten fila inferior. Lógica matemática de cuadre corregida para permitir el guardado solo con balance exacto.
