@@ -877,7 +877,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         const isOk = Math.abs(diff) < 0.01;
                                         return (
                                             <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
-                                                <div className="bg-[#36606F] px-2 md:px-4 py-1 md:py-1.5 flex items-center justify-start text-white shrink-0">
+                                                <div className="bg-[#36606F] pl-4 pr-2 md:pl-6 md:pr-4 py-1 md:py-1.5 flex items-center justify-start text-white shrink-0">
                                                     <h3 className="text-[9px] md:text-sm font-black uppercase tracking-wider truncate">{title}</h3>
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-2">
