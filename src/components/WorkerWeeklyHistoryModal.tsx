@@ -149,7 +149,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
                 {/* Header */}
                 <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
@@ -164,18 +164,18 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-4 bg-gray-50 min-h-[300px]">
+                {/* Content: se adapta al tamaño de la tabla */}
+                <div className="p-4 overflow-auto flex-1 min-h-0">
                     {loading ? (
                         <div className="flex items-center justify-center h-40">
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="rounded-2xl overflow-hidden">
+                        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-stone-50/80 w-fit max-w-full">
                             {/* Days Grid */}
-                            <div className="grid grid-cols-7 border-b border-gray-100">
+                            <div className="grid grid-cols-7 border-b border-gray-200/80">
                                 {weekData.days.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[90px] bg-white relative">
+                                    <div key={i} className="flex flex-col border-r border-gray-200/80 last:border-r-0 min-h-[90px] bg-white/90 relative">
                                         <div className="h-4 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-md relative z-10">
                                             <span className="text-[8px] font-bold text-white uppercase tracking-wider block truncate px-0.5">{day.dayName}</span>
                                         </div>
@@ -221,7 +221,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             </div>
 
                             {/* Summary Footer */}
-                            <div className="p-3 flex items-center justify-between gap-1 bg-white">
+                            <div className="p-3 flex items-center justify-between gap-1 bg-white/90 border-t border-gray-200/80">
                                 <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
                                     <span className="font-black text-gray-800 text-xs leading-none">{formatValue(weekData.summary.totalHours)}</span>
                                     <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
