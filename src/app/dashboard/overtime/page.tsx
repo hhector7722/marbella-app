@@ -137,27 +137,28 @@ export default function OvertimePage() {
     return (
         <>
             <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
-                <div className="max-w-2xl mx-auto">
-                    {/* Card única: réplica del widget Horas Extras del dashboard */}
-                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                        {/* Cabecera: mismo estilo que widget */}
-                        <div className="bg-purple-600 px-4 py-2 md:py-2.5 flex justify-between items-center text-white shrink-0">
-                            <div className="flex items-center gap-2">
+                <div className="max-w-4xl mx-auto">
+                    {/* Vista detalle: contenedor grande con cabecera petróleo y dentro el widget */}
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-[85vh]">
+                        {/* Cabecera petróleo (vista detalle) */}
+                        <div className="bg-[#36606F] px-6 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => router.push('/dashboard')}
-                                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white"
+                                    className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
                                     aria-label="Volver"
                                 >
-                                    <ArrowLeft size={18} strokeWidth={2.5} />
+                                    <ArrowLeft size={20} strokeWidth={2.5} />
                                 </button>
-                                <h2 className="text-sm md:text-base font-black uppercase tracking-wider">Horas Extras</h2>
+                                <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider">Horas Extras</h1>
                             </div>
-                            <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white" aria-label="Cerrar">
-                                <X size={20} />
+                            <button onClick={() => router.push('/dashboard')} className="p-2 text-white/60 hover:text-white transition-colors" aria-label="Cerrar">
+                                <X size={24} />
                             </button>
                         </div>
 
-                        <div className="p-3 md:p-4">
+                        {/* Cuerpo: widget grande (calendario + semanas) */}
+                        <div className="p-4 md:p-6 flex-1 flex flex-col min-h-0">
                             {/* Navegación mes (como widget) */}
                             <div className="flex items-center justify-center gap-2 mb-3 md:mb-4">
                                 <button
@@ -267,7 +268,7 @@ export default function OvertimePage() {
                 </div>
             </div>
 
-            {/* Modal detalle semana (réplica del dashboard) */}
+            {/* Modal detalle semana */}
             {weekDetailModal && (() => {
                 const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
                     const cost = (s.totalCost ?? s.amount ?? 0);
