@@ -521,14 +521,18 @@ export default function HistoryPage() {
             />
 
             {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar mes</h3>
-                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={() => setShowMonthPicker(false)}>
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
+                        {/* Header Estilo Marbella (como Plantilla) */}
+                        <div className="bg-[#36606F] px-8 py-6 flex justify-between items-center text-white shrink-0">
+                            <h3 className="text-xl font-black uppercase tracking-wider leading-none">Seleccionar mes</h3>
+                            <button onClick={() => setShowMonthPicker(false)} className="w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90">
+                                <X size={24} strokeWidth={3} />
+                            </button>
                         </div>
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-8 px-2">
+
+                        <div className="p-6 overflow-y-auto bg-white">
+                            <div className="flex items-center justify-between mb-6 px-2">
                                 <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
                                 <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
                                 <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
@@ -546,8 +550,8 @@ export default function HistoryPage() {
                                                 setShowMonthPicker(false);
                                             }}
                                             className={cn(
-                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                                isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
+                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
+                                                isSelected ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-[#36606F]/20 hover:text-zinc-900 hover:bg-[#36606F]/5"
                                             )}
                                         >
                                             {format(date, 'MMM', { locale: es })}
@@ -555,6 +559,16 @@ export default function HistoryPage() {
                                     );
                                 })}
                             </div>
+                        </div>
+
+                        <div className="p-4 bg-zinc-50 border-t border-zinc-100 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setShowMonthPicker(false)}
+                                className="w-full min-h-[48px] h-12 bg-zinc-200 text-zinc-600 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-zinc-300 transition-all active:scale-95"
+                            >
+                                Cerrar Ventana
+                            </button>
                         </div>
                     </div>
                 </div>
