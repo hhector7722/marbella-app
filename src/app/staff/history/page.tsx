@@ -411,6 +411,14 @@ export default function HistoryPage() {
 
                                         {/* FILA: Resumen Semanal (integrada) */}
                                         <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
+                                            {/* Sello PAGADO centrado en altura en la fila */}
+                                            {week.summary.isPaid && (
+                                                <img
+                                                    src="/sello/pagado.png"
+                                                    alt="PAGADO"
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-[64px] h-auto z-30 pointer-events-none md:w-[72px]"
+                                                />
+                                            )}
                                             {/* ZONA IZQUIERDA (Fija) */}
                                             <div className="w-16 pl-3 shrink-0 flex items-center h-full">
                                                 <span className="font-black text-[7px] uppercase leading-none text-zinc-600">
@@ -455,15 +463,6 @@ export default function HistoryPage() {
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* Sello PAGADO dinámico anclado a la semana */}
-                                        {week.summary.isPaid && (
-                                            <img
-                                                src="/sello/pagado.png"
-                                                alt="PAGADO"
-                                                className="absolute -bottom-2 -right-2 w-[64px] h-auto z-30 pointer-events-none drop-shadow-xl md:w-[72px]"
-                                            />
-                                        )}
                                     </div>
                                 ))}
                             </div>
