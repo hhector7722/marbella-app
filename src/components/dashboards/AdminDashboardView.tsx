@@ -571,7 +571,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         );
                     })()}
                     <div className={cn("overflow-hidden transition-all duration-300 shrink-0", isSalesExpanded ? "opacity-100" : "h-0 opacity-0")}>
-                        <div className={cn("pt-1 pb-1 px-1 space-y-1 overflow-y-auto no-scrollbar transition-all duration-300", expandedTicket ? "max-h-[500px] md:max-h-[70vh]" : "max-h-[200px] md:max-h-[280px]")}>
+                        <div className={cn("pt-1 pb-1 px-1 space-y-1 transition-all duration-300", expandedTicket ? "overflow-y-auto no-scrollbar max-h-none" : "overflow-y-auto no-scrollbar max-h-[200px] md:max-h-[280px]")}>
                             {loadingSalesTickets ? (
                                 <div className="flex justify-center py-8">
                                     <LoadingSpinner size="sm" className="text-[#36606F]/50" />
