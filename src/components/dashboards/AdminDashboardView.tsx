@@ -839,18 +839,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 py-3 flex flex-col gap-0.5 shrink-0">
-                            <div className="flex items-center justify-between">
+                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0">
+                            <span className="text-base font-black text-white shrink-0">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
+                            <div className="flex-1 flex flex-col gap-0.5 min-w-0 text-center">
                                 <h3 className="text-sm font-black uppercase tracking-wider text-white">Semana {weekNum}</h3>
-                                <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"><X className="w-5 h-5" /></button>
+                                <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{periodStr}</span>
                             </div>
-                            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{periodStr}</span>
+                            <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-4 overflow-y-auto flex-1 space-y-2">
-                            <div className="flex items-center justify-between py-2 px-3 bg-zinc-50 rounded-xl border border-zinc-100 mb-1">
-                                <span className="text-xs font-black text-zinc-700 uppercase tracking-wider">Total</span>
-                                <span className="text-sm font-black text-zinc-900">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
-                            </div>
                             {weekStaff.map((s: any) => (
                                 <StaffOvertimeRow
                                     key={s.id}

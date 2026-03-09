@@ -1,18 +1,15 @@
 'use client';
 
-import { createClient } from "@/utils/supabase/client";
 import {
-    ArrowLeft, Calendar, Filter, ChevronDown, CheckCircle2, Circle, X, AlertCircle, Check,
-    Coins, Landmark
+    ArrowLeft, ChevronLeft, ChevronRight, Check, Circle, X
 } from 'lucide-react';
-import React, { memo, useEffect, useState, useMemo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, getISOWeek, addDays, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, subMonths, getISOWeek, addDays, eachDayOfInterval, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getOvertimeData, togglePaidStatus, togglePreferStockStatus, type WeeklyStats, type StaffWeeklyStats } from '@/app/actions/overtime';
+import { getOvertimeData, togglePaidStatus, togglePreferStockStatus, type WeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
-import { toUTCDateString, getISOWeekEndUTC } from '@/lib/date-utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
@@ -21,39 +18,43 @@ const formatDisplay = (val: number, suffix: string = '') => {
     return `${val.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${suffix}`;
 };
 
-// --- COMPONENTS UNIFIED WITH DASHBOARD ---
-
+// Fila de staff en el modal (réplica del dashboard)
 const StaffOvertimeRow = memo(({
     staff,
     weekId,
+    isPaid,
     onTogglePaid,
-    onTogglePreferStock,
     onClick
 }: {
-    staff: StaffWeeklyStats,
-    weekId: string,
-    onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean, stats: any) => void,
-    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
-    onClick: () => void
+    staff: { id: string; name: string; amount: number };
+    weekId: string;
+    isPaid: boolean;
+    onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void;
+    onClick: () => void;
 }) => (
     <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
+        <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
+            {staff.name}
+        </span>
         <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors block">
-                {staff.name}
+            <span className="text-xs font-black text-gray-800">
+                {staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : " "}
             </span>
-        </div>
-        <div className="flex items-center gap-3">
-            <span className="text-sm font-black text-gray-800">{formatDisplay(staff.totalCost, '€')}</span>
-
-            <div className="flex items-center bg-gray-100 rounded-full h-9 px-1 gap-1">
+            <div className="flex items-center bg-gray-100/50 rounded-full h-8 px-1 gap-1">
                 <button
-                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !staff.isPaid, { totalHours: staff.totalHours, overtimeHours: staff.overtimeHours })}
+                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
                     className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 p-0.5",
-                        staff.isPaid ? "bg-emerald-500 text-white shadow-md border-0" : "bg-white border-2 border-gray-200 text-transparent"
+                        "flex items-center justify-center transition-all active:scale-90 p-0.5",
+                        isPaid ? "" : "text-gray-300 hover:text-gray-400"
                     )}
                 >
-                    <Check className="w-4 h-4" strokeWidth={4} />
+                    {isPaid ? (
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
+                        </div>
+                    ) : (
+                        <Circle className="w-5 h-5" />
+                    )}
                 </button>
             </div>
         </div>
@@ -61,307 +62,251 @@ const StaffOvertimeRow = memo(({
 ));
 StaffOvertimeRow.displayName = 'StaffOvertimeRow';
 
-const WeekOvertimeCard = memo(({
-    week,
-    onTogglePaid,
-    onTogglePreferStock,
-    onSelectHistory
-}: {
-    week: WeeklyStats,
-    onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean, stats: any) => void,
-    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
-    onSelectHistory: (workerId: string, weekId: string) => void
-}) => {
-    const isFullyPaid = week.staff?.every((s: any) => s.totalCost === 0 || s.isPaid);
-    const [expanded, setExpanded] = useState(false);
-
-    return (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all">
-            <button onClick={() => setExpanded(!expanded)} className="w-full p-3 flex items-center justify-between text-left group transition-colors hover:bg-gray-50/50">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center transition-transform group-hover:scale-110 shrink-0">
-                        {isFullyPaid ? (
-                            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                <Check className="w-4 h-4 text-white" strokeWidth={4} />
-                            </div>
-                        ) : (
-                            <div className="w-6 h-6 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                <span className="text-white font-black text-sm leading-none pt-[1px]">!</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black text-gray-900">Sem {getISOWeek(new Date(week.weekId))}</h4>
-                        <span className="font-light mx-0.5 text-gray-300">•</span>
-                        <p className="text-[10px] font-bold uppercase pt-0.5 text-gray-500">
-                            {format(new Date(week.weekId), "d MMM", { locale: es })} - {format(addDays(new Date(week.weekId), 6), "d MMM", { locale: es })}
-                        </p>
-                    </div>
-                </div>
-                <div className="text-right flex items-center gap-3">
-                    <span className="text-lg font-black text-gray-900">{formatDisplay(week.totalAmount, '€')}</span>
-                    <ChevronDown className={cn("w-4 h-4 transition-transform text-gray-400", expanded && "rotate-180")} />
-                </div>
-            </button>
-            {expanded && (
-                <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                    {week.staff.filter((s: any) => s.totalCost > 0).map((s: any) => (
-                        <StaffOvertimeRow
-                            key={s.id}
-                            staff={s}
-                            weekId={week.weekId}
-                            onTogglePaid={onTogglePaid}
-                            onTogglePreferStock={onTogglePreferStock}
-                            onClick={() => onSelectHistory(s.id, week.weekId)}
-                        />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-});
-WeekOvertimeCard.displayName = 'WeekOvertimeCard';
-
-// --- MAIN PAGE ---
-
 export default function OvertimePage() {
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
+    const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
     const [weeksData, setWeeksData] = useState<WeeklyStats[]>([]);
-    const [summary, setSummary] = useState({ totalCost: 0, totalHours: 0, totalOvertimeCost: 0 });
-    const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
-
-    // Filters
-    const [startDate, setStartDate] = useState(() => toUTCDateString(startOfMonth(new Date())));
-    const [endDate, setEndDate] = useState(() => toUTCDateString(endOfMonth(new Date())));
-    const [showMonthPicker, setShowMonthPicker] = useState(false);
-    const [showManualDates, setShowManualDates] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
+    const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
+    const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
 
     useEffect(() => {
-        fetchData();
-    }, [startDate, endDate]);
-
-    const fetchData = async () => {
+        const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
+        const end = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
         setLoading(true);
-        try {
-            const result = await getOvertimeData(startDate, endDate);
-            setWeeksData(result.weeksResult);
-            setSummary(result.summary);
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al cargar datos");
-        } finally {
-            setLoading(false);
-        }
-    };
+        getOvertimeData(start, end)
+            .then((result) => {
+                if (result?.weeksResult) setWeeksData(result.weeksResult);
+                else setWeeksData([]);
+            })
+            .catch(() => setWeeksData([]))
+            .finally(() => setLoading(false));
+    }, [viewMonth]);
 
-    const handleTogglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, status: boolean, stats: any) => {
+    const handleTogglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
-
-        // Optimistic update
-        setWeeksData(prev => prev.map(w => {
-            if (w.weekId === weekId) {
-                return {
-                    ...w,
-                    staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: status } : s)
-                };
-            }
-            return w;
-        }));
-
+        const key = `${weekId}-${staffId}`;
+        setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
+        setWeeksData(prev => prev.map(w => w.weekId === weekId
+            ? { ...w, staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: newStatus } : s) }
+            : w));
         try {
-            const result = await togglePaidStatus(staffId, weekId, status, stats);
-            if (!result.success) throw new Error("Error logic");
-            toast.success(status ? "Marcado como pagado" : "Pago cancelado");
+            const weekData = weeksData.find(w => w.weekId === weekId);
+            const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
+            const result = await togglePaidStatus(staffId, weekId, newStatus, {
+                totalHours: staffData?.totalHours ?? 0,
+                overtimeHours: staffData?.overtimeHours ?? 0
+            });
+            if (!result.success) throw new Error("Error updating paid status");
+            toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
-            console.error(error);
-            toast.error("Error al actualizar");
-            // Revert
-            setWeeksData(prev => prev.map(w => {
-                if (w.weekId === weekId) {
-                    return {
-                        ...w,
-                        staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: !status } : s)
-                    };
-                }
-                return w;
-            }));
+            setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
+            setWeeksData(prev => prev.map(w => w.weekId === weekId
+                ? { ...w, staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: !newStatus } : s) }
+                : w));
+            toast.error("Error al actualizar pago");
         }
     };
 
     const handleTogglePreferStock = async (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => {
         e.stopPropagation();
         try {
-            toast.loading("Actualizando balances globales...", { id: 'prefer-stock-toggle' });
+            toast.loading("Actualizando balances...", { id: 'prefer-stock-toggle' });
             const result = await togglePreferStockStatus(staffId, weekId, currentStatus);
             if (!result.success) throw new Error(result.error);
-
             toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
-            fetchData();
+            const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
+            const end = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
+            const res = await getOvertimeData(start, end);
+            if (res?.weeksResult) setWeeksData(res.weeksResult);
         } catch (error: any) {
-            console.error(error);
-            toast.error("Error al cambiar modo: " + error.message, { id: 'prefer-stock-toggle' });
+            toast.error("Error al actualizar modo: " + error.message, { id: 'prefer-stock-toggle' });
         }
     };
+
+    const start = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
+    const end = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 });
+    const days = eachDayOfInterval({ start, end });
+    const today = new Date();
+    const currentWeekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const rows: Date[][] = [];
+    for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7));
+    const rowWeekIds = rows.map(row => row[0] ? format(row[0], 'yyyy-MM-dd') : '');
 
     return (
         <>
             <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
-                <div className="max-w-4xl mx-auto space-y-4">
-                    {/* DOUBLE CONTAINER STRUCTURE (Card-in-Card) */}
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col min-h-[85vh]">
+                <div className="max-w-2xl mx-auto">
+                    {/* Card única: réplica del widget Horas Extras del dashboard */}
+                    <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                        {/* Cabecera: mismo estilo que widget */}
+                        <div className="bg-purple-600 px-4 py-2 md:py-2.5 flex justify-between items-center text-white shrink-0">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white"
+                                    aria-label="Volver"
+                                >
+                                    <ArrowLeft size={18} strokeWidth={2.5} />
+                                </button>
+                                <h2 className="text-sm md:text-base font-black uppercase tracking-wider">Horas Extras</h2>
+                            </div>
+                            <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white" aria-label="Cerrar">
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                        {/* INTEGRATED DARK HEADER */}
-                        <div className="bg-[#36606F] p-6 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
-                                        <ArrowLeft size={20} strokeWidth={3} />
-                                    </button>
-                                    <h1 className="text-2xl font-black text-white uppercase tracking-tight italic">Histórico Extras</h1>
-                                </div>
-                                <button onClick={() => router.push('/dashboard')} className="text-white/40 hover:text-white transition-colors">
-                                    <X size={24} />
+                        <div className="p-3 md:p-4">
+                            {/* Navegación mes (como widget) */}
+                            <div className="flex items-center justify-center gap-2 mb-3 md:mb-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMonth(prev => subMonths(prev, 1))}
+                                    className="p-2 rounded-xl hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0"
+                                    aria-label="Mes anterior"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <span className="text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 min-w-[140px] text-center">
+                                    {format(viewMonth, 'MMMM yyyy', { locale: es })}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMonth(prev => addMonths(prev, 1))}
+                                    className="p-2 rounded-xl hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0"
+                                    aria-label="Mes siguiente"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
                                 </button>
                             </div>
 
-                            {/* CAPSULE SUMMARY (KPIs) */}
-                            <div className="bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 p-4 grid grid-cols-3 gap-2">
-                                <div className="flex flex-col items-center justify-center text-center">
-                                    <span className="text-xl font-black text-white leading-none whitespace-nowrap">{formatDisplay(summary.totalOvertimeCost, '€')}</span>
-                                    <span className="text-[7px] font-black text-white/40 uppercase tracking-[0.2em] mt-1">Coste Extra</span>
+                            {loading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <div className="w-10 h-10 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
                                 </div>
-                                <div className="flex flex-col items-center justify-center text-center border-x border-white/10">
-                                    <span className="text-xl font-black text-emerald-400 leading-none whitespace-nowrap">{formatDisplay(summary.totalCost, '€')}</span>
-                                    <span className="text-[7px] font-black text-white/40 uppercase tracking-[0.2em] mt-1">Total Ref.</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center text-center">
-                                    <span className="text-xl font-black text-blue-300 leading-none whitespace-nowrap">{summary.totalHours.toFixed(0)}h</span>
-                                    <span className="text-[7px] font-black text-white/40 uppercase tracking-[0.2em] mt-1">Producción</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* FILTERS AREA (Bento Style) */}
-                        <div className="p-6 bg-[#fafafa] space-y-4">
-                            <div className="flex flex-wrap items-center gap-2">
-                                {/* PERIOD SELECTOR */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowMonthPicker(!showMonthPicker)}
-                                        className={cn(
-                                            "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                            showMonthPicker ? "bg-rose-500 text-white" : "bg-white border border-gray-100 text-gray-400 hover:border-blue-200"
-                                        )}
-                                    >
-                                        <Calendar size={14} />
-                                        {format(new Date(startDate), 'MMMM yyyy', { locale: es })}
-                                        <ChevronDown size={12} className={cn("transition-transform", showMonthPicker && "rotate-180")} />
-                                    </button>
-
-                                    {showMonthPicker && (
-                                        <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)}></div>
-                                            <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                                <div className="grid grid-cols-1 gap-1 max-h-60 overflow-y-auto no-scrollbar">
-                                                    {Array.from({ length: 12 }).map((_, i) => {
-                                                        const d = addMonths(startOfMonth(new Date()), -i);
-                                                        const isCurrent = isSameMonth(d, new Date(startDate));
-                                                        return (
-                                                            <button
-                                                                key={i}
-                                                                onClick={() => {
-                                                                    setStartDate(toUTCDateString(startOfMonth(d)));
-                                                                    setEndDate(toUTCDateString(endOfMonth(d)));
-                                                                    setShowMonthPicker(false);
-                                                                    setShowManualDates(false);
-                                                                }}
-                                                                className={cn(
-                                                                    "px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all text-left",
-                                                                    isCurrent ? "bg-rose-500 text-white" : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                                                                )}
-                                                            >
-                                                                {format(d, 'MMMM yyyy', { locale: es })}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
+                            ) : (
+                                <div className="flex gap-3 md:gap-4">
+                                    {/* Calendario mini (escala widget, un poco mayor) */}
+                                    <div className="shrink-0 flex flex-col gap-[3px]">
+                                        {rows.map((rowDays, rowIndex) => (
+                                            <div key={rowIndex} className="grid grid-cols-7 gap-[3px]">
+                                                {rowDays.map((day) => {
+                                                    const inMonth = isSameMonth(day, viewMonth);
+                                                    const isToday = isSameDay(day, today);
+                                                    return (
+                                                        <div
+                                                            key={day.getTime()}
+                                                            className={cn(
+                                                                'w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-full text-[10px] md:text-xs font-bold',
+                                                                !inMonth && 'text-zinc-300',
+                                                                inMonth && !isToday && 'text-zinc-600',
+                                                                isToday && 'bg-blue-500 text-white'
+                                                            )}
+                                                        >
+                                                            {format(day, 'd')}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
-                                        </>
-                                    )}
-                                </div>
-
-                                <div className="h-6 w-px bg-gray-200 mx-2"></div>
-
-                                {/* MANUAL DATES */}
-                                {!showManualDates ? (
-                                    <button
-                                        onClick={() => setShowManualDates(true)}
-                                        className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:border-blue-200 transition-all flex items-center gap-2"
-                                    >
-                                        <Filter size={14} /> Fecha Manual
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-2 animate-in slide-in-from-left duration-200">
-                                        <input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-[10px] font-black text-gray-700 outline-none"
-                                        />
-                                        <span className="text-gray-300 font-black">/</span>
-                                        <input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-[10px] font-black text-gray-700 outline-none"
-                                        />
-                                        <button onClick={() => setShowManualDates(false)} className="p-1.5 text-gray-400 hover:text-rose-500 transition-colors">
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* MAIN LIST CONTAINER (Internal Card) */}
-                        <div className="flex-1 p-4 md:p-6 bg-white">
-                            <div className="bg-[#EFEDED] rounded-[2rem] border border-zinc-100 shadow-inner p-4 md:p-6 min-h-[400px]">
-                                {loading ? (
-                                    <div className="h-64 flex flex-col items-center justify-center gap-4">
-                                        <div className="w-12 h-12 border-4 border-[#36606F] border-t-transparent rounded-full animate-spin"></div>
-                                        <span className="text-[10px] font-black text-[#36606F] uppercase tracking-[0.2em] animate-pulse">Sincronizando nóminas...</span>
-                                    </div>
-                                ) : weeksData.length === 0 ? (
-                                    <div className="h-64 flex flex-col items-center justify-center text-center space-y-4">
-                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                                            <AlertCircle size={32} className="text-gray-200" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No hay registros</p>
-                                            <p className="text-[10px] font-medium text-gray-400">Intenta con otro periodo o filtros</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                        {weeksData.map(week => (
-                                            <WeekOvertimeCard
-                                                key={week.weekId}
-                                                week={week}
-                                                onTogglePaid={handleTogglePaid}
-                                                onTogglePreferStock={handleTogglePreferStock}
-                                                onSelectHistory={(workerId, weekId) => setSelectedHistory({ workerId, weekId })}
-                                            />
                                         ))}
                                     </div>
-                                )}
-                            </div>
+                                    {/* Lista de semanas (1 fila = 1 fila calendario) */}
+                                    <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
+                                        {rowWeekIds.map((weekId, rowIndex) => {
+                                            if (weekId === currentWeekStart) {
+                                                return <div key={weekId} className="w-7 h-7 md:w-8 md:h-8 flex-shrink-0" aria-hidden />;
+                                            }
+                                            const week = weeksData.find(w => w.weekId === weekId);
+                                            if (!week) {
+                                                return <div key={weekId} className="h-7 md:h-8 flex-shrink-0 min-h-[28px] md:min-h-[32px]" aria-hidden />;
+                                            }
+                                            const isFullyPaid = week.staff?.every((s: any) => {
+                                                const cost = (s.totalCost ?? (s as any).amount ?? 0);
+                                                return cost < 0.05 || !!s.isPaid || s.preferStock === true;
+                                            });
+                                            const weekTotal = week.totalAmount ?? 0;
+                                            return (
+                                                <button
+                                                    key={week.weekId}
+                                                    type="button"
+                                                    onClick={() => setWeekDetailModal({ week })}
+                                                    className={cn(
+                                                        'w-full h-7 md:h-8 min-h-[28px] md:min-h-[32px] flex items-center justify-between gap-2 px-2 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
+                                                        'bg-transparent border-0 hover:bg-purple-50/50'
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-1.5 shrink-0 w-24 md:w-28">
+                                                        <div className="shrink-0 flex items-center justify-center w-6 md:w-7">
+                                                            {isFullyPaid ? (
+                                                                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                                                    <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" strokeWidth={4} />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                                                    <span className="text-white font-black text-[8px] leading-none">!</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
+                                                    </div>
+                                                    <span className="flex-1 text-[8px] md:text-[9px] font-bold text-zinc-500 uppercase truncate min-w-0 text-left pl-2">
+                                                        {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
+                                                    </span>
+                                                    <span className="text-[10px] md:text-xs font-black text-zinc-900 shrink-0 w-10 md:w-12 text-right">
+                                                        {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* MODAL HISTORIAL TRABAJADOR */}
+            {/* Modal detalle semana (réplica del dashboard) */}
+            {weekDetailModal && (() => {
+                const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
+                    const cost = (s.totalCost ?? s.amount ?? 0);
+                    return cost > 0.05 && s.preferStock !== true;
+                });
+                const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
+                const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
+                        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0">
+                                <span className="text-base font-black text-white shrink-0">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
+                                <div className="flex-1 flex flex-col gap-0.5 min-w-0 text-center">
+                                    <h3 className="text-sm font-black uppercase tracking-wider text-white">Semana {weekNum}</h3>
+                                    <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{periodStr}</span>
+                                </div>
+                                <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0"><X className="w-5 h-5" /></button>
+                            </div>
+                            <div className="p-4 overflow-y-auto flex-1 space-y-2">
+                                {weekStaff.map((s: any) => (
+                                    <StaffOvertimeRow
+                                        key={s.id}
+                                        staff={{ id: s.id, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
+                                        weekId={weekDetailModal.week.weekId}
+                                        isPaid={paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid}
+                                        onTogglePaid={handleTogglePaid}
+                                        onClick={() => setSelectedHistory({ workerId: s.id, weekId: weekDetailModal.week.weekId })}
+                                    />
+                                ))}
+                                {weekStaff.length === 0 && (
+                                    <p className="text-center text-zinc-400 text-xs font-bold uppercase tracking-widest py-4">Sin importes esta semana</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
             <WorkerWeeklyHistoryModal
                 isOpen={!!selectedHistory}
                 onClose={() => setSelectedHistory(null)}
