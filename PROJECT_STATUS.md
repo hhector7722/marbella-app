@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-08 (Motor Albaranes Cognitivos)
+**Última actualización:** 2026-03-09 (Lista Plantilla tipo Perfil)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
@@ -12,6 +12,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el m
   - **Staff**: Vista "Mi cuenta" con cabecera compacta, sin botón Editar ni Facturas; DocumentManager en solo lectura; sección Configuración de Cuenta (contraseña, cerrar sesión).
   - **Manager (propio perfil)**: Mismo layout con botón Editar, Facturas (si user maestro) y DocumentManager con subir/borrar.
   - **Manager (perfil empleado)**: Vista "Ficha empleado" con botón "Volver a plantilla", badge de rol, sección Datos laborales (horas contrato/sem, banco horas, preferir bolsa) con regla Zero-Display, enlace "Ver en Registros", y sin sección Configuración de Cuenta. Implementado `viewMode` (`staff` | `manager-self` | `manager-employee`) y `viewingOtherProfile` en `src/app/profile/page.tsx`.
+- [x] **Lista Plantilla tipo Perfil (Modal Plantilla)**: El modal "Plantilla" desde el Dashboard Admin muestra ahora una lista de perfiles en lugar de la cuadrícula compacta. Cada fila incluye avatar (real o fallback), nombre completo, badge de rol (Manager/Supervisor/Staff) y chevron; targets táctiles min 48px. Prop `variant="profile-list"` en `StaffSelectionModal`; variante `grid` se mantiene para Registros y Staff/Historial.
 - [x] **Ajustes Smartphone Staff Dashboard**: Optimización de la interfaz táctil para smartphones.
   - **Fichaje**: La tarjeta de "Entrada/Salida" ahora ocupa el ancho completo de la página en móviles para facilitar el acceso.
   - **Horarios**: Eliminado el borde blanco exterior de la tarjeta de horarios para un diseño más limpio ("Borderless Premium").

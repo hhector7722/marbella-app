@@ -755,6 +755,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 employees={allEmployees}
                 onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
                 title="Plantilla"
+                variant="profile-list"
             />
 
             {isNewWorkerModalOpen && (
