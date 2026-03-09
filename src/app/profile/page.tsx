@@ -261,11 +261,56 @@ function ProfileContent() {
                         </div>
                     )}
 
-                    {/* DASHBOARD: Grid de tarjetas, toda la info visible y amable */}
+                    {/* DASHBOARD: Contrato/Nóminas arriba, luego grid 2 cols en móvil */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
 
-                        {/* Grid principal: Datos identificativos + Contacto */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Documentación Oficial (arriba) */}
+                        <div>
+                            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Documentación Oficial</h2>
+
+                            {activeDocTab ? (
+                                <div className="animate-in slide-in-from-bottom-2 duration-300">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <button
+                                            onClick={() => setActiveDocTab(null)}
+                                            className="text-[9px] font-black text-[#36606F] uppercase tracking-widest flex items-center gap-1 hover:underline"
+                                        >
+                                            <ArrowLeft size={10} strokeWidth={3} /> Volver
+                                        </button>
+                                    </div>
+                                    <DocumentManager
+                                        userId={profile.id}
+                                        isManager={isManager}
+                                        initialType={activeDocTab}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => setActiveDocTab('contract')}
+                                        className="min-h-[100px] flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/30 transition-all group active:scale-[0.98]"
+                                    >
+                                        <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] mb-2 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                            <FileText size={24} strokeWidth={2} />
+                                        </div>
+                                        <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Contrato</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setIsNominasOpen(true)}
+                                        className="min-h-[100px] flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/30 transition-all group active:scale-[0.98]"
+                                    >
+                                        <div className="bg-[#36606F]/10 p-3 rounded-2xl text-[#36606F] mb-2 group-hover:bg-[#36606F] group-hover:text-white transition-all">
+                                            <Euro size={24} strokeWidth={2} />
+                                        </div>
+                                        <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Nóminas</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Grid principal: Datos identificativos + Contacto (2 cols en smartphone) */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <DashboardCard
                                 icon={Hash}
                                 label="DNI / NIE"
@@ -354,51 +399,6 @@ function ProfileContent() {
                                 </a>
                             </div>
                         )}
-
-                        {/* Documentación Oficial */}
-                        <div>
-                            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Documentación Oficial</h2>
-
-                            {activeDocTab ? (
-                                <div className="animate-in slide-in-from-bottom-2 duration-300">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <button
-                                            onClick={() => setActiveDocTab(null)}
-                                            className="text-[9px] font-black text-[#36606F] uppercase tracking-widest flex items-center gap-1 hover:underline"
-                                        >
-                                            <ArrowLeft size={10} strokeWidth={3} /> Volver
-                                        </button>
-                                    </div>
-                                    <DocumentManager
-                                        userId={profile.id}
-                                        isManager={isManager}
-                                        initialType={activeDocTab}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => setActiveDocTab('contract')}
-                                        className="min-h-[120px] flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/30 transition-all group active:scale-[0.98]"
-                                    >
-                                        <div className="bg-[#36606F]/10 p-4 rounded-2xl text-[#36606F] mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
-                                            <FileText size={28} strokeWidth={2} />
-                                        </div>
-                                        <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Contrato</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => setIsNominasOpen(true)}
-                                        className="min-h-[120px] flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/30 transition-all group active:scale-[0.98]"
-                                    >
-                                        <div className="bg-[#36606F]/10 p-4 rounded-2xl text-[#36606F] mb-3 group-hover:bg-[#36606F] group-hover:text-white transition-all">
-                                            <Euro size={28} strokeWidth={2} />
-                                        </div>
-                                        <span className="font-black text-[#36606F] text-[10px] uppercase tracking-widest">Nóminas</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
 
                         {/* Configuración de Cuenta (solo cuando es el propio perfil) */}
                         {showAccountSection && (

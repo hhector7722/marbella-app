@@ -39,10 +39,9 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     });
 
     const roleLabel = (role?: string) => {
-        if (!role) return 'Staff';
         if (role === 'manager') return 'Manager';
         if (role === 'supervisor') return 'Supervisor';
-        return 'Staff';
+        return null; // No mostrar "Staff"
     };
 
     return (
@@ -52,13 +51,16 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         >
             <div
                 className={cn(
-                    "bg-white rounded-[2rem] shadow-2xl w-full overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]",
+                    "bg-white rounded-[2rem] shadow-2xl w-full overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col",
                     variant === 'profile-list' ? 'max-w-xl' : 'max-w-md'
                 )}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header Estilo Marbella */}
-                <div className="bg-[#36606F] px-8 py-6 flex justify-between items-center text-white shrink-0">
+                <div className={cn(
+                    "bg-[#36606F] flex justify-between items-center text-white shrink-0",
+                    variant === 'profile-list' ? 'px-6 py-4' : 'px-8 py-6'
+                )}>
                     <div>
                         <h3 className="text-xl font-black uppercase tracking-wider leading-none">{title}</h3>
                     </div>
@@ -70,40 +72,42 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     </button>
                 </div>
 
-                <div className="p-4 overflow-y-auto no-scrollbar flex-1 bg-white">
+                <div className={cn(
+                    "p-4 bg-white",
+                    variant === 'profile-list' ? 'overflow-visible' : 'overflow-y-auto no-scrollbar flex-1'
+                )}>
                     {children}
 
                     {variant === 'profile-list' ? (
-                        /* Iconos flotantes en 3–4 columnas: avatar circular, nombre debajo. Targets táctiles 48px+ */
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                            {filteredEmployees.map((emp) => {
-                                const fullName = `${emp.first_name} ${emp.last_name || ''}`.trim();
-                                return (
-                                    <button
-                                        key={emp.id}
-                                        type="button"
-                                        onClick={() => {
-                                            onSelect(emp);
-                                            onClose();
-                                        }}
-                                        className="group flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-zinc-100 shadow-sm hover:shadow-md hover:border-[#36606F]/20 hover:bg-[#36606F]/5 transition-all active:scale-[0.98] min-h-[48px]"
-                                    >
-                                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center overflow-hidden shrink-0 border-2 border-zinc-100 group-hover:border-[#36606F]/30 transition-colors shadow-inner">
-                                            {emp.avatar_url ? (
-                                                <Image src={emp.avatar_url} alt={fullName} width={64} height={64} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <img src="/icons/profile.png" alt="" className="w-10 h-10 sm:w-12 sm:h-12 object-contain opacity-70" />
-                                            )}
-                                        </div>
-                                        <p className="text-[11px] sm:text-xs font-black text-zinc-800 leading-tight truncate w-full text-center uppercase tracking-tight">
-                                            {fullName || 'Sin nombre'}
-                                        </p>
-                                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                        /* Iconos flotantes sobre contenedor: sin tarjetas, sin marco avatar, solo primer nombre */
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                            {filteredEmployees.map((emp) => (
+                                <button
+                                    key={emp.id}
+                                    type="button"
+                                    onClick={() => {
+                                        onSelect(emp);
+                                        onClose();
+                                    }}
+                                    className="group flex flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
+                                >
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                                        {emp.avatar_url ? (
+                                            <Image src={emp.avatar_url} alt={emp.first_name} width={56} height={56} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <img src="/icons/profile.png" alt="" className="w-8 h-8 sm:w-10 sm:h-10 object-contain opacity-70" />
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] font-black text-zinc-800 leading-tight truncate w-full text-center uppercase tracking-tight">
+                                        {emp.first_name || 'Sin nombre'}
+                                    </p>
+                                    {roleLabel(emp.role) && (
+                                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">
                                             {roleLabel(emp.role)}
                                         </span>
-                                    </button>
-                                );
-                            })}
+                                    )}
+                                </button>
+                            ))}
                         </div>
                     ) : (
                         <div className="grid grid-cols-4 gap-2">
@@ -138,16 +142,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                             ))}
                         </div>
                     )}
-                </div>
-
-                <div className="p-4 bg-zinc-50 border-t border-zinc-100 shrink-0">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-full min-h-[48px] h-12 bg-zinc-200 text-zinc-600 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-zinc-300 transition-all active:scale-95"
-                    >
-                        Cerrar Ventana
-                    </button>
                 </div>
             </div>
         </div>
