@@ -697,12 +697,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     else if (card.title === 'Producto') setIsProductModalOpen(true);
                                     else if (card.link) router.push(card.link);
                                 }}
-                                className="bg-white rounded-none p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full"
+                                className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full min-h-0"
                             >
-                                <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden">
+                                <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
                                     <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
                                 </div>
-                                <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 mt-0.5">
+                                <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">
                                     {card.title}
                                 </span>
                             </button>
