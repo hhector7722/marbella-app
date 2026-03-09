@@ -5,9 +5,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, ChevronDown
+    Calendar, X, ChevronDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
@@ -98,6 +99,9 @@ export default function HistoryPage() {
 
     const [filterYear, setFilterYear] = useState(new Date().getFullYear());
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); // 0-indexed
+
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
+    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
     const [editingDate, setEditingDate] = useState<string | null>(null);
 
@@ -241,9 +245,16 @@ export default function HistoryPage() {
                                 <span className="text-lg font-bold font-mono">{'<'}</span>
                             </button>
 
-                            <h2 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest whitespace-nowrap">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPickerYear(filterYear);
+                                    setShowMonthPicker(true);
+                                }}
+                                className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest whitespace-nowrap cursor-pointer hover:text-white/80 transition-colors select-none"
+                            >
                                 {getMonthLabel(filterYear, filterMonth)}
-                            </h2>
+                            </button>
 
                             <button onClick={nextMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
                                 <span className="text-lg font-bold font-mono">{'>'}</span>
@@ -322,6 +333,13 @@ export default function HistoryPage() {
                                                 const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
                                                 const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
 
+                                                // Día pertenece a otro mes (comparte semana pero se muestra por contexto)
+                                                const isOtherMonth = day.date ? (() => {
+                                                    const y = parseInt(day.date.slice(0, 4), 10);
+                                                    const m = parseInt(day.date.slice(5, 7), 10) - 1;
+                                                    return m !== filterMonth || y !== filterYear;
+                                                })() : false;
+
                                                 // Lógica Zero-Display
                                                 const hFormatted = fmtHours(day.totalHours);
                                                 const exFormatted = fmtHours(day.extraHours);
@@ -331,22 +349,27 @@ export default function HistoryPage() {
                                                         key={di}
                                                         onClick={() => setEditingDate(day.date)}
                                                         className={cn(
-                                                            "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center bg-white p-1 pb-1 cursor-pointer hover:bg-zinc-50 transition-colors",
-                                                            day.isToday && "bg-blue-50/10"
+                                                            "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center p-1 pb-1 cursor-pointer transition-colors",
+                                                            isOtherMonth ? "bg-gray-100 hover:bg-gray-200/80" : "bg-white hover:bg-zinc-50",
+                                                            day.isToday && !isOtherMonth && "bg-blue-50/10"
                                                         )}
                                                     >
                                                         {/* Número de día superior derecha */}
                                                         <span
                                                             className={cn(
                                                                 "absolute top-1 right-1 text-[9px] font-bold",
-                                                                day.isToday ? "text-blue-600" : "text-gray-400"
+                                                                day.isToday && !isOtherMonth ? "text-blue-600" : "text-gray-400",
+                                                                isOtherMonth && "opacity-60"
                                                             )}
                                                         >
                                                             {day.dayNumber}
                                                         </span>
 
-                                                        {/* Centro: evento especial o fichajes */}
-                                                        <div className="flex-1 flex flex-col items-center justify-center mt-3 w-full">
+                                                        {/* Centro: evento especial o fichajes (contenido rebajado si otro mes) */}
+                                                        <div className={cn(
+                                                            "flex-1 flex flex-col items-center justify-center mt-3 w-full",
+                                                            isOtherMonth && "opacity-55"
+                                                        )}>
                                                             {isSpecial ? (
                                                                 <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
                                                                     {eventConfig.showCross ? (
@@ -385,7 +408,10 @@ export default function HistoryPage() {
 
                                                         {/* Pie: H y Ex en miniatura, Zero-Display */}
                                                         {!isSpecial && (
-                                                            <div className="w-full space-y-0 mt-0.5 min-h-[20px]">
+                                                            <div className={cn(
+                                                                "w-full space-y-0 mt-0.5 min-h-[20px]",
+                                                                isOtherMonth && "opacity-55"
+                                                            )}>
                                                                 {day.hasLog && hFormatted ? (
                                                                     <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                                                         <span className="ml-0.5">H</span>
@@ -410,18 +436,21 @@ export default function HistoryPage() {
                                         </div>
 
                                         {/* FILA: Resumen Semanal (integrada) */}
-                                        <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
+                                        <div className={cn(
+                                            "bg-white border-t border-gray-100 flex items-center h-10 relative z-10",
+                                            idx === weeksData.length - 1 && "rounded-b-2xl"
+                                        )}>
                                             {/* Sello PAGADO centrado en altura en la fila */}
                                             {week.summary.isPaid && (
                                                 <img
                                                     src="/sello/pagado.png"
                                                     alt="PAGADO"
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-[64px] h-auto z-30 pointer-events-none md:w-[72px]"
+                                                    className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[64px] h-auto z-30 pointer-events-none md:w-[72px]"
                                                 />
                                             )}
                                             {/* ZONA IZQUIERDA (Fija) */}
                                             <div className="w-16 pl-3 shrink-0 flex items-center h-full">
-                                                <span className="font-black text-[7px] uppercase leading-none text-zinc-600">
+                                                <span className="font-black text-[9px] uppercase leading-none text-zinc-600">
                                                     SEMANA {week.weekNumber}
                                                 </span>
                                             </div>
@@ -490,6 +519,46 @@ export default function HistoryPage() {
                     setShowEmployeeDropdown(false);
                 }}
             />
+
+            {showMonthPicker && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
+                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar mes</h3>
+                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
+                        </div>
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-8 px-2">
+                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
+                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
+                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {Array.from({ length: 12 }).map((_, i) => {
+                                    const date = new Date(pickerYear, i, 1);
+                                    const isSelected = filterMonth === i && filterYear === pickerYear;
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                setFilterMonth(i);
+                                                setFilterYear(pickerYear);
+                                                setShowMonthPicker(false);
+                                            }}
+                                            className={cn(
+                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                                                isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
+                                            )}
+                                        >
+                                            {format(date, 'MMM', { locale: es })}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }
