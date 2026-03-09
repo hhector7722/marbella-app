@@ -876,7 +876,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         const diff = box.current_balance - 300;
                                         const isOk = Math.abs(diff) < 0.01;
                                         return (
-                                            <div key={box.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden flex-1 min-h-0">
+                                            <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
                                                 <div className="bg-[#36606F] px-2 md:px-4 py-1 md:py-1.5 flex items-center justify-start text-white shrink-0">
                                                     <h3 className="text-[9px] md:text-sm font-black uppercase tracking-wider truncate">{title}</h3>
                                                 </div>
