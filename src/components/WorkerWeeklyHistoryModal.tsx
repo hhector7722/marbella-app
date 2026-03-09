@@ -149,29 +149,29 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col w-fit max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
                 {/* Header */}
                 <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                         <h3 className="text-lg font-black uppercase tracking-wider leading-none">Historial Semanal</h3>
-                        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mt-1">
+                        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mt-1 truncate">
                             {format(parseISO(weekStart), 'd MMM', { locale: es })} - {format(addDays(parseISO(weekStart), 6), 'd MMM yyyy', { locale: es })} • {workerName}
                         </p>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90">
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 shrink-0">
                         <X size={20} strokeWidth={3} />
                     </button>
                 </div>
 
-                {/* Content: se adapta al tamaño de la tabla */}
-                <div className="p-4 overflow-auto flex-1 min-h-0">
+                {/* Content: contenedor se adapta al tamaño de la tabla */}
+                <div className="p-4 overflow-auto shrink-0">
                     {loading ? (
-                        <div className="flex items-center justify-center h-40">
+                        <div className="flex items-center justify-center h-40 min-w-[280px]">
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-stone-50/80 w-fit max-w-full">
+                        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-stone-50/80 w-fit">
                             {/* Days Grid */}
                             <div className="grid grid-cols-7 border-b border-gray-200/80">
                                 {weekData.days.map((day, i) => (
@@ -220,35 +220,35 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                 ))}
                             </div>
 
-                            {/* Summary Footer */}
-                            <div className="p-3 flex items-center justify-between gap-1 bg-white/90 border-t border-gray-200/80">
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                            {/* Summary Footer: cada celda valor + etiqueta alineados */}
+                            <div className="p-3 grid grid-cols-5 gap-0 bg-white/90 border-t border-gray-200/80">
+                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
                                     <span className="font-black text-gray-800 text-xs leading-none">{formatValue(weekData.summary.totalHours)}</span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Horas</span>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
                                     <span className={`font-black text-xs leading-none ${weekData.summary.weeklyBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                         {formatBalance(weekData.summary.weeklyBalance)}
                                     </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Balance</span>
+                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Balance</span>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
                                     <span className={`font-black text-xs leading-none ${weekData.summary.startBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                                         {formatBalance(weekData.summary.startBalance)}
                                     </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
+                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Pendiente</span>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 border-r border-gray-100 shrink-0">
+                                <div className="flex flex-col items-center justify-center border-r border-gray-200/80 last:border-r-0 min-w-[52px]">
                                     <span className={`font-black text-xs leading-none ${weekData.summary.finalBalance > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                                         {weekData.summary.finalBalance > 0 ? formatBalance(weekData.summary.finalBalance) : " "}
                                     </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">H Extras</span>
+                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">H Extras</span>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 shrink-0">
+                                <div className="flex flex-col items-center justify-center min-w-[52px]">
                                     <span className="font-black text-xs leading-none text-green-600">
                                         {weekData.summary.estimatedValue > 0 ? formatMoney(weekData.summary.estimatedValue) : " "}
                                     </span>
-                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1">Importe</span>
+                                    <span className="text-[7px] font-bold text-gray-400 uppercase leading-none mt-1 whitespace-nowrap">Importe</span>
                                 </div>
                             </div>
                         </div>
