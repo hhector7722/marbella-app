@@ -74,21 +74,29 @@ export function OrderSuccessModal({
         if (!supplierPhone || !generatedBlob) return;
 
         setIsCapturing(true);
+        const mensaje = 'Adjunto pedido. Recordad enviarnos el albarán también por correo a marbellaremote@gmail.com por favor. Gracias.';
+        const cleanPhone = supplierPhone.replace(/\D/g, '');
+        const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
+        const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
+
         try {
             const pngBlob = await pdfFirstPageToPngBlob(generatedBlob);
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': pngBlob })
-            ]);
-            toast.success('Imagen del pedido copiada al portapapeles');
 
-            const mensaje = 'Adjunto pedido. Recordad enviarnos el albarán también por correo a marbellaremote@gmail.com por favor. Gracias.';
-            const cleanPhone = supplierPhone.replace(/\D/g, '');
-            const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
-            const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
+            // Safari requiere Promise en ClipboardItem; evita límites de canvas con escala dinámica
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })
+                ]);
+                toast.success('Imagen copiada al portapapeles');
+            } catch {
+                toast.warning('No se pudo copiar la imagen. Usa "Descargar" y adjunta el PDF en WhatsApp.');
+            }
+
             window.open(whatsappUrl, '_blank');
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error WhatsApp:', error);
-            toast.error('Error al copiar o abrir WhatsApp.');
+            toast.error('Error al procesar. Usa "Descargar" y envía el PDF manualmente.');
+            window.open(whatsappUrl, '_blank');
         } finally {
             setIsCapturing(false);
         }

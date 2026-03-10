@@ -7,7 +7,8 @@ export async function pdfFirstPageToPngBlob(pdfBlob: Blob): Promise<Blob> {
   const buffer = await pdfBlob.arrayBuffer();
   const pdfDoc = await getDocument({ data: new Uint8Array(buffer) }).promise;
   const numPages = pdfDoc.numPages;
-  const scale = 2;
+  // Reducir escala con muchas páginas para no superar límites de canvas (Safari ~5M px)
+  const scale = numPages > 3 ? 1 : 2;
 
   type PageViewport = Awaited<ReturnType<Awaited<ReturnType<typeof pdfDoc.getPage>>['getViewport']>>;
   const pageViewports: { page: Awaited<ReturnType<typeof pdfDoc.getPage>>; viewport: PageViewport }[] = [];
