@@ -602,13 +602,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
                     {/* Gráfica en parte inferior, por encima del contenido desplegable */}
                     {(() => {
-                        const { start: hStart, end: hEnd } = BUSINESS_HOURS;
-                        const chartData = salesChartData.filter(d => d.hora >= hStart && d.hora <= hEnd);
+                        // Ventas: el dashboard debe mostrar 24h. Recortar por BUSINESS_HOURS hace que parezca "plana"
+                        // cuando el grueso de ventas cae fuera (ej. después de las 20:00).
+                        const chartData = salesChartData;
                         const maxMain = Math.max(...chartData.map(d => d.total), 0);
                         const scaleMax = Math.max(maxMain, 1);
                         const hasData = maxMain > 0;
                         if (!hasData) return null;
-                        const numPoints = hEnd - hStart + 1;
+                        const numPoints = 24;
                         const toPath = (data: { hora: number; total: number }[]) => {
                             const pts = data.map((d, i) => {
                                 const x = (i / (numPoints - 1 || 1)) * 120;
