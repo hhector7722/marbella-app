@@ -7,7 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
@@ -37,6 +37,7 @@ interface WeekSummary {
     finalBalance: number;
     estimatedValue: number;
     isPaid: boolean;
+    preferStock?: boolean;
 }
 
 interface WeekData {
@@ -148,7 +149,7 @@ export default function HistoryPage() {
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
             // p_month es 1-indexed en PostgreSQL
-            const [rpcResult, logsResult] = await Promise.all([
+            const [rpcResult, logsResult, weeklyStatsResult] = await Promise.all([
                 supabase.rpc('get_monthly_timesheet', {
                     p_user_id: targetUserId,
                     p_year: filterYear,
@@ -166,6 +167,18 @@ export default function HistoryPage() {
                         .gte('clock_in', start.toISOString())
                         .lte('clock_in', end.toISOString());
                 })(),
+                // RPC semanal para saber si la semana está configurada como "guardar horas" (preferStock)
+                (() => {
+                    const monthStart = new Date(filterYear, filterMonth, 1);
+                    const monthEnd = new Date(filterYear, filterMonth + 1, 0);
+                    const startStr = format(monthStart, 'yyyy-MM-dd');
+                    const endStr = format(monthEnd, 'yyyy-MM-dd');
+                    return supabase.rpc('get_weekly_worker_stats', {
+                        p_start_date: startStr,
+                        p_end_date: endStr,
+                        p_user_id: targetUserId,
+                    });
+                })(),
             ]);
 
             const { data, error } = rpcResult;
@@ -180,6 +193,23 @@ export default function HistoryPage() {
                 toast.warning('No se pudieron cargar los indicadores de salida no registrada.');
             }
 
+            // Mapa semana -> preferStock (guardar horas esta semana)
+            const preferStockByWeekStart: Record<string, boolean> = {};
+            if (weeklyStatsResult && !weeklyStatsResult.error && weeklyStatsResult.data) {
+                const weeksArray = (weeklyStatsResult.data as any).weeksResult || [];
+                (weeksArray as any[]).forEach((week: any) => {
+                    if (!week || !week.weekId || !Array.isArray(week.staff) || week.staff.length === 0) return;
+                    const staffEntry = week.staff[0];
+                    if (typeof staffEntry?.preferStock !== 'boolean') return;
+                    const key: string = typeof week.weekId === 'string'
+                        ? week.weekId.split('T')[0]
+                        : String(week.weekId);
+                    preferStockByWeekStart[key] = staffEntry.preferStock;
+                });
+            } else if (weeklyStatsResult?.error) {
+                console.error('Error fetching weekly stats (preferStock):', weeklyStatsResult.error);
+            }
+
             // Mapa fecha (YYYY-MM-DD) -> mostrar "No registrada"
             const noRegistradaByDate: Record<string, boolean> = {};
             (logsResult.data || []).forEach((log: { clock_in: string; clock_out_show_no_registrada?: boolean }) => {
@@ -187,14 +217,25 @@ export default function HistoryPage() {
                 if (log.clock_out_show_no_registrada === true) noRegistradaByDate[dateKey] = true;
             });
 
-            const formattedWeeks: WeekData[] = (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => ({
-                ...week,
-                days: week.days.map((day) => ({
-                    ...day,
-                    eventType: day.eventType ?? day.event_type ?? 'regular',
-                    clock_out_show_no_registrada: noRegistradaByDate[day.date] === true,
-                })),
-            }));
+            const formattedWeeks: WeekData[] = (((data as unknown) as MonthlyTimesheetRpcWeek[]) || []).map((week) => {
+                const startDateKey = typeof (week as any).startDate === 'string'
+                    ? (week as any).startDate.split('T')[0]
+                    : String((week as any).startDate);
+                const preferStockForWeek = preferStockByWeekStart[startDateKey];
+
+                return {
+                    ...week,
+                    summary: {
+                        ...week.summary,
+                        preferStock: preferStockForWeek,
+                    },
+                    days: week.days.map((day) => ({
+                        ...day,
+                        eventType: day.eventType ?? day.event_type ?? 'regular',
+                        clock_out_show_no_registrada: noRegistradaByDate[day.date] === true,
+                    })),
+                };
+            });
 
             setWeeksData(formattedWeeks);
         } catch (err) {
@@ -475,15 +516,32 @@ export default function HistoryPage() {
                                                     <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
                                                 </div>
 
-                                                {/* COL 2: PENDIENTE */}
-                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                    <span className="text-[9px] font-black leading-none text-red-600 block">
-                                                        {Math.abs(week.summary.startBalance ?? 0) > 0.05
-                                                            ? `${Math.abs(week.summary.startBalance).toFixed(1).replace('.0', '')}`
-                                                            : " "}
-                                                    </span>
-                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
-                                                </div>
+                                            {/* COL 2: PENDIENTE */}
+                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                                {(() => {
+                                                    const startBalance = week.summary.startBalance ?? 0;
+                                                    const hasPending = Math.abs(startBalance) > 0.05;
+                                                    const weekStartStr = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
+                                                    const weekStartDate = parseISO(weekStartStr);
+                                                    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+                                                    const isFutureWeek = weekStartDate > currentWeekStart;
+                                                    const showPending = hasPending && !isFutureWeek;
+                                                    const colorClass = !showPending
+                                                        ? "text-transparent"
+                                                        : startBalance >= 0
+                                                            ? "text-emerald-600"
+                                                            : "text-red-600";
+                                                    const text = showPending
+                                                        ? `${Math.abs(startBalance).toFixed(1).replace('.0', '')}`
+                                                        : " ";
+                                                    return (
+                                                        <span className={cn("text-[9px] font-black leading-none block", colorClass)}>
+                                                            {text}
+                                                        </span>
+                                                    );
+                                                })()}
+                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                                            </div>
 
                                                 {/* COL 3: EXTRAS */}
                                                 <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
@@ -493,13 +551,15 @@ export default function HistoryPage() {
                                                     <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                                                 </div>
 
-                                                {/* COL 4: IMPORTE */}
-                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                    <span className="text-[9px] font-black leading-none text-emerald-600 block">
-                                                        {(week.summary.estimatedValue ?? 0) > 0.05 ? fmtMoney(week.summary.estimatedValue) : " "}
-                                                    </span>
-                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
-                                                </div>
+                                            {/* COL 4: IMPORTE */}
+                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                                <span className="text-[9px] font-black leading-none text-emerald-600 block">
+                                                    {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
+                                                        ? fmtMoney(week.summary.estimatedValue)
+                                                        : " "}
+                                                </span>
+                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                                            </div>
                                             </div>
                                         </div>
                                     </div>
