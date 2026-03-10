@@ -18,7 +18,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
-import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
+import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
@@ -197,6 +197,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [overtimeWeeksData, setOvertimeWeeksData] = useState<any[]>([]);
     const [overtimeLoading, setOvertimeLoading] = useState(false);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
+    // Ventas: fecha seleccionada y modal
+    const [salesViewDate, setSalesViewDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false);
+    const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
 
     useEffect(() => {
         setIsDesktop(window.innerWidth >= 768);
@@ -243,12 +247,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
-    const fetchHourlySales = async () => {
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const fetchHourlySales = async (targetDate?: string) => {
+        const dateStr = targetDate ?? format(new Date(), 'yyyy-MM-dd');
         try {
             const { data, error } = await supabase.rpc('get_hourly_sales', {
-                p_start_date: todayStr,
-                p_end_date: todayStr
+                p_start_date: dateStr,
+                p_end_date: dateStr
             });
             if (!error && data && data.length > 0) {
                 const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
@@ -262,8 +266,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             const { data: tickets } = await supabase
                 .from('tickets_marbella')
                 .select('hora_cierre, total_documento')
-                .gte('fecha', todayStr)
-                .lte('fecha', todayStr);
+                .gte('fecha', dateStr)
+                .lte('fecha', dateStr);
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
             (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
                 let hour = 12;
@@ -281,13 +285,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
-    const fetchHourlyBaseline = async () => {
-        const today = new Date();
-        const todayStr = format(today, 'yyyy-MM-dd');
-        const todayDow = today.getDay();
+    const fetchHourlyBaseline = async (targetDateStr?: string) => {
+        const dateStr = targetDateStr ?? format(new Date(), 'yyyy-MM-dd');
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const refDate = new Date(y, (m || 1) - 1, d || 1);
+        const refDow = refDate.getDay();
         const dates: string[] = [];
         for (let w = 1; w <= 4; w++) {
-            const d = subDays(today, 7 * w);
+            const d = subDays(refDate, 7 * w);
             dates.push(format(d, 'yyyy-MM-dd'));
         }
         const startStr = dates[dates.length - 1];
@@ -304,9 +309,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             const byHora: Record<number, number[]> = {};
             for (let h = 0; h < 24; h++) byHora[h] = [];
             (data as { fecha: string; hora: number; total: number }[]).forEach((r) => {
-                const [y, m, d] = String(r.fecha).split('T')[0].split('-').map(Number);
-                const dObj = new Date(y, (m || 1) - 1, d || 1);
-                if (dObj.getDay() === todayDow) {
+                const [yr, mo, dy] = String(r.fecha).split('T')[0].split('-').map(Number);
+                const dObj = new Date(yr, (mo || 1) - 1, dy || 1);
+                if (dObj.getDay() === refDow) {
                     const h = Number(r.hora);
                     if (h >= 0 && h < 24) byHora[h].push(Number(r.total) || 0);
                 }
