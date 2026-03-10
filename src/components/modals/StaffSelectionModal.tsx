@@ -41,12 +41,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
     });
 
-    const roleLabel = (role?: string) => {
-        if (role === 'manager') return 'Manager';
-        if (role === 'supervisor') return 'Supervisor';
-        return null; // No mostrar "Staff"
-    };
-
     return (
         <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200"
@@ -113,11 +107,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                     <p className="text-[10px] font-black text-zinc-800 leading-tight truncate w-full text-center uppercase tracking-tight">
                                         {emp.first_name || 'Sin nombre'}
                                     </p>
-                                    {roleLabel(emp.role) && (
-                                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">
-                                            {roleLabel(emp.role)}
-                                        </span>
-                                    )}
                                 </button>
                             ))}
                         </div>
@@ -133,14 +122,12 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                     }}
                                     className="group flex flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
                                 >
-                                    <div className="w-14 h-14 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                                        <Image
-                                            src="/icons/user.png"
-                                            alt={emp.first_name}
-                                            width={48}
-                                            height={48}
-                                            className="w-12 h-12 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
-                                        />
+                                    <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden transition-all group-hover:-translate-y-1 shrink-0">
+                                        {emp.avatar_url ? (
+                                            <Image src={emp.avatar_url} alt={emp.first_name} width={56} height={56} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <img src="/icons/profile.png" alt="" className="w-10 h-10 object-contain opacity-70" />
+                                        )}
                                     </div>
                                     <div className="text-center">
                                         <p className="text-[10px] font-black text-zinc-700 leading-tight truncate w-full max-w-[70px] uppercase">

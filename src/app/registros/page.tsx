@@ -38,6 +38,7 @@ type Employee = {
     first_name: string;
     last_name: string;
     overtime_cost_per_hour: number;
+    avatar_url?: string | null;
 };
 
 type TimeLog = {
@@ -153,7 +154,7 @@ export default function RegistrosPage() {
             // 1. Siempre cargar perfiles primero para asegurar enriquecimiento
             const { data: staff } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, overtime_cost_per_hour')
+                .select('id, first_name, last_name, overtime_cost_per_hour, avatar_url')
                 .order('first_name');
 
             if (staff) {

@@ -77,7 +77,7 @@ const fmtMoney = (val: number): string => {
 const getMonthLabel = (year: number, month: number) =>
     new Date(year, month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
-type Employee = { id: string; first_name: string; last_name: string };
+type Employee = { id: string; first_name: string; last_name: string; avatar_url?: string | null };
 
 type MonthlyTimesheetRpcDay = Omit<DayData, 'eventType' | 'clock_out_show_no_registrada'> & {
     eventType?: string;
@@ -123,7 +123,7 @@ export default function HistoryPage() {
         if (profile?.role === 'manager') {
             const { data: emps } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name')
+                .select('id, first_name, last_name, avatar_url')
                 .order('first_name');
 
             setEmployees((emps || []).filter((e: Employee) => {
