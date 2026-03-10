@@ -365,45 +365,56 @@ export default function HistoryPage() {
                                                             {day.dayNumber}
                                                         </span>
 
-                                                        {/* Centro: evento especial o fichajes (contenido rebajado si otro mes) */}
+                                                        {/* Centro: evento especial o fichajes. Filas de altura fija para alinear círculos verde/rojo entre días. */}
                                                         <div className={cn(
-                                                            "flex-1 flex flex-col items-center justify-center mt-3 w-full",
+                                                            "flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]",
                                                             isOtherMonth && "opacity-55"
                                                         )}>
                                                             {isSpecial ? (
-                                                                <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
-                                                                    {eventConfig.showCross ? (
-                                                                        <X size={14} strokeWidth={2.5} className="text-white" />
-                                                                    ) : (
-                                                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>
-                                                                    )}
-                                                                </div>
-                                                            ) : day.hasLog ? (
-                                                                <div className="flex flex-col items-center gap-0.5 w-full">
-                                                                    {/* Entrada */}
-                                                                    <div className="h-3 flex items-center justify-center gap-1">
-                                                                        <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
-                                                                        <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                <>
+                                                                    <div className="h-5 flex items-center justify-center shrink-0">
+                                                                        <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
+                                                                            {eventConfig.showCross ? (
+                                                                                <X size={14} strokeWidth={2.5} className="text-white" />
+                                                                            ) : (
+                                                                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                    {/* Salida: si "no registrada" → solo cruz roja centrada; si no → punto + hora */}
-                                                                    <div className="h-3 flex items-center justify-center w-full">
-                                                                        {day.clockOut ? (
+                                                                    <div className="h-5 shrink-0" aria-hidden />
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {/* Fila entrada: misma altura en todos los días para alinear círculos verdes */}
+                                                                    <div className="h-5 flex items-center justify-center gap-1 shrink-0">
+                                                                        {day.hasLog ? (
+                                                                            <>
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                            </>
+                                                                        ) : <span className="text-[9px] text-transparent select-none">0</span>}
+                                                                    </div>
+                                                                    {/* Fila salida: misma altura en todos los días para alinear círculos rojos */}
+                                                                    <div className="h-5 flex items-center justify-center gap-1 shrink-0">
+                                                                        {day.hasLog && day.clockOut ? (
                                                                             day.clock_out_show_no_registrada ? (
                                                                                 <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
                                                                                     <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
                                                                                 </span>
                                                                             ) : (
                                                                                 <>
-                                                                                    <div className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                                                                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                                                                                     <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
                                                                                 </>
                                                                             )
-                                                                        ) : day.isToday ? (
-                                                                            <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
-                                                                        ) : null}
+                                                                        ) : (day.hasLog && !day.clockOut && day.isToday) ? (
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />
+                                                                        ) : (
+                                                                            <span className="text-[9px] text-transparent select-none">0</span>
+                                                                        )}
                                                                     </div>
-                                                                </div>
-                                                            ) : null}
+                                                                </>
+                                                            )}
                                                         </div>
 
                                                         {/* Pie: H y Ex en miniatura, Zero-Display */}
