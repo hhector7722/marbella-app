@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Megaphone } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type NominasMenuAction = 'nominas' | 'comunicados' | 'contrato';
@@ -11,9 +11,9 @@ interface NominasMenuModalProps {
     onSelect: (action: NominasMenuAction) => void;
 }
 
-const OPTIONS: { key: NominasMenuAction; label: string; iconPath?: string; Icon?: React.ComponentType<{ className?: string }> }[] = [
+const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
     { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin.png' },
-    { key: 'comunicados', label: 'Comunicados', Icon: Megaphone },
+    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
     { key: 'contrato', label: 'Contrato', iconPath: '/icons/contract.png' },
 ];
 
@@ -44,20 +44,14 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
                     </button>
                 </div>
                 <div className="p-6 grid grid-cols-1 gap-6">
-                    {OPTIONS.map(({ key, label, iconPath, Icon }) => (
+                    {OPTIONS.map(({ key, label, iconPath }) => (
                         <button
                             key={key}
                             type="button"
                             onClick={() => { onSelect(key); onClose(); }}
                             className="min-h-[56px] flex items-center justify-center gap-3 p-3 transition-all active:scale-[0.98] hover:opacity-80"
                         >
-                            {Icon ? (
-                                <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-xl bg-[#36606F]/10 text-[#36606F]">
-                                    <Icon className="w-5 h-5" />
-                                </div>
-                            ) : (
-                                <img src={iconPath} alt="" className="w-10 h-10 object-contain shrink-0" />
-                            )}
+                            <img src={iconPath} alt="" className="w-10 h-10 object-contain shrink-0" />
                             <span className="font-black text-zinc-800 text-sm uppercase tracking-wide">{label}</span>
                         </button>
                     ))}
