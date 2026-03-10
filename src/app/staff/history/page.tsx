@@ -504,7 +504,7 @@ export default function HistoryPage() {
                                                 {/* COL 1: HORAS */}
                                                 <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                     <span className="text-[9px] font-black leading-none text-black block">
-                                                        {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace('.0', '') : " "}
+                                                        {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace(".0", "") : " "}
                                                     </span>
                                                     <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
                                                 </div>
@@ -525,7 +525,7 @@ export default function HistoryPage() {
                                                             ? "text-emerald-600"
                                                             : "text-red-600";
                                                     const text = showPending
-                                                        ? `${Math.abs(startBalance).toFixed(1).replace('.0', '')}`
+                                                        ? `${Math.abs(startBalance).toFixed(1).replace(".0", "")}`
                                                         : " ";
                                                     return (
                                                         <span className={cn("text-[9px] font-black leading-none block", colorClass)}>
@@ -539,7 +539,7 @@ export default function HistoryPage() {
                                                 {/* COL 3: EXTRAS */}
                                                 <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                                     <span className="text-[9px] font-black leading-none text-black block">
-                                                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace('.0', '') : " "}
+                                                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace(".0", "") : " "}
                                                     </span>
                                                     <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                                                 </div>
