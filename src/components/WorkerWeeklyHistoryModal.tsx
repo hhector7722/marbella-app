@@ -44,13 +44,12 @@ interface WorkerWeeklyHistoryModalProps {
     weekStart: string; // ISO Date string (yyyy-MM-dd) of the Monday
 }
 
-// --- VISUAL HELPERS (idénticos a /staff/dashboard) ---
-const formatValue = (val: number | undefined | null) => {
-    if (val === undefined || val === null || isNaN(Number(val))) return ' ';
-    const n = Number(val);
-    if (Math.abs(n) < 0.1) return ' ';
-    return Math.round(n).toString();
+// --- VISUAL HELPERS (idénticos a StaffDashboardView.tsx) ---
+const formatNumber = (val: number) => {
+    if (Math.abs(val) < 0.1) return " ";
+    return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
 };
+const formatWorked = (val: number) => formatNumber(Math.abs(val));
 const formatMoney = (val: number) => {
     if (Math.abs(val) < 0.1) return " ";
     return `${val.toFixed(0)}€`;
@@ -200,70 +199,76 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
                         </div>
                     ) : weekData ? (
-                        <div className="bg-white rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
-                            {/* Days Grid — fotocopia de /staff/dashboard */}
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                             <div className="grid grid-cols-7">
                                 {weekData.days.map((day, i) => (
-                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[110px] bg-white relative">
-                                        <div className="h-7 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
+                                    <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
+                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
-                                        <div className="flex-1 p-1 flex flex-col items-center relative z-0 bg-white">
+                                        <div className="flex-1 p-1 flex flex-col items-stretch relative z-0 bg-white">
                                             <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                            <div className="flex-1 flex flex-col justify-center gap-1 w-full">
-                                                {day.hasLog ? (
-                                                    <>
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 shadow-sm"></div>
+                                            <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px]">
+                                                <div className="h-5 flex items-center justify-center gap-1 shrink-0">
+                                                    {day.hasLog ? (
+                                                        <>
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                                                             <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                        </div>
-                                                        {day.clockOut && (
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 shadow-sm"></div>
-                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : (<span className="text-gray-200 text-xs text-center">-</span>)}
+                                                        </>
+                                                    ) : <span className="text-[9px] text-transparent select-none">0</span>}
+                                                </div>
+                                                <div className="h-5 flex items-center justify-center gap-1 shrink-0">
+                                                    {day.hasLog && day.clockOut ? (
+                                                        <>
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                        </>
+                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" /> : <span className="text-[9px] text-transparent select-none">0</span>)}
+                                                </div>
                                             </div>
-                                            <div className="w-full mt-auto space-y-0.5 pt-1">
-                                                {day.hasLog && day.totalHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[8px] text-gray-400 border-t border-gray-50 pt-1">
-                                                        <span>Horas</span><span className="font-bold text-gray-800">{day.totalHours > 0.05 ? day.totalHours.toFixed(0) : ' '}</span>
+                                            <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
+                                                {day.hasLog && day.totalHours > 0 ? (
+                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                        <span className="ml-0.5">H</span>
+                                                        <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
                                                     </div>
-                                                )}
-                                                {day.extraHours > 0 && (
-                                                    <div className="flex justify-between items-end text-[8px] text-gray-400">
-                                                        <span>Extras</span><span className="font-bold text-gray-800">{day.extraHours.toFixed(0)}</span>
+                                                ) : <div className="h-3" />}
+                                                {day.extraHours > 0 ? (
+                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                                        <span className="ml-0.5">Ex</span>
+                                                        <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
                                                     </div>
-                                                )}
+                                                ) : <div className="h-3" />}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Footer totales — fotocopia de /staff/dashboard (Horas, Extras, Pendiente, Importe) */}
-                            <div className="p-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
-                                <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
-                                    <span className="font-black text-gray-800 text-sm">{formatValue(weekData.summary.totalHours)}</span>
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Horas</span>
+                            <div className="p-2 md:p-3 flex items-center justify-between gap-1 md:gap-2 overflow-x-auto no-scrollbar">
+                                <div className="flex flex-col items-center flex-1">
+                                    <div className="h-4 md:h-5 flex items-center">
+                                        <span className="font-black text-black text-[11px] md:text-sm leading-none">{formatWorked(weekData.summary.totalHours)}</span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
                                 </div>
-                                <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
-                                    <span className="font-black text-sm text-blue-600">{formatValue(weekData.summary.weeklyBalance)}</span>
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Extras</span>
+                                <div className="flex flex-col items-center flex-1">
+                                    <div className="h-4 md:h-5 flex items-center">
+                                        <span className="font-black text-[11px] md:text-sm leading-none text-red-600">{formatWorked(weekData.summary.startBalance)}</span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                 </div>
-                                <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
-                                    <span className={`font-black text-sm ${(weekData.summary.startBalance ?? 0) > 0 ? 'text-green-600' :
-                                        (weekData.summary.startBalance ?? 0) < 0 ? 'text-red-500' : 'text-gray-400'
-                                        }`}>
-                                        {formatValue(weekData.summary.startBalance)}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Pendiente</span>
+                                <div className="flex flex-col items-center flex-1">
+                                    <div className="h-4 md:h-5 flex items-center">
+                                        <span className="font-black text-[11px] md:text-sm leading-none text-black">{weekData.summary.finalBalance > 0 ? formatWorked(weekData.summary.finalBalance) : " "}</span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
                                 </div>
-                                <div className="flex flex-col items-center px-4 shrink-0">
-                                    <span className="font-black text-sm text-green-600">{formatMoney(weekData.summary.estimatedValue)}</span>
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Importe</span>
+                                <div className="flex flex-col items-center flex-1">
+                                    <div className="h-4 md:h-5 flex items-center">
+                                        <span className="font-black text-[11px] md:text-sm leading-none text-emerald-600">{formatMoney(weekData.summary.estimatedValue)}</span>
+                                    </div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
                                 </div>
                             </div>
                         </div>
