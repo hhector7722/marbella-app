@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, Ch
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import CreateIngredientModal from '@/components/CreateIngredientModal';
+import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 
 const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails'];
 
@@ -32,6 +33,7 @@ function RecipeDetailContent() {
     const [allRecipes, setAllRecipes] = useState<any[]>([]);
     const [currentRecipeIndex, setCurrentRecipeIndex] = useState<number>(-1);
 
+    const [backendCost, setBackendCost] = useState<{ total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] } | null>(null);
     const [simulatedPrice, setSimulatedPrice] = useState(0);
     const [savingPrice, setSavingPrice] = useState(false);
     const [applyingSimulation, setApplyingSimulation] = useState(false);
@@ -44,6 +46,7 @@ function RecipeDetailContent() {
     const [presentationSteps, setPresentationSteps] = useState<string[]>([]);
 
     const [showIngredientModal, setShowIngredientModal] = useState(false);
+    const [addIngredientUnit, setAddIngredientUnit] = useState<string>('kg');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -57,6 +60,13 @@ function RecipeDetailContent() {
     const fetchAvailableIngredients = async () => {
         const { data } = await supabase.from('ingredients').select('*').order('name');
         if (data) setAvailableIngredients(data);
+    };
+
+    const fetchBackendCost = async () => {
+        const useHalf = view.size === 'half';
+        const { data, error } = await supabase.rpc('get_recipe_cost', { p_recipe_id: recipeId, p_use_half_ration: useHalf });
+        if (!error && data) setBackendCost(data as { total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] });
+        else setBackendCost(null);
     };
 
     const fetchRecipe = async () => {
@@ -79,7 +89,6 @@ function RecipeDetailContent() {
             setPresentationSteps(data.presentation ? (data.presentation.includes('\n') ? data.presentation.split('\n') : [data.presentation]) : []);
 
             if (data.target_food_cost_pct) setTargetFC(data.target_food_cost_pct);
-
         } catch (error) {
             console.error(error);
             toast.error('Error al cargar receta');
@@ -119,6 +128,16 @@ function RecipeDetailContent() {
         setSimulatedPrice(price || 0);
     }, [view, recipe]);
 
+    useEffect(() => {
+        if (!recipeId) return;
+        const useHalf = view.size === 'half';
+        supabase.rpc('get_recipe_cost', { p_recipe_id: recipeId, p_use_half_ration: useHalf })
+            .then(({ data, error }) => {
+                if (!error && data) setBackendCost(data as { total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] });
+                else setBackendCost(null);
+            });
+    }, [recipeId, view.size]);
+
     // --- 4. LÓGICA DE NEGOCIO ---
     const getCurrentPrice = () => {
         if (!recipe) return 0;
@@ -135,11 +154,14 @@ function RecipeDetailContent() {
 
     const calculateIngredientCost = (ing: any) => {
         const qty = getIngredientQuantity(ing);
-        const price = ing.ingredients?.current_price || 0;
-        return qty * price;
+        const price = ing.ingredients?.current_price ?? 0;
+        const purchaseUnit = ing.ingredients?.purchase_unit ?? 'kg';
+        const recipeUnit = ing.unit ?? 'kg';
+        return recipeLineCost(qty, recipeUnit, purchaseUnit, price);
     };
 
-    const totalCost = ingredients.reduce((sum, ing) => sum + calculateIngredientCost(ing), 0);
+    const totalCostClient = ingredients.reduce((sum, ing) => sum + calculateIngredientCost(ing), 0);
+    const totalCost = backendCost != null ? backendCost.total_cost : totalCostClient;
     const VAT_RATE = 1.10;
     const currentPrice = getCurrentPrice() || 0;
     const basePrice = currentPrice > 0 ? currentPrice / VAT_RATE : 0;
@@ -176,6 +198,7 @@ function RecipeDetailContent() {
         const column = view.size === 'full' ? 'quantity_gross' : 'quantity_half';
         await supabase.from('recipe_ingredients').update({ [column]: newQuantity }).eq('id', ingredientId);
         setIngredients(ingredients.map(ing => ing.id === ingredientId ? { ...ing, [column]: newQuantity } : ing));
+        fetchBackendCost();
     };
 
     const handleCategoryUpdate = async (cat: string) => {
@@ -242,14 +265,16 @@ function RecipeDetailContent() {
             quantity_half: 0.5,
             unit: unit || 'kg'
         });
-        fetchRecipe();
+        await fetchRecipe();
+        fetchBackendCost();
         setShowIngredientModal(false);
     };
 
     const handleDeleteIngredient = async (id: string) => {
         if (!confirm('¿Eliminar?')) return;
         await supabase.from('recipe_ingredients').delete().eq('id', id);
-        fetchRecipe();
+        await fetchRecipe();
+        fetchBackendCost();
     };
 
     const updateTextDB = async (field: 'elaboration' | 'presentation', steps: string[]) => {
@@ -430,7 +455,15 @@ function RecipeDetailContent() {
                                                         <QuantityInput initialValue={qty} onSave={(val) => handleQuantityChange(ing.id, val)} />
                                                     )}
                                                 </td>
-                                                <td className="text-center text-gray-400 py-2 font-bold">{ing.unit}</td>
+                                                <td className="text-center py-2">
+                                                    {isRestricted ? (
+                                                        <span className="text-gray-400 font-bold">{ing.unit}</span>
+                                                    ) : (
+                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); fetchBackendCost(); }); }} className="text-[10px] font-bold border border-gray-100 rounded px-1 py-0.5 bg-white focus:border-[#36606F] outline-none">
+                                                            {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                                        </select>
+                                                    )}
+                                                </td>
                                                 {!isRestricted && <td className="text-right font-black text-gray-700 py-2">{cost.toFixed(2)}€</td>}
                                                 <td className="text-center py-2">
                                                     {!isRestricted && (
@@ -552,9 +585,15 @@ function RecipeDetailContent() {
             {showIngredientModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowIngredientModal(false)}>
                     <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir</h3><button onClick={() => setShowIngredientModal(false)}><X size={16} /></button></div>
+                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button onClick={() => setShowIngredientModal(false)}><X size={16} /></button></div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-bold text-gray-500 shrink-0">Unidad en receta:</span>
+                            <select value={addIngredientUnit} onChange={e => setAddIngredientUnit(e.target.value)} className="flex-1 p-2 border rounded text-xs font-medium focus:border-[#36606F] outline-none">
+                                {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
                         <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
-                        <div className="flex-1 overflow-y-auto space-y-1">{filteredIngredients.map(ing => (<button key={ing.id} onClick={() => handleAddIngredient(ing.id, ing.purchase_unit)} className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"><span className="font-bold">{ing.name}</span><span>{ing.current_price}€</span></button>))}</div>
+                        <div className="flex-1 overflow-y-auto space-y-1">{filteredIngredients.map(ing => (<button key={ing.id} onClick={() => handleAddIngredient(ing.id, addIngredientUnit)} className="w-full text-left p-2 hover:bg-gray-50 flex justify-between rounded text-xs"><span className="font-bold">{ing.name}</span><span>{ing.current_price}€/{ing.purchase_unit || 'ud'}</span></button>))}</div>
                     </div>
                 </div>
             )}

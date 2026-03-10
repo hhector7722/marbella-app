@@ -1,0 +1,104 @@
+/**
+ * GOOGLE APPS SCRIPT — TRANSPORTADOR DE ALBARANES (IA)
+ * Bar La Marbella · Operativa Determinista
+ */
+
+var CONFIG_ALBARANES = {
+  // Lista de emails autorizados. Añade aquí a tus proveedores reales.
+  PROVEEDORES: ['hhector7722@gmail.com', 'info@grupsantateresa.com', 'peterdelperal@gmail.com', 'DELEGACION.BARCELONA@es.froneri.com'], 
+  NEXT_API_URL: 'https://marbella-app.vercel.app/api/webhooks/albaranes', // Ruta de la IA
+  ADMIN_EMAIL: 'hhector7722@gmail.com',
+  LABEL_PROCESADO: 'albaranes/procesado',
+  LABEL_ERROR: 'albaranes/error'
+};
+
+function procesarAlbaranesEntrantes() {
+  var props = PropertiesService.getScriptProperties();
+  var secret = props.getProperty('WEBHOOK_SECRET'); 
+  
+  if (!secret) {
+    Logger.log('ERROR: No se ha configurado WEBHOOK_SECRET.');
+    return;
+  }
+
+  // Construir query de búsqueda dinámica con los emails de los proveedores
+  var remitentes = CONFIG_ALBARANES.PROVEEDORES.map(function(email) { return 'from:' + email; }).join(' OR ');
+  
+  // MOTOR DE BÚSQUEDA BLINDADO: Exclusión global de singular y plural (con y sin tilde)
+  var query = '(' + remitentes + ') is:unread has:attachment filename:pdf' + 
+              ' -nomina -nómina -nominas -nóminas' +
+              ' -label:' + CONFIG_ALBARANES.LABEL_PROCESADO.replace('/', '-') + 
+              ' -label:' + CONFIG_ALBARANES.LABEL_ERROR.replace('/', '-');
+
+  var threads = GmailApp.search(query);
+  if (threads.length === 0) return;
+
+  var labelOk = _getOrCreateLabel(CONFIG_ALBARANES.LABEL_PROCESADO);
+  var labelError = _getOrCreateLabel(CONFIG_ALBARANES.LABEL_ERROR);
+
+  threads.forEach(function (thread) {
+    var messages = thread.getMessages();
+    var lastMessage = messages[messages.length - 1];
+
+    if (!lastMessage.isUnread()) return;
+
+    var attachments = lastMessage.getAttachments({ includeInlineImages: false });
+    var errorEnHilos = false;
+
+    attachments.forEach(function (att) {
+      if (att.getContentType() !== 'application/pdf' && !att.getName().toLowerCase().endsWith('.pdf')) return;
+
+      var filename = att.getName(); 
+      var b64 = Utilities.base64Encode(att.getBytes());
+      
+      var payload = {
+        fileBase64: b64,
+        filename: filename
+      };
+
+      var options = {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + secret },
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      try {
+        var response = UrlFetchApp.fetch(CONFIG_ALBARANES.NEXT_API_URL, options);
+        var code = response.getResponseCode();
+        var responseText = response.getContentText();
+        
+        if (code >= 200 && code < 300) {
+          Logger.log('✅ Éxito enviando albarán a la IA: ' + filename);
+        } else {
+          errorEnHilos = true;
+          _reportarErrorAlbaran(lastMessage, 'HTTP ' + code, responseText, filename);
+        }
+      } catch (e) {
+        errorEnHilos = true;
+        _reportarErrorAlbaran(lastMessage, 'FALLO CONEXIÓN', e.toString(), filename);
+      }
+    });
+
+    if (!errorEnHilos) {
+      thread.addLabel(labelOk);
+      lastMessage.markRead();
+    } else {
+      thread.addLabel(labelError);
+    }
+  });
+}
+
+function _reportarErrorAlbaran(message, tipo, detalle, fileName) {
+  var asunto = '[🚨 ERROR ALBARÁN] ' + fileName;
+  var cuerpo = 'Error al enviar a la IA: ' + fileName + '\nTipo: ' + tipo + '\nDetalle: ' + detalle;
+  GmailApp.sendEmail(CONFIG_ALBARANES.ADMIN_EMAIL, asunto, cuerpo);
+  Logger.log(asunto + ' - ' + detalle);
+}
+
+function _getOrCreateLabel(name) {
+  var label = GmailApp.getUserLabelByName(name);
+  if (!label) label = GmailApp.createLabel(name);
+  return label;
+}

@@ -11,7 +11,6 @@ export async function confirmarMapeoAction(formData: FormData) {
   const ingredientId = formData.get('ingredientId') as string
   const conversionFactor = parseFloat(formData.get('conversionFactor') as string || '1')
 
-  // Validar supplier_id antes de parseInt (evitar NaN)
   const supplierIdParsed = supplierIdRaw != null && supplierIdRaw.trim() !== ''
     ? parseInt(supplierIdRaw, 10)
     : null
@@ -19,7 +18,7 @@ export async function confirmarMapeoAction(formData: FormData) {
     throw new Error('ID de proveedor inválido')
   }
 
-  // 1. Crear el mapeo permanente para el futuro
+  // 1. Crear/actualizar mapeo permanente
   const { error: mapError } = await supabase
     .from('supplier_item_mappings')
     .upsert({
@@ -31,8 +30,47 @@ export async function confirmarMapeoAction(formData: FormData) {
 
   if (mapError) throw new Error(mapError.message)
 
-  // 2. Marcar la línea actual como mapeada
-  // El trigger de SQL que creamos antes se encargará de actualizar current_price automáticamente
+  // 2. Precio desde el albarán: actualizar ingrediente e historial (el trigger solo corre en INSERT de líneas)
+  const { data: line } = await supabase
+    .from('purchase_invoice_lines')
+    .select('unit_price')
+    .eq('id', lineId)
+    .single()
+
+  const unitPrice = line?.unit_price ?? 0
+  const factor = conversionFactor && !Number.isNaN(conversionFactor) ? conversionFactor : 1
+  const newPrice = unitPrice / factor
+
+  const { data: ing } = await supabase
+    .from('ingredients')
+    .select('current_price')
+    .eq('id', ingredientId)
+    .single()
+
+  const oldPrice = ing?.current_price ?? 0
+
+  await supabase.from('ingredient_price_history').insert({
+    ingredient_id: ingredientId,
+    old_price: oldPrice,
+    new_price: newPrice
+  })
+
+  const { error: updIngError } = await supabase
+    .from('ingredients')
+    .update({ current_price: newPrice, updated_at: new Date().toISOString() })
+    .eq('id', ingredientId)
+
+  if (updIngError) throw new Error(updIngError.message)
+
+  if (supplierIdParsed != null) {
+    await supabase
+      .from('supplier_item_mappings')
+      .update({ last_known_price: unitPrice })
+      .eq('supplier_id', supplierIdParsed)
+      .eq('supplier_item_name', originalName)
+  }
+
+  // 3. Marcar línea como mapeada
   const { error: lineError } = await supabase
     .from('purchase_invoice_lines')
     .update({ mapped_ingredient_id: ingredientId, status: 'mapped' })

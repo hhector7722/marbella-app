@@ -118,8 +118,10 @@ export default function CreateModal({
                                             onChange={e => updateRecipeIngredient(idx, 'unit', e.target.value)}
                                             className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:border-[#36606F] outline-none"
                                         >
+                                            <option value="g">g</option>
                                             <option value="kg">kg</option>
-                                            <option value="l">l</option>
+                                            <option value="ml">ml</option>
+                                            <option value="l">L</option>
                                             <option value="ud">ud</option>
                                         </select>
                                     </div>

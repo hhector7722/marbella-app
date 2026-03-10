@@ -10,6 +10,7 @@ import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
+import { recipeLineCost } from '@/lib/recipe-cost';
 
 interface Recipe {
     id: string;
@@ -20,7 +21,8 @@ interface Recipe {
     servings?: number;
     recipe_ingredients?: {
         quantity_gross: number;
-        ingredients: { current_price: number } | { current_price: number }[] | null;
+        unit: string | null;
+        ingredients: { current_price: number; purchase_unit?: string } | { current_price: number; purchase_unit?: string }[] | null;
     }[];
 }
 
@@ -88,7 +90,7 @@ function RecipesContent() {
     async function fetchRecipes() {
         try {
             setLoading(true);
-            const { data, error } = await supabase.from('recipes').select(`id, name, category, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, ingredients (current_price))`).order('name');
+            const { data, error } = await supabase.from('recipes').select(`id, name, category, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit))`).order('name');
             if (error) throw error;
             setRecipes(data || []);
         } catch (error) { console.error('Error fetching recipes:', error); } finally { setLoading(false); }
@@ -118,8 +120,10 @@ function RecipesContent() {
         if (!recipe.recipe_ingredients || !recipe.sale_price) return 'text-gray-400';
         const totalCost = recipe.recipe_ingredients.reduce((sum, item) => {
             const ingredient = Array.isArray(item.ingredients) ? item.ingredients[0] : item.ingredients;
-            const price = ingredient?.current_price || 0;
-            return sum + (item.quantity_gross * price);
+            const price = ingredient?.current_price ?? 0;
+            const purchaseUnit = ingredient?.purchase_unit ?? 'kg';
+            const recipeUnit = item.unit ?? 'kg';
+            return sum + recipeLineCost(item.quantity_gross, recipeUnit, purchaseUnit, price);
         }, 0);
         const basePrice = recipe.sale_price / 1.10;
         const foodCost = basePrice > 0 ? (totalCost / basePrice) * 100 : 0;

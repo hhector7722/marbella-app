@@ -76,3 +76,43 @@ Si en remoto ya tienes aplicadas migraciones a mano (por ejemplo desde el SQL Ed
 - O nombrar a mano: `YYYYMMDDHHMMSS_descripcion.sql`, comprobando que ese prefijo no exista ya en `supabase/migrations/`.
 
 Resumen: el fallo viene de **varias migraciones con el mismo prefijo (version)**. La solución es **un prefijo distinto por migración**; la forma más segura es usar fecha+hora en 14 dígitos.
+
+---
+
+## Error: "Remote migration versions not found in local migrations directory"
+
+Si al hacer `npx supabase db push` aparece que **en remoto hay versiones que ya no existen en tu carpeta local** (por ejemplo porque en remoto quedaron los prefijos antiguos `20260302`, `20260310`, `20260315` y localmente los renombraste a `20260302120000`, etc.):
+
+1. **Reparar el historial** (marca esas versiones remotas como "revertidas" para que el CLI no espere encontrarlas localmente):
+   ```bash
+   npx supabase migration repair --status reverted 20260302 20260310 20260315
+   ```
+   (Sustituye por las versiones que te indique el mensaje de error.)
+
+2. **Opcional:** Sincronizar esquema remoto a local:
+   ```bash
+   npx supabase db pull
+   ```
+
+3. Vuelve a intentar:
+   ```bash
+   npx supabase db push
+   ```
+
+**Alternativa:** Si prefieres no tocar el historial, puedes aplicar las migraciones nuevas **a mano** desde el **SQL Editor** del dashboard de Supabase (copiar el contenido del `.sql` y ejecutarlo).
+
+---
+
+## Error EPERM al usar `npx supabase` (Windows)
+
+Si ves avisos de **npm warn cleanup** y **EPERM: operation not permitted** al hacer `npx supabase db push`, es un problema de **permisos de la caché de npm** en Windows, no del comando en sí. El `db push` puede haber terminado bien.
+
+Opciones:
+
+- **Ignorar el aviso** si el push terminó correctamente.
+- **Instalar Supabase CLI globalmente** para no depender de npx:
+  ```bash
+  npm install -g supabase
+  supabase db push
+  ```
+- Cerrar VS Code / otros procesos que usen Node y volver a intentar, o ejecutar el terminal **como administrador** una vez para que npm pueda limpiar la caché.
