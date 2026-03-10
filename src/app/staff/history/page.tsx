@@ -500,8 +500,8 @@ export default function HistoryPage() {
                                                 />
                                             )}
                                             {/* ZONA IZQUIERDA (Fija) */}
-                                            <div className="w-16 pl-3 shrink-0 flex items-center h-full">
-                                                <span className="font-black text-[6px] uppercase leading-none text-zinc-600 whitespace-nowrap">
+                                            <div className="w-24 pl-3 shrink-0 flex items-center h-full">
+                                                <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
                                                     SEMANA {week.weekNumber}
                                                 </span>
                                             </div>
