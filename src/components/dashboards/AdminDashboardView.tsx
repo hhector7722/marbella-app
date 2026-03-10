@@ -18,7 +18,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
-import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
+import { getISOWeek, format, addDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
@@ -158,7 +158,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
     const [liveTickets, setLiveTickets] = useState(initialData?.liveTickets || { total: 0, count: 0 });
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>(initialData?.salesChartData || Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
-    const [salesChartBaseline, setSalesChartBaseline] = useState<{ hora: number; total: number }[]>([]);
     const [isSalesExpanded, setIsSalesExpanded] = useState(false);
     const [salesTickets, setSalesTickets] = useState<any[]>([]);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
@@ -286,52 +285,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
-    const fetchHourlyBaseline = async (targetDateStr?: string) => {
-        const dateStr = targetDateStr ?? format(new Date(), 'yyyy-MM-dd');
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const refDate = new Date(y, (m || 1) - 1, d || 1);
-        const refDow = refDate.getDay();
-        const dates: string[] = [];
-        for (let w = 1; w <= 4; w++) {
-            const d = subDays(refDate, 7 * w);
-            dates.push(format(d, 'yyyy-MM-dd'));
-        }
-        const startStr = dates[dates.length - 1];
-        const endStr = dates[0];
-        try {
-            const { data, error } = await supabase.rpc('get_hourly_sales', {
-                p_start_date: startStr,
-                p_end_date: endStr
-            });
-            if (error || !data?.length) {
-                setSalesChartBaseline([]);
-                return;
-            }
-            const byHora: Record<number, number[]> = {};
-            for (let h = 0; h < 24; h++) byHora[h] = [];
-            (data as { fecha: string; hora: number; total: number }[]).forEach((r) => {
-                const [yr, mo, dy] = String(r.fecha).split('T')[0].split('-').map(Number);
-                const dObj = new Date(yr, (mo || 1) - 1, dy || 1);
-                if (dObj.getDay() === refDow) {
-                    const h = Number(r.hora);
-                    if (h >= 0 && h < 24) byHora[h].push(Number(r.total) || 0);
-                }
-            });
-            const baseline = Array.from({ length: 24 }, (_, h) => {
-                const vals = byHora[h];
-                const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-                return { hora: h, total: avg };
-            });
-            setSalesChartBaseline(baseline);
-        } catch {
-            setSalesChartBaseline([]);
-        }
-    };
-
-    // Cargar ventas para la fecha seleccionada (hoy u otra)
+    // Cargar ventas para la fecha seleccionada (hoy u otra) — solo día en directo, sin línea de otras fechas
     const fetchSalesForDate = async (dateStr: string) => {
         await fetchHourlySales(dateStr);
-        await fetchHourlyBaseline(dateStr);
         try {
             const { data: salesStats } = await supabase.rpc('get_daily_sales_stats', { target_date: dateStr });
             setLiveTickets({
@@ -352,7 +308,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 lastDateStr = nowStr;
                 if (salesViewDate === nowStr) {
                     fetchHourlySales(nowStr);
-                    fetchHourlyBaseline(nowStr);
                 }
             }
         }, 60000);
@@ -464,9 +419,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 setOvertimeData(data.overtimeData);
                 setPaidStatus(data.paidStatus);
                 setAllEmployees(data.allEmployees);
-            }
-            if (salesViewDateRef.current === format(new Date(), 'yyyy-MM-dd')) {
-                fetchHourlyBaseline();
             }
         } catch (error) {
             console.error(error);
@@ -652,13 +604,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     {(() => {
                         const { start: hStart, end: hEnd } = BUSINESS_HOURS;
                         const chartData = salesChartData.filter(d => d.hora >= hStart && d.hora <= hEnd);
-                        const baselineData = salesChartBaseline.length > 0
-                            ? salesChartBaseline.filter(d => d.hora >= hStart && d.hora <= hEnd)
-                            : [];
                         const maxMain = Math.max(...chartData.map(d => d.total), 0);
-                        const maxBaseline = baselineData.length > 0 ? Math.max(...baselineData.map(d => d.total), 0) : 0;
-                        const scaleMax = Math.max(maxMain, maxBaseline, 1);
-                        const hasData = maxMain > 0 || maxBaseline > 0;
+                        const scaleMax = Math.max(maxMain, 1);
+                        const hasData = maxMain > 0;
                         if (!hasData) return null;
                         const numPoints = hEnd - hStart + 1;
                         const toPath = (data: { hora: number; total: number }[]) => {
@@ -675,21 +623,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         return (
                             <div className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2">
                                 <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block" preserveAspectRatio="none">
-                                    {baselineData.length === numPoints && (
-                                        <>
-                                            <path
-                                                d={toPath(baselineData) + ` L 120,22 L 0,22 Z`}
-                                                fill="#E2E8F0"
-                                                fillOpacity={0.6}
-                                            />
-                                            <path
-                                                d={toPath(baselineData)}
-                                                fill="none"
-                                                stroke="#E2E8F0"
-                                                strokeWidth="1"
-                                            />
-                                        </>
-                                    )}
                                     {x14 >= 0 && (
                                         <line
                                             x1={x14} y1={0}
