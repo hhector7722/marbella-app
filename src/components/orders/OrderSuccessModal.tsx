@@ -71,7 +71,9 @@ export function OrderSuccessModal({
             try {
                 blob = await pdfFirstPageToPngBlob(generatedBlob);
             } catch (err) {
-                toast.error('Error al crear la imagen del pedido');
+                const msg = err instanceof Error ? err.message : String(err);
+                console.error('pdfFirstPageToPngBlob error:', err);
+                toast.error(`Error al crear imagen: ${msg.slice(0, 80)}`);
                 return;
             }
         }

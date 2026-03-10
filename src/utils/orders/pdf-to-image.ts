@@ -1,11 +1,19 @@
-import { getDocument } from 'pdfjs-dist';
+// Legacy build: mejor compatibilidad con Next.js/Webpack
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+// Worker desde CDN (evita problemas de path en Next.js)
+if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
+  GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.5.207/legacy/build/pdf.worker.min.mjs';
+}
 
 /**
  * Convierte todas las páginas de un PDF (Blob) en una sola imagen PNG para copiar al portapapeles.
  */
 export async function pdfFirstPageToPngBlob(pdfBlob: Blob): Promise<Blob> {
   const buffer = await pdfBlob.arrayBuffer();
-  const pdfDoc = await getDocument({ data: new Uint8Array(buffer) }).promise;
+  const pdfDoc = await getDocument({
+    data: new Uint8Array(buffer),
+  }).promise;
   const numPages = pdfDoc.numPages;
   // Reducir escala con muchas páginas para no superar límites de canvas (Safari ~5M px, móviles ~4k)
   const scale = numPages > 2 ? 1 : 1.5;
