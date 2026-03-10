@@ -339,17 +339,13 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="p-4 bg-zinc-50/50">
-                            {/* Calendario mensual continuo (semanas pegadas) */}
-                            <div className="bg-white rounded-2xl overflow-visible border border-zinc-100 shadow-[0_6px_20px_rgba(0,0,0,0.18)]">
-                                {weeksData.map((week, idx) => (
-                                    <div
-                                        key={week.weekNumber}
-                                        className={cn(
-                                            "relative overflow-visible",
-                                            idx !== 0 && "border-t-2 border-zinc-200"
-                                        )}
-                                    >
+                        <div className="p-4 bg-zinc-50/50 space-y-4">
+                            {/* Cada semana con contorno y sombra propios */}
+                            {weeksData.map((week, idx) => (
+                                <div
+                                    key={week.weekNumber}
+                                    className="rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white"
+                                >
                                         {/* Cabecera de días (roja) SOLO una vez, al inicio del mes */}
                                         {idx === 0 && (
                                             <div className="rounded-t-2xl overflow-hidden">
@@ -487,10 +483,7 @@ export default function HistoryPage() {
                                         </div>
 
                                         {/* FILA: Resumen Semanal (integrada) */}
-                                        <div className={cn(
-                                            "bg-white border-t border-gray-100 flex items-center h-10 relative z-10",
-                                            idx === weeksData.length - 1 && "rounded-b-2xl"
-                                        )}>
+                                        <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
                                             {/* Sello PAGADO centrado en altura en la fila */}
                                             {week.summary.isPaid && (
                                                 <img
