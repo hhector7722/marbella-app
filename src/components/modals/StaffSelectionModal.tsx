@@ -20,6 +20,8 @@ interface StaffSelectionModalProps {
     /** 'grid' = cuadrícula compacta (registros, historial). 'profile-list' = lista tipo ficha perfil (Plantilla → /profile) */
     variant?: 'grid' | 'profile-list';
     children?: React.ReactNode;
+    /** Opcional: botón en cabecera para abrir la vista de Propinas desde /dashboard (Plantilla) */
+    onOpenTips?: () => void;
 }
 
 export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
@@ -29,7 +31,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     employees,
     title = "Plantilla",
     variant = 'grid',
-    children
+    children,
+    onOpenTips
 }) => {
     if (!isOpen) return null;
 
@@ -61,8 +64,17 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     "bg-[#36606F] flex justify-between items-center text-white shrink-0",
                     variant === 'profile-list' ? 'px-6 py-4' : 'px-8 py-6'
                 )}>
-                    <div>
-                        <h3 className="text-xl font-black uppercase tracking-wider leading-none">{title}</h3>
+                    <div className="flex items-center gap-3 min-w-0">
+                        <h3 className="text-xl font-black uppercase tracking-wider leading-none truncate">{title}</h3>
+                        {onOpenTips && (
+                            <button
+                                type="button"
+                                onClick={onOpenTips}
+                                className="hidden sm:inline-flex items-center justify-center h-9 px-3 rounded-2xl bg-white/10 hover:bg-white/20 text-[9px] font-black uppercase tracking-widest border border-white/20 active:scale-95 transition-all shrink-0"
+                            >
+                                Propinas
+                            </button>
+                        )}
                     </div>
                     <button
                         onClick={onClose}

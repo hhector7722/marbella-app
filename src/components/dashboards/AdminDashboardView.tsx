@@ -1066,6 +1066,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 onSelect={(emp) => router.push(`/profile?id=${emp.id}`)}
                 title="Plantilla"
                 variant="profile-list"
+                onOpenTips={() => {
+                    setIsStaffModalOpen(false);
+                    router.push('/dashboard/propinas');
+                }}
             />
 
             {isNewWorkerModalOpen && (
