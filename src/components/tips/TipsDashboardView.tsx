@@ -46,6 +46,14 @@ const fmtZeroBlank = (val: number, digits = 2) => (Math.abs(val) < 0.005 ? ' ' :
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${val.toFixed(2)}€`);
 const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)));
 
+/** Convierte cashBreakdown de JSON (claves string) a Record<number, number> para CashDenominationForm */
+function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
+  if (!b || typeof b !== 'object') return {};
+  return Object.fromEntries(
+    Object.entries(b).map(([k, v]) => [Number(k), Number(v)]).filter(([k]) => !isNaN(k))
+  );
+}
+
 export default function TipsDashboardView() {
   const supabase = createClient();
 
@@ -440,12 +448,12 @@ export default function TipsDashboardView() {
             onClick={(e) => e.stopPropagation()}
           >
             <CashDenominationForm
-              key={`${cashModal.poolType}-${startDate}-${endDate}`}
+              key={`tip-cash-${cashModal.poolType}-${startDate}-${endDate}`}
               type="in"
               boxName={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
               onCancel={() => setCashModal(null)}
               onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
-              initialCounts={{}}
+              initialCounts={breakdownToInitialCounts(cashModal.poolType === 'weekday' ? preview?.pools?.weekday?.cashBreakdown : preview?.pools?.weekend?.cashBreakdown)}
               availableStock={{}}
               submitLabel="Guardar bote"
             />
