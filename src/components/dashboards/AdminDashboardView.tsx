@@ -617,21 +617,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             });
                             return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
                         };
-                        const x14 = 14 >= hStart && 14 <= hEnd
-                            ? ((14 - hStart) / (numPoints - 1 || 1)) * 120
-                            : -1;
                         return (
                             <div className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2">
                                 <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block" preserveAspectRatio="none">
-                                    {x14 >= 0 && (
-                                        <line
-                                            x1={x14} y1={0}
-                                            x2={x14} y2={22}
-                                            stroke="#36606F"
-                                            strokeWidth="0.25"
-                                            opacity={0.4}
-                                        />
-                                    )}
                                     <path
                                         d={toPath(chartData)}
                                         fill="none"
