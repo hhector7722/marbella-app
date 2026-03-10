@@ -26,6 +26,7 @@ interface UserProfile {
     phone: string | null;
     dni: string | null;
     bank_account: string | null;
+    codigo_empleado?: string | null;
     contracted_hours_weekly?: number | null;
     hours_balance?: number | null;
     prefer_stock_hours?: boolean | null;
@@ -241,6 +242,13 @@ function ProfileContent() {
                             <div className="mt-8">
                                 <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Datos laborales</h2>
                                 <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-zinc-50 rounded-2xl p-4">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Código nóminas</p>
+                                        <p className="text-zinc-800 font-black text-base">{profile.codigo_empleado || '—'}</p>
+                                        {!profile.codigo_empleado && (
+                                            <p className="text-[9px] text-amber-600 mt-1">Sin código → nóminas no se vinculan</p>
+                                        )}
+                                    </div>
                                     <div className="bg-zinc-50 rounded-2xl p-4">
                                         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas contrato/sem</p>
                                         <p className="text-zinc-800 font-black text-base">{profile.contracted_hours_weekly ?? '—'}</p>

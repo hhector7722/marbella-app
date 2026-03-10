@@ -16,28 +16,38 @@ export async function POST(req: Request) {
         );
 
         // 3. Recepción del payload crudo
+        // Soporta dos métodos: codigo_empleado (legacy) o dni (extracción desde PDF)
         const body = await req.json();
-        const { fileBase64, filename, codigo_empleado, mes, year } = body;
+        const { fileBase64, filename, codigo_empleado, dni, mes, year } = body;
 
         const has = (v: unknown) => v != null && String(v).trim() !== '';
-        if (!has(fileBase64) || !has(filename) || !has(codigo_empleado) || !has(mes) || !has(year)) {
-            return NextResponse.json({ error: 'Faltan parámetros requeridos (fileBase64, filename, codigo_empleado, mes, year)' }, { status: 400 });
+        if (!has(fileBase64) || !has(filename) || !has(mes) || !has(year)) {
+            return NextResponse.json({ error: 'Faltan parámetros requeridos (fileBase64, filename, mes, year). Además se necesita codigo_empleado O dni.' }, { status: 400 });
+        }
+        if (!has(codigo_empleado) && !has(dni)) {
+            return NextResponse.json({ error: 'Se requiere codigo_empleado o dni para identificar al empleado.' }, { status: 400 });
         }
 
-        // 4. Validar que el perfil existe en BDP
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('codigo_empleado', codigo_empleado)
-            .single();
+        // 4. Buscar perfil por codigo_empleado (prioridad) o por dni (extracción desde PDF)
+        let profile: { id: string; codigo_empleado?: string | null } | null = null;
 
-        if (profileError || !profile) {
-            return NextResponse.json({ error: `Empleado con código ${codigo_empleado} no encontrado.` }, { status: 404 });
+        if (has(codigo_empleado)) {
+            const r = await supabase.from('profiles').select('id, codigo_empleado').eq('codigo_empleado', codigo_empleado).single();
+            profile = r.data ?? null;
+            if (r.error) return NextResponse.json({ error: `Empleado con código ${codigo_empleado} no encontrado.` }, { status: 404 });
+        }
+        if (!profile && has(dni)) {
+            const dniNorm = String(dni).trim().toUpperCase().replace(/[\s\-\.]/g, '');
+            const { data: profiles } = await supabase.from('profiles').select('id, codigo_empleado, dni');
+            profile = (profiles ?? []).find(p => p.dni && String(p.dni).toUpperCase().replace(/[\s\-\.]/g, '') === dniNorm) ?? null;
+            if (!profile) return NextResponse.json({ error: `Empleado con DNI ${dni} no encontrado. Verifica que profiles.dni coincida.` }, { status: 404 });
         }
 
-        // 5. Decodificar Base64 y subir a Supabase Storage
+        if (!profile) return NextResponse.json({ error: 'No se pudo identificar al empleado.' }, { status: 404 });
+
+        const pathPrefix = has(codigo_empleado) ? codigo_empleado : (profile.codigo_empleado ?? profile.id);
         const buffer = Buffer.from(fileBase64, 'base64');
-        const filePath = `${codigo_empleado}/${year}/${mes}_${filename}`;
+        const filePath = `${pathPrefix}/${year}/${mes}_${filename}`;
 
         const { error: uploadError } = await supabase.storage
             .from('nominas')
@@ -49,11 +59,12 @@ export async function POST(req: Request) {
         if (uploadError) throw uploadError;
 
         // 6. Guardar referencia en BD (Sin publicUrl porque el bucket es privado)
+        const codigoParaInsert = has(codigo_empleado) ? codigo_empleado : (profile.codigo_empleado ?? profile.id);
         const { error: dbError } = await supabase
             .from('employee_documents')
             .insert({
                 user_id: profile.id,
-                codigo_empleado: codigo_empleado,
+                codigo_empleado: codigoParaInsert,
                 tipo: 'nomina',
                 mes: mes,
                 year: Number(year),

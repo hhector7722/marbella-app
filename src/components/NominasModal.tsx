@@ -17,7 +17,6 @@ interface NominasModalProps {
 interface NominaRow {
     id: string;
     user_id: string;
-    tipo: string;
     mes: string;
     year: number;
     filename: string;
@@ -47,22 +46,75 @@ export default function NominasModal({ isOpen, onClose, targetUserId }: NominasM
                 // Si targetUserId viene (manager viendo ficha empleado), usar ese; si no, el propio usuario
                 const effectiveUserId = targetUserId ?? user.id;
 
-                const { data, error } = await supabase
+                // 1. employee_documents (webhook flow: codigo_empleado, tipo=nomina)
+                const { data: edData, error: edError } = await supabase
                     .from('employee_documents')
-                    .select('id, user_id, tipo, mes, year, filename, storage_path, created_at')
+                    .select('id, user_id, mes, year, filename, storage_path, created_at')
                     .eq('user_id', effectiveUserId)
                     .eq('tipo', 'nomina')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error('Error fetching nominas:', error);
-                    toast.error('Error al cargar las nóminas');
-                    setNominas([]);
-                    setLoading(false);
-                    return;
+                if (edError) {
+                    console.error('Error fetching employee_documents nominas:', edError);
                 }
 
-                setNominas(data ?? []);
+                // 2. nominas (tabla legacy: empleado_id, mes_anio, file_path)
+                const { data: nomData, error: nomError } = await supabase
+                    .from('nominas')
+                    .select('id, empleado_id, mes_anio, file_path, created_at')
+                    .eq('empleado_id', effectiveUserId)
+                    .order('created_at', { ascending: false });
+
+                if (nomError) {
+                    console.error('Error fetching nominas legacy:', nomError);
+                }
+
+                // Normalizar y fusionar (evitar duplicados por storage_path)
+                const seen = new Set<string>();
+                const merged: NominaRow[] = [];
+
+                for (const row of edData ?? []) {
+                    if (row.storage_path && !seen.has(row.storage_path)) {
+                        seen.add(row.storage_path);
+                        merged.push({
+                            id: row.id,
+                            user_id: row.user_id,
+                            mes: row.mes ?? '',
+                            year: row.year ?? 0,
+                            filename: row.filename ?? '',
+                            storage_path: row.storage_path,
+                            created_at: row.created_at
+                        });
+                    }
+                }
+
+                for (const row of nomData ?? []) {
+                    if (row.file_path && !seen.has(row.file_path)) {
+                        seen.add(row.file_path);
+                        const parts = (row.mes_anio ?? '').split('-');
+                        const [a, b] = parts;
+                        const isYearFirst = a?.length === 4;
+                        const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
+                        const mes = isYearFirst ? (b ?? '') : (a ?? '');
+                        merged.push({
+                            id: row.id,
+                            user_id: row.empleado_id,
+                            mes,
+                            year,
+                            filename: `Nómina ${row.mes_anio ?? ''}`,
+                            storage_path: row.file_path,
+                            created_at: row.created_at
+                        });
+                    }
+                }
+
+                merged.sort((a, b) => {
+                    const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+                    const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+                    return db - da;
+                });
+
+                setNominas(merged);
             } catch (err) {
                 console.error('NominasModal fetch error:', err);
                 toast.error('Error al cargar las nóminas');

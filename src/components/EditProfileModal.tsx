@@ -19,6 +19,7 @@ interface EditProfileModalProps {
         phone: string | null;
         email: string;
         prefer_stock_hours?: boolean | null;
+        codigo_empleado?: string | null;
     };
 }
 
@@ -26,6 +27,7 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
     const [dni, setDni] = useState(profile.dni || '');
     const [iban, setIban] = useState(profile.bank_account || '');
     const [phone, setPhone] = useState(profile.phone || '');
+    const [codigoEmpleado, setCodigoEmpleado] = useState(profile.codigo_empleado || '');
     const [preferStockHours, setPreferStockHours] = useState(profile.prefer_stock_hours || false);
     const [loading, setLoading] = useState(false);
 
@@ -38,7 +40,8 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
             dni: dni.trim() || undefined,
             bank_account: iban.trim() || undefined,
             phone: phone.trim() || undefined,
-            prefer_stock_hours: preferStockHours
+            prefer_stock_hours: preferStockHours,
+            codigo_empleado: codigoEmpleado.trim() || undefined
         });
         setLoading(false);
 
@@ -70,6 +73,17 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess, profile }
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
                     <div className="space-y-4">
+                        <div>
+                            <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Código empleado (nóminas)</label>
+                            <input
+                                type="text"
+                                value={codigoEmpleado}
+                                onChange={e => setCodigoEmpleado(e.target.value)}
+                                placeholder="Ej: 01, 02, 03… (debe coincidir con el nombre del PDF)"
+                                className="w-full h-14 px-5 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-300"
+                            />
+                            <p className="mt-1 text-[9px] text-gray-400 ml-1">Nombre PDF: «febrero-01.pdf» → código 01</p>
+                        </div>
                         <div>
                             <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">DNI / NIE</label>
                             <input
