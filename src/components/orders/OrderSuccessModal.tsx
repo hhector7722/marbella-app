@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Share2, Send, Copy } from 'lucide-react';
+import { Download, Share2, Send } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
@@ -30,7 +30,7 @@ export function OrderSuccessModal({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const [cachedPngBlob, setCachedPngBlob] = useState<Blob | null>(null);
-    const [imageError, setImageError] = useState<string | null>(null);
+    const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
 
     useEffect(() => {
         if (generatedBlob) {
@@ -46,62 +46,90 @@ export function OrderSuccessModal({
     useEffect(() => {
         if (!isOpen || !generatedBlob) {
             setCachedPngBlob(null);
-            setImageError(null);
             return;
         }
         let cancelled = false;
-        setImageError(null);
         pdfFirstPageToPngBlob(generatedBlob).then((blob) => {
             if (!cancelled) setCachedPngBlob(blob);
-        }).catch((err) => {
-            if (!cancelled) {
-                setCachedPngBlob(null);
-                setImageError(err instanceof Error ? err.message : 'Error al crear imagen');
-            }
+        }).catch(() => {
+            if (!cancelled) setCachedPngBlob(null);
         });
         return () => { cancelled = true; };
     }, [isOpen, generatedBlob]);
 
+    useEffect(() => {
+        if (!isOpen) setShowConfirmEnviar(false);
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
-    /** Copia la imagen al portapapeles. Llamar desde clic directo (user gesture). */
-    const handleCopyImage = async () => {
+    const mensaje = 'Adjunto pedido.\n\nRecordad enviar el albarán a marbellaremote@gmail.com.\n\nGracias.';
+
+    /** Paso 1: Copia imagen al portapapeles y muestra confirmación para abrir WhatsApp */
+    const handleProveedor = async () => {
+        if (!supplierPhone || !generatedBlob) return;
+
+        setIsCapturing(true);
         let blob = cachedPngBlob;
-        if (!blob && generatedBlob) {
+        if (!blob) {
             try {
                 blob = await pdfFirstPageToPngBlob(generatedBlob);
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.error('pdfFirstPageToPngBlob error:', err);
                 toast.error(`Error al crear imagen: ${msg.slice(0, 80)}`);
+                setIsCapturing(false);
                 return;
             }
         }
         if (!blob) {
             toast.warning('Espera a que se genere la imagen…');
+            setIsCapturing(false);
             return;
         }
-        try {
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-            ]);
-            toast.success('Imagen copiada al portapapeles');
-        } catch {
+
+        let copied = false;
+        if (navigator.clipboard?.write) {
             try {
-                await navigator.clipboard.write([
-                    new ClipboardItem({ 'image/png': Promise.resolve(blob) })
-                ]);
-                toast.success('Imagen copiada al portapapeles');
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                copied = true;
             } catch {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'Pedido_Bar_La_Marbella.png';
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.info('Imagen descargada. Adjúntala manualmente en WhatsApp.');
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(blob) })]);
+                    copied = true;
+                } catch {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Pedido_Bar_La_Marbella.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast.info('Imagen descargada. Adjúntala en WhatsApp.');
+                }
             }
+        } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Pedido_Bar_La_Marbella.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.info('Imagen descargada. Adjúntala en WhatsApp.');
         }
+        if (copied) toast.success('Imagen copiada al portapapeles');
+
+        setShowConfirmEnviar(true);
+        setIsCapturing(false);
+    };
+
+    /** Paso 2: Abre WhatsApp con el contacto del proveedor (desde modal de confirmación) */
+    const handleConfirmEnviar = () => {
+        if (!supplierPhone) return;
+        const cleanPhone = supplierPhone.replace(/\D/g, '');
+        const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
+        const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
+        window.open(whatsappUrl, '_blank');
+        setShowConfirmEnviar(false);
     };
 
     const handleShare = async () => {
@@ -129,87 +157,6 @@ export function OrderSuccessModal({
             }
         } catch (error) {
             console.error('Error sharing:', error);
-        }
-    };
-
-    const handleWhatsApp = async () => {
-        if (!supplierPhone || !generatedBlob) return;
-
-        setIsCapturing(true);
-        const mensaje = 'Adjunto pedido.\n\nRecordad enviar el albarán a marbellaremote@gmail.com.\n\nGracias.';
-        const cleanPhone = supplierPhone.replace(/\D/g, '');
-        const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
-        const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
-
-        try {
-            // Usar imagen pre-cacheada si existe (clipboard requiere user gesture inmediato)
-            let pngBlob = cachedPngBlob;
-            if (!pngBlob) {
-                pngBlob = await pdfFirstPageToPngBlob(generatedBlob);
-            }
-
-            if (pngBlob) {
-                if (navigator.clipboard?.write) {
-                    try {
-                        await navigator.clipboard.write([
-                            new ClipboardItem({ 'image/png': pngBlob })
-                        ]);
-                        toast.success('Imagen copiada al portapapeles');
-                    } catch {
-                        try {
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })
-                            ]);
-                            toast.success('Imagen copiada al portapapeles');
-                        } catch {
-                            const file = new File([pngBlob], 'Pedido.png', { type: 'image/png' });
-                            if (navigator.canShare?.({ files: [file] })) {
-                                try {
-                                    await navigator.share({ files: [file], text: mensaje });
-                                    toast.success('Selecciona WhatsApp y el contacto del proveedor');
-                                    setIsCapturing(false);
-                                    return;
-                                } catch {
-                                    // Fallback: descargar imagen
-                                    const url = URL.createObjectURL(pngBlob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = 'Pedido_Bar_La_Marbella.png';
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                    toast.info('Imagen descargada. Adjúntala en WhatsApp.');
-                                }
-                            } else {
-                                const url = URL.createObjectURL(pngBlob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = 'Pedido_Bar_La_Marbella.png';
-                                a.click();
-                                URL.revokeObjectURL(url);
-                                toast.info('Imagen descargada. Adjúntala en WhatsApp.');
-                            }
-                        }
-                    }
-                } else {
-                    const url = URL.createObjectURL(pngBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Pedido_Bar_La_Marbella.png';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    toast.info('Imagen descargada. Adjúntala en WhatsApp.');
-                }
-            } else {
-                toast.warning('No se pudo crear la imagen. Usa "Descargar" para el PDF.');
-            }
-
-            window.open(whatsappUrl, '_blank');
-        } catch (error: unknown) {
-            console.error('Error WhatsApp:', error);
-            toast.error('Error al procesar. Usa "Descargar" y envía el PDF manualmente.');
-            window.open(whatsappUrl, '_blank');
-        } finally {
-            setIsCapturing(false);
         }
     };
 
@@ -269,7 +216,7 @@ export function OrderSuccessModal({
                         </button>
 
                         <button
-                            onClick={handleWhatsApp}
+                            onClick={handleProveedor}
                             disabled={isCapturing || !generatedBlob || !supplierPhone}
                             className={cn(
                                 "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
@@ -281,21 +228,6 @@ export function OrderSuccessModal({
                         </button>
                     </div>
 
-                    {/* Copiar imagen: clic directo = user gesture para clipboard */}
-                    <button
-                        onClick={handleCopyImage}
-                        disabled={isCapturing || !generatedBlob}
-                        className={cn(
-                            "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50 min-h-[48px]",
-                            "bg-zinc-100 hover:bg-zinc-200 border border-zinc-200"
-                        )}
-                    >
-                        <Copy size={16} className="text-[#36606F]" />
-                        <span className="text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
-                            {cachedPngBlob ? 'Copiar imagen' : imageError ? 'Error imagen' : 'Preparando imagen…'}
-                        </span>
-                    </button>
-
                     {/* Main Action */}
                     <button
                         onClick={onClose}
@@ -305,6 +237,31 @@ export function OrderSuccessModal({
                     </button>
                 </div>
             </div>
+
+            {/* Modal de confirmación: ¿Enviar pedido al proveedor? */}
+            {showConfirmEnviar && (
+                <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-[90] rounded-[2.5rem] animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-6 mx-4 max-w-[280px] shadow-xl">
+                        <p className="text-center text-sm font-medium text-zinc-700 mb-4">
+                            ¿Estás seguro de que deseas enviar el pedido al proveedor?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirmEnviar(false)}
+                                className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmEnviar}
+                                className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white transition-all min-h-[48px]"
+                            >
+                                Sí, enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
