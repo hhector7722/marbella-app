@@ -13,8 +13,8 @@ interface NominasMenuModalProps {
 
 const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
     { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin.png' },
-    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contract.png' },
-    { key: 'contrato', label: 'Contrato', iconPath: '/icons/contrato.png' },
+    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
+    { key: 'contrato', label: 'Contrato', iconPath: '/icons/contract.png' },
 ];
 
 export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasMenuModalProps) {
@@ -43,18 +43,16 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
                         <X size={22} strokeWidth={2.5} />
                     </button>
                 </div>
-                <div className="p-6 grid grid-cols-1 gap-3">
+                <div className="p-6 grid grid-cols-1 gap-6">
                     {OPTIONS.map(({ key, label, iconPath }) => (
                         <button
                             key={key}
                             type="button"
                             onClick={() => { onSelect(key); onClose(); }}
-                            className="min-h-[56px] flex items-center gap-4 p-4 rounded-2xl border border-zinc-100 bg-white hover:bg-zinc-50 hover:border-[#36606F]/20 transition-all active:scale-[0.99]"
+                            className="min-h-[56px] flex items-center justify-center gap-3 p-3 transition-all active:scale-[0.98] hover:opacity-80"
                         >
-                            <div className="w-12 h-12 rounded-xl bg-[#36606F]/10 flex items-center justify-center shrink-0 overflow-hidden">
-                                <img src={iconPath} alt="" className="w-7 h-7 object-contain" />
-                            </div>
-                            <span className="font-black text-zinc-800 text-sm uppercase tracking-wide text-left">{label}</span>
+                            <img src={iconPath} alt="" className="w-10 h-10 object-contain shrink-0" />
+                            <span className="font-black text-zinc-800 text-sm uppercase tracking-wide">{label}</span>
                         </button>
                     ))}
                 </div>
