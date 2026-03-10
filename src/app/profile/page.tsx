@@ -215,31 +215,25 @@ function ProfileContent() {
                         </div>
 
                         <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                            <div className="relative">
-                                <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-3 flex-shrink-0 overflow-hidden">
-                                    {profile.avatar_url ? (
-                                        <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
-                                    ) : (
-                                        <img src="/icons/profile.png" alt="" className="w-full h-full object-cover rounded-xl" />
-                                    )}
-                                </div>
-                                {showAccountSection && (
-                                    <label className="absolute -top-5 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-white/90 text-[#36606F] shadow-md hover:bg-white transition-colors cursor-pointer active:scale-95">
-                                        <input
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp,image/gif"
-                                            onChange={handleAvatarChange}
-                                            disabled={avatarUploading}
-                                            className="hidden"
-                                        />
-                                        {avatarUploading ? (
-                                            <span className="text-[8px] font-black uppercase tracking-widest">Subiendo…</span>
-                                        ) : (
-                                            <span className="text-[8px] font-black uppercase tracking-widest">Editar</span>
-                                        )}
-                                    </label>
+                            <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-2 flex-shrink-0 overflow-hidden">
+                                {profile.avatar_url ? (
+                                    <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
+                                ) : (
+                                    <img src="/icons/profile.png" alt="" className="w-full h-full object-cover rounded-xl" />
                                 )}
                             </div>
+                            {showAccountSection && (
+                                <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95">
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        onChange={handleAvatarChange}
+                                        disabled={avatarUploading}
+                                        className="hidden"
+                                    />
+                                    {avatarUploading ? 'Subiendo…' : 'Editar'}
+                                </label>
+                            )}
                             <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
                             {viewMode === 'staff' && <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>}
                             {viewMode === 'manager-employee' && (
