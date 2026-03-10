@@ -625,7 +625,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         d={toPath(chartData)}
                                         fill="none"
                                         stroke="#36606F"
-                                        strokeWidth="1.5"
+                                        strokeWidth="2"
+                                        strokeLinecap="butt"
+                                        strokeLinejoin="miter"
+                                        vectorEffect="non-scaling-stroke"
                                     />
                                 </svg>
                             </div>
