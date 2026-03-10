@@ -55,6 +55,7 @@ export default function NewOrderPage() {
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [supplierPhoneForSuccess, setSupplierPhoneForSuccess] = useState<string | null>(null);
 
     useEffect(() => {
         let channel: any;
@@ -201,6 +202,7 @@ export default function NewOrderPage() {
             setIsSuccessOpen(true);
             setIsGenerating(true);
             setIsUploading(true);
+            setSupplierPhoneForSuccess(targetSupplier.phone ?? null);
 
             const { data: order, error: orderError } = await supabase.from('purchase_orders').insert({
                 order_number: orderNum,
@@ -383,12 +385,13 @@ export default function NewOrderPage() {
                 isOpen={isSuccessOpen}
                 pdfUrl={pdfUrl}
                 generatedBlob={generatedBlob}
-                supplierPhone={dbSuppliers.find(s => s.name.toLowerCase() === selectedSupplier?.toLowerCase())?.phone || null}
+                supplierPhone={supplierPhoneForSuccess}
                 isUploading={isUploading}
                 isGenerating={isGenerating}
                 onDownload={handleDownload}
                 onClose={() => {
                     setIsSuccessOpen(false);
+                    setSupplierPhoneForSuccess(null);
                     // Persistent quantities: no router.refresh() or reset needed
                 }}
             />

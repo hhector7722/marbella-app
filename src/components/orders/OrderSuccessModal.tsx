@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Download, Share2, Send } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
+import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -74,27 +75,20 @@ export function OrderSuccessModal({
 
         setIsCapturing(true);
         try {
-            const file = new File([generatedBlob], 'Pedido_Bar_La_Marbella.pdf', { type: 'application/pdf' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Pedido Bar La Marbella',
-                    text: 'Adjunto pedido. Recordad enviarnos el albarán también por correo a marbellaremote@gmail.com por favor. Gracias.'
-                });
-                setIsCapturing(false);
-                return;
-            }
+            const pngBlob = await pdfFirstPageToPngBlob(generatedBlob);
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': pngBlob })
+            ]);
+            toast.success('Imagen del pedido copiada al portapapeles');
 
-            // Fallback: sin Web Share API o en PC — enviar URL del PDF en el texto
-            const linkTexto = pdfUrl || 'Descarga el PDF desde el botón "Descargar" de la app.';
-            const mensaje = `Adjunto pedido. Podéis descargarlo aquí: ${linkTexto}. Recordad enviarnos el albarán también por correo a marbellaremote@gmail.com por favor. Gracias.`;
+            const mensaje = 'Adjunto pedido. Recordad enviarnos el albarán también por correo a marbellaremote@gmail.com por favor. Gracias.';
             const cleanPhone = supplierPhone.replace(/\D/g, '');
             const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
             const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
             window.open(whatsappUrl, '_blank');
         } catch (error) {
             console.error('Error WhatsApp:', error);
-            toast.error('Error al abrir WhatsApp.');
+            toast.error('Error al copiar o abrir WhatsApp.');
         } finally {
             setIsCapturing(false);
         }
