@@ -36,7 +36,7 @@ interface UserProfile {
 }
 
 const PROFILE_GRID = [
-    { id: 'datos-personales', label: 'Datos personales', icon: '/icons/staff-card.png' },
+    { id: 'datos-personales', label: 'Datos personales', icon: '/icons/profile.png' },
     { id: 'contacto', label: 'Contacto', icon: '/icons/phone.png' },
     { id: 'datos-bancarios', label: 'Datos bancarios', icon: '/icons/visa.png' },
     { id: 'nominas', label: 'Nóminas', icon: '/icons/admin.png' },
