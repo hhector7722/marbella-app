@@ -350,7 +350,7 @@ export default function HistoryPage() {
                                                         onClick={() => setEditingDate(day.date)}
                                                         className={cn(
                                                             "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center p-1 pb-1 cursor-pointer transition-colors",
-                                                            isOtherMonth ? "bg-gray-100 hover:bg-gray-200/80" : "bg-white hover:bg-zinc-50",
+                                                            "bg-white hover:bg-zinc-50",
                                                             day.isToday && !isOtherMonth && "bg-blue-50/10"
                                                         )}
                                                     >
@@ -358,8 +358,7 @@ export default function HistoryPage() {
                                                         <span
                                                             className={cn(
                                                                 "absolute top-1 right-1 text-[9px] font-bold",
-                                                                day.isToday && !isOtherMonth ? "text-blue-600" : "text-gray-400",
-                                                                isOtherMonth && "opacity-60"
+                                                                day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400")
                                                             )}
                                                         >
                                                             {day.dayNumber}
@@ -368,12 +367,12 @@ export default function HistoryPage() {
                                                         {/* Centro: evento especial o fichajes. Filas de altura fija para alinear círculos verde/rojo entre días. */}
                                                         <div className={cn(
                                                             "flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]",
-                                                            isOtherMonth && "opacity-55"
+                                                            isOtherMonth && "opacity-45"
                                                         )}>
                                                             {isSpecial ? (
                                                                 <>
                                                                     <div className="h-5 flex items-center justify-center shrink-0">
-                                                                        <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color)}>
+                                                                        <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color, isOtherMonth && "opacity-60")}>
                                                                             {eventConfig.showCross ? (
                                                                                 <X size={14} strokeWidth={2.5} className="text-white" />
                                                                             ) : (
@@ -389,8 +388,8 @@ export default function HistoryPage() {
                                                                     <div className="h-5 flex items-center justify-center gap-1 shrink-0">
                                                                         {day.hasLog ? (
                                                                             <>
-                                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                                                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
+                                                                                <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
                                                                             </>
                                                                         ) : <span className="text-[9px] text-transparent select-none">0</span>}
                                                                     </div>
@@ -399,12 +398,12 @@ export default function HistoryPage() {
                                                                         {day.hasLog && day.clockOut ? (
                                                                             day.clock_out_show_no_registrada ? (
                                                                                 <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
-                                                                                    <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
+                                                                                    <X size={14} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-600")} />
                                                                                 </span>
                                                                             ) : (
                                                                                 <>
-                                                                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                                                                                    <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
+                                                                                    <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                                                 </>
                                                                             )
                                                                         ) : (day.hasLog && !day.clockOut && day.isToday) ? (
@@ -421,12 +420,12 @@ export default function HistoryPage() {
                                                         {!isSpecial && (
                                                             <div className={cn(
                                                                 "w-full space-y-0 mt-0.5 min-h-[20px]",
-                                                                isOtherMonth && "opacity-55"
+                                                                isOtherMonth && "opacity-45"
                                                             )}>
                                                                 {day.hasLog && hFormatted ? (
                                                                     <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                                                         <span className="ml-0.5">H</span>
-                                                                        <span className="font-bold text-gray-800 pr-1">{hFormatted}</span>
+                                                                        <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{hFormatted}</span>
                                                                     </div>
                                                                 ) : (
                                                                     <div className="h-3" />
@@ -434,7 +433,7 @@ export default function HistoryPage() {
                                                                 {exFormatted ? (
                                                                     <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
                                                                         <span className="ml-0.5">Ex</span>
-                                                                        <span className="font-bold text-gray-800 pr-1">{exFormatted}</span>
+                                                                        <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
                                                                     </div>
                                                                 ) : (
                                                                     <div className="h-3" />
@@ -461,7 +460,7 @@ export default function HistoryPage() {
                                             )}
                                             {/* ZONA IZQUIERDA (Fija) */}
                                             <div className="w-16 pl-3 shrink-0 flex items-center h-full">
-                                                <span className="font-black text-[9px] uppercase leading-none text-zinc-600">
+                                                <span className="font-black text-[6px] uppercase leading-none text-zinc-600 whitespace-nowrap">
                                                     SEMANA {week.weekNumber}
                                                 </span>
                                             </div>
