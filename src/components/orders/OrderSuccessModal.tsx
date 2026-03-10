@@ -29,6 +29,7 @@ export function OrderSuccessModal({
 }: OrderSuccessModalProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
+    const [cachedPngBlob, setCachedPngBlob] = useState<Blob | null>(null);
 
     useEffect(() => {
         if (generatedBlob) {
@@ -39,6 +40,21 @@ export function OrderSuccessModal({
             setPreviewUrl(null);
         }
     }, [generatedBlob]);
+
+    // Pre-convertir PDF a imagen al abrir para que el clipboard tenga la imagen lista al clic (preserva user gesture)
+    useEffect(() => {
+        if (!isOpen || !generatedBlob) {
+            setCachedPngBlob(null);
+            return;
+        }
+        let cancelled = false;
+        pdfFirstPageToPngBlob(generatedBlob).then((blob) => {
+            if (!cancelled) setCachedPngBlob(blob);
+        }).catch(() => {
+            if (!cancelled) setCachedPngBlob(null);
+        });
+        return () => { cancelled = true; };
+    }, [isOpen, generatedBlob]);
 
     if (!isOpen) return null;
 
@@ -74,21 +90,47 @@ export function OrderSuccessModal({
         if (!supplierPhone || !generatedBlob) return;
 
         setIsCapturing(true);
-        const mensaje = 'Adjunto pedido. Recordad enviarnos el albarán también por correo a marbellaremote@gmail.com por favor. Gracias.';
+        const mensaje = 'Adjunto pedido.\n\nRecordad enviar el albarán a marbellaremote@gmail.com.\n\nGracias.';
         const cleanPhone = supplierPhone.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`;
         const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(mensaje)}`;
 
         try {
-            const pngBlob = await pdfFirstPageToPngBlob(generatedBlob);
+            // Usar imagen pre-cacheada si existe (clipboard requiere user gesture inmediato)
+            let pngBlob = cachedPngBlob;
+            if (!pngBlob) {
+                pngBlob = await pdfFirstPageToPngBlob(generatedBlob);
+            }
 
-            // Safari requiere Promise en ClipboardItem; evita límites de canvas con escala dinámica
-            try {
-                await navigator.clipboard.write([
-                    new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })
-                ]);
-                toast.success('Imagen copiada al portapapeles');
-            } catch {
+            if (pngBlob && navigator.clipboard?.write) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': pngBlob })
+                    ]);
+                    toast.success('Imagen copiada al portapapeles');
+                } catch {
+                    try {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })
+                        ]);
+                        toast.success('Imagen copiada al portapapeles');
+                    } catch {
+                        const file = new File([pngBlob], 'Pedido.png', { type: 'image/png' });
+                        if (navigator.canShare?.({ files: [file] })) {
+                            try {
+                                await navigator.share({ files: [file], text: mensaje });
+                                toast.success('Selecciona WhatsApp y el contacto del proveedor');
+                                setIsCapturing(false);
+                                return;
+                            } catch {
+                                toast.warning('No se pudo copiar. Usa "Descargar" y adjunta el PDF.');
+                            }
+                        } else {
+                            toast.warning('No se pudo copiar la imagen. Usa "Descargar" y adjunta el PDF en WhatsApp.');
+                        }
+                    }
+                }
+            } else {
                 toast.warning('No se pudo copiar la imagen. Usa "Descargar" y adjunta el PDF en WhatsApp.');
             }
 
