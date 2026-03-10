@@ -21,11 +21,12 @@ interface OrderProductCardProps {
     ingredient: Ingredient;
     initialQuantity?: number;
     initialUnit?: string | null;
-    userId: string;
+    /** When set, draft is persisted per supplier (shared for all users). When null, only local state. */
+    supplierId?: string | number | null;
     onQuantityChange?: (ingredientId: string, quantity: number, unit: string) => void;
 }
 
-export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit, userId, onQuantityChange }: OrderProductCardProps) {
+export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit, supplierId, onQuantityChange }: OrderProductCardProps) {
     const supabase = createClient();
     const unitOptions = ['pack', 'caja', 'unidad', 'kg', 'pieza', 'lt', 'otro...'];
 
@@ -73,9 +74,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         onQuantityChange?.(ingredient.id, newQ, fUnit);
     };
 
-    // 3. DB Syncer (Debounced for Server writes)
+    // 3. DB Syncer (Debounced). Only persist when supplierId is set (drafts are per supplier).
     useEffect(() => {
-        if (!isDirtyRef.current) return;
+        if (!isDirtyRef.current || supplierId == null) return;
 
         const timer = setTimeout(async () => {
             setIsUpdating(true);
@@ -84,22 +85,20 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
                 if (quantity > 0) {
                     await supabase.from('order_drafts').upsert({
-                        user_id: userId,
+                        supplier_id: supplierId,
                         ingredient_id: ingredient.id,
                         quantity: quantity,
                         unit: finalUnit,
                         updated_at: new Date().toISOString()
                     });
 
-                    // Also update preferred unit in ingredients
                     await supabase.from('ingredients').update({ order_unit: finalUnit }).eq('id', ingredient.id);
                 } else {
                     await supabase.from('order_drafts').delete()
-                        .eq('user_id', userId)
+                        .eq('supplier_id', supplierId)
                         .eq('ingredient_id', ingredient.id);
                 }
 
-                // Mark clean after DB sync is initiated
                 isDirtyRef.current = false;
             } catch (error) {
                 console.error('Error updating draft:', error);
@@ -109,7 +108,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         }, 600);
 
         return () => clearTimeout(timer);
-    }, [quantity, unit, isCustomUnit, customUnit, userId, ingredient.id, supabase]);
+    }, [quantity, unit, isCustomUnit, customUnit, supplierId, ingredient.id, supabase]);
 
     const handleIncrement = () => updateLocal(quantity + 1, unit, isCustomUnit, customUnit);
     const handleDecrement = () => updateLocal(Math.max(0, quantity - 1), unit, isCustomUnit, customUnit);

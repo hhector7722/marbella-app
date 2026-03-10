@@ -57,64 +57,32 @@ export default function NewOrderPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [supplierPhoneForSuccess, setSupplierPhoneForSuccess] = useState<string | null>(null);
 
+    // supplierId for drafts (drafts are shared per supplier)
+    const supplierId = selectedSupplier ? dbSuppliers.find(s => s.name === selectedSupplier)?.id ?? null : null;
+
     useEffect(() => {
-        let channel: any;
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
-                await fetchData(user.id);
-
-                // Supabase Realtime para actualizar la IU al recibir comandos de voz de la IA
-                channel = supabase.channel('order_drafts_changes')
-                    .on('postgres_changes', {
-                        event: '*',
-                        schema: 'public',
-                        table: 'order_drafts',
-                        filter: `user_id=eq.${user.id}`
-                    }, (payload) => {
-                        console.log('Realtime AI worker event:', payload);
-                        if (payload.eventType === 'DELETE') {
-                            setDrafts(prev => {
-                                const newDrafts = { ...prev };
-                                delete newDrafts[payload.old.ingredient_id];
-                                return newDrafts;
-                            });
-                        } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                            setDrafts(prev => ({
-                                ...prev,
-                                [payload.new.ingredient_id]: {
-                                    quantity: Number(payload.new.quantity),
-                                    unit: payload.new.unit || 'unidad'
-                                }
-                            }));
-                        }
-                    })
-                    .subscribe();
+                await fetchData();
             }
         };
         init();
-
-        return () => {
-            if (channel) supabase.removeChannel(channel);
-        };
     }, []);
 
-    async function fetchData(uid: string) {
-        setLoading(true);
-        try {
-            const { data: ingData } = await supabase.from('ingredients').select('*').order('name');
-            setIngredients(ingData || []);
-
-            // Fetch registered suppliers for ID lookup
-            const { data: supData } = await supabase.from('suppliers').select('id, name, phone');
-            setDbSuppliers(supData || []);
-
-            // Unique suppliers from ingredients for the filter dropdown
-            const uniqueSuppliers = Array.from(new Set((ingData || []).map(i => i.supplier).filter(Boolean))) as string[];
-            setSuppliers(uniqueSuppliers);
-
-            const { data: draftData } = await supabase.from('order_drafts').select('ingredient_id, quantity, unit').eq('user_id', uid);
+    // Load drafts for the selected supplier (shared: anyone sees the same draft for that supplier)
+    useEffect(() => {
+        if (!supplierId) {
+            setDrafts({});
+            return;
+        }
+        let channel: ReturnType<typeof supabase.channel> | null = null;
+        const loadDrafts = async () => {
+            const { data: draftData } = await supabase
+                .from('order_drafts')
+                .select('ingredient_id, quantity, unit')
+                .eq('supplier_id', supplierId);
             const draftMap: Record<string, DraftItem> = {};
             draftData?.forEach(d => {
                 draftMap[d.ingredient_id] = {
@@ -123,6 +91,51 @@ export default function NewOrderPage() {
                 };
             });
             setDrafts(draftMap);
+        };
+        loadDrafts();
+
+        channel = supabase.channel(`order_drafts_supplier_${supplierId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'order_drafts',
+                filter: `supplier_id=eq.${supplierId}`
+            }, (payload) => {
+                if (payload.eventType === 'DELETE') {
+                    setDrafts(prev => {
+                        const newDrafts = { ...prev };
+                        delete newDrafts[payload.old.ingredient_id];
+                        return newDrafts;
+                    });
+                } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                    setDrafts(prev => ({
+                        ...prev,
+                        [payload.new.ingredient_id]: {
+                            quantity: Number(payload.new.quantity),
+                            unit: payload.new.unit || 'unidad'
+                        }
+                    }));
+                }
+            })
+            .subscribe();
+
+        return () => {
+            if (channel) supabase.removeChannel(channel);
+        };
+    }, [supplierId]);
+
+    async function fetchData() {
+        setLoading(true);
+        try {
+            const { data: ingData } = await supabase.from('ingredients').select('*').order('name');
+            setIngredients(ingData || []);
+
+            const { data: supData } = await supabase.from('suppliers').select('id, name, phone');
+            setDbSuppliers(supData || []);
+
+            const uniqueSuppliers = Array.from(new Set((ingData || []).map(i => i.supplier).filter(Boolean))) as string[];
+            setSuppliers(uniqueSuppliers);
+            // Drafts are loaded in useEffect when supplierId is set (shared per supplier)
         } catch (error) {
             console.error('Error fetching data:', error);
             toast.error('Error al cargar datos');
@@ -147,18 +160,24 @@ export default function NewOrderPage() {
         }));
 
     const handleNewOrder = async () => {
-        if (!userId) return;
-        const confirms = window.confirm('¿Estás seguro de que quieres empezar un NUEVO pedido? Se borrarán todas las cantidades actuales de TODOS los proveedores.');
+        if (!supplierId || !selectedSupplier) return;
+        const confirms = window.confirm(`¿Reiniciar cantidades del borrador de "${selectedSupplier}"? Solo se pondrán a 0 las cantidades de este proveedor.`);
         if (!confirms) return;
 
         setIsProcessing(true);
         try {
-            const { error } = await supabase.from('order_drafts').delete().eq('user_id', userId);
+            const { error } = await supabase.from('order_drafts').delete().eq('supplier_id', supplierId);
             if (error) throw error;
-            setDrafts({});
-            toast.success('Cantidades reiniciadas');
+            setDrafts(prev => {
+                const next = { ...prev };
+                ingredients.filter(ing => ing.supplier === selectedSupplier).forEach(ing => {
+                    delete next[ing.id];
+                });
+                return next;
+            });
+            toast.success('Borrador de este proveedor reiniciado');
         } catch (error) {
-            console.error('Error clearing all drafts:', error);
+            console.error('Error clearing supplier draft:', error);
             toast.error('Error al reiniciar');
         } finally {
             setIsProcessing(false);
@@ -362,7 +381,7 @@ export default function NewOrderPage() {
                         <OrderProductCard
                             key={ing.id}
                             ingredient={ing}
-                            userId={userId!}
+                            supplierId={supplierId}
                             initialQuantity={drafts[ing.id]?.quantity || 0}
                             initialUnit={drafts[ing.id]?.unit}
                             onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
