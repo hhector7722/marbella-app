@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Home, LogOut, User, Calendar, Clock, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
-import Image from 'next/image';
+import { Avatar } from '@/components/ui/Avatar';
 import { toast } from 'sonner';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
@@ -108,19 +108,7 @@ export default function BottomNavStaff() {
         { name: 'Pedidos', href: '/orders/new', icon: Package },
         {
             name: 'Cuenta', href: '/profile', icon: () => (
-                <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
-                    {userData?.avatar_url ? (
-                        <Image
-                            src={userData.avatar_url}
-                            alt="Me"
-                            width={24}
-                            height={24}
-                            className="w-full h-full object-cover rounded-full"
-                        />
-                    ) : (
-                        <User size={20} className="text-current" />
-                    )}
-                </div>
+                <Avatar src={userData?.avatar_url ?? null} alt="Cuenta" size="sm" />
             )
         },
     ];

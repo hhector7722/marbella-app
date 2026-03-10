@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface Employee {
     id: string;
@@ -97,13 +97,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                     }}
                                     className="group flex flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
                                 >
-                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                                        {emp.avatar_url ? (
-                                            <Image src={emp.avatar_url} alt={emp.first_name} width={56} height={56} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <img src="/icons/profile.png" alt="" className="w-8 h-8 sm:w-10 sm:h-10 object-contain opacity-70" />
-                                        )}
-                                    </div>
+                                    <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
                                     <p className="text-[10px] font-black text-zinc-800 leading-tight truncate w-full text-center uppercase tracking-tight">
                                         {emp.first_name || 'Sin nombre'}
                                     </p>
@@ -122,12 +116,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                     }}
                                     className="group flex flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
                                 >
-                                    <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden transition-all group-hover:-translate-y-1 shrink-0">
-                                        {emp.avatar_url ? (
-                                            <Image src={emp.avatar_url} alt={emp.first_name} width={56} height={56} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <img src="/icons/profile.png" alt="" className="w-10 h-10 object-contain opacity-70" />
-                                        )}
+                                    <div className="transition-all group-hover:-translate-y-1 shrink-0">
+                                        <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
                                     </div>
                                     <div className="text-center">
                                         <p className="text-[10px] font-black text-zinc-700 leading-tight truncate w-full max-w-[70px] uppercase">

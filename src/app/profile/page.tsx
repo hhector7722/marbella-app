@@ -4,10 +4,10 @@ import { useEffect, useState, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import Image from 'next/image';
 import { ArrowLeft, Settings, Receipt } from 'lucide-react';
 import { updateAvatar } from '@/app/actions/profile';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
 import EditProfileModal from '@/components/EditProfileModal';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
@@ -137,7 +137,9 @@ function ProfileContent() {
         e.target.value = '';
         if (result.success) {
             toast.success('Imagen actualizada');
-            if (result.avatarUrl) setProfile(p => p ? { ...p, avatar_url: result.avatarUrl! } : null);
+            if (result.avatarUrl) {
+                setProfile(p => p ? { ...p, avatar_url: result.avatarUrl! + '?t=' + Date.now() } : null);
+            }
             fetchInitialData();
         } else {
             toast.error(result.error || 'Error al subir');
@@ -215,13 +217,7 @@ function ProfileContent() {
                         </div>
 
                         <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                            <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-2 flex-shrink-0 overflow-hidden">
-                                {profile.avatar_url ? (
-                                    <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
-                                ) : (
-                                    <img src="/icons/profile.png" alt="" className="w-full h-full object-cover rounded-xl" />
-                                )}
-                            </div>
+                            <Avatar src={profile.avatar_url} alt={fullName} size="lg" className="shadow-xl mb-2 bg-white" />
                             {showAccountSection && (
                                 <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95">
                                     <input
@@ -271,29 +267,13 @@ function ProfileContent() {
                         {viewMode === 'manager-employee' && (
                             <div className="mt-8">
                                 <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Datos laborales</h2>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-zinc-50 rounded-2xl p-4">
-                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Código nóminas</p>
-                                        <p className="text-zinc-800 font-black text-base">{profile.codigo_empleado || '—'}</p>
-                                        {!profile.codigo_empleado && (
-                                            <p className="text-[9px] text-amber-600 mt-1">Sin código → nóminas no se vinculan</p>
-                                        )}
-                                    </div>
-                                    <div className="bg-zinc-50 rounded-2xl p-4">
-                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas contrato/sem</p>
-                                        <p className="text-zinc-800 font-black text-base">{profile.contracted_hours_weekly ?? '—'}</p>
-                                    </div>
-                                    <div className="bg-zinc-50 rounded-2xl p-4">
-                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Banco horas</p>
-                                        <p className="text-zinc-800 font-black text-base">{profile.hours_balance ?? '—'}</p>
-                                    </div>
-                                </div>
-                                <a
-                                    href="/registros"
-                                    className="mt-4 flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
+                                <button
+                                    type="button"
+                                    onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
+                                    className="flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
                                 >
-                                    Ver en Registros
-                                </a>
+                                    Ver registros
+                                </button>
                             </div>
                         )}
                     </div>

@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight
@@ -64,6 +65,7 @@ type MonthlyTimesheetRpcWeek = Omit<WeekData, 'days'> & { days: MonthlyTimesheet
 
 export default function HistoryPage() {
     const supabase = createClient();
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [weeksData, setWeeksData] = useState<WeekData[]>([]);
 
@@ -110,6 +112,12 @@ export default function HistoryPage() {
     }, [supabase]);
 
     useEffect(() => { void initUser(); }, [initUser]);
+    // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
+    useEffect(() => {
+        const id = searchParams.get('id');
+        if (userRole === 'manager' && id && currentUserId) setSelectedEmployeeId(id);
+    }, [searchParams, userRole, currentUserId]);
+
     useEffect(() => {
         if (currentUserId) fetchCalendar();
         // eslint-disable-next-line react-hooks/exhaustive-deps
