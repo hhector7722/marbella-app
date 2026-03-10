@@ -157,115 +157,108 @@ function ProfileContent() {
     const fullName = `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase();
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] pb-24">
+        <div className="min-h-screen bg-[#5B8FB9] pb-24 p-4">
             <div className="max-w-2xl mx-auto">
-                {/* Cabecera: petróleo, flecha atrás, avatar, nombre, banda */}
-                <div className={cn('bg-[#36606F] text-white relative overflow-hidden shrink-0', viewMode === 'staff' ? 'pt-6 pb-4 px-4' : 'pt-6 pb-4 px-4')}>
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
+                {/* Un solo contenedor: esquinas redondeadas, cabecera petróleo + contenido */}
+                <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden min-h-[60vh] flex flex-col">
+                    {/* Cabecera petróleo */}
+                    <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 pt-6 pb-4 px-4">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
 
-                    {/* Botón atrás (izq) y acciones (dcha) */}
-                    <div className="relative z-10 flex items-center justify-between">
-                        <button
-                            onClick={viewMode === 'manager-employee' ? () => router.push('/dashboard') : () => router.back()}
-                            className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white/90 hover:bg-white/10 transition-all active:scale-95"
-                            aria-label="Volver"
-                        >
-                            <ArrowLeft size={24} strokeWidth={2.5} />
-                        </button>
-                        <div className="flex items-center gap-2">
-                            {viewMode === 'manager-self' && currentUser?.id === 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6' && (
-                                <button
-                                    onClick={() => router.push('/dashboard/ledger')}
-                                    className="h-12 px-4 flex items-center gap-2 bg-[#5B8FB9] shadow-xl rounded-xl hover:bg-blue-400 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest"
-                                >
-                                    <Receipt size={18} strokeWidth={2.5} />
-                                    Facturas
-                                </button>
-                            )}
-                            {(viewMode === 'manager-self' || viewMode === 'manager-employee') && (
-                                <button
-                                    onClick={() => setIsEditModalOpen(true)}
-                                    className="min-h-[48px] min-w-[48px] flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 text-white"
-                                >
-                                    <Settings size={20} />
-                                </button>
+                        <div className="relative z-10 flex items-center justify-between">
+                            <button
+                                onClick={viewMode === 'manager-employee' ? () => router.push('/dashboard') : () => router.back()}
+                                className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white/90 hover:bg-white/10 transition-all active:scale-95"
+                                aria-label="Volver"
+                            >
+                                <ArrowLeft size={24} strokeWidth={2.5} />
+                            </button>
+                            <div className="flex items-center gap-2">
+                                {viewMode === 'manager-self' && currentUser?.id === 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6' && (
+                                    <button
+                                        onClick={() => router.push('/dashboard/ledger')}
+                                        className="h-12 px-4 flex items-center gap-2 bg-[#5B8FB9] shadow-xl rounded-xl hover:bg-blue-400 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        <Receipt size={18} strokeWidth={2.5} />
+                                        Facturas
+                                    </button>
+                                )}
+                                {(viewMode === 'manager-self' || viewMode === 'manager-employee') && (
+                                    <button
+                                        onClick={() => setIsEditModalOpen(true)}
+                                        className="min-h-[48px] min-w-[48px] flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 text-white"
+                                    >
+                                        <Settings size={20} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="relative z-10 flex flex-col items-center text-center mt-4">
+                            <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-3 flex-shrink-0 overflow-hidden">
+                                {profile.avatar_url ? (
+                                    <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
+                                ) : (
+                                    <img src="/icons/staff-card.png" alt="" className="w-full h-full object-cover rounded-xl" />
+                                )}
+                            </div>
+                            <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
+                            {viewMode === 'staff' && <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>}
+                            {viewMode === 'manager-employee' && (
+                                <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full mt-1">
+                                    {profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff'}
+                                </span>
                             )}
                         </div>
+                        <div className="absolute bottom-0 left-0 right-0 h-2 bg-white/10 rounded-t-full" />
                     </div>
 
-                    <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                        <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-3 flex-shrink-0 overflow-hidden">
-                            {profile.avatar_url ? (
-                                <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
-                            ) : (
-                                <img src="/icons/staff-card.png" alt="" className="w-full h-full object-cover rounded-xl" />
-                            )}
+                    {/* Contenido: iconos flotando sin marco ni fondo */}
+                    <div className="flex-1 bg-white px-4 pt-6 pb-8">
+                        <div className="grid grid-cols-2 gap-6">
+                            {gridItems.map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => handleGridAction(item.id)}
+                                    className={cn(
+                                        'min-h-[80px] flex flex-col items-center justify-center p-3 transition-all active:scale-[0.98]',
+                                        item.id === 'cerrar-sesion' ? 'hover:opacity-80' : 'hover:opacity-90'
+                                    )}
+                                >
+                                    <img src={item.icon} alt="" className="w-10 h-10 object-contain mb-2 shrink-0" />
+                                    <span className={cn(
+                                        'font-black text-[10px] uppercase tracking-widest text-center leading-tight',
+                                        item.id === 'cerrar-sesion' ? 'text-rose-600' : 'text-zinc-700'
+                                    )}>
+                                        {item.label}
+                                    </span>
+                                </button>
+                            ))}
                         </div>
-                        <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
-                        {viewMode === 'staff' && <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>}
+
                         {viewMode === 'manager-employee' && (
-                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full mt-1">
-                                {profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff'}
-                            </span>
+                            <div className="mt-8">
+                                <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Datos laborales</h2>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-zinc-50 rounded-2xl p-4">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas contrato/sem</p>
+                                        <p className="text-zinc-800 font-black text-base">{profile.contracted_hours_weekly ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-zinc-50 rounded-2xl p-4">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Banco horas</p>
+                                        <p className="text-zinc-800 font-black text-base">{profile.hours_balance ?? '—'}</p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="/registros"
+                                    className="mt-4 flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
+                                >
+                                    Ver en Registros
+                                </a>
+                            </div>
                         )}
                     </div>
-                    {/* Banda decorativa */}
-                    <div className="absolute bottom-0 left-0 right-0 h-2 bg-white/10 rounded-t-full" />
-                </div>
-
-                {/* Tarjeta blanca con grid 3x2 (Bento) */}
-                <div className="bg-white rounded-t-[1.5rem] shadow-xl -mt-2 relative z-10 min-h-[50vh] px-4 pt-6 pb-8">
-                    <div className="grid grid-cols-2 gap-4">
-                        {gridItems.map((item) => (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => handleGridAction(item.id)}
-                                className={cn(
-                                    'min-h-[100px] flex flex-col items-center justify-center p-4 rounded-2xl border border-zinc-100 shadow-sm transition-all active:scale-[0.98]',
-                                    item.id === 'cerrar-sesion'
-                                        ? 'hover:border-rose-200 hover:bg-rose-50/50'
-                                        : 'hover:shadow-md hover:border-[#36606F]/15'
-                                )}
-                            >
-                                <div className={cn(
-                                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-2 shrink-0 overflow-hidden',
-                                    item.id === 'cerrar-sesion' ? 'bg-rose-500/10' : 'bg-[#36606F]/10'
-                                )}>
-                                    <img src={item.icon} alt="" className="w-8 h-8 object-contain" />
-                                </div>
-                                <span className={cn(
-                                    'font-black text-[10px] uppercase tracking-widest text-center leading-tight',
-                                    item.id === 'cerrar-sesion' ? 'text-rose-600' : 'text-zinc-700'
-                                )}>
-                                    {item.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Datos laborales solo en vista manager → empleado */}
-                    {viewMode === 'manager-employee' && (
-                        <div className="mt-8">
-                            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">Datos laborales</h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-zinc-50 rounded-2xl p-4">
-                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas contrato/sem</p>
-                                    <p className="text-zinc-800 font-black text-base">{profile.contracted_hours_weekly ?? '—'}</p>
-                                </div>
-                                <div className="bg-zinc-50 rounded-2xl p-4">
-                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Banco horas</p>
-                                    <p className="text-zinc-800 font-black text-base">{profile.hours_balance ?? '—'}</p>
-                                </div>
-                            </div>
-                            <a
-                                href="/registros"
-                                className="mt-4 flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
-                            >
-                                Ver en Registros
-                            </a>
-                        </div>
-                    )}
                 </div>
             </div>
 
