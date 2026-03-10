@@ -9,7 +9,6 @@ import { ArrowLeft, Settings, Receipt, Pencil } from 'lucide-react';
 import { updateAvatar } from '@/app/actions/profile';
 import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
-import DocumentManager from '@/components/DocumentManager';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -36,7 +35,7 @@ interface UserProfile {
 }
 
 const PROFILE_GRID = [
-    { id: 'datos-personales', label: 'Datos personales', icon: '/icons/profile.png' },
+    { id: 'datos-personales', label: 'Datos personales', icon: '/icons/staff-card.png' },
     { id: 'contacto', label: 'Contacto', icon: '/icons/phone.png' },
     { id: 'datos-bancarios', label: 'Datos bancarios', icon: '/icons/visa.png' },
     { id: 'nominas', label: 'Nóminas', icon: '/icons/admin.png' },
@@ -216,11 +215,29 @@ function ProfileContent() {
                         </div>
 
                         <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                            <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-3 flex-shrink-0 overflow-hidden">
-                                {profile.avatar_url ? (
-                                    <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
-                                ) : (
-                                    <img src="/icons/profile.png" alt="" className="w-full h-full object-cover rounded-xl" />
+                            <div className="relative">
+                                <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-xl mb-3 flex-shrink-0 overflow-hidden">
+                                    {profile.avatar_url ? (
+                                        <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
+                                    ) : (
+                                        <img src="/icons/profile.png" alt="" className="w-full h-full object-cover rounded-xl" />
+                                    )}
+                                </div>
+                                {showAccountSection && (
+                                    <label className="absolute -top-1 -right-1 min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg bg-white/90 text-[#36606F] shadow-md hover:bg-white transition-colors cursor-pointer active:scale-95">
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp,image/gif"
+                                            onChange={handleAvatarChange}
+                                            disabled={avatarUploading}
+                                            className="hidden"
+                                        />
+                                        {avatarUploading ? (
+                                            <span className="text-[8px] font-black">…</span>
+                                        ) : (
+                                            <Pencil size={12} strokeWidth={2.5} />
+                                        )}
+                                    </label>
                                 )}
                             </div>
                             <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
@@ -231,7 +248,6 @@ function ProfileContent() {
                                 </span>
                             )}
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 h-2 bg-white/10 rounded-t-full" />
                     </div>
 
                     {/* Contenido: iconos flotando sin marco ni fondo */}
@@ -257,36 +273,6 @@ function ProfileContent() {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Pie: imagen de perfil + Editar (solo propio perfil) */}
-                        {showAccountSection && (
-                            <div className="mt-8 pt-6 border-t border-zinc-100 flex flex-col items-center gap-3">
-                                <div className="w-20 h-20 rounded-2xl bg-zinc-100 overflow-hidden flex-shrink-0">
-                                    {profile.avatar_url ? (
-                                        <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full" />
-                                    ) : (
-                                        <img src="/icons/profile.png" alt="" className="w-full h-full object-cover" />
-                                    )}
-                                </div>
-                                <label className="min-h-[48px] flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57] transition-colors cursor-pointer active:scale-[0.98]">
-                                    <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp,image/gif"
-                                        onChange={handleAvatarChange}
-                                        disabled={avatarUploading}
-                                        className="hidden"
-                                    />
-                                    {avatarUploading ? (
-                                        <span className="opacity-80">Subiendo…</span>
-                                    ) : (
-                                        <>
-                                            <Pencil size={14} strokeWidth={2.5} />
-                                            Editar
-                                        </>
-                                    )}
-                                </label>
-                            </div>
-                        )}
 
                         {viewMode === 'manager-employee' && (
                             <div className="mt-8">
