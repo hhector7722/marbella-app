@@ -242,29 +242,29 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                     </div>
                                 ))}
                             </div>
-                        </div>
 
-                        {/* Footer totales — fotocopia de /staff/dashboard (Horas, Extras, Pendiente, Importe) */}
-                        <div className="p-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
-                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
-                                <span className="font-black text-gray-800 text-sm">{formatValue(weekData.summary.totalHours)}</span>
-                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Horas</span>
-                            </div>
-                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
-                                <span className="font-black text-sm text-blue-600">{formatValue(weekData.summary.weeklyBalance)}</span>
-                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Extras</span>
-                            </div>
-                            <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
-                                <span className={`font-black text-sm ${(weekData.summary.startBalance ?? 0) > 0 ? 'text-green-600' :
-                                    (weekData.summary.startBalance ?? 0) < 0 ? 'text-red-500' : 'text-gray-400'
-                                    }`}>
-                                    {formatValue(weekData.summary.startBalance)}
-                                </span>
-                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Pendiente</span>
-                            </div>
-                            <div className="flex flex-col items-center px-4 shrink-0">
-                                <span className="font-black text-sm text-green-600">{formatMoney(weekData.summary.estimatedValue)}</span>
-                                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Importe</span>
+                            {/* Footer totales — fotocopia de /staff/dashboard (Horas, Extras, Pendiente, Importe) */}
+                            <div className="p-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+                                <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                    <span className="font-black text-gray-800 text-sm">{formatValue(weekData.summary.totalHours)}</span>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Horas</span>
+                                </div>
+                                <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                    <span className="font-black text-sm text-blue-600">{formatValue(weekData.summary.weeklyBalance)}</span>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Extras</span>
+                                </div>
+                                <div className="flex flex-col items-center px-4 border-r border-gray-200 shrink-0">
+                                    <span className={`font-black text-sm ${(weekData.summary.startBalance ?? 0) > 0 ? 'text-green-600' :
+                                        (weekData.summary.startBalance ?? 0) < 0 ? 'text-red-500' : 'text-gray-400'
+                                        }`}>
+                                        {formatValue(weekData.summary.startBalance)}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Pendiente</span>
+                                </div>
+                                <div className="flex flex-col items-center px-4 shrink-0">
+                                    <span className="font-black text-sm text-green-600">{formatMoney(weekData.summary.estimatedValue)}</span>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">Importe</span>
+                                </div>
                             </div>
                         </div>
                     ) : (
