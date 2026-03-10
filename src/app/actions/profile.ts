@@ -125,6 +125,55 @@ export async function deleteEmployeeDocument(docId: string, filePath: string) {
     return { success: true };
 }
 
+export async function updateAvatar(userId: string, formData: FormData): Promise<{ success: boolean; error?: string; avatarUrl?: string }> {
+    const supabase = await createClient();
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+    if (currentUser.id !== userId) {
+        return { success: false, error: 'Solo puedes editar tu propia imagen de perfil' };
+    }
+
+    const file = formData.get('avatar') as File | null;
+    if (!file || !file.size) return { success: false, error: 'No se ha seleccionado ninguna imagen' };
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+        return { success: false, error: 'Formato no permitido. Usa JPG, PNG, WebP o GIF.' };
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+        return { success: false, error: 'La imagen no puede superar 2 MB' };
+    }
+
+    const filePath = `${userId}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+        console.error('Avatar upload error:', uploadError);
+        return { success: false, error: uploadError.message };
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', userId);
+
+    if (updateError) {
+        console.error('Profile update error:', updateError);
+        return { success: false, error: updateError.message };
+    }
+
+    revalidatePath('/profile');
+    return { success: true, avatarUrl: publicUrl };
+}
+
 export async function completeOnboarding() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

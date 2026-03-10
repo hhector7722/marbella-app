@@ -5,7 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { ArrowLeft, Settings, Receipt } from 'lucide-react';
+import { ArrowLeft, Settings, Receipt, Pencil } from 'lucide-react';
+import { updateAvatar } from '@/app/actions/profile';
 import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
 import DocumentManager from '@/components/DocumentManager';
@@ -63,6 +64,7 @@ function ProfileContent() {
     const [comunicadosOpen, setComunicadosOpen] = useState(false);
     const [contratoOpen, setContratoOpen] = useState(false);
     const [logoutConfirm, setLogoutConfirm] = useState(false);
+    const [avatarUploading, setAvatarUploading] = useState(false);
 
     useEffect(() => {
         fetchInitialData();
@@ -122,6 +124,24 @@ function ProfileContent() {
             case 'cerrar-sesion':
                 setLogoutConfirm(true);
                 break;
+        }
+    };
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !profile || currentUser?.id !== profile.id) return;
+        setAvatarUploading(true);
+        const formData = new FormData();
+        formData.set('avatar', file);
+        const result = await updateAvatar(profile.id, formData);
+        setAvatarUploading(false);
+        e.target.value = '';
+        if (result.success) {
+            toast.success('Imagen actualizada');
+            if (result.avatarUrl) setProfile(p => p ? { ...p, avatar_url: result.avatarUrl! } : null);
+            fetchInitialData();
+        } else {
+            toast.error(result.error || 'Error al subir');
         }
     };
 
@@ -200,7 +220,7 @@ function ProfileContent() {
                                 {profile.avatar_url ? (
                                     <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full rounded-xl" />
                                 ) : (
-                                    <img src="/icons/staff-card.png" alt="" className="w-full h-full object-cover rounded-xl" />
+                                    <img src="/icons/profile.png" alt="" className="w-full h-full object-cover rounded-xl" />
                                 )}
                             </div>
                             <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
@@ -237,6 +257,36 @@ function ProfileContent() {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Pie: imagen de perfil + Editar (solo propio perfil) */}
+                        {showAccountSection && (
+                            <div className="mt-8 pt-6 border-t border-zinc-100 flex flex-col items-center gap-3">
+                                <div className="w-20 h-20 rounded-2xl bg-zinc-100 overflow-hidden flex-shrink-0">
+                                    {profile.avatar_url ? (
+                                        <Image src={profile.avatar_url} alt={fullName} width={80} height={80} className="object-cover w-full h-full" />
+                                    ) : (
+                                        <img src="/icons/profile.png" alt="" className="w-full h-full object-cover" />
+                                    )}
+                                </div>
+                                <label className="min-h-[48px] flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57] transition-colors cursor-pointer active:scale-[0.98]">
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        onChange={handleAvatarChange}
+                                        disabled={avatarUploading}
+                                        className="hidden"
+                                    />
+                                    {avatarUploading ? (
+                                        <span className="opacity-80">Subiendo…</span>
+                                    ) : (
+                                        <>
+                                            <Pencil size={14} strokeWidth={2.5} />
+                                            Editar
+                                        </>
+                                    )}
+                                </label>
+                            </div>
+                        )}
 
                         {viewMode === 'manager-employee' && (
                             <div className="mt-8">
