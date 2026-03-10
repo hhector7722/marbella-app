@@ -251,10 +251,12 @@ export async function generateOrderPDF(data: OrderData): Promise<Blob> {
 
     // --- FOOTER: Albarán reminder ---
     const reminderY = doc.lastAutoTable.finalY + 15;
-    doc.setFontSize(10);
+    const centerX = pageWidth / 2;
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    doc.text('Por favor, enviad el albarán a marbellaremote@gmail.com. Gracias.', margin, reminderY);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Enviar albarán por correo a marbellaremote@gmail.com', centerX, reminderY, { align: 'center' });
+    doc.text('Gracias', centerX, reminderY + 7, { align: 'center' });
 
     console.log("PDF GENERATOR V9.0: Cleanup Complete");
     return doc.output('blob');
