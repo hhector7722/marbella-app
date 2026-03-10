@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { ArrowLeft, Settings, Receipt, Pencil } from 'lucide-react';
+import { ArrowLeft, Settings, Receipt } from 'lucide-react';
 import { updateAvatar } from '@/app/actions/profile';
 import { cn } from '@/lib/utils';
 import EditProfileModal from '@/components/EditProfileModal';
@@ -224,7 +224,7 @@ function ProfileContent() {
                                     )}
                                 </div>
                                 {showAccountSection && (
-                                    <label className="absolute -top-1 -right-1 min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg bg-white/90 text-[#36606F] shadow-md hover:bg-white transition-colors cursor-pointer active:scale-95">
+                                    <label className="absolute -top-5 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-white/90 text-[#36606F] shadow-md hover:bg-white transition-colors cursor-pointer active:scale-95">
                                         <input
                                             type="file"
                                             accept="image/jpeg,image/png,image/webp,image/gif"
@@ -233,9 +233,9 @@ function ProfileContent() {
                                             className="hidden"
                                         />
                                         {avatarUploading ? (
-                                            <span className="text-[8px] font-black">…</span>
+                                            <span className="text-[8px] font-black uppercase tracking-widest">Subiendo…</span>
                                         ) : (
-                                            <Pencil size={12} strokeWidth={2.5} />
+                                            <span className="text-[8px] font-black uppercase tracking-widest">Editar</span>
                                         )}
                                     </label>
                                 )}
