@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Share2, Send } from 'lucide-react';
+import { Download, Share2, Send, Copy } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
@@ -30,6 +30,7 @@ export function OrderSuccessModal({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const [cachedPngBlob, setCachedPngBlob] = useState<Blob | null>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
 
     useEffect(() => {
         if (generatedBlob) {
@@ -41,22 +42,65 @@ export function OrderSuccessModal({
         }
     }, [generatedBlob]);
 
-    // Pre-convertir PDF a imagen al abrir para que el clipboard tenga la imagen lista al clic (preserva user gesture)
+    // Pre-convertir PDF a imagen al abrir
     useEffect(() => {
         if (!isOpen || !generatedBlob) {
             setCachedPngBlob(null);
+            setImageError(null);
             return;
         }
         let cancelled = false;
+        setImageError(null);
         pdfFirstPageToPngBlob(generatedBlob).then((blob) => {
             if (!cancelled) setCachedPngBlob(blob);
-        }).catch(() => {
-            if (!cancelled) setCachedPngBlob(null);
+        }).catch((err) => {
+            if (!cancelled) {
+                setCachedPngBlob(null);
+                setImageError(err instanceof Error ? err.message : 'Error al crear imagen');
+            }
         });
         return () => { cancelled = true; };
     }, [isOpen, generatedBlob]);
 
     if (!isOpen) return null;
+
+    /** Copia la imagen al portapapeles. Llamar desde clic directo (user gesture). */
+    const handleCopyImage = async () => {
+        let blob = cachedPngBlob;
+        if (!blob && generatedBlob) {
+            try {
+                blob = await pdfFirstPageToPngBlob(generatedBlob);
+            } catch (err) {
+                toast.error('Error al crear la imagen del pedido');
+                return;
+            }
+        }
+        if (!blob) {
+            toast.warning('Espera a que se genere la imagen…');
+            return;
+        }
+        try {
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+            toast.success('Imagen copiada al portapapeles');
+        } catch {
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': Promise.resolve(blob) })
+                ]);
+                toast.success('Imagen copiada al portapapeles');
+            } catch {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Pedido_Bar_La_Marbella.png';
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.info('Imagen descargada. Adjúntala manualmente en WhatsApp.');
+            }
+        }
+    };
 
     const handleShare = async () => {
         if (!generatedBlob) return;
@@ -102,36 +146,59 @@ export function OrderSuccessModal({
                 pngBlob = await pdfFirstPageToPngBlob(generatedBlob);
             }
 
-            if (pngBlob && navigator.clipboard?.write) {
-                try {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': pngBlob })
-                    ]);
-                    toast.success('Imagen copiada al portapapeles');
-                } catch {
+            if (pngBlob) {
+                if (navigator.clipboard?.write) {
                     try {
                         await navigator.clipboard.write([
-                            new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })
+                            new ClipboardItem({ 'image/png': pngBlob })
                         ]);
                         toast.success('Imagen copiada al portapapeles');
                     } catch {
-                        const file = new File([pngBlob], 'Pedido.png', { type: 'image/png' });
-                        if (navigator.canShare?.({ files: [file] })) {
-                            try {
-                                await navigator.share({ files: [file], text: mensaje });
-                                toast.success('Selecciona WhatsApp y el contacto del proveedor');
-                                setIsCapturing(false);
-                                return;
-                            } catch {
-                                toast.warning('No se pudo copiar. Usa "Descargar" y adjunta el PDF.');
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })
+                            ]);
+                            toast.success('Imagen copiada al portapapeles');
+                        } catch {
+                            const file = new File([pngBlob], 'Pedido.png', { type: 'image/png' });
+                            if (navigator.canShare?.({ files: [file] })) {
+                                try {
+                                    await navigator.share({ files: [file], text: mensaje });
+                                    toast.success('Selecciona WhatsApp y el contacto del proveedor');
+                                    setIsCapturing(false);
+                                    return;
+                                } catch {
+                                    // Fallback: descargar imagen
+                                    const url = URL.createObjectURL(pngBlob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'Pedido_Bar_La_Marbella.png';
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                    toast.info('Imagen descargada. Adjúntala en WhatsApp.');
+                                }
+                            } else {
+                                const url = URL.createObjectURL(pngBlob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = 'Pedido_Bar_La_Marbella.png';
+                                a.click();
+                                URL.revokeObjectURL(url);
+                                toast.info('Imagen descargada. Adjúntala en WhatsApp.');
                             }
-                        } else {
-                            toast.warning('No se pudo copiar la imagen. Usa "Descargar" y adjunta el PDF en WhatsApp.');
                         }
                     }
+                } else {
+                    const url = URL.createObjectURL(pngBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Pedido_Bar_La_Marbella.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast.info('Imagen descargada. Adjúntala en WhatsApp.');
                 }
             } else {
-                toast.warning('No se pudo copiar la imagen. Usa "Descargar" y adjunta el PDF en WhatsApp.');
+                toast.warning('No se pudo crear la imagen. Usa "Descargar" para el PDF.');
             }
 
             window.open(whatsappUrl, '_blank');
@@ -211,6 +278,21 @@ export function OrderSuccessModal({
                             <span className="text-[8px] font-black text-white uppercase tracking-widest">Proveedor</span>
                         </button>
                     </div>
+
+                    {/* Copiar imagen: clic directo = user gesture para clipboard */}
+                    <button
+                        onClick={handleCopyImage}
+                        disabled={isCapturing || !generatedBlob}
+                        className={cn(
+                            "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50 min-h-[48px]",
+                            "bg-zinc-100 hover:bg-zinc-200 border border-zinc-200"
+                        )}
+                    >
+                        <Copy size={16} className="text-[#36606F]" />
+                        <span className="text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
+                            {cachedPngBlob ? 'Copiar imagen' : imageError ? 'Error imagen' : 'Preparando imagen…'}
+                        </span>
+                    </button>
 
                     {/* Main Action */}
                     <button
