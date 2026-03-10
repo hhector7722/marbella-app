@@ -315,7 +315,7 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold">No hay registros este mes</p>
                         </div>
                     ) : (
-                        <div className="p-4 bg-zinc-50/50 space-y-4">
+                        <div className="p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
                                 <WeekCard
                                     key={week.weekNumber}
