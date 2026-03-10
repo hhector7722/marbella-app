@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
@@ -199,6 +199,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
     // Ventas: fecha seleccionada y modal
     const [salesViewDate, setSalesViewDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const salesViewDateRef = useRef(salesViewDate);
     const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false);
     const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
 
@@ -327,16 +328,32 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
+    // Cargar ventas para la fecha seleccionada (hoy u otra)
+    const fetchSalesForDate = async (dateStr: string) => {
+        await fetchHourlySales(dateStr);
+        await fetchHourlyBaseline(dateStr);
+        try {
+            const { data: salesStats } = await supabase.rpc('get_daily_sales_stats', { target_date: dateStr });
+            setLiveTickets({
+                total: salesStats?.total_ventas ?? 0,
+                count: salesStats?.recuento_tickets ?? 0
+            });
+        } catch {
+            setLiveTickets({ total: 0, count: 0 });
+        }
+    };
+
     useEffect(() => {
         if (!initialData) fetchData();
-        fetchHourlyBaseline();
         let lastDateStr = format(new Date(), 'yyyy-MM-dd');
         const dayCheckInterval = setInterval(() => {
             const nowStr = format(new Date(), 'yyyy-MM-dd');
             if (nowStr !== lastDateStr) {
                 lastDateStr = nowStr;
-                fetchHourlySales();
-                fetchHourlyBaseline();
+                if (salesViewDate === nowStr) {
+                    fetchHourlySales(nowStr);
+                    fetchHourlyBaseline(nowStr);
+                }
             }
         }, 60000);
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -348,12 +365,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 table: 'tickets_marbella',
                 filter: `fecha=eq.${todayStr}`
             }, (payload: any) => {
+                if (salesViewDateRef.current !== todayStr) return;
                 const newTotal = Number(payload.new.total_documento) || 0;
                 setLiveTickets((prev: { total: number; count: number }) => ({
                     total: prev.total + newTotal,
                     count: prev.count + (newTotal > 0 ? 1 : (newTotal < 0 ? -1 : 0))
                 }));
-                fetchHourlySales();
+                fetchHourlySales(todayStr);
             })
             .subscribe();
         return () => {
@@ -361,6 +379,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             clearInterval(dayCheckInterval);
         };
     }, []);
+
+    salesViewDateRef.current = salesViewDate;
+
+    // Refetch ventas cuando cambia la fecha seleccionada
+    useEffect(() => {
+        fetchSalesForDate(salesViewDate);
+    }, [salesViewDate]);
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
 
@@ -426,8 +451,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             const data = await getDashboardData();
             if (data) {
                 setDailyStats(data.dailyStats);
-                setLiveTickets(data.liveTickets);
-                setSalesChartData(data.salesChartData || []);
+                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                if (salesViewDateRef.current === todayStr) {
+                    setLiveTickets(data.liveTickets);
+                    setSalesChartData(data.salesChartData || []);
+                }
                 setBoxes(data.boxes);
                 setBoxMovements(data.boxMovements);
                 setTheoreticalBalance(data.theoreticalBalance || 0);
@@ -437,7 +465,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 setPaidStatus(data.paidStatus);
                 setAllEmployees(data.allEmployees);
             }
-            fetchHourlyBaseline();
+            if (salesViewDateRef.current === format(new Date(), 'yyyy-MM-dd')) {
+                fetchHourlyBaseline();
+            }
         } catch (error) {
             console.error(error);
             toast.error('Error al actualizar datos');
@@ -475,14 +505,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     useEffect(() => {
         if (!isSalesExpanded) return;
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
         let cancelled = false;
         setLoadingSalesTickets(true);
         supabase
             .from('tickets_marbella')
             .select('numero_documento, fecha, hora_cierre, total_documento')
-            .gte('fecha', todayStr)
-            .lte('fecha', todayStr)
+            .gte('fecha', salesViewDate)
+            .lte('fecha', salesViewDate)
             .order('fecha', { ascending: false })
             .order('hora_cierre', { ascending: false })
             .limit(20)
@@ -498,7 +527,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 }
             });
         return () => { cancelled = true; };
-    }, [isSalesExpanded]);
+    }, [isSalesExpanded, salesViewDate]);
 
     const toggleTicket = async (numero_documento: string) => {
         if (expandedTicket === numero_documento) {
@@ -555,9 +584,28 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-[#36606F] px-4 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
-                        <div className="shrink-0">
-                            <LiveClock />
-                        </div>
+                        <button
+                            onClick={() => {
+                                const [y, m, d] = salesViewDate.split('-').map(Number);
+                                setSalesCalendarBaseDate(new Date(y, (m || 1) - 1, d || 1));
+                                setIsSalesDateModalOpen(true);
+                            }}
+                            className="shrink-0 min-h-[48px] flex flex-col items-center justify-center -m-2 p-2 rounded-xl hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer"
+                        >
+                            {isToday(new Date(salesViewDate)) ? (
+                                <LiveClock />
+                            ) : (
+                                <>
+                                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90">
+                                        {(() => {
+                                            const [y, m, d] = salesViewDate.split('-').map(Number);
+                                            return format(new Date(y, (m || 1) - 1, d || 1), "eee d MMM", { locale: es }).replace('.', '');
+                                        })()}
+                                    </span>
+                                    <span className="text-[8px] font-medium text-white/60">histórico</span>
+                                </>
+                            )}
+                        </button>
                         <Link
                             href="/dashboard/history"
                             className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest shrink-0"
@@ -668,7 +716,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <LoadingSpinner size="sm" className="text-[#36606F]/50" />
                                 </div>
                             ) : salesTickets.length === 0 ? (
-                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 italic px-2 py-6 text-center">Sin tickets hoy</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 italic px-2 py-6 text-center">
+                                    {isToday(new Date(salesViewDate)) ? 'Sin tickets hoy' : 'Sin tickets este día'}
+                                </p>
                             ) : (
                                 <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0">
                                     <table className="w-full text-left border-collapse">
@@ -1205,6 +1255,82 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             })()}
             <WorkerWeeklyHistoryModal isOpen={!!selectedHistory} onClose={() => setSelectedHistory(null)} workerId={selectedHistory?.workerId || ''} weekStart={selectedHistory?.weekId || ''} />
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
+
+            {/* Modal selección fecha ventas */}
+            {isSalesDateModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setIsSalesDateModalOpen(false)}>
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
+                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar fecha</h3>
+                            <button onClick={() => setIsSalesDateModalOpen(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                <X size={18} className="text-zinc-400" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6 px-2">
+                                <button onClick={() => setSalesCalendarBaseDate(subMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                    <ChevronLeft size={20} className="text-zinc-400" />
+                                </button>
+                                <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(salesCalendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
+                                <button onClick={() => setSalesCalendarBaseDate(addMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                    <ChevronRight size={20} className="text-zinc-400" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                                    <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
+                                ))}
+                                {(() => {
+                                    const year = salesCalendarBaseDate.getFullYear();
+                                    const month = salesCalendarBaseDate.getMonth();
+                                    const firstDay = new Date(year, month, 1);
+                                    const lastDay = new Date(year, month + 1, 0);
+                                    const days: (number | null)[] = [];
+                                    const startDay = (firstDay.getDay() + 6) % 7;
+                                    for (let i = 0; i < startDay; i++) days.push(null);
+                                    for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
+                                    return days.map((day, i) => {
+                                        if (!day) return <div key={i} />;
+                                        const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                        const isSelected = salesViewDate === dStr;
+                                        const today = new Date();
+                                        const isFuture = new Date(year, month, day) > new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => {
+                                                    if (!isFuture) {
+                                                        setSalesViewDate(dStr);
+                                                        setIsSalesDateModalOpen(false);
+                                                    }
+                                                }}
+                                                disabled={isFuture}
+                                                className={cn(
+                                                    "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all min-h-[48px]",
+                                                    isSelected ? "bg-[#36606F] text-white shadow-xl" : isFuture ? "text-zinc-300 cursor-not-allowed" : "hover:bg-zinc-50 text-zinc-600 active:scale-95"
+                                                )}
+                                            >
+                                                {day}
+                                            </button>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                            {!isToday(new Date(salesViewDate)) && (
+                                <button
+                                    onClick={() => {
+                                        setSalesViewDate(format(new Date(), 'yyyy-MM-dd'));
+                                        setIsSalesDateModalOpen(false);
+                                    }}
+                                    className="mt-6 w-full py-3 rounded-2xl bg-[#5B8FB9] text-white font-black text-xs uppercase tracking-widest hover:bg-[#4a7a9e] active:scale-[0.98] transition-all"
+                                >
+                                    Ver hoy
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
