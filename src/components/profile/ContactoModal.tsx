@@ -1,6 +1,8 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface ContactoModalProps {
@@ -17,10 +19,20 @@ function normalizePhone(phone: string | null): string {
 }
 
 export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalProps) {
+    const [copied, setCopied] = useState(false);
+
     if (!isOpen) return null;
 
     const telNumber = phone ? normalizePhone(phone) : '';
     const waNumber = telNumber;
+
+    const handleCopy = () => {
+        if (!phone) return;
+        navigator.clipboard.writeText(phone);
+        setCopied(true);
+        toast.success('Número copiado');
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     return (
         <div
@@ -46,13 +58,27 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
                     </button>
                 </div>
                 <div className="p-6 space-y-5">
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Teléfono</p>
-                    <p className="text-zinc-800 font-bold text-sm break-all">{phone || '—'}</p>
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Teléfono</p>
+                            <p className="text-black font-bold text-sm break-all">{phone || '—'}</p>
+                        </div>
+                        {phone && (
+                            <button
+                                type="button"
+                                onClick={handleCopy}
+                                className="shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors"
+                                title="Copiar número"
+                            >
+                                {copied ? <Check size={20} className="text-emerald-600" /> : <Copy size={18} />}
+                            </button>
+                        )}
+                    </div>
                     {phone && (
-                        <div className="flex items-center gap-4 pt-2">
+                        <div className="flex items-center gap-6 pt-2">
                             <a
                                 href={`tel:+${telNumber}`}
-                                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-colors active:scale-[0.98]"
+                                className="min-h-[48px] flex items-center justify-center gap-2 text-black font-black text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity active:scale-[0.98]"
                             >
                                 <img src="/icons/phone.png" alt="" className="w-6 h-6 object-contain" />
                                 Llamar
@@ -61,7 +87,7 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
                                 href={`https://wa.me/${waNumber}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#20bd5a] transition-colors active:scale-[0.98]"
+                                className="min-h-[48px] flex items-center justify-center gap-2 text-black font-black text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity active:scale-[0.98]"
                             >
                                 <img src="/icons/whatsapp.png" alt="" className="w-6 h-6 object-contain" />
                                 WhatsApp
