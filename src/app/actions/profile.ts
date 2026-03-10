@@ -67,6 +67,93 @@ export async function addEmployeeDocument(userId: string, docData: { type: 'cont
     return { success: true };
 }
 
+/** Sube comunicado o contrato para un empleado (bucket employee-documents, tabla employee_documents) */
+export async function addEmployeeDocumentByTipo(
+    userId: string,
+    docData: { tipo: 'comunicado' | 'contrato'; storage_path: string; filename: string }
+) {
+    const supabase = await createClient();
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+    const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (currentProfile?.role !== 'manager' && currentProfile?.role !== 'supervisor') {
+        return { success: false, error: 'Solo managers pueden subir comunicados y contratos' };
+    }
+
+    const { data: targetProfile } = await supabase
+        .from('profiles')
+        .select('codigo_empleado')
+        .eq('id', userId)
+        .single();
+
+    const codigoEmpleado = targetProfile?.codigo_empleado ?? userId;
+
+    const { error } = await supabase
+        .from('employee_documents')
+        .insert({
+            user_id: userId,
+            codigo_empleado: codigoEmpleado,
+            tipo: docData.tipo,
+            mes: null,
+            year: null,
+            filename: docData.filename,
+            storage_path: docData.storage_path
+        });
+
+    if (error) {
+        console.error('Error saving document metadata:', error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath('/profile');
+    return { success: true };
+}
+
+/** Borra documento de tipo comunicado/contrato (storage + DB) */
+export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: string) {
+    const supabase = await createClient();
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+    const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (currentProfile?.role !== 'manager' && currentProfile?.role !== 'supervisor') {
+        return { success: false, error: 'No tienes permisos' };
+    }
+
+    const { error: storageError } = await supabase.storage
+        .from('employee-documents')
+        .remove([storagePath]);
+
+    if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+    }
+
+    const { error: dbError } = await supabase
+        .from('employee_documents')
+        .delete()
+        .eq('id', docId);
+
+    if (dbError) {
+        return { success: false, error: dbError.message };
+    }
+
+    revalidatePath('/profile');
+    return { success: true };
+}
+
 export async function getEmployeeDocuments(userId: string) {
     const supabase = await createClient();
 

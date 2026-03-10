@@ -3,7 +3,9 @@
 **Última actualización:** 2026-03-10 (Propinas por botes weekday/weekend)
 
 ## 📌 ESTADO GENERAL
-El sistema ha sido estabilizado para su despliegue en Vercel. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
+El sistema ha sido estabilizado para su despliegue en Vercel.
+
+- [x] **Comunicados y Contratos Manuales (2026-03-10)**: Icono de Comunicados redefinido (Megaphone) en modal de nóminas. Managers pueden subir comunicados y contratos manualmente desde `/profile`; se guardan en bucket `employee-documents` y tabla `employee_documents` (tipo comunicado/contrato). Migración `20260310160000_employee_documents_bucket.sql`. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
 
 ---
 

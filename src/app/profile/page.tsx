@@ -306,8 +306,8 @@ function ProfileContent() {
             <DatosBancariosModal isOpen={modalDatosBancarios} onClose={() => setModalDatosBancarios(false)} iban={profile.bank_account} />
             <NominasMenuModal isOpen={nominasMenuOpen} onClose={() => setNominasMenuOpen(false)} onSelect={handleNominasMenuSelect} />
             <NominasModal isOpen={nominasListOpen} onClose={() => setNominasListOpen(false)} targetUserId={viewingOtherProfile ? profile.id : undefined} />
-            <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} />
-            <ContratoModal isOpen={contratoOpen} onClose={() => setContratoOpen(false)} userId={profile.id} />
+            <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} isManager={isManager} />
+            <ContratoModal isOpen={contratoOpen} onClose={() => setContratoOpen(false)} userId={profile.id} isManager={isManager} />
             {isPasswordModalOpen && <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />}
 
             {isEditModalOpen && (
