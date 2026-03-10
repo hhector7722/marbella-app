@@ -85,9 +85,12 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
 
             const { error: uploadError } = await supabase.storage
                 .from('employee-documents')
-                .upload(filePath, file);
+                .upload(filePath, file, { upsert: true });
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error('Storage upload error:', uploadError);
+                throw new Error(uploadError.message || 'Error al subir el archivo');
+            }
 
             const result = await addEmployeeDocumentByTipo(userId, {
                 tipo: 'comunicado',
@@ -103,7 +106,9 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                 throw new Error(result.error);
             }
         } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : 'Error al subir el comunicado');
+            const msg = err instanceof Error ? err.message : 'Error al subir el comunicado';
+            toast.error(msg);
+            console.error('ComunicadosModal upload error:', err);
         } finally {
             setUploading(false);
             e.target.value = '';

@@ -84,9 +84,12 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
 
             const { error: uploadError } = await supabase.storage
                 .from('employee-documents')
-                .upload(filePath, file);
+                .upload(filePath, file, { upsert: true });
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error('Storage upload error:', uploadError);
+                throw new Error(uploadError.message || 'Error al subir el archivo');
+            }
 
             const result = await addEmployeeDocumentByTipo(userId, {
                 tipo: 'contrato',
@@ -101,7 +104,9 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 throw new Error(result.error);
             }
         } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : 'Error al subir el contrato');
+            const msg = err instanceof Error ? err.message : 'Error al subir el contrato';
+            toast.error(msg);
+            console.error('ContratoModal upload error:', err);
         } finally {
             setUploading(false);
             e.target.value = '';
