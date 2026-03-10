@@ -7,13 +7,14 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { format, startOfWeek, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
+import { WeekCard } from './WeekCard';
 
 // --- TIPOS ---
 interface DayData {
@@ -49,31 +50,6 @@ interface WeekData {
 }
 
 // --- CONSTANTES ---
-const EVENT_TYPES = [
-    { value: 'regular', label: 'Regular' },
-    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
-    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
-    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
-    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
-    { value: 'no_registered', label: 'No registrado', initial: '', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
-];
-
-const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-
-// --- HELPERS VISUALES ---
-const fmtHours = (val: number): string => {
-    if (!val || Math.abs(val) < 0.05) return '';
-    const rounded = Math.round(val * 2) / 2;
-    const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
-    return val < 0 ? `-${str}` : str;
-};
-
-const fmtMoney = (val: number): string => {
-    if (!val || Math.abs(val) < 0.05) return '';
-    const str = Math.abs(val).toFixed(0);
-    return val < 0 ? `-${str}€` : `${str}€`;
-};
-
 const getMonthLabel = (year: number, month: number) =>
     new Date(year, month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
@@ -340,224 +316,16 @@ export default function HistoryPage() {
                         </div>
                     ) : (
                         <div className="p-4 bg-zinc-50/50 space-y-4">
-                            {/* Cada semana con contorno y sombra propios */}
                             {weeksData.map((week, idx) => (
-                                <div
+                                <WeekCard
                                     key={week.weekNumber}
-                                    className="rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white"
-                                >
-                                        {/* Cabecera de días (roja) SOLO una vez, al inicio del mes */}
-                                        {idx === 0 && (
-                                            <div className="rounded-t-2xl overflow-hidden">
-                                                <div className="grid grid-cols-7 border-b border-gray-100">
-                                                    {DAY_HEADERS.map((d) => (
-                                                        <div
-                                                            key={d}
-                                                            className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
-                                                        >
-                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">
-                                                                {d}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* FILA: Días (sin cabecera de LUN-DOM) */}
-                                        <div className="grid grid-cols-7 border-b border-gray-100">
-                                            {week.days.map((day, di) => {
-                                                const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
-                                                const isSpecial = day.eventType && day.eventType !== 'regular' && eventConfig;
-
-                                                // Día pertenece a otro mes (comparte semana pero se muestra por contexto)
-                                                const isOtherMonth = day.date ? (() => {
-                                                    const y = parseInt(day.date.slice(0, 4), 10);
-                                                    const m = parseInt(day.date.slice(5, 7), 10) - 1;
-                                                    return m !== filterMonth || y !== filterYear;
-                                                })() : false;
-
-                                                // Lógica Zero-Display
-                                                const hFormatted = fmtHours(day.totalHours);
-                                                const exFormatted = fmtHours(day.extraHours);
-
-                                                return (
-                                                    <div
-                                                        key={di}
-                                                        onClick={() => setEditingDate(day.date)}
-                                                        className={cn(
-                                                            "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center p-1 pb-1 cursor-pointer transition-colors",
-                                                            "bg-white hover:bg-zinc-50",
-                                                            day.isToday && !isOtherMonth && "bg-blue-50/10"
-                                                        )}
-                                                    >
-                                                        {/* Número de día superior derecha */}
-                                                        <span
-                                                            className={cn(
-                                                                "absolute top-1 right-1 text-[9px] font-bold",
-                                                                day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400")
-                                                            )}
-                                                        >
-                                                            {day.dayNumber}
-                                                        </span>
-
-                                                        {/* Centro: evento especial o fichajes. Filas de altura fija para alinear círculos verde/rojo entre días. */}
-                                                        <div className={cn(
-                                                            "flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px]",
-                                                            isOtherMonth && "opacity-45"
-                                                        )}>
-                                                            {isSpecial ? (
-                                                                <>
-                                                                    <div className="h-5 flex items-center justify-center shrink-0">
-                                                                        <div className={cn("w-6 h-6 rounded-full shadow-sm flex items-center justify-center", eventConfig.color, isOtherMonth && "opacity-60")}>
-                                                                            {eventConfig.showCross ? (
-                                                                                <X size={14} strokeWidth={2.5} className="text-white" />
-                                                                            ) : (
-                                                                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">{eventConfig.initial}</span>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="h-5 shrink-0" aria-hidden />
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    {/* Fila entrada: misma altura en todos los días para alinear círculos verdes */}
-                                                                    <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                                        {day.hasLog ? (
-                                                                            <>
-                                                                                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
-                                                                                <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
-                                                                            </>
-                                                                        ) : <span className="text-[9px] text-transparent select-none">0</span>}
-                                                                    </div>
-                                                                    {/* Fila salida: misma altura en todos los días para alinear círculos rojos */}
-                                                                    <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                                        {day.hasLog && day.clockOut ? (
-                                                                            day.clock_out_show_no_registrada ? (
-                                                                                <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
-                                                                                    <X size={14} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-600")} />
-                                                                                </span>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
-                                                                                    <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
-                                                                                </>
-                                                                            )
-                                                                        ) : (day.hasLog && !day.clockOut && day.isToday) ? (
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />
-                                                                        ) : (
-                                                                            <span className="text-[9px] text-transparent select-none">0</span>
-                                                                        )}
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Pie: H y Ex en miniatura, Zero-Display */}
-                                                        {!isSpecial && (
-                                                            <div className={cn(
-                                                                "w-full space-y-0 mt-0.5 min-h-[20px]",
-                                                                isOtherMonth && "opacity-45"
-                                                            )}>
-                                                                {day.hasLog && hFormatted ? (
-                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                        <span className="ml-0.5">H</span>
-                                                                        <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{hFormatted}</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="h-3" />
-                                                                )}
-                                                                {exFormatted ? (
-                                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                        <span className="ml-0.5">Ex</span>
-                                                                        <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="h-3" />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {/* FILA: Resumen Semanal (integrada) */}
-                                        <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
-                                            {/* Sello PAGADO centrado en altura en la fila */}
-                                            {week.summary.isPaid && (
-                                                <img
-                                                    src="/sello/pagado.png"
-                                                    alt="PAGADO"
-                                                    className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[64px] h-auto z-30 pointer-events-none md:w-[72px]"
-                                                />
-                                            )}
-                                            {/* ZONA IZQUIERDA (Fija) */}
-                                            <div className="w-24 pl-3 shrink-0 flex items-center h-full">
-                                                <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                                                    SEMANA {week.weekNumber}
-                                                </span>
-                                            </div>
-
-                                            {/* ZONA DERECHA (Grid de valores desplazado a la izquierda para el sello) */}
-                                            <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
-                                                {/* COL 1: HORAS */}
-                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                    <span className="text-[9px] font-black leading-none text-black block">
-                                                        {week.summary.totalHours > 0.05 ? week.summary.totalHours.toFixed(1).replace(".0", "") : " "}
-                                                    </span>
-                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
-                                                </div>
-
-                                            {/* COL 2: PENDIENTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                {(() => {
-                                                    const startBalance = week.summary.startBalance ?? 0;
-                                                    const hasPending = Math.abs(startBalance) > 0.05;
-                                                    const weekStartStr = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
-                                                    const weekStartDate = parseISO(weekStartStr);
-                                                    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-                                                    const isFutureWeek = weekStartDate > currentWeekStart;
-                                                    const showPending = hasPending && !isFutureWeek;
-                                                    const colorClass = !showPending
-                                                        ? "text-transparent"
-                                                        : startBalance >= 0
-                                                            ? "text-emerald-600"
-                                                            : "text-red-600";
-                                                    const text = showPending
-                                                        ? `${Math.abs(startBalance).toFixed(1).replace(".0", "")}`
-                                                        : " ";
-                                                    return (
-                                                        <span className={cn("text-[9px] font-black leading-none block", colorClass)}>
-                                                            {text}
-                                                        </span>
-                                                    );
-                                                })()}
-                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
-                                            </div>
-
-                                                {/* COL 3: EXTRAS */}
-                                                <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                    <span className="text-[9px] font-black leading-none text-black block">
-                                                        {(week.summary.weeklyBalance ?? 0) > 0.05 ? Math.abs(week.summary.weeklyBalance).toFixed(1).replace(".0", "") : " "}
-                                                    </span>
-                                                    <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
-                                                </div>
-
-                                            {/* COL 4: IMPORTE */}
-                                            <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
-                                                <span className="text-[9px] font-black leading-none text-emerald-600 block">
-                                                    {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
-                                                        ? fmtMoney(week.summary.estimatedValue)
-                                                        : " "}
-                                                </span>
-                                                <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
-                                            </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    week={week}
+                                    idx={idx}
+                                    filterMonth={filterMonth}
+                                    filterYear={filterYear}
+                                    onDayClick={setEditingDate}
+                                />
+                            ))}
                         </div>
                     )}
                 </div>
