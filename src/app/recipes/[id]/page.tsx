@@ -342,12 +342,14 @@ function RecipeDetailContent() {
     if (!recipe) return <div className="min-h-screen bg-[#5B8FB9] flex items-center justify-center text-white">No encontrada</div>;
 
     return (
-        <div className={`min-h-screen bg-[#5B8FB9] p-2 md:p-3 flex flex-col ${isRestricted ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+        <div className={`min-h-screen bg-[#5B8FB9] p-4 md:p-6 flex flex-col ${isRestricted ? 'overflow-y-auto pb-8' : 'overflow-hidden'}`}>
             <Toaster position="top-right" />
 
-            <div className={`max-w-6xl mx-auto space-y-2 w-full flex-1 flex flex-col ${isRestricted ? 'pb-8' : ''}`}>
-                <div className="flex items-center justify-center gap-4 shrink-0">
-                    <button onClick={handlePreviousRecipe} disabled={currentRecipeIndex <= 0} className="w-8 h-8 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition disabled:opacity-30"><ChevronLeft className="w-5 h-5 text-gray-700" /></button>
+            {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
+            <div className={`max-w-6xl mx-auto w-full flex-1 flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden ${!isRestricted ? 'min-h-0' : ''}`}>
+                {/* CABECERA COLOR PETRÓLEO */}
+                <div className="bg-[#36606F] px-4 md:px-6 py-4 flex flex-col sm:flex-row items-center justify-center gap-4 shrink-0">
+                    <button onClick={handlePreviousRecipe} disabled={currentRecipeIndex <= 0} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition disabled:opacity-30 text-white"><ChevronLeft className="w-5 h-5" /></button>
                     <div className="bg-white rounded-2xl p-1 shadow-md w-fit">
                         <div className="relative group w-32 h-20 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
                             {recipe.photo_url ? (
@@ -364,28 +366,26 @@ function RecipeDetailContent() {
                             {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="sm" className="text-blue-600" /></div>}
                         </div>
                     </div>
-                    <button onClick={handleNextRecipe} disabled={currentRecipeIndex >= allRecipes.length - 1} className="w-8 h-8 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition disabled:opacity-30"><ChevronRight className="w-5 h-5 text-gray-700" /></button>
-                </div>
-
-                <div className="flex justify-center items-center gap-4 shrink-0">
-                    <div className="bg-white rounded-full shadow-sm px-4 py-1 flex items-center gap-4 text-xs">
+                    <button onClick={handleNextRecipe} disabled={currentRecipeIndex >= allRecipes.length - 1} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition disabled:opacity-30 text-white"><ChevronRight className="w-5 h-5" /></button>
+                    <div className="flex items-center gap-2 text-white/90">
                         {isRestricted ? (
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium uppercase tracking-wider">{recipe.category}</span>
+                            <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[10px]">{recipe.category}</span>
                         ) : (
-                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium hover:bg-blue-200 transition-colors uppercase">{recipe.category}</button>
+                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-full font-medium uppercase tracking-wider text-[10px] transition-colors">{recipe.category}</button>
                         )}
-                        <div className="flex items-center gap-1.5 text-gray-600"><Users className="w-3.5 h-3.5" /><span>{recipe.servings || 1} rac</span></div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold"><Users className="w-3.5 h-3.5" /><span>{recipe.servings || 1} rac</span></div>
                     </div>
                     {!isRestricted && (
-                        <button onClick={handleDelete} className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold text-xs flex items-center gap-2">
+                        <button onClick={handleDelete} className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition font-semibold text-xs flex items-center gap-2">
                             <Trash2 size={14} /> Eliminar
                         </button>
                     )}
                 </div>
 
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 ${!isRestricted ? 'min-h-0' : ''}`}>
+                {/* CUERPO: fondo blanco roto */}
+                <div className={`bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 ${!isRestricted ? 'min-h-0' : ''}`}>
                     {!isRestricted && (
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
+                        <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0">
                                 <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Escandallos y Precios</h2>
                             </div>
@@ -420,7 +420,7 @@ function RecipeDetailContent() {
                             </div>
                         </div>
                     )}
-                    <div className={`bg-white rounded-xl shadow-md overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
+                    <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Ingredientes <span className="opacity-50">({ingredients.length})</span></h2>
                             {!isRestricted && (
@@ -487,7 +487,7 @@ function RecipeDetailContent() {
                         </div>
                     </div>
                     {!isRestricted && (
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col">
+                        <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
                             <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
                                 <Beaker className="w-3.5 h-3.5 text-white/70" />
                                 <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Simulador de Margen</h2>
@@ -509,7 +509,7 @@ function RecipeDetailContent() {
                             </div>
                         </div>
                     )}
-                    <div className={`bg-white rounded-xl shadow-md overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
+                    <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div className="bg-[#36606F] px-4 py-2 shrink-0"><h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración y Notas</h2></div>
                         <div className="flex-1 p-3 border-b flex flex-col min-h-0 overflow-hidden">
                             <div className="flex justify-between items-center mb-2 shrink-0">

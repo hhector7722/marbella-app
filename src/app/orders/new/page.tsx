@@ -292,101 +292,96 @@ export default function NewOrderPage() {
     }
 
     return (
-        <div className="w-full bg-[#5B8FB9] min-h-screen">
+        <div className="w-full bg-[#5B8FB9] min-h-screen p-4 md:p-6 pb-24">
             <Toaster position="top-right" />
 
-            {/* STICKY HEADER (2 ROWS) */}
-            <div className="sticky top-0 z-50 bg-[#5B8FB9]/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-white/10 shadow-lg">
-                <div className="max-w-7xl mx-auto flex flex-col gap-4">
-                    {/* Row 1: Search */}
-                    <div className="relative w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar ingrediente..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1] transition-all"
-                        />
-                    </div>
+            {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
+            <div className="max-w-7xl mx-auto bg-white rounded-[20px] shadow-xl overflow-hidden">
+                {/* CABECERA COLOR PETRÓLEO */}
+                <div className="sticky top-0 z-50 bg-[#36606F] px-4 md:px-6 pt-4 pb-4">
+                    <div className="flex flex-col gap-4">
+                        <div className="relative w-full">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                            <input
+                                type="text"
+                                placeholder="Buscar ingrediente..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30 transition-all"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                            <div className="relative shrink-0">
+                                <button
+                                    onClick={() => setShowSupplierPopup(!showSupplierPopup)}
+                                    className={cn(
+                                        "px-4 py-2.5 bg-white/90 hover:bg-white rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50",
+                                        selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10 text-[#5E35B1]"
+                                    )}
+                                >
+                                    {selectedSupplier || "Proveedor"} <ChevronDown size={14} className="text-zinc-400" />
+                                </button>
 
-                    {/* Row 2: Tools */}
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                        {/* Supplier Selector */}
-                        <div className="relative shrink-0">
-                            <button
-                                onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                                className={cn(
-                                    "px-4 py-2.5 bg-white/90 hover:bg-white rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50",
-                                    selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10 text-[#5E35B1]"
-                                )}
-                            >
-                                {selectedSupplier || "Proveedor"} <ChevronDown size={14} className="text-zinc-400" />
-                            </button>
-
-                            {showSupplierPopup && (
-                                <>
-                                    <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
-                                    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar Proveedor</span>
-                                        </div>
-                                        <button
-                                            onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
-                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
-                                        >
-                                            Todos {!selectedSupplier && <Check size={14} className="text-[#5E35B1]" />}
-                                        </button>
-                                        {suppliers.map(sup => (
+                                {showSupplierPopup && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
+                                        <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar Proveedor</span>
+                                            </div>
                                             <button
-                                                key={sup}
-                                                onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
+                                                onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
                                                 className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
                                             >
-                                                {sup} {selectedSupplier === sup && <Check size={14} className="text-[#5E35B1]" />}
+                                                Todos {!selectedSupplier && <Check size={14} className="text-[#5E35B1]" />}
                                             </button>
-                                        ))}
-                                    </div>
-                                </>
+                                            {suppliers.map(sup => (
+                                                <button
+                                                    key={sup}
+                                                    onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
+                                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
+                                                >
+                                                    {sup} {selectedSupplier === sup && <Check size={14} className="text-[#5E35B1]" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            {selectedItems.length > 0 && selectedSupplier && (
+                                <button
+                                    onClick={handleNewOrder}
+                                    className="shrink-0 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
+                                >
+                                    Nuevo
+                                </button>
+                            )}
+                            {selectedItems.length > 0 && selectedSupplier && (
+                                <button
+                                    onClick={() => setIsSummaryOpen(true)}
+                                    className="shrink-0 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
+                                >
+                                    Tramitar ({selectedItems.length})
+                                </button>
                             )}
                         </div>
-
-                        {/* Nuevo Button (Conditional) */}
-                        {selectedItems.length > 0 && selectedSupplier && (
-                            <button
-                                onClick={handleNewOrder}
-                                className="shrink-0 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
-                            >
-                                Nuevo
-                            </button>
-                        )}
-
-                        {/* Tramitar Button (Conditional) */}
-                        {selectedItems.length > 0 && selectedSupplier && (
-                            <button
-                                onClick={() => setIsSummaryOpen(true)}
-                                className="shrink-0 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
-                            >
-                                Tramitar ({selectedItems.length})
-                            </button>
-                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* PRODUCT GRID */}
-            <div className="p-6 md:p-8 max-w-7xl mx-auto">
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 pb-24">
-                    {filteredIngredients.map(ing => (
-                        <OrderProductCard
-                            key={ing.id}
-                            ingredient={ing}
-                            supplierId={supplierId}
-                            initialQuantity={drafts[ing.id]?.quantity || 0}
-                            initialUnit={drafts[ing.id]?.unit}
-                            onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
-                        />
-                    ))}
+                {/* CUERPO: fondo blanco roto */}
+                <div className="bg-[#fafafa] p-4 md:p-6">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
+                        {filteredIngredients.map(ing => (
+                            <OrderProductCard
+                                key={ing.id}
+                                ingredient={ing}
+                                supplierId={supplierId}
+                                initialQuantity={drafts[ing.id]?.quantity || 0}
+                                initialUnit={drafts[ing.id]?.unit}
+                                onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
 

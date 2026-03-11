@@ -141,63 +141,68 @@ function RecipesContent() {
     });
 
     return (
-        <div className="p-6 md:p-8 w-full bg-[#5B8FB9] min-h-screen">
+        <div className="p-4 md:p-6 w-full bg-[#5B8FB9] min-h-screen pb-24">
             <Toaster position="top-right" />
-            <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="relative w-full sm:max-w-xs">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Buscar receta..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#5E35B1]"
-                    />
-                </div>
-                <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
-                    <div className="flex gap-2 items-center">
-                        {!selectedCategory ? (
-                            <div className="relative">
-                                <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50">Categoría <ChevronDown size={14} className="text-zinc-400" /></button>
-                                {showCategoryPopup && (
-                                    <>
-                                        <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
-                                        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
-                                            <button onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
-                                            {uniqueDbCategories.map(cat => (
-                                                <button key={cat} onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
-                                            ))}
-                                        </div>
-                                    </>
+            {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
+            <div className="max-w-7xl mx-auto bg-white rounded-[20px] shadow-xl overflow-hidden">
+                <div className="bg-[#36606F] px-4 md:px-6 py-4 md:py-5">
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                        <div className="relative w-full sm:max-w-xs">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                            <input
+                                type="text"
+                                placeholder="Buscar receta..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30"
+                            />
+                        </div>
+                        <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
+                            <div className="flex gap-2 items-center">
+                                {!selectedCategory ? (
+                                    <div className="relative">
+                                        <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50">Categoría <ChevronDown size={14} className="text-zinc-400" /></button>
+                                        {showCategoryPopup && (
+                                            <>
+                                                <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
+                                                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                    <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
+                                                    <button onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
+                                                    {uniqueDbCategories.map(cat => (
+                                                        <button key={cat} onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
+                                        <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
+                                        <button onClick={() => setSelectedCategory(null)} className="p-1.5 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={14} className="text-rose-500" strokeWidth={4} /></button>
+                                    </div>
                                 )}
                             </div>
-                        ) : (
-                            <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
-                                <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
-                                <button onClick={() => setSelectedCategory(null)} className="p-1.5 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={14} className="text-rose-500" strokeWidth={4} /></button>
-                            </div>
-                        )}
+                            {!isRestricted && (
+                                <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-12 h-12 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-6 h-6" /></button>
+                            )}
+                        </div>
                     </div>
-                    {!isRestricted && (
-                        <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-12 h-12 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-6 h-6" /></button>
-                    )}
                 </div>
-            </div>
-            {!loading && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6 pb-24">
-                    {filteredRecipes.map((recipe) => (
-                        <div key={recipe.id} className="group relative overflow-hidden">
-                            <div
-                                onClick={() => {
-                                    if (isStaffView) {
-                                        setSelectedRecipeId(recipe.id);
-                                    } else {
-                                        router.push(`/recipes/${recipe.id}`);
-                                    }
-                                }}
-                                className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
-                            >
+                {!loading && (
+                    <div className="bg-[#fafafa] p-4 md:p-6">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6">
+                            {filteredRecipes.map((recipe) => (
+                                <div key={recipe.id} className="group relative overflow-hidden">
+                                    <div
+                                        onClick={() => {
+                                            if (isStaffView) {
+                                                setSelectedRecipeId(recipe.id);
+                                            } else {
+                                                router.push(`/recipes/${recipe.id}`);
+                                            }
+                                        }}
+                                        className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
+                                    >
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                     {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
                                 </div>
@@ -208,8 +213,10 @@ function RecipesContent() {
                             </div>
                         </div>
                     ))}
-                </div>
-            )}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* MODAL DE DETALLE (PARA STAFF) */}
             {selectedRecipeId && (
@@ -218,7 +225,7 @@ function RecipesContent() {
                     onClick={() => setSelectedRecipeId(null)}
                 >
                     <div
-                        className="bg-zinc-100 w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
+                        className="bg-[#fafafa] w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header del Modal */}

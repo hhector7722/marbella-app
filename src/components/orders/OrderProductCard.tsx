@@ -117,7 +117,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const renderCard = (isModal: boolean) => (
         <div className={cn(
             "flex flex-col bg-white transition-all overflow-hidden relative",
-            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-sm",
+            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-md",
             !isModal && quantity > 0 ? "" : "",
             !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
         )}>
