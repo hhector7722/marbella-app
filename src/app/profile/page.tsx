@@ -72,12 +72,19 @@ function ProfileContent() {
 
     const handleAvatarCropSave = useCallback(
         async (blob: Blob) => {
-            if (!profile || currentUser?.id !== profile.id) return;
+            if (!profile || currentUser?.id !== profile.id) {
+                toast.error('No se puede actualizar el avatar');
+                return;
+            }
             setAvatarUploading(true);
             try {
                 const formData = new FormData();
                 formData.append('avatar', new File([blob], 'avatar.png', { type: 'image/png' }));
-                const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData });
+                const res = await fetch('/api/profile/avatar', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                });
                 let data: { success?: boolean; error?: string; avatarUrl?: string } = {};
                 try {
                     data = await res.json();
@@ -86,7 +93,9 @@ function ProfileContent() {
                     return;
                 }
                 if (!res.ok) {
-                    toast.error(data.error || res.statusText || 'Error al subir');
+                    const msg = data.error || res.statusText || 'Error al subir';
+                    toast.error(msg);
+                    console.error('Avatar upload failed:', res.status, msg);
                     return;
                 }
                 toast.success('Imagen actualizada');

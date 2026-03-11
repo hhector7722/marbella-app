@@ -4,9 +4,13 @@ import { createClient } from '@/utils/supabase/server';
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error('Avatar API auth error:', authError);
+      return NextResponse.json({ success: false, error: 'Sesión no válida' }, { status: 401 });
+    }
     if (!user) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Inicia sesión para cambiar el avatar' }, { status: 401 });
     }
 
     const formData = await req.formData();

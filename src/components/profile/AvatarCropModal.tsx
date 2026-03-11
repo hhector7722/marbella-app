@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import { getCroppedImg, type CropAreaPixels } from '@/lib/crop-image';
 import { cn } from '@/lib/utils';
@@ -15,11 +15,28 @@ const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.1;
 
+/** Calcula un recorte cuadrado centrado en la imagen (coordenadas originales). */
+function getDefaultCropArea(imgWidth: number, imgHeight: number): CropAreaPixels {
+  const size = Math.min(imgWidth, imgHeight);
+  const x = Math.max(0, (imgWidth - size) / 2);
+  const y = Math.max(0, (imgHeight - size) / 2);
+  return { x, y, width: size, height: size };
+}
+
 export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropAreaPixels | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setCroppedAreaPixels(getDefaultCropArea(img.naturalWidth, img.naturalHeight));
+    };
+    img.onerror = () => setCroppedAreaPixels(null);
+    img.src = imageSrc;
+  }, [imageSrc]);
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels as CropAreaPixels);
