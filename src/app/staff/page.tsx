@@ -16,6 +16,7 @@ import { Share_Tech_Mono } from 'next/font/google';
 import { cn, formatDisplayValue } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
+import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { addEmployeeDocument, getEmployeeDocuments, deleteEmployeeDocument, updateProfile } from '@/app/actions/profile';
 import { getISOWeekStartUTC, toUTCDateString } from '@/lib/date-utils';
@@ -302,8 +303,10 @@ export default function StaffDashboard() {
                 setTodayLog(data);
                 toast.success("¡Jornada iniciada!");
                 const { data: { user: currentUser } } = await supabase.auth.getUser();
-                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
-                    setGiffOverlaySrc('/icons/riquelme.mp4');
+                const email = currentUser?.email?.toLowerCase().trim() ?? '';
+                const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                if (overlayConfig) {
+                    setGiffOverlaySrc(overlayConfig.entrada);
                     setShowGiffOverlay(true);
                 }
             } else if (modalAction === 'out' && todayLog) {
@@ -325,8 +328,10 @@ export default function StaffDashboard() {
                 setTodayLog(data);
                 toast.success("Jornada finalizada.");
                 const { data: { user: currentUser } } = await supabase.auth.getUser();
-                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
-                    setGiffOverlaySrc('/icons/cris.mp4');
+                const email = currentUser?.email?.toLowerCase().trim() ?? '';
+                const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                if (overlayConfig) {
+                    setGiffOverlaySrc(overlayConfig.salida);
                     setShowGiffOverlay(true);
                 }
             }

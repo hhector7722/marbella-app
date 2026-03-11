@@ -25,6 +25,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
+import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -410,8 +411,10 @@ export default function StaffDashboardView() {
                     .single();
                 setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
                 const { data: { user: u } } = await supabase.auth.getUser();
-                if (u?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
-                    setGiffOverlaySrc('/icons/riquelme.mp4');
+                const email = u?.email?.toLowerCase().trim() ?? '';
+                const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                if (overlayConfig) {
+                    setGiffOverlaySrc(overlayConfig.entrada);
                     setShowGiffOverlay(true);
                 }
             } else if (modalAction === 'out' && todayLog) {
@@ -430,8 +433,10 @@ export default function StaffDashboardView() {
 
                 setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
                 const { data: { user: u } } = await supabase.auth.getUser();
-                if (u?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
-                    setGiffOverlaySrc('/icons/cris.mp4');
+                const email = u?.email?.toLowerCase().trim() ?? '';
+                const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                if (overlayConfig) {
+                    setGiffOverlaySrc(overlayConfig.salida);
                     setShowGiffOverlay(true);
                 }
             }
