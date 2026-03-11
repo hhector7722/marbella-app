@@ -80,6 +80,7 @@ export default function StaffDashboard() {
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
+    const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
 
     // Estado Menús Emergentes
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
@@ -301,7 +302,10 @@ export default function StaffDashboard() {
                 setTodayLog(data);
                 toast.success("¡Jornada iniciada!");
                 const { data: { user: currentUser } } = await supabase.auth.getUser();
-                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
+                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
+                    setGiffOverlaySrc('/icons/riquelme.mp4');
+                    setShowGiffOverlay(true);
+                }
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
@@ -321,7 +325,10 @@ export default function StaffDashboard() {
                 setTodayLog(data);
                 toast.success("Jornada finalizada.");
                 const { data: { user: currentUser } } = await supabase.auth.getUser();
-                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
+                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
+                    setGiffOverlaySrc('/icons/cris.mp4');
+                    setShowGiffOverlay(true);
+                }
             }
             // Re-initialize to sync any other dependent state (defer so overlay can paint first)
             setTimeout(() => initialize(), 0);
@@ -619,8 +626,8 @@ export default function StaffDashboard() {
                 >
                     <div className="w-[min(90vw,90vh)] h-[min(90vw,90vh)] rounded-full overflow-hidden flex items-center justify-center">
                         <video
-                            key="giff-overlay"
-                            src="/icons/giff.mp4"
+                            key={giffOverlaySrc}
+                            src={giffOverlaySrc}
                             autoPlay
                             muted
                             playsInline
