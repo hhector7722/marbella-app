@@ -106,12 +106,13 @@ export default function Navbar() {
                             </button>
                         )}
 
-                        {/* INTERRUPTOR (SOLO MANAGER) */}
+                        {/* INTERRUPTOR STAFF/ADM — visible solo para rol manager (no staff ni supervisor) */}
                         {userData?.role === 'manager' && (
                             <button
                                 onClick={() => router.push(isAdminMode ? '/staff/dashboard' : '/dashboard')}
                                 className={`relative w-16 h-7 flex items-center rounded-full transition-all duration-300 shadow-inner border-2 border-white/30 p-1 ${isAdminMode ? 'bg-[#FF9800]' : 'bg-[#4CAF50]'
                                     }`}
+                                aria-label={isAdminMode ? 'Cambiar a vista Staff' : 'Cambiar a vista Admin'}
                             >
                                 <span className={`absolute w-full text-center text-[7px] font-black text-white uppercase transition-all duration-300 tracking-widest ${isAdminMode ? 'pl-3' : 'pr-6'
                                     }`}>
