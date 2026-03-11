@@ -80,6 +80,7 @@ export default function StaffDashboard() {
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
+    const [giffOverlayInteractive, setGiffOverlayInteractive] = useState(true);
 
     // Estado Menús Emergentes
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
@@ -300,7 +301,8 @@ export default function StaffDashboard() {
 
                 setTodayLog(data);
                 toast.success("¡Jornada iniciada!");
-                if (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
+                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
@@ -319,10 +321,11 @@ export default function StaffDashboard() {
 
                 setTodayLog(data);
                 toast.success("Jornada finalizada.");
-                if (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
+                if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
             }
-            // Re-initialize to sync any other dependent state
-            initialize();
+            // Re-initialize to sync any other dependent state (defer so overlay can paint first)
+            setTimeout(() => initialize(), 0);
         } catch (error) {
             console.error("Clock action error:", error);
             // Rollback on any failure
@@ -334,7 +337,22 @@ export default function StaffDashboard() {
         }
     };
 
-    const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
+    const openConfirmation = async () => {
+        if (status === 'finished' || actionLoading) return;
+        setModalAction(status === 'idle' ? 'in' : 'out');
+        setShowModal(true);
+
+        // Preview inmediato al pulsar "FICHAR" (sin bloquear la UI) para el usuario de prueba.
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') {
+            setGiffOverlayInteractive(false);
+            setShowGiffOverlay(true);
+            window.setTimeout(() => {
+                setShowGiffOverlay(false);
+                setGiffOverlayInteractive(true);
+            }, 1400);
+        }
+    };
 
     // --- COMPONENTE VISUAL MEJORADO PARA LINK/BUTTON ---
     const FloatingIconSolid = ({ icon: Icon, img, colorClass, label, onClick, href }: { icon?: any, img?: string, colorClass: string, label: string, onClick?: () => void, href?: string }) => {
@@ -603,26 +621,34 @@ export default function StaffDashboard() {
                 </div>
             )}
 
-            {/* Overlay GIF/vídeo solo para marbellaremote@gmail.com al fichar */}
+            {/* Overlay GIF/vídeo para marbellaremote@gmail.com al fichar */}
             {showGiffOverlay && (
                 <div
-                    className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                    role="dialog"
+                    aria-label="Fichaje registrado"
+                    className={cn(
+                        "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4",
+                        giffOverlayInteractive ? "" : "pointer-events-none"
+                    )}
                     onClick={() => setShowGiffOverlay(false)}
                 >
-                    <div className="relative max-w-md w-full mx-4 flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative max-w-md w-full flex flex-col items-center bg-white/10 rounded-2xl p-4 min-h-[200px]" onClick={(e) => e.stopPropagation()}>
                         <video
+                            key="giff-overlay"
                             src="/icons/giff.mp4"
                             autoPlay
                             muted
                             playsInline
                             loop={false}
-                            className="w-full rounded-2xl shadow-2xl"
+                            className="w-full max-h-[70vh] rounded-xl shadow-2xl object-contain bg-black/20"
                             onEnded={() => setShowGiffOverlay(false)}
+                            onError={() => toast.error("No se pudo cargar el vídeo")}
                         />
-                        <p className="text-white text-sm mt-3 font-medium">Toca fuera para cerrar</p>
+                        <p className="text-white text-sm mt-3 font-medium">Toca fuera o el botón para cerrar</p>
                         <button
+                            type="button"
                             onClick={() => setShowGiffOverlay(false)}
-                            className="mt-2 py-2 px-4 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-bold transition-colors"
+                            className="mt-2 py-2 px-4 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-bold transition-colors min-h-[48px]"
                         >
                             Cerrar
                         </button>
