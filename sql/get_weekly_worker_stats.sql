@@ -81,16 +81,6 @@ BEGIN
         FROM staff_stats
         GROUP BY week_start
     ),
-    -- 3b. Incluir TODAS las semanas del rango (aunque no tengan fichajes), para que no "desaparezcan" en el calendario
-    all_weeks_with_data AS (
-        SELECT 
-            w.week_start,
-            COALESCE(f.staff_list, '[]'::jsonb) AS staff_list,
-            COALESCE(f.week_overtime_cost, 0) AS week_overtime_cost,
-            COALESCE(f.week_total_hours, 0) AS week_total_hours
-        FROM weeks_in_range w
-        LEFT JOIN formatted_staff f ON w.week_start = f.week_start
-    ),
     -- 4. Formatear cada semana (WeeklyStats)
     weeks_array AS (
         SELECT 
@@ -104,7 +94,7 @@ BEGIN
                     'staff', staff_list
                 ) ORDER BY week_start DESC
             ) as weeks
-        FROM all_weeks_with_data
+        FROM formatted_staff
     )
     SELECT 
         jsonb_build_object(

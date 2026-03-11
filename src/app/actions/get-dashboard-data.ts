@@ -155,9 +155,12 @@ export async function getDashboardData() {
             });
         });
 
-        // FILTRO DE SEMANA EN CURSO: Solo mostramos semanas finalizadas en el dashboard
+        // FILTRO DE SEMANA EN CURSO: Solo mostramos semanas finalizadas en el dashboard.
+        // Normalizar weekId a YYYY-MM-DD (p. ej. si la API devuelve ISO "2026-03-09T00:00:00.000Z",
+        // la comparación string a string dejaría fuera todas; con slice(0,10) comparamos solo la fecha).
         const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        overtimeData = overtimeData.filter((week: any) => week.weekId < currentWeekStart);
+        const toDateStr = (id: any) => typeof id === 'string' ? id.slice(0, 10) : String(id).slice(0, 10);
+        overtimeData = overtimeData.filter((week: any) => toDateStr(week.weekId) < currentWeekStart);
     }
 
     return {
