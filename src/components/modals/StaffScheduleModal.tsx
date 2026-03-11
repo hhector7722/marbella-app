@@ -9,6 +9,7 @@ import { Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
+import { Avatar } from '@/components/ui/Avatar';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -47,7 +48,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface ShiftMock { date: Date; startTime: string; endTime: string; activity?: string; }
-interface DayShiftRow { name: string; startTime: string; endTime: string; activity?: string; }
+interface DayShiftRow { name: string; avatar_url?: string | null; startTime: string; endTime: string; activity?: string; }
 interface Props {
     isOpen: boolean;
     onClose: () => void;
@@ -140,9 +141,13 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             }
 
             const ids = [...new Set(publishedShifts.map((s: any) => s.user_id))];
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name').in('id', ids);
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
             const nameMap: Record<string, string> = {};
-            (profiles || []).forEach((p: any) => { nameMap[p.id] = p.first_name || '?'; });
+            const avatarMap: Record<string, string | null> = {};
+            (profiles || []).forEach((p: any) => {
+                nameMap[p.id] = p.first_name || '?';
+                avatarMap[p.id] = p.avatar_url ?? null;
+            });
 
             setDayActivity(publishedShifts[0]?.activity || '');
             setEventStart(publishedShifts[0]?.event_start_time || '');
@@ -150,6 +155,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             setEventParticipants(publishedShifts[0]?.event_participants || '');
             setDayShifts(publishedShifts.map((s: any) => ({
                 name: nameMap[s.user_id] || '?',
+                avatar_url: avatarMap[s.user_id] ?? null,
                 startTime: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                 endTime: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                 activity: s.activity || undefined,
@@ -414,8 +420,9 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                     <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto">
                                         {dayShifts.map((shift, idx) => (
                                             <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white">
-                                                <div className="w-24 md:w-28 px-3 flex items-center shrink-0 overflow-hidden">
-                                                    <span className="font-black text-[10px] md:text-xs truncate uppercase tracking-tight text-gray-800 select-none">
+                                                <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
+                                                    <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
+                                                    <span className="font-black text-[10px] md:text-xs truncate uppercase tracking-tight text-gray-800 select-none min-w-0">
                                                         {shift.name}
                                                     </span>
                                                 </div>
