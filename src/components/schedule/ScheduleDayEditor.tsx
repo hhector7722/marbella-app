@@ -475,7 +475,12 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const handleSendNotifications = async () => {
         const saved = await handleSave(true, true);
         if (!saved) return;
-        const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
+        // Solo usuarios que tienen turno ese día (activo y con hora inicio/fin)
+        const userIds = shifts.filter(s => s.active && s.start && s.end).map(s => s.employeeId);
+        if (userIds.length === 0) {
+            toast.info('No hay nadie con horario ese día para notificar');
+            return;
+        }
         const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
         const loadingToast = toast.loading('Enviando notificaciones...');
         try {
@@ -871,7 +876,12 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         setShowShareModal(false);
                                         const saved = await handleSave(true, true);
                                         if (saved || isDayPublished) {
-                                            const userIds = shifts.filter(s => s.active).map(s => s.employeeId);
+                                            // Solo usuarios con turno ese día (activo y con hora inicio/fin)
+                                            const userIds = shifts.filter(s => s.active && s.start && s.end).map(s => s.employeeId);
+                                            if (userIds.length === 0) {
+                                                toast.info('No hay nadie con horario ese día para notificar');
+                                                return;
+                                            }
                                             const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
                                             const loadToast = toast.loading('Enviando...');
                                             try {
