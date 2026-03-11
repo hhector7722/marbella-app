@@ -62,21 +62,25 @@ export const CashChangeModal = ({ boxId, boxName, onClose, onSuccess }: CashChan
     };
 
     const handleSubmit = async () => {
-        try {
-            await supabase.from('treasury_log').insert({
-                box_id: boxId,
-                type: 'SWAP',
-                amount: totalIn,
-                breakdown: { in: inCounts, out: outCounts },
-                notes: `Cambio: Entra ${totalIn.toFixed(2)}€`
-            });
-            toast.success('Cambio realizado correctamente');
-            if (onSuccess) onSuccess();
-            onClose();
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al realizar cambio');
+        if (!boxId) {
+            toast.error('Caja no seleccionada');
+            return;
         }
+        const { error } = await supabase.from('treasury_log').insert({
+            box_id: boxId,
+            type: 'SWAP',
+            amount: totalIn,
+            breakdown: { in: inCounts, out: outCounts },
+            notes: `Cambio: Entra ${totalIn.toFixed(2)}€`
+        });
+        if (error) {
+            console.error('CashChangeModal insert SWAP:', error);
+            toast.error(error.message || 'Error al guardar el cambio');
+            return;
+        }
+        toast.success('Cambio realizado correctamente');
+        if (onSuccess) onSuccess();
+        onClose();
     };
 
     const DenomControl = ({ denom, count, side }: { denom: number, count: number, side: 'in' | 'out' }) => (

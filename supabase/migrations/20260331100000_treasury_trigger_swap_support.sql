@@ -1,7 +1,6 @@
 -- =============================================
--- FIX: current_balance debe actualizarse al EDITAR un movimiento
--- - Trigger NULL-safe: breakdown puede ser NULL al editar
--- - Siempre revertir/aplicar balance en UPDATE (IN/OUT/CLOSE_ENTRY)
+-- Soporte SWAP en trigger de tesorería: "Cambiar" en Caja cambio 1/2
+-- Actualiza cash_box_inventory al insertar tipo SWAP (breakdown: in/out).
 -- =============================================
 
 CREATE OR REPLACE FUNCTION public.fn_sync_box_inventory_v3()
@@ -17,7 +16,6 @@ BEGIN
     -- [A] REVERSAR IMPACTO ANTERIOR (Update o Delete)
     IF TG_OP IN ('UPDATE', 'DELETE') THEN
         IF OLD.type IN ('IN', 'OUT', 'CLOSE_ENTRY') THEN
-            -- Inventario: solo si breakdown existe (evita error jsonb_each_text(NULL))
             IF OLD.breakdown IS NOT NULL AND OLD.breakdown != '{}'::jsonb THEN
                 FOR b_key, b_val IN SELECT * FROM jsonb_each_text(OLD.breakdown) LOOP
                     IF OLD.type IN ('IN', 'CLOSE_ENTRY') THEN
@@ -29,12 +27,10 @@ BEGIN
                     END IF;
                 END LOOP;
             END IF;
-            -- Balance: SIEMPRE revertir (así al editar un movimiento se actualiza current_balance)
             UPDATE cash_boxes SET current_balance = current_balance + (CASE WHEN OLD.type = 'OUT' THEN OLD.amount ELSE -OLD.amount END)
             WHERE id = OLD.box_id;
 
         ELSIF OLD.type = 'SWAP' THEN
-            -- Reversar SWAP: sumar lo que había salido, restar lo que había entrado
             IF OLD.breakdown IS NOT NULL AND OLD.breakdown ? 'out' THEN
                 FOR b_key, b_val IN SELECT * FROM jsonb_each_text(OLD.breakdown->'out') LOOP
                     INSERT INTO cash_box_inventory (box_id, denomination, quantity)
@@ -57,7 +53,6 @@ BEGIN
     -- [B] APLICAR NUEVO IMPACTO (Insert o Update)
     IF TG_OP IN ('INSERT', 'UPDATE') THEN
         IF NEW.type IN ('IN', 'OUT', 'CLOSE_ENTRY') THEN
-            -- Inventario: solo si breakdown existe
             IF NEW.breakdown IS NOT NULL AND NEW.breakdown != '{}'::jsonb THEN
                 FOR b_key, b_val IN SELECT * FROM jsonb_each_text(NEW.breakdown) LOOP
                     IF NEW.type IN ('IN', 'CLOSE_ENTRY') THEN
@@ -71,12 +66,10 @@ BEGIN
                     END IF;
                 END LOOP;
             END IF;
-            -- Balance: SIEMPRE aplicar (INSERT o UPDATE por edición)
             UPDATE cash_boxes SET current_balance = current_balance + (CASE WHEN NEW.type = 'OUT' THEN -NEW.amount ELSE NEW.amount END)
             WHERE id = NEW.box_id;
 
         ELSIF NEW.type = 'SWAP' THEN
-            -- SWAP: restar "out" del inventario, sumar "in". El balance total no cambia.
             IF NEW.breakdown IS NOT NULL AND NEW.breakdown ? 'out' THEN
                 FOR b_key, b_val IN SELECT * FROM jsonb_each_text(NEW.breakdown->'out') LOOP
                     UPDATE cash_box_inventory SET quantity = quantity - b_val::int
@@ -108,9 +101,3 @@ BEGIN
     RETURN COALESCE(NEW, OLD);
 END;
 $$;
-
--- Asegurar que el trigger cubre INSERT, UPDATE y DELETE
-DROP TRIGGER IF EXISTS trg_sync_treasury_inventory_v3 ON public.treasury_log;
-CREATE TRIGGER trg_sync_treasury_inventory_v3
-AFTER INSERT OR UPDATE OR DELETE ON public.treasury_log
-FOR EACH ROW EXECUTE FUNCTION public.fn_sync_box_inventory_v3();
