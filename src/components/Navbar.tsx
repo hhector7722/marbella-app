@@ -20,40 +20,35 @@ export default function Navbar() {
         const fetchUserData = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    // Fetch profile separately to ensure we get the latest role
-                    const { data: profile, error: profileError } = await supabase
-                        .from('profiles')
-                        .select('first_name, role, email, is_supervisor')
-                        .eq('id', user.id)
-                        .single();
+                if (!user) return;
 
-                    if (profileError) {
-                        console.error("Error fetching user profile in Navbar:", profileError);
-                        // Fallback to basic user data if profile fetch fails
-                        setUserData({
-                            name: user.user_metadata?.first_name || 'Empleado',
-                            role: user.user_metadata?.role || 'staff',
-                            email: user.email || '',
-                            is_supervisor: user.user_metadata?.is_supervisor || false
-                        });
-                        return;
-                    }
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('first_name, role, email, is_supervisor')
+                    .eq('id', user.id)
+                    .single();
 
-                    if (profile) {
-                        setUserData({
-                            name: profile.first_name || 'Empleado',
-                            role: profile.role || 'staff',
-                            email: profile.email || user.email || '',
-                            is_supervisor: profile.is_supervisor || false
-                        });
-                    }
+                // Rol: prioridad perfil > JWT (raw_app_meta_data sincronizado por trigger)
+                const role = (profile?.role ?? user.user_metadata?.role ?? 'staff') as string;
+                const name = profile?.first_name ?? user.user_metadata?.first_name ?? 'Empleado';
+                const email = profile?.email ?? user.email ?? '';
+                const is_supervisor = profile?.is_supervisor ?? user.user_metadata?.is_supervisor ?? false;
+
+                setUserData({ name, role, email, is_supervisor });
+                if (profileError) {
+                    console.error("Error fetching user profile in Navbar:", profileError);
                 }
             } catch (error) {
                 console.error("Critical error in Navbar fetchUserData:", error);
             }
         };
+
         fetchUserData();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+            fetchUserData();
+        });
+        return () => subscription.unsubscribe();
     }, [supabase]);
 
     if (pathname === '/login') return null;
