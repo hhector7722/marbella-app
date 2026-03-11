@@ -361,10 +361,6 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
     const handleSave = async (silent = false, publish = false) => {
         const activeShifts = shifts.filter(s => s.active);
-        if (activeShifts.length === 0) {
-            if (!silent) toast.error('No hay turnos activos para guardar');
-            return false;
-        }
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
@@ -372,10 +368,24 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 return false;
             }
 
-            // Paso 1: Obtener estado actual de la DB para este día
             const startOfRange = new Date(`${date}T00:00:00`).toISOString();
             const endOfRange = new Date(`${date}T23:59:59`).toISOString();
 
+            // Si no hay turnos activos: borrar todos los del día y salir (tabla vacía permitida)
+            if (activeShifts.length === 0) {
+                const { error } = await supabase.from('shifts')
+                    .delete()
+                    .gte('start_time', startOfRange)
+                    .lte('start_time', endOfRange);
+                if (error) throw error;
+                setHasUnsavedChanges(false);
+                setIsDayPublished(false);
+                if (!silent) toast.success('Horario vacío guardado');
+                fetchData(date);
+                return true;
+            }
+
+            // Paso 1: Obtener estado actual de la DB para este día
             const { data: dbShifts } = await supabase.from('shifts')
                 .select('*')
                 .gte('start_time', startOfRange)
@@ -692,17 +702,16 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                     className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4 cursor-pointer hover:bg-blue-50/30 transition-colors"
                                     onClick={(e) => { e.stopPropagation(); setEditingIndex(idx); }}
                                 >
-                                    <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1 select-none`}>
+                                    <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1 select-none min-w-0`}>
                                         {shift.name}
                                     </span>
-                                    {editingIndex === idx && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                            className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-100"
-                                        >
-                                            <X size={12} strokeWidth={4} />
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                        className="w-7 h-7 min-w-[28px] min-h-[28px] rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-90 group-hover/row:opacity-100"
+                                        title="Quitar del horario"
+                                    >
+                                        <X size={14} strokeWidth={4} />
+                                    </button>
                                 </div>
                                 <div className="flex-1 relative">
                                     <div className="absolute inset-0 flex">
