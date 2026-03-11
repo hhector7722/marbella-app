@@ -9,7 +9,6 @@ import { createClient } from "@/utils/supabase/client";
 import { Avatar } from '@/components/ui/Avatar';
 import { toast } from 'sonner';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
-import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
@@ -21,7 +20,6 @@ export default function BottomNavStaff() {
     const [userData, setUserData] = useState<{ id: string; name: string; role: string; avatar_url: string | null } | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
-    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [monthShifts, setMonthShifts] = useState<any[]>([]);
 
@@ -139,7 +137,7 @@ export default function BottomNavStaff() {
                         onClick={(e) => {
                             if (item.name.toLowerCase() === 'pedidos') {
                                 e.preventDefault();
-                                setIsProductModalOpen(true);
+                                setIsSupplierModalOpen(true);
                             } else if (item.name.toLowerCase() === 'horarios') {
                                 e.preventDefault();
                                 setIsScheduleModalOpen(true);
@@ -159,12 +157,6 @@ export default function BottomNavStaff() {
                     </Link>
                 ))}
             </nav>
-
-            <StaffProductModal
-                isOpen={isProductModalOpen}
-                onClose={() => setIsProductModalOpen(false)}
-                onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
-            />
 
             <SupplierSelectionModal
                 isOpen={isSupplierModalOpen}
