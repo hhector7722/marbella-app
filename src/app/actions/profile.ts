@@ -212,18 +212,24 @@ export async function deleteEmployeeDocument(docId: string, filePath: string) {
     return { success: true };
 }
 
-export async function updateAvatar(userId: string, formData: FormData): Promise<{ success: boolean; error?: string; avatarUrl?: string }> {
+/** Resultado para useActionState (form con action). */
+export type UpdateAvatarResult = { success: boolean; error?: string; avatarUrl?: string };
+
+export async function updateAvatar(formData: FormData): Promise<UpdateAvatarResult> {
     const supabase = await createClient();
 
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (!currentUser) return { success: false, error: 'No autenticado' };
 
-    if (currentUser.id !== userId) {
+    const userId = formData.get('userId') as string | null;
+    if (!userId || currentUser.id !== userId) {
         return { success: false, error: 'Solo puedes editar tu propia imagen de perfil' };
     }
 
     const file = formData.get('avatar') as File | null;
-    if (!file || !file.size) return { success: false, error: 'No se ha seleccionado ninguna imagen' };
+    if (!file || typeof file.size !== 'number' || file.size === 0) {
+        return { success: false, error: 'No se ha seleccionado ninguna imagen' };
+    }
 
     const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
     if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
@@ -259,6 +265,14 @@ export async function updateAvatar(userId: string, formData: FormData): Promise<
 
     revalidatePath('/profile');
     return { success: true, avatarUrl: publicUrl };
+}
+
+/** Wrapper para useActionState: el formulario envía FormData (incl. archivo) correctamente. */
+export async function updateAvatarFormAction(
+    _prevState: UpdateAvatarResult | null,
+    formData: FormData
+): Promise<UpdateAvatarResult> {
+    return updateAvatar(formData);
 }
 
 export async function completeOnboarding() {

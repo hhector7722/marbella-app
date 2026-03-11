@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import { useActionState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Settings, Receipt } from 'lucide-react';
-import { updateAvatar } from '@/app/actions/profile';
+import { updateAvatarFormAction, type UpdateAvatarResult } from '@/app/actions/profile';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import EditProfileModal from '@/components/EditProfileModal';
@@ -63,11 +64,28 @@ function ProfileContent() {
     const [comunicadosOpen, setComunicadosOpen] = useState(false);
     const [contratoOpen, setContratoOpen] = useState(false);
     const [logoutConfirm, setLogoutConfirm] = useState(false);
-    const [avatarUploading, setAvatarUploading] = useState(false);
+    const avatarFormRef = useRef<HTMLFormElement>(null);
+    const [avatarState, formAction, avatarUploading] = useActionState<UpdateAvatarResult | null, FormData>(
+        updateAvatarFormAction,
+        null
+    );
 
     useEffect(() => {
         fetchInitialData();
     }, [targetId]);
+
+    useEffect(() => {
+        if (!avatarState) return;
+        if (avatarState.success) {
+            toast.success('Imagen actualizada');
+            if (avatarState.avatarUrl && profile) {
+                setProfile(p => p ? { ...p, avatar_url: avatarState.avatarUrl! + '?t=' + Date.now() } : null);
+            }
+            fetchInitialData();
+        } else {
+            toast.error(avatarState.error || 'Error al subir');
+        }
+    }, [avatarState]);
 
     const fetchInitialData = async () => {
         try {
@@ -126,24 +144,8 @@ function ProfileContent() {
         }
     };
 
-    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !profile || currentUser?.id !== profile.id) return;
-        setAvatarUploading(true);
-        const formData = new FormData();
-        formData.set('avatar', file);
-        const result = await updateAvatar(profile.id, formData);
-        setAvatarUploading(false);
-        e.target.value = '';
-        if (result.success) {
-            toast.success('Imagen actualizada');
-            if (result.avatarUrl) {
-                setProfile(p => p ? { ...p, avatar_url: result.avatarUrl! + '?t=' + Date.now() } : null);
-            }
-            fetchInitialData();
-        } else {
-            toast.error(result.error || 'Error al subir');
-        }
+    const handleAvatarSubmit = () => {
+        avatarFormRef.current?.requestSubmit();
     };
 
     const handleNominasMenuSelect = (action: NominasMenuAction) => {
@@ -219,16 +221,20 @@ function ProfileContent() {
                         <div className="relative z-10 flex flex-col items-center text-center mt-4">
                             <Avatar src={profile.avatar_url} alt={fullName} size="lg" className="shadow-xl mb-2 bg-white" />
                             {showAccountSection && (
-                                <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95">
-                                    <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp,image/gif"
-                                        onChange={handleAvatarChange}
-                                        disabled={avatarUploading}
-                                        className="hidden"
-                                    />
-                                    {avatarUploading ? 'Subiendo…' : 'Editar'}
-                                </label>
+                                <form ref={avatarFormRef} action={formAction} className="mb-2">
+                                    <input type="hidden" name="userId" value={profile.id} />
+                                    <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-block">
+                                        <input
+                                            type="file"
+                                            name="avatar"
+                                            accept="image/jpeg,image/png,image/webp,image/gif"
+                                            onChange={handleAvatarSubmit}
+                                            disabled={avatarUploading}
+                                            className="hidden"
+                                        />
+                                        {avatarUploading ? 'Subiendo…' : 'Editar'}
+                                    </label>
+                                </form>
                             )}
                             <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
                             {viewMode === 'staff' && <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>}
