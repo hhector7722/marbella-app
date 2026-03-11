@@ -496,7 +496,7 @@ export default function HistoryPage() {
                                     filterMonth={filterMonth}
                                     filterYear={filterYear}
                                     onDayClick={handleDayClick}
-                                    showWeekOverrides={isManager && !isPlantilla}
+                                    showWeekOverrides={false}
                                     userId={selectedEmployeeId || currentUserId}
                                     onApplyWeekOverrides={async (contractedHours, preferStock) => {
                                         const uid = selectedEmployeeId || currentUserId;

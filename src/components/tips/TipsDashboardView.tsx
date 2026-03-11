@@ -201,9 +201,9 @@ export default function TipsDashboardView() {
   const weekendPool = preview?.pools.weekend;
 
   return (
-    <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto space-y-6 min-w-0">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden min-w-0">
           <div className="bg-[#36606F] p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -336,15 +336,126 @@ export default function TipsDashboardView() {
                   </p>
                 </div>
                 {loading && (
-                  <div className="flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+                  <div className="flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest shrink-0">
                     <RefreshCw className="animate-spin" size={14} strokeWidth={3} />
                     Calculando…
                   </div>
                 )}
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Vista smartphone: tarjetas por empleado, sin scroll horizontal */}
+              <div className="md:hidden p-4 space-y-3">
+                {!preview || preview.staff.length === 0 ? (
+                  <div className="py-10 text-center text-zinc-400 font-bold text-sm">
+                    {loading ? ' ' : 'Sin datos'}
+                  </div>
+                ) : (
+                  preview.staff.map((s) => (
+                    <div
+                      key={s.id}
+                      className="bg-zinc-50/80 rounded-2xl border border-zinc-100 p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2 min-w-0">
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-black text-zinc-900 truncate">
+                            {s.name}
+                            {s.hasOverrides && (
+                              <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-orange-500">
+                                OVERRIDE
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                            {s.role}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                            Total
+                          </div>
+                          <div className="text-[15px] font-black tabular-nums text-zinc-900">
+                            {fmtMoney(s.totalAmount)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                          <div className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                            L–V h
+                          </div>
+                          <div className="text-[12px] font-black tabular-nums text-[#36606F]">
+                            {fmtHours(s.weekdayHours)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                            S–D h
+                          </div>
+                          <div className="text-[12px] font-black tabular-nums text-[#36606F]">
+                            {fmtHours(s.weekendHours)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                            L–V €
+                          </div>
+                          <div className="text-[12px] font-black tabular-nums text-emerald-600">
+                            {fmtZeroBlank(s.weekdayAmount, 2)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                            S–D €
+                          </div>
+                          <div className="text-[12px] font-black tabular-nums text-orange-600">
+                            {fmtZeroBlank(s.weekendAmount, 2)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() =>
+                            setOverrideModal({
+                              open: true,
+                              poolType: 'weekday',
+                              staffId: s.id,
+                              staffName: s.name,
+                            })
+                          }
+                          className="flex-1 min-h-[48px] rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                          title="Editar entre semana"
+                        >
+                          <Edit3 size={16} strokeWidth={3} />
+                          <span className="text-[11px] font-black uppercase tracking-wider">
+                            Lun–Vie
+                          </span>
+                        </button>
+                        <button
+                          onClick={() =>
+                            setOverrideModal({
+                              open: true,
+                              poolType: 'weekend',
+                              staffId: s.id,
+                              staffName: s.name,
+                            })
+                          }
+                          className="flex-1 min-h-[48px] rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                          title="Editar fin de semana"
+                        >
+                          <Edit3 size={16} strokeWidth={3} />
+                          <span className="text-[11px] font-black uppercase tracking-wider">
+                            Sáb–Dom
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Vista escritorio: tabla */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-0">
                   <thead className="bg-white">
                     <tr className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
                       <th className="text-left px-4 py-3 w-[34%]">Empleado</th>

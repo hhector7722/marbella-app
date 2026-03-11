@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { X, Save, Coins, Landmark, Calendar } from 'lucide-react';
+import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { cn } from '@/lib/utils';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -26,10 +27,178 @@ const EVENT_TYPES = [
     { value: 'no_registered', label: 'No registrado', color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50', showCross: true },
 ];
 
+interface EditWeekModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    date: Date | null;
+    userId: string | null;
+    onSuccess: () => void;
+}
+
+function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekModalProps) {
+    const [contractedHours, setContractedHours] = useState(40);
+    const [preferStock, setPreferStock] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    const weekStart = date
+        ? format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+        : '';
+
+    useEffect(() => {
+        if (!isOpen || !userId || !weekStart) return;
+        setLoading(true);
+        (async () => {
+            try {
+                const { createClient } = await import('@/utils/supabase/client');
+                const supabase = createClient();
+                const [snapRes, profileRes] = await Promise.all([
+                    supabase
+                        .from('weekly_snapshots')
+                        .select('contracted_hours_snapshot, prefer_stock_hours_override')
+                        .eq('user_id', userId)
+                        .eq('week_start', weekStart)
+                        .maybeSingle(),
+                    supabase.from('profiles').select('contracted_hours_weekly, prefer_stock_hours').eq('id', userId).single(),
+                ]);
+                const snap = snapRes.data;
+                const profile = profileRes.data;
+                const contracted = snap?.contracted_hours_snapshot ?? profile?.contracted_hours_weekly ?? 40;
+                const prefer = snap?.prefer_stock_hours_override ?? profile?.prefer_stock_hours ?? false;
+                setContractedHours(Number(contracted) || 40);
+                setPreferStock(!!prefer);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [isOpen, userId, weekStart]);
+
+    const handleSave = async () => {
+        if (!userId || !weekStart) return;
+        setSaving(true);
+        try {
+            const result = await updateWeeklyWorkerConfig(userId, weekStart, {
+                contractedHours,
+                preferStock,
+            });
+            if (result.success) {
+                toast.success('Semana actualizada');
+                onSuccess();
+                onClose();
+            } else {
+                toast.error(result.error ?? 'Error al guardar');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al guardar');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    const weekStartDate = weekStart ? (() => {
+        const [y, m, d] = weekStart.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    })() : null;
+    const weekEndDate = weekStartDate ? addDays(weekStartDate, 6) : null;
+    const weekLabel = weekStartDate && weekEndDate
+        ? `${format(weekStartDate, 'd', { locale: es })} al ${format(weekEndDate, 'd MMM yyyy', { locale: es })}`
+        : '';
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[160] p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="w-full max-w-[320px] bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#36606F] h-[44px] flex items-center justify-center px-4 relative shrink-0">
+                    <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em]">
+                        Editar semana
+                    </h3>
+                    <button onClick={onClose} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-1">
+                        <X size={16} />
+                    </button>
+                </div>
+                <div className="px-4 py-4 space-y-4">
+                    {weekLabel && (
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{weekLabel}</p>
+                    )}
+                    {loading ? (
+                        <div className="py-6 flex justify-center">
+                            <LoadingSpinner size="md" className="text-[#36606F]" />
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">Overtime</span>
+                                <div className="flex bg-zinc-200 p-0.5 rounded-lg">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPreferStock(false)}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded text-[9px] font-black transition-all min-h-[48px]",
+                                            !preferStock ? "bg-white text-emerald-600 shadow" : "text-zinc-500"
+                                        )}
+                                    >
+                                        <Coins size={14} />
+                                        PAGO
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPreferStock(true)}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded text-[9px] font-black transition-all min-h-[48px]",
+                                            preferStock ? "bg-white text-blue-600 shadow" : "text-zinc-500"
+                                        )}
+                                    >
+                                        <Landmark size={14} />
+                                        BOLSA
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">Horas contratadas (semana)</span>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step={0.5}
+                                    value={contractedHours || ''}
+                                    onChange={(e) => setContractedHours(Number(e.target.value) || 0)}
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-black text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
+                                />
+                            </div>
+                            <div className="flex gap-2 pt-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="flex-1 h-12 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[9px] uppercase tracking-widest active:scale-95"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50"
+                                >
+                                    {saving ? <LoadingSpinner size="sm" /> : <Save size={14} />}
+                                    Guardar
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, onSuccess }: AttendanceDetailModalProps) {
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [editWeekModalOpen, setEditWeekModalOpen] = useState(false);
     const isManager = userRole === 'manager';
 
     useEffect(() => {
@@ -291,21 +460,44 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                     </div>
 
                                     {isManager && (
-                                        <div className="bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 mt-1.5">
-                                            <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
-                                            <select
-                                                value={log.event_type}
-                                                onChange={(e) => updateLog(0, 'event_type', e.target.value)}
-                                                className="text-[9px] font-black text-zinc-800 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent w-full"
-                                            >
-                                                {EVENT_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value} className="text-gray-900 bg-white">
-                                                        {t.label}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                        <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                                            <div className="bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
+                                                <select
+                                                    value={log.event_type}
+                                                    onChange={(e) => updateLog(0, 'event_type', e.target.value)}
+                                                    className="text-[9px] font-black text-zinc-800 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent w-full"
+                                                >
+                                                    {EVENT_TYPES.map(t => (
+                                                        <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                            {t.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-stretch min-w-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditWeekModalOpen(true)}
+                                                    className="w-full min-h-[48px] rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
+                                                >
+                                                    <Calendar size={14} strokeWidth={2.5} />
+                                                    <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Editar semana</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
+
+                                    <EditWeekModal
+                                        isOpen={editWeekModalOpen}
+                                        onClose={() => setEditWeekModalOpen(false)}
+                                        date={date}
+                                        userId={userId}
+                                        onSuccess={() => {
+                                            onSuccess();
+                                            setEditWeekModalOpen(false);
+                                        }}
+                                    />
 
                                     {/* Botonera fija abajo */}
                                     <div className="mt-3 flex gap-1.5 shrink-0">

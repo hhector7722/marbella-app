@@ -1,14 +1,12 @@
 -- =================================================================
--- RPC: get_weekly_worker_stats (V4 - Semana completa invariante por rango)
--- Centraliza la agregación de horas, redondeo y cálculo de costes.
--- Soporta filtrado por usuario en origen para máxima eficiencia.
--- FIX CRÍTICO: Las semanas que tocan [p_start_date, p_end_date] se agregan
--- por SEMANA COMPLETA (lunes-domingo). Así la misma semana devuelve siempre
--- el mismo total aunque se llame con febrero o con marzo (evita 1013€ vs 1204€).
+-- FIX: get_weekly_worker_stats devuelve TODAS las semanas del rango
+-- Antes solo devolvía semanas con al menos un fichaje en time_logs,
+-- por eso "desaparecían" semanas en el calendario de Horas Extras.
+-- Ahora incluye todas las semanas (staff vacío y totales 0 si no hay datos).
 -- =================================================================
 
 CREATE OR REPLACE FUNCTION public.get_weekly_worker_stats(
-    p_start_date date, 
+    p_start_date date,
     p_end_date date,
     p_user_id uuid DEFAULT NULL
 )
@@ -16,12 +14,10 @@ RETURNS jsonb AS $$
 DECLARE
     v_result jsonb;
 BEGIN
-    -- 0. Semanas cuyo intervalo [lunes, domingo] toca el rango pedido (solo listado)
     WITH weeks_in_range AS (
         SELECT DISTINCT date_trunc('week', d::timestamp)::date AS week_start
         FROM generate_series(p_start_date, p_end_date, '1 day'::interval) AS d
     ),
-    -- 1. Agregar por semana y usuario: SUMAR TODA LA SEMANA, no solo días en [p_start, p_end]
     weekly_user_logs AS (
         SELECT 
             date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date AS week_start,
@@ -33,7 +29,6 @@ BEGIN
           AND (p_user_id IS NULL OR user_id = p_user_id)
         GROUP BY 1, 2
     ),
-    -- 2. CTE para unir con perfiles y snapshots (override semanal: guardar horas esta semana)
     staff_stats AS (
         SELECT 
             wl.week_start,
@@ -45,7 +40,6 @@ BEGIN
             COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0) as limit_hours,
             wl.week_logs_sum,
             COALESCE(s.is_paid, false) as is_paid,
-            -- Lógica de Balance Semanal (Espejo de fn_recalc_and_propagate_snapshots)
             CASE 
                 WHEN extract(month from wl.week_start) = 8 OR p.role = 'manager' OR p.is_fixed_salary = true 
                 THEN wl.week_logs_sum 
@@ -57,7 +51,6 @@ BEGIN
         JOIN public.profiles p ON wl.user_id = p.id
         LEFT JOIN public.weekly_snapshots s ON wl.user_id = s.user_id AND wl.week_start = s.week_start
     ),
-    -- 3. Formatear desglose por trabajador (StaffWeeklyStats)
     formatted_staff AS (
         SELECT 
             week_start,
@@ -81,7 +74,6 @@ BEGIN
         FROM staff_stats
         GROUP BY week_start
     ),
-    -- 3b. Incluir TODAS las semanas del rango (aunque no tengan fichajes), para que no "desaparezcan" en el calendario
     all_weeks_with_data AS (
         SELECT 
             w.week_start,
@@ -91,7 +83,6 @@ BEGIN
         FROM weeks_in_range w
         LEFT JOIN formatted_staff f ON w.week_start = f.week_start
     ),
-    -- 4. Formatear cada semana (WeeklyStats)
     weeks_array AS (
         SELECT 
             jsonb_agg(
