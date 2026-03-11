@@ -98,7 +98,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#FAF9F6] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
 
                 {/* Header Marbella Premium */}
                 <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
@@ -116,7 +116,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                     </button>
                 </div>
 
-                <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
+                <div className="p-4 bg-[#FAF9F6] flex-1 overflow-hidden flex flex-col">
                     {/* Buscador */}
                     <div className="relative mb-4 shrink-0">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -145,9 +145,9 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                                     <button
                                         key={supplier.id}
                                         onClick={() => handleSelectSupplier(supplier.name)}
-                                        className="bg-transparent border-0 rounded-2xl p-2 flex flex-col items-center gap-2 transition-all hover:bg-gray-50/50 hover:shadow-md active:scale-95 min-h-[90px] justify-center"
+                                        className="rounded-2xl p-0 flex flex-col items-center justify-center gap-1.5 min-h-[90px] transition-all hover:shadow-md active:scale-95 border-0 bg-transparent shadow-sm"
                                     >
-                                        <div className="w-14 h-14 flex items-center justify-center overflow-hidden shrink-0 p-1">
+                                        <div className="w-14 h-14 flex items-center justify-center overflow-hidden shrink-0">
                                             {logo ? (
                                                 <img
                                                     src={logo}
@@ -158,7 +158,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                                                 <Truck className="w-6 h-6 text-gray-300" />
                                             )}
                                         </div>
-                                        <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight">
+                                        <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
                                             {supplier.name}
                                         </span>
                                     </button>
