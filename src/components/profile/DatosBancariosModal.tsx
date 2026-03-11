@@ -54,9 +54,10 @@ export default function DatosBancariosModal({ isOpen, onClose, iban }: DatosBanc
                         {iban && (
                             <button
                                 onClick={copy}
-                                className="shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
+                                className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
                             >
                                 {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
+                                <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
                             </button>
                         )}
                     </div>
