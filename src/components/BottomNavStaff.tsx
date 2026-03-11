@@ -114,12 +114,12 @@ export default function BottomNavStaff() {
 
     const staffItems: { name: string; href: string; icon: any }[] = [
         { name: 'Horarios', href: '#horarios', icon: CalendarIcon },
-        { name: 'Asistencia', href: userData?.role === 'manager' ? '/registros' : '/staff/history', icon: Clock },
+        { name: 'Asistencia', href: '/staff/history', icon: Clock },
         { name: 'Inicio', href: isAdmin ? '/dashboard' : '/staff/dashboard', icon: Home },
         { name: 'Pedidos', href: '/orders/new', icon: Package },
         {
             name: 'Cuenta', href: '/profile', icon: () => (
-                <Avatar src={userData?.avatar_url ?? null} alt="Cuenta" size="sm" />
+                <Avatar src={userData?.avatar_url ?? null} alt="Cuenta" size="sm" className="ring-2 ring-white" />
             )
         },
     ];

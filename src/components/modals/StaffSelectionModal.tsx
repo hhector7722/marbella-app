@@ -22,7 +22,11 @@ interface StaffSelectionModalProps {
     children?: React.ReactNode;
     /** Opcional: botón en cabecera para abrir la vista de Propinas desde /dashboard (Plantilla) */
     onOpenTips?: () => void;
+    /** Si true, muestra opción "Plantilla" primero (id ''); para vista asistencia manager */
+    allowPlantilla?: boolean;
 }
+
+const PLANTILLA_SENTINEL: Employee = { id: '', first_name: 'Plantilla', last_name: '' };
 
 export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     isOpen,
@@ -32,7 +36,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     title = "Plantilla",
     variant = 'grid',
     children,
-    onOpenTips
+    onOpenTips,
+    allowPlantilla = false
 }) => {
     if (!isOpen) return null;
 
@@ -83,6 +88,19 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     variant === 'profile-list' ? 'overflow-visible' : 'overflow-y-auto no-scrollbar flex-1'
                 )}>
                     {children}
+
+                    {allowPlantilla && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onSelect(PLANTILLA_SENTINEL);
+                                onClose();
+                            }}
+                            className="w-full mb-3 py-2.5 px-3 rounded-xl bg-[#36606F]/10 border border-[#36606F]/20 text-[#36606F] text-[10px] font-black uppercase tracking-widest hover:bg-[#36606F]/20 active:scale-[0.98] transition-all"
+                        >
+                            Vista plantilla (todos)
+                        </button>
+                    )}
 
                     {variant === 'profile-list' ? (
                         /* Iconos flotantes sobre contenedor: sin tarjetas, sin marco avatar, solo primer nombre */

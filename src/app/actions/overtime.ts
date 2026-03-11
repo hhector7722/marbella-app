@@ -356,7 +356,7 @@ export async function updateWeeklyWorkerConfig(
 
         if (rpcError) throw rpcError;
 
-        revalidatePath('/registros');
+        revalidatePath('/staff/history');
         revalidatePath('/dashboard');
         revalidatePath('/dashboard/overtime');
 

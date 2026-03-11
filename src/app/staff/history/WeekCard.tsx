@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Coins, Landmark, Save } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -64,9 +64,31 @@ interface WeekCardProps {
     filterMonth: number;
     filterYear: number;
     onDayClick: (date: string) => void;
+    /** Solo manager con empleado seleccionado: muestra controles Bolsa/Pago y Contrato en el pie */
+    showWeekOverrides?: boolean;
+    userId?: string;
+    onApplyWeekOverrides?: (contractedHours: number, preferStock: boolean) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick }: WeekCardProps) {
+export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showWeekOverrides, userId, onApplyWeekOverrides }: WeekCardProps) {
+    const [localContracted, setLocalContracted] = useState<number>(40);
+    const [localPreferStock, setLocalPreferStock] = useState<boolean>(week.summary.preferStock ?? false);
+    const [savingOverrides, setSavingOverrides] = useState(false);
+
+    React.useEffect(() => {
+        setLocalPreferStock(week.summary.preferStock ?? false);
+    }, [week.summary.preferStock]);
+
+    const handleApplyOverrides = async () => {
+        if (!userId || !onApplyWeekOverrides) return;
+        setSavingOverrides(true);
+        try {
+            const result = await onApplyWeekOverrides(localContracted, localPreferStock);
+            if (!result.success && result.error) setSavingOverrides(false);
+        } finally {
+            setSavingOverrides(false);
+        }
+    };
     return (
         <div className="rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
             {idx === 0 && (
@@ -232,6 +254,63 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick }: Wee
                     </div>
                 </div>
             </div>
+
+            {showWeekOverrides && userId && onApplyWeekOverrides && (
+                <div className="bg-zinc-50 border-t border-gray-100 flex flex-wrap items-center gap-2 px-3 py-2">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Overtime</span>
+                        <div className="flex bg-zinc-200 p-0.5 rounded-lg">
+                            <button
+                                type="button"
+                                onClick={() => setLocalPreferStock(false)}
+                                className={cn(
+                                    "flex items-center gap-1 px-2 py-1 rounded text-[8px] font-black transition-all",
+                                    !localPreferStock ? "bg-white text-emerald-600 shadow" : "text-zinc-500"
+                                )}
+                            >
+                                <Coins size={10} />
+                                PAGO
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setLocalPreferStock(true)}
+                                className={cn(
+                                    "flex items-center gap-1 px-2 py-1 rounded text-[8px] font-black transition-all",
+                                    localPreferStock ? "bg-white text-blue-600 shadow" : "text-zinc-500"
+                                )}
+                            >
+                                <Landmark size={10} />
+                                BOLSA
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Contrato</span>
+                        <input
+                            type="number"
+                            value={localContracted}
+                            onChange={(e) => setLocalContracted(Number(e.target.value) || 40)}
+                            className="w-10 h-6 text-center text-[10px] font-black bg-white border border-zinc-200 rounded focus:outline-none focus:ring-1 focus:ring-[#36606F]"
+                        />
+                        <span className="text-[8px] text-zinc-400 font-bold">H</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleApplyOverrides}
+                        disabled={savingOverrides}
+                        className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest disabled:opacity-50"
+                    >
+                        {savingOverrides ? (
+                            <span className="animate-pulse">...</span>
+                        ) : (
+                            <>
+                                <Save size={10} />
+                                Aplicar
+                            </>
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

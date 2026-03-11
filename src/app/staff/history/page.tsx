@@ -8,14 +8,27 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, X, ChevronDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { format } from 'date-fns';
+import {
+    format,
+    startOfWeek,
+    endOfWeek,
+    startOfMonth,
+    endOfMonth,
+    eachDayOfInterval,
+    isSameDay,
+    parseISO,
+    addDays,
+} from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
+import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import { WeekCard } from './WeekCard';
+import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 
 // --- TIPOS ---
 interface DayData {
@@ -83,12 +96,15 @@ export default function HistoryPage() {
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
     const [editingDate, setEditingDate] = useState<string | null>(null);
+    const [editingUserId, setEditingUserId] = useState<string | null>(null);
+    const [plantillaWeeksData, setPlantillaWeeksData] = useState<PlantillaWeek[]>([]);
+    const [summaryDate, setSummaryDate] = useState<string | null>(null);
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
     const initUser = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         setCurrentUserId(user.id);
-        setSelectedEmployeeId(user.id);
 
         const { data: profile } = await supabase
             .from('profiles')
@@ -97,6 +113,11 @@ export default function HistoryPage() {
             .single();
 
         if (profile) setUserRole(profile.role);
+        if (profile?.role === 'manager') {
+            setSelectedEmployeeId('');
+        } else {
+            setSelectedEmployeeId(user.id);
+        }
 
         if (profile?.role === 'manager') {
             const { data: emps } = await supabase
@@ -119,14 +140,15 @@ export default function HistoryPage() {
     }, [searchParams, userRole, currentUserId]);
 
     useEffect(() => {
-        if (currentUserId) fetchCalendar();
+        if (!currentUserId) return;
+        const isPlantilla = userRole === 'manager' && selectedEmployeeId === '';
+        if (isPlantilla) {
+            fetchPlantilla();
+        } else {
+            fetchCalendar();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth]);
-
-    // Modal Success Handler
-    const handleModalSuccess = () => {
-        fetchCalendar();
-    };
+    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth, userRole]);
 
     async function fetchCalendar() {
         setLoading(true);
@@ -229,6 +251,88 @@ export default function HistoryPage() {
         }
     }
 
+    async function fetchPlantilla() {
+        setLoading(true);
+        try {
+            const monthStart = new Date(filterYear, filterMonth, 1);
+            const monthEnd = new Date(filterYear, filterMonth + 1, 0);
+            const rangeStart = startOfWeek(startOfMonth(monthStart), { weekStartsOn: 1 });
+            const rangeEnd = endOfWeek(endOfMonth(monthEnd), { weekStartsOn: 1 });
+
+            const [logsRes, profilesRes] = await Promise.all([
+                supabase
+                    .from('time_logs')
+                    .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
+                    .gte('clock_in', rangeStart.toISOString())
+                    .lte('clock_in', rangeEnd.toISOString()),
+                supabase.from('profiles').select('id, first_name, last_name').order('first_name'),
+            ]);
+
+            const logsRaw = logsRes.data || [];
+            const profiles = (profilesRes.data || []).filter((p: { first_name?: string }) => {
+                const name = (p.first_name || '').trim().toLowerCase();
+                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+            });
+
+            const profileMap = new Map(profiles.map((p: { id: string }) => [p.id, p]));
+            const enrichedLogs = logsRaw.map((log: { user_id: string; clock_in: string; clock_out: string | null; event_type?: string; clock_out_show_no_registrada?: boolean; id: string }) => {
+                const p = profileMap.get(log.user_id) as { first_name?: string; last_name?: string } | undefined;
+                return {
+                    ...log,
+                    first_name: p?.first_name ?? '',
+                    last_name: p?.last_name ?? '',
+                    in_time: format(parseISO(log.clock_in), 'HH:mm'),
+                    out_time: log.clock_out ? format(parseISO(log.clock_out), 'HH:mm') : '',
+                };
+            });
+
+            const calendarDays = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
+            const weeks: PlantillaWeek[] = [];
+            for (let i = 0; i < calendarDays.length; i += 7) {
+                const weekDays = calendarDays.slice(i, i + 7);
+                const weekStart = weekDays[0];
+                const weekNumber = Math.ceil((weekStart.getDate() + startOfMonth(monthStart).getDay() - 1) / 7) || 1;
+                const days = weekDays.map((day): PlantillaDay => {
+                    const dayLogs = enrichedLogs.filter((l: { clock_in: string }) => isSameDay(parseISO(l.clock_in), day));
+                    const y = day.getFullYear();
+                    const m = day.getMonth();
+                    const isOtherMonth = m !== filterMonth || y !== filterYear;
+                    const logs: PlantillaDayLog[] = dayLogs.map((l: { id: string; user_id: string; first_name?: string; last_name?: string; clock_in: string; clock_out: string | null; event_type?: string; clock_out_show_no_registrada?: boolean; in_time: string; out_time: string }) => ({
+                        id: l.id,
+                        user_id: l.user_id,
+                        first_name: l.first_name,
+                        last_name: l.last_name,
+                        clock_in: l.clock_in,
+                        clock_out: l.clock_out,
+                        event_type: l.event_type || 'regular',
+                        clock_out_show_no_registrada: l.clock_out_show_no_registrada === true,
+                        in_time: l.in_time,
+                        out_time: l.out_time,
+                    }));
+                    return {
+                        date: format(day, 'yyyy-MM-dd'),
+                        dayNumber: day.getDate(),
+                        dayName: format(day, 'EEE', { locale: es }),
+                        isToday: isSameDay(day, new Date()),
+                        isOtherMonth,
+                        logs,
+                    };
+                });
+                weeks.push({
+                    weekNumber: weeks.length + 1,
+                    startDate: format(weekStart, 'yyyy-MM-dd'),
+                    days,
+                });
+            }
+            setPlantillaWeeksData(weeks);
+        } catch (err) {
+            console.error('fetchPlantilla error:', err);
+            setPlantillaWeeksData([]);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const nextMonth = () => {
         if (filterMonth === 11) {
             setFilterMonth(0);
@@ -248,10 +352,52 @@ export default function HistoryPage() {
     };
 
     const isManager = userRole === 'manager';
+    const isPlantilla = isManager && selectedEmployeeId === '';
     const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
     const selectedEmployeeName = viewingOther
         ? employees.find(e => e.id === selectedEmployeeId)?.first_name || ''
         : '';
+
+    const headerLabel = isPlantilla ? 'Plantilla' : (employees.find(e => e.id === selectedEmployeeId)?.first_name || 'Plantilla');
+
+    const summaryLogs = (() => {
+        if (!summaryDate || !plantillaWeeksData.length) return [];
+        for (const w of plantillaWeeksData) {
+            const d = w.days.find((day) => day.date === summaryDate);
+            if (d) return d.logs.map((l) => ({ ...l, employee_name: l.first_name }));
+        }
+        return [];
+    })();
+
+    const handleDayClick = (date: string) => {
+        if (isPlantilla) {
+            setSummaryDate(date);
+            setIsSummaryModalOpen(true);
+        } else {
+            setEditingDate(date);
+            setEditingUserId(selectedEmployeeId || currentUserId);
+        }
+    };
+
+    const handleSelectLogFromSummary = (userId: string) => {
+        setEditingDate(summaryDate);
+        setEditingUserId(userId);
+        setIsSummaryModalOpen(false);
+    };
+
+    const handleCloseSummary = () => {
+        setSummaryDate(null);
+        setIsSummaryModalOpen(false);
+    };
+
+    const handleDetailModalSuccess = () => {
+        if (isPlantilla) fetchPlantilla(); else fetchCalendar();
+    };
+
+    const handleCloseDetailModal = () => {
+        setEditingDate(null);
+        setEditingUserId(null);
+    };
 
     return (
         <div className="pb-10">
@@ -297,12 +443,12 @@ export default function HistoryPage() {
                                             viewingOther && "bg-white/20 border-white/30"
                                         )}
                                     >
-                                        <span className="max-w-[70px] truncate">{viewingOther ? selectedEmployeeName : "Plantilla"}</span>
+                                        <span className="max-w-[70px] truncate">{headerLabel}</span>
                                         <ChevronDown size={10} className="ml-1.5 opacity-40 shrink-0" />
                                     </button>
-                                    {viewingOther && (
+                                    {!isPlantilla && selectedEmployeeId && (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(currentUserId); }}
+                                            onClick={(e) => { e.stopPropagation(); setSelectedEmployeeId(''); }}
                                             className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
                                         >
                                             <X size={8} strokeWidth={4} />
@@ -317,6 +463,24 @@ export default function HistoryPage() {
                         <div className="py-20 flex justify-center">
                             <LoadingSpinner size="md" className="text-[#36606F]" />
                         </div>
+                    ) : isPlantilla ? (
+                        plantillaWeeksData.length === 0 ? (
+                            <div className="py-20 text-center text-zinc-400">
+                                <Calendar size={40} className="mx-auto mb-3 opacity-30" />
+                                <p className="text-sm font-bold">No hay registros este mes</p>
+                            </div>
+                        ) : (
+                            <div className="p-4 bg-zinc-50/50">
+                                {plantillaWeeksData.map((week, idx) => (
+                                    <PlantillaWeekCard
+                                        key={week.weekNumber}
+                                        week={week}
+                                        idx={idx}
+                                        onDayClick={handleDayClick}
+                                    />
+                                ))}
+                            </div>
+                        )
                     ) : weeksData.length === 0 ? (
                         <div className="py-20 text-center text-zinc-400">
                             <Calendar size={40} className="mx-auto mb-3 opacity-30" />
@@ -331,20 +495,42 @@ export default function HistoryPage() {
                                     idx={idx}
                                     filterMonth={filterMonth}
                                     filterYear={filterYear}
-                                    onDayClick={setEditingDate}
+                                    onDayClick={handleDayClick}
+                                    showWeekOverrides={isManager && !isPlantilla}
+                                    userId={selectedEmployeeId || currentUserId}
+                                    onApplyWeekOverrides={async (contractedHours, preferStock) => {
+                                        const uid = selectedEmployeeId || currentUserId;
+                                        const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
+                                        const result = await updateWeeklyWorkerConfig(uid, weekStart, { contractedHours, preferStock });
+                                        if (result.success) {
+                                            toast.success('Semana actualizada');
+                                            fetchCalendar();
+                                        } else {
+                                            toast.error(result.error ?? 'Error al guardar');
+                                        }
+                                        return result;
+                                    }}
                                 />
                             ))}
                         </div>
                     )}
                 </div>
 
+                <DaySummaryModal
+                    isOpen={isSummaryModalOpen}
+                    onClose={handleCloseSummary}
+                    date={summaryDate ? new Date(summaryDate + 'T12:00:00') : null}
+                    logs={summaryLogs}
+                    onSelectLog={handleSelectLogFromSummary}
+                />
+
                 <AttendanceDetailModal
-                    isOpen={!!editingDate}
-                    onClose={() => setEditingDate(null)}
+                    isOpen={!!editingDate && !!editingUserId}
+                    onClose={handleCloseDetailModal}
                     date={editingDate ? new Date(editingDate + 'T12:00:00') : null}
-                    userId={selectedEmployeeId || currentUserId}
+                    userId={editingUserId}
                     userRole={userRole}
-                    onSuccess={handleModalSuccess}
+                    onSuccess={handleDetailModalSuccess}
                 />
 
             </div>
@@ -353,6 +539,7 @@ export default function HistoryPage() {
                 isOpen={showEmployeeDropdown}
                 onClose={() => setShowEmployeeDropdown(false)}
                 employees={employees}
+                allowPlantilla={isManager}
                 onSelect={(emp: { id: string; first_name: string; last_name: string }) => {
                     setSelectedEmployeeId(emp.id);
                     setShowEmployeeDropdown(false);

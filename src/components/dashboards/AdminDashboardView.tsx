@@ -995,7 +995,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                     <div className="grid grid-cols-2 gap-3 md:gap-4 min-h-0 self-start md:self-stretch">
                         {[
-                            { title: 'Asistencia', img: '/icons/calendar.png', link: '/registros' },
+                            { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
                             { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
                             { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
                             { title: 'Producto', img: '/icons/suppliers.png', link: '/ingredients' },
