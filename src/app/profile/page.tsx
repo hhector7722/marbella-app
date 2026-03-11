@@ -91,7 +91,9 @@ function ProfileContent() {
                 }
                 toast.success('Imagen actualizada');
                 if (data.avatarUrl) {
-                    setProfile((p) => (p ? { ...p, avatar_url: data.avatarUrl + '?t=' + Date.now() } : null));
+                    const urlWithCache = data.avatarUrl + '?t=' + Date.now();
+                    setProfile((p) => (p ? { ...p, avatar_url: urlWithCache } : null));
+                    window.dispatchEvent(new CustomEvent('avatar-updated', { detail: { avatarUrl: urlWithCache } }));
                 }
                 fetchInitialData();
                 if (cropModalImageSrc) URL.revokeObjectURL(cropModalImageSrc);

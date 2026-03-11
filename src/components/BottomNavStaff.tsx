@@ -74,6 +74,17 @@ export default function BottomNavStaff() {
         loadProfile();
     }, [supabase]);
 
+    useEffect(() => {
+        const onAvatarUpdated = (e: Event) => {
+            const detail = (e as CustomEvent<{ avatarUrl: string }>).detail;
+            if (detail?.avatarUrl) {
+                setUserData((prev) => (prev ? { ...prev, avatar_url: detail.avatarUrl } : null));
+            }
+        };
+        window.addEventListener('avatar-updated', onAvatarUpdated);
+        return () => window.removeEventListener('avatar-updated', onAvatarUpdated);
+    }, []);
+
     const handleLogout = async () => {
         if (!confirm("¿Seguro que quieres cerrar sesión?")) return;
         const { error } = await supabase.auth.signOut();
