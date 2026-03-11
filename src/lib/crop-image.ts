@@ -7,7 +7,9 @@ export type CropAreaPixels = { x: number; y: number; width: number; height: numb
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.crossOrigin = 'anonymous';
+    if (!url.startsWith('blob:')) {
+      image.crossOrigin = 'anonymous';
+    }
     image.addEventListener('load', () => resolve(image));
     image.addEventListener('error', (e) => reject(e));
     image.src = url;
@@ -23,7 +25,8 @@ export async function getCroppedImg(
   circular: boolean = true
 ): Promise<Blob> {
   const image = await createImage(imageSrc);
-  const size = Math.min(pixelCrop.width, pixelCrop.height);
+  const size = Math.max(1, Math.min(pixelCrop.width, pixelCrop.height));
+  if (size <= 0 || !Number.isFinite(size)) throw new Error('Área de recorte inválida');
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;

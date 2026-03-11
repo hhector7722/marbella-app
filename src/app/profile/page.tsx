@@ -78,9 +78,15 @@ function ProfileContent() {
                 const formData = new FormData();
                 formData.append('avatar', new File([blob], 'avatar.png', { type: 'image/png' }));
                 const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData });
-                const data = await res.json();
+                let data: { success?: boolean; error?: string; avatarUrl?: string } = {};
+                try {
+                    data = await res.json();
+                } catch {
+                    toast.error(res.statusText || 'Error al subir');
+                    return;
+                }
                 if (!res.ok) {
-                    toast.error(data.error || 'Error al subir');
+                    toast.error(data.error || res.statusText || 'Error al subir');
                     return;
                 }
                 toast.success('Imagen actualizada');

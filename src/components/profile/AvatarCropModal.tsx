@@ -66,8 +66,8 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
         </button>
       </div>
 
-      {/* Área de recorte: marco circular visible */}
-      <div className="flex-1 relative min-h-0 w-full min-h-[40vh]">
+      {/* Área de recorte: marco circular visible (altura mínima para que Cropper calcule bien) */}
+      <div className="flex-1 relative w-full min-h-[280px]">
         <Cropper
           image={imageSrc}
           crop={crop}
