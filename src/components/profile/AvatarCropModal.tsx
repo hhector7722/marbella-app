@@ -40,33 +40,12 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#36606F]">
-      {/* Cabecera */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 text-white border-b border-white/20">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10"
-          aria-label="Cancelar"
-        >
-          Cancelar
-        </button>
-        <span className="text-sm font-bold uppercase tracking-widest">Encuadrar foto</span>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !croppedAreaPixels}
-          className={cn(
-            'min-h-[48px] px-4 rounded-xl font-bold uppercase text-[10px] tracking-widest',
-            saving || !croppedAreaPixels
-              ? 'bg-white/30 text-white/70 cursor-not-allowed'
-              : 'bg-white text-[#36606F] hover:bg-white/90'
-          )}
-        >
-          {saving ? 'Guardando…' : 'Guardar'}
-        </button>
+      {/* Título único: un solo paso (encuadrar + zoom y listo) */}
+      <div className="shrink-0 py-3 text-center text-white border-b border-white/20">
+        <span className="text-sm font-bold uppercase tracking-widest">Ajusta el encuadre y guarda</span>
       </div>
 
-      {/* Área de recorte: marco circular visible (altura mínima para que Cropper calcule bien) */}
+      {/* Área de recorte: círculo y zoom en un único paso */}
       <div className="flex-1 relative w-full min-h-[280px]">
         <Cropper
           image={imageSrc}
@@ -80,13 +59,13 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
           onCropComplete={onCropComplete}
           style={{
             containerStyle: { backgroundColor: '#36606F' },
-            cropAreaStyle: { border: '2px solid rgba(255,255,255,0.8)' },
+            cropAreaStyle: { border: '2px solid rgba(255,255,255,0.9)' },
           }}
         />
       </div>
 
-      {/* Controles zoom */}
-      <div className="shrink-0 px-4 py-4 bg-[#36606F] border-t border-white/20">
+      {/* Zona inferior: zoom + botones (fácil de pulsar) */}
+      <div className="shrink-0 px-4 pt-4 pb-8 pb-safe bg-[#36606F] border-t border-white/20">
         <p className="text-white/80 text-[10px] uppercase tracking-widest mb-2">Zoom</p>
         <input
           type="range"
@@ -98,6 +77,29 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
           className="w-full h-2 rounded-full appearance-none bg-white/30 accent-white min-h-[48px] touch-none"
           aria-label="Zoom"
         />
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 min-h-[48px] flex items-center justify-center rounded-xl border border-white/80 text-white font-bold uppercase text-[10px] tracking-widest hover:bg-white/10"
+            aria-label="Cancelar"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || !croppedAreaPixels}
+            className={cn(
+              'flex-1 min-h-[48px] flex items-center justify-center rounded-xl font-bold uppercase text-[10px] tracking-widest',
+              saving || !croppedAreaPixels
+                ? 'bg-white/30 text-white/70 cursor-not-allowed'
+                : 'bg-white text-[#36606F] hover:bg-white/90'
+            )}
+          >
+            {saving ? 'Guardando…' : 'Guardar'}
+          </button>
+        </div>
       </div>
     </div>
   );

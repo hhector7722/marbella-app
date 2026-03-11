@@ -260,7 +260,7 @@ function ProfileContent() {
                         </div>
 
                         <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                            <Avatar src={profile.avatar_url} alt={fullName} size="lg" className="shadow-xl mb-2 bg-white" />
+                            <Avatar src={profile.avatar_url} alt={fullName} size="lg" className="shadow-xl mb-2 bg-white ring-2 ring-white" />
                             {showAccountSection && (
                                 <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-block">
                                     <input
