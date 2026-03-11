@@ -49,17 +49,15 @@ export async function POST(req: Request) {
 
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: publicUrl })
-      .eq('id', user.id);
+    const { data: updatedUrl, error: updateError } = await supabase
+      .rpc('update_own_avatar_url', { new_avatar_url: publicUrl });
 
     if (updateError) {
       console.error('Profile update error:', updateError);
       return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, avatarUrl: publicUrl });
+    return NextResponse.json({ success: true, avatarUrl: updatedUrl ?? publicUrl });
   } catch (e) {
     console.error('Avatar API error:', e);
     return NextResponse.json({ success: false, error: 'Error al subir' }, { status: 500 });
