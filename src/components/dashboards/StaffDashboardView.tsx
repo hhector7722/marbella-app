@@ -750,17 +750,19 @@ export default function StaffDashboardView() {
                     aria-label="Fichaje registrado"
                     className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none"
                 >
-                    <video
-                        key="giff-overlay"
-                        src="/icons/giff.mp4"
-                        autoPlay
-                        muted
-                        playsInline
-                        loop={false}
-                        className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain"
-                        onEnded={() => setShowGiffOverlay(false)}
-                        onError={() => setShowGiffOverlay(false)}
-                    />
+                    <div className="w-[min(90vw,90vh)] h-[min(90vw,90vh)] rounded-full overflow-hidden flex items-center justify-center">
+                        <video
+                            key="giff-overlay"
+                            src="/icons/giff.mp4"
+                            autoPlay
+                            muted
+                            playsInline
+                            loop={false}
+                            className="w-full h-full object-cover"
+                            onEnded={() => setShowGiffOverlay(false)}
+                            onError={() => setShowGiffOverlay(false)}
+                        />
+                    </div>
                 </div>
             )}
 
