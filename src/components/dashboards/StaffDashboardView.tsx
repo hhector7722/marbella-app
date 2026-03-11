@@ -95,6 +95,8 @@ export default function StaffDashboardView() {
     const [weekNumber, setWeekNumber] = useState<number | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
+    const [showGiffOverlay, setShowGiffOverlay] = useState(false);
+    const [giffOverlayInteractive, setGiffOverlayInteractive] = useState(true);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'convenio' | 'conducta' | 'reservas' | 'carta' | null>(null);
     const [preferStock, setPreferStock] = useState(false);
@@ -407,6 +409,8 @@ export default function StaffDashboardView() {
                     .select()
                     .single();
                 setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
+                const { data: { user: u } } = await supabase.auth.getUser();
+                if (u?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffMinutes = differenceInMinutes(now, clockIn);
@@ -422,12 +426,28 @@ export default function StaffDashboardView() {
                     .single();
 
                 setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
+                const { data: { user: u } } = await supabase.auth.getUser();
+                if (u?.email?.toLowerCase().trim() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
             }
-            initialize();
+            setTimeout(() => initialize(), 0);
         } catch (error) { toast.error("Error al fichar"); } finally { setActionLoading(false); }
     };
 
-    const openConfirmation = () => { if (status !== 'finished' && !actionLoading) { setModalAction(status === 'idle' ? 'in' : 'out'); setShowModal(true); } };
+    const openConfirmation = async () => {
+        if (status === 'finished' || actionLoading) return;
+        setModalAction(status === 'idle' ? 'in' : 'out');
+        setShowModal(true);
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const detectedEmail = (currentUser?.email ?? '').toLowerCase().trim();
+        if (detectedEmail === 'marbellaremote@gmail.com') {
+            setGiffOverlayInteractive(false);
+            setShowGiffOverlay(true);
+            window.setTimeout(() => {
+                setShowGiffOverlay(false);
+                setGiffOverlayInteractive(true);
+            }, 1400);
+        }
+    };
 
     const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
         <button
@@ -730,6 +750,40 @@ export default function StaffDashboardView() {
                             <button onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
                             <button onClick={handleClockAction} className={cn("h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg", modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200")}>Confirmar</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showGiffOverlay && (
+                <div
+                    role="dialog"
+                    aria-label="Fichaje registrado"
+                    className={cn(
+                        "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4",
+                        giffOverlayInteractive ? "" : "pointer-events-none"
+                    )}
+                    onClick={() => setShowGiffOverlay(false)}
+                >
+                    <div className="relative max-w-md w-full flex flex-col items-center bg-white/10 rounded-2xl p-4 min-h-[200px]" onClick={(e) => e.stopPropagation()}>
+                        <video
+                            key="giff-overlay"
+                            src="/icons/giff.mp4"
+                            autoPlay
+                            muted
+                            playsInline
+                            loop={false}
+                            className="w-full max-h-[70vh] rounded-xl shadow-2xl object-contain bg-black/20"
+                            onEnded={() => setShowGiffOverlay(false)}
+                            onError={() => toast.error("No se pudo cargar el vídeo")}
+                        />
+                        <p className="text-white text-sm mt-3 font-medium">Toca fuera o el botón para cerrar</p>
+                        <button
+                            type="button"
+                            onClick={() => setShowGiffOverlay(false)}
+                            className="mt-2 py-2 px-4 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-bold transition-colors min-h-[48px]"
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
             )}

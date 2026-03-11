@@ -345,9 +345,6 @@ export default function StaffDashboard() {
         // Preview inmediato al pulsar "FICHAR" (sin bloquear la UI) para el usuario de prueba.
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         const detectedEmail = (currentUser?.email ?? '').toLowerCase().trim();
-        // Debug visible (temporal): confirma qué email está detectando Supabase Auth.
-        toast.message(`Auth email: ${detectedEmail || '(vacío)'}`);
-
         if (detectedEmail === 'marbellaremote@gmail.com') {
             setGiffOverlayInteractive(false);
             setShowGiffOverlay(true);
