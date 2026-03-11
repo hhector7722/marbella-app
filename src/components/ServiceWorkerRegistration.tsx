@@ -18,38 +18,40 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export function ServiceWorkerRegistration() {
     useEffect(() => {
-        if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(async (registration) => {
-                    console.log('SW registered:', registration);
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
-                    // Request notification permission if not granted
-                    if (Notification.permission === 'default') {
-                        const permission = await Notification.requestPermission();
-                        if (permission !== 'granted') return;
+        navigator.serviceWorker.register('/sw.js')
+            .then(async (registration) => {
+                console.log('SW registered:', registration);
+                if (!VAPID_PUBLIC_KEY) return;
+
+                if (Notification.permission === 'default') {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') return;
+                }
+                if (Notification.permission !== 'granted') return;
+
+                let subscription = await registration.pushManager.getSubscription();
+                if (!subscription) {
+                    try {
+                        subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                        });
+                    } catch (err) {
+                        console.error('Failed to subscribe to push:', err);
+                        return;
                     }
+                }
 
-                    // Get existing subscription or create new one
-                    let subscription = await registration.pushManager.getSubscription();
-
-                    if (!subscription) {
-                        try {
-                            subscription = await registration.pushManager.subscribe({
-                                userVisibleOnly: true,
-                                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                            });
-
-                            // Save to DB
-                            await saveSubscription(JSON.parse(JSON.stringify(subscription)));
-                        } catch (err) {
-                            console.error('Failed to subscribe to push:', err);
-                        }
-                    }
-                })
-                .catch((error) => {
-                    console.error('SW registration failed:', error);
-                });
-        }
+                if (subscription) {
+                    const res = await saveSubscription(JSON.parse(JSON.stringify(subscription)));
+                    if (res?.error) console.error('Error saving push subscription:', res.error);
+                }
+            })
+            .catch((error) => {
+                console.error('SW registration failed:', error);
+            });
     }, []);
 
     return null;

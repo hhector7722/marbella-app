@@ -241,7 +241,7 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                     </div>
                                 )}
 
-                                {os === 'android' && (
+                                {os === 'android' && !isInstallable && (
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-3 text-[10px] text-[#36606F] font-bold uppercase">
                                             <div className="w-6 h-6 bg-white border border-[#36606F]/20 rounded-lg flex items-center justify-center shrink-0">
@@ -256,6 +256,17 @@ export default function OnboardingOverlay({ needsOnboarding }: OnboardingOverlay
                                             <span>2. Selecciona "Instalar App"</span>
                                         </div>
                                     </div>
+                                )}
+
+                                {isInstallable && (
+                                    <button
+                                        type="button"
+                                        onClick={handleInstallClick}
+                                        className="w-full h-14 bg-emerald-600 text-white font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-xl shadow-emerald-600/25 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                    >
+                                        <Smartphone size={20} />
+                                        Instalar app en este dispositivo
+                                    </button>
                                 )}
 
                                 <p className="text-[9px] text-[#36606F]/70 italic text-center font-bold leading-tight">

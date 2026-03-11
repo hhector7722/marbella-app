@@ -481,7 +481,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         try {
             const result = await sendScheduleNotifications(userIds, dateFormatted);
             toast.dismiss(loadingToast);
-            if (result.success) {
+            if (result?.error) {
+                toast.error(result.error);
+            } else if (result?.success) {
                 toast.success('Notificaciones enviadas');
                 onSuccess?.();
                 onClose();
@@ -875,7 +877,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             try {
                                                 const res = await sendScheduleNotifications(userIds, dateFormatted);
                                                 toast.dismiss(loadToast);
-                                                if (res.success) {
+                                                if (res?.error) {
+                                                    toast.error(res.error);
+                                                } else if (res?.success) {
                                                     toast.success('Notificaciones enviadas');
                                                     setIsDaySent(true);
                                                 }

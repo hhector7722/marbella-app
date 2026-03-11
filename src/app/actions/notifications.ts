@@ -37,9 +37,13 @@ export async function saveSubscription(subscription: any) {
 }
 
 export async function sendScheduleNotifications(userIds: string[], dateStr: string) {
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+        console.error('Push: VAPID keys not set. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Vercel env.');
+        return { error: 'Notificaciones push no configuradas (falta VAPID en el servidor)', sentCount: 0 };
+    }
+
     const supabase = await createClient();
 
-    // Get subscriptions for these users
     const { data: subscriptions, error } = await supabase
         .from('push_subscriptions')
         .select('subscription, user_id')
@@ -90,9 +94,14 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
 }
 
 export async function sendClosingNotification(data: { totalSales: number, netSales: number, avgTicket: number }) {
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+        console.error('Push: VAPID keys not set.');
+        return { success: false, error: 'Notificaciones push no configuradas (falta VAPID en el servidor)', sentCount: 0 };
+    }
+
     const supabase = await createClient();
 
-    // 1. Get specific manager (requested: hhector7722@gmail.com)
+    // 1. Get manager(s) to notify (by email)
     const { data: managers, error: managerError } = await supabase
         .from('profiles')
         .select('id')
