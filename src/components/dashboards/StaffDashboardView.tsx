@@ -439,6 +439,8 @@ export default function StaffDashboardView() {
         setShowModal(true);
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         const detectedEmail = (currentUser?.email ?? '').toLowerCase().trim();
+        // Debug: ver qué email ve la app al pulsar (quitar cuando confirmes que el giff funciona)
+        toast.info(`Email: ${detectedEmail || '(vacío)'}`, { duration: 4000 });
         if (detectedEmail === 'marbellaremote@gmail.com') {
             setGiffOverlayInteractive(false);
             setShowGiffOverlay(true);
