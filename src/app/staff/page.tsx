@@ -79,6 +79,7 @@ export default function StaffDashboard() {
     // Modales
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
+    const [showGiffOverlay, setShowGiffOverlay] = useState(false);
 
     // Estado Menús Emergentes
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
@@ -299,6 +300,7 @@ export default function StaffDashboard() {
 
                 setTodayLog(data);
                 toast.success("¡Jornada iniciada!");
+                if (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
             } else if (modalAction === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffHours = (now.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
@@ -317,6 +319,7 @@ export default function StaffDashboard() {
 
                 setTodayLog(data);
                 toast.success("Jornada finalizada.");
+                if (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') setShowGiffOverlay(true);
             }
             // Re-initialize to sync any other dependent state
             initialize();
@@ -596,6 +599,33 @@ export default function StaffDashboard() {
                             <button onClick={() => setShowModal(false)} className="py-3 px-4 bg-gray-100 text-gray-600 font-bold rounded-xl">Cancelar</button>
                             <button onClick={handleClockAction} className="py-3 px-4 bg-blue-600 text-white font-bold rounded-xl">Confirmar</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Overlay GIF/vídeo solo para marbellaremote@gmail.com al fichar */}
+            {showGiffOverlay && (
+                <div
+                    className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                    onClick={() => setShowGiffOverlay(false)}
+                >
+                    <div className="relative max-w-md w-full mx-4 flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+                        <video
+                            src="/icons/giff.mp4"
+                            autoPlay
+                            muted
+                            playsInline
+                            loop={false}
+                            className="w-full rounded-2xl shadow-2xl"
+                            onEnded={() => setShowGiffOverlay(false)}
+                        />
+                        <p className="text-white text-sm mt-3 font-medium">Toca fuera para cerrar</p>
+                        <button
+                            onClick={() => setShowGiffOverlay(false)}
+                            className="mt-2 py-2 px-4 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-bold transition-colors"
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
             )}
