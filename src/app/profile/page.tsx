@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
-import { useActionState } from 'react';
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Settings, Receipt } from 'lucide-react';
-import { updateAvatarFormAction, type UpdateAvatarResult } from '@/app/actions/profile';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import EditProfileModal from '@/components/EditProfileModal';
@@ -18,6 +16,7 @@ import DatosBancariosModal from '@/components/profile/DatosBancariosModal';
 import NominasMenuModal, { NominasMenuAction } from '@/components/profile/NominasMenuModal';
 import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
+import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
 
 interface UserProfile {
     id: string;
@@ -64,28 +63,66 @@ function ProfileContent() {
     const [comunicadosOpen, setComunicadosOpen] = useState(false);
     const [contratoOpen, setContratoOpen] = useState(false);
     const [logoutConfirm, setLogoutConfirm] = useState(false);
-    const avatarFormRef = useRef<HTMLFormElement>(null);
-    const [avatarState, formAction, avatarUploading] = useActionState<UpdateAvatarResult | null, FormData>(
-        updateAvatarFormAction,
-        null
-    );
+    const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
+    const [avatarUploading, setAvatarUploading] = useState(false);
 
     useEffect(() => {
         fetchInitialData();
     }, [targetId]);
 
-    useEffect(() => {
-        if (!avatarState) return;
-        if (avatarState.success) {
-            toast.success('Imagen actualizada');
-            if (avatarState.avatarUrl && profile) {
-                setProfile(p => p ? { ...p, avatar_url: avatarState.avatarUrl! + '?t=' + Date.now() } : null);
+    const handleAvatarCropSave = useCallback(
+        async (blob: Blob) => {
+            if (!profile || currentUser?.id !== profile.id) return;
+            setAvatarUploading(true);
+            try {
+                const formData = new FormData();
+                formData.append('avatar', new File([blob], 'avatar.png', { type: 'image/png' }));
+                const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast.error(data.error || 'Error al subir');
+                    return;
+                }
+                toast.success('Imagen actualizada');
+                if (data.avatarUrl) {
+                    setProfile((p) => (p ? { ...p, avatar_url: data.avatarUrl + '?t=' + Date.now() } : null));
+                }
+                fetchInitialData();
+                if (cropModalImageSrc) URL.revokeObjectURL(cropModalImageSrc);
+                setCropModalImageSrc(null);
+            } catch (e) {
+                console.error(e);
+                toast.error('Error al subir');
+            } finally {
+                setAvatarUploading(false);
             }
-            fetchInitialData();
-        } else {
-            toast.error(avatarState.error || 'Error al subir');
-        }
-    }, [avatarState]);
+        },
+        [profile, currentUser?.id, cropModalImageSrc]
+    );
+
+    const handleAvatarCropCancel = useCallback(() => {
+        if (cropModalImageSrc) URL.revokeObjectURL(cropModalImageSrc);
+        setCropModalImageSrc(null);
+    }, [cropModalImageSrc]);
+
+    const handleAvatarFileSelect = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file || !profile || currentUser?.id !== profile.id) return;
+            const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            if (!allowed.includes(file.type)) {
+                toast.error('Formato no permitido. Usa JPG, PNG, WebP o GIF.');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                toast.error('La imagen no puede superar 2 MB');
+                return;
+            }
+            setCropModalImageSrc(URL.createObjectURL(file));
+        },
+        [profile, currentUser?.id]
+    );
 
     const fetchInitialData = async () => {
         try {
@@ -142,10 +179,6 @@ function ProfileContent() {
                 setLogoutConfirm(true);
                 break;
         }
-    };
-
-    const handleAvatarSubmit = () => {
-        avatarFormRef.current?.requestSubmit();
     };
 
     const handleNominasMenuSelect = (action: NominasMenuAction) => {
@@ -221,20 +254,16 @@ function ProfileContent() {
                         <div className="relative z-10 flex flex-col items-center text-center mt-4">
                             <Avatar src={profile.avatar_url} alt={fullName} size="lg" className="shadow-xl mb-2 bg-white" />
                             {showAccountSection && (
-                                <form ref={avatarFormRef} action={formAction} className="mb-2">
-                                    <input type="hidden" name="userId" value={profile.id} />
-                                    <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-block">
-                                        <input
-                                            type="file"
-                                            name="avatar"
-                                            accept="image/jpeg,image/png,image/webp,image/gif"
-                                            onChange={handleAvatarSubmit}
-                                            disabled={avatarUploading}
-                                            className="hidden"
-                                        />
-                                        {avatarUploading ? 'Subiendo…' : 'Editar'}
-                                    </label>
-                                </form>
+                                <label className="mb-2 px-3 py-1.5 rounded-lg border border-white/80 text-white text-[8px] font-black uppercase tracking-widest hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95 inline-block">
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        onChange={handleAvatarFileSelect}
+                                        disabled={avatarUploading}
+                                        className="hidden"
+                                    />
+                                    {avatarUploading ? 'Subiendo…' : 'Editar'}
+                                </label>
                             )}
                             <h1 className="text-lg font-black uppercase tracking-tight px-2">{fullName}</h1>
                             {viewMode === 'staff' && <p className="text-[10px] text-white/70 uppercase tracking-widest mt-0.5">Mi cuenta</p>}
@@ -302,6 +331,14 @@ function ProfileContent() {
                     onClose={() => setIsEditModalOpen(false)}
                     onSuccess={() => fetchInitialData()}
                     profile={profile}
+                />
+            )}
+
+            {cropModalImageSrc && (
+                <AvatarCropModal
+                    imageSrc={cropModalImageSrc}
+                    onSave={handleAvatarCropSave}
+                    onCancel={handleAvatarCropCancel}
                 />
             )}
 

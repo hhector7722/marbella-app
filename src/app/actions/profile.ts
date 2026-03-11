@@ -240,15 +240,24 @@ export async function updateAvatar(formData: FormData): Promise<UpdateAvatarResu
         return { success: false, error: 'La imagen no puede superar 2 MB' };
     }
 
-    const filePath = `${userId}/avatar.${ext}`;
+    const timestamp = Date.now();
+    const filePath = `${userId}/avatar_${timestamp}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: false });
 
     if (uploadError) {
         console.error('Avatar upload error:', uploadError);
         return { success: false, error: uploadError.message };
+    }
+
+    const { data: existingObjects } = await supabase.storage.from('avatars').list(userId);
+    if (existingObjects?.length) {
+        const toRemove = existingObjects.filter((o) => o.name !== `avatar_${timestamp}.${ext}`);
+        if (toRemove.length > 0) {
+            await supabase.storage.from('avatars').remove(toRemove.map((o) => `${userId}/${o.name}`));
+        }
     }
 
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
