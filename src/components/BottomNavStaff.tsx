@@ -119,7 +119,7 @@ export default function BottomNavStaff() {
         { name: 'Pedidos', href: '/orders/new', icon: Package },
         {
             name: 'Cuenta', href: '/profile', icon: () => (
-                <Avatar src={userData?.avatar_url ?? null} alt="Cuenta" size="sm" className="ring-2 ring-white" />
+                <Avatar src={userData?.avatar_url ?? null} alt="Cuenta" size="sm" className="ring-1 ring-white" />
             )
         },
     ];
