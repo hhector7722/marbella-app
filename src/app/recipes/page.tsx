@@ -144,45 +144,43 @@ function RecipesContent() {
         <div className="p-4 md:p-6 w-full bg-[#5B8FB9] min-h-screen pb-24">
             <Toaster position="top-right" />
             <div className="max-w-7xl mx-auto">
-                <div className="bg-[#36606F] rounded-2xl px-4 md:px-6 py-4 md:py-5">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                        <div className="relative w-full sm:max-w-xs">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                <div className="bg-[#36606F] rounded-2xl px-3 md:px-6 py-3 md:py-5">
+                    <div className="flex flex-row gap-2 items-center">
+                        <div className="relative flex-1 min-w-0">
+                            <Search className="absolute left-2.5 md:left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-white/70" />
                             <input
                                 type="text"
-                                placeholder="Buscar receta..."
+                                placeholder="Buscar..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30"
+                                className="w-full pl-8 md:pl-10 pr-2 md:pr-4 py-2 md:py-2.5 bg-white/95 rounded-xl md:rounded-2xl shadow-sm outline-none text-xs md:text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30"
                             />
                         </div>
-                        <div className="flex gap-2 items-center relative flex-1 justify-between w-full">
-                            <div className="flex gap-2 items-center">
-                                {!selectedCategory ? (
-                                    <div className="relative">
-                                        <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-5 py-2.5 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50">Categoría <ChevronDown size={14} className="text-zinc-400" /></button>
-                                        {showCategoryPopup && (
-                                            <>
-                                                <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
-                                                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                    <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
-                                                    <button onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
-                                                    {uniqueDbCategories.map(cat => (
-                                                        <button key={cat} onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1 bg-white rounded-2xl pl-4 pr-1.5 py-1.5 shadow-md border border-white">
-                                        <span className="text-zinc-800 font-black text-[10px] uppercase tracking-widest">{selectedCategory}</span>
-                                        <button onClick={() => setSelectedCategory(null)} className="p-1.5 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={14} className="text-rose-500" strokeWidth={4} /></button>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="flex gap-1.5 md:gap-2 items-center shrink-0">
+                            {!selectedCategory ? (
+                                <div className="relative">
+                                    <button onClick={() => setShowCategoryPopup(!showCategoryPopup)} className="px-2.5 md:px-5 py-2 md:py-2.5 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50"><span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" /></button>
+                                    {showCategoryPopup && (
+                                        <>
+                                            <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
+                                            <div className="absolute top-full right-0 mt-2 w-40 md:w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div className="px-4 py-2 border-b border-gray-50 mb-1"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span></div>
+                                                <button onClick={() => { setSelectedCategory(null); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">Todas</button>
+                                                {uniqueDbCategories.map(cat => (
+                                                    <button key={cat} onClick={() => { setSelectedCategory(cat); setShowCategoryPopup(false); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider">{cat}</button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1 bg-white rounded-xl md:rounded-2xl pl-2.5 md:pl-4 pr-1 md:pr-1.5 py-1 md:py-1.5 shadow-md border border-white max-w-[100px] md:max-w-none">
+                                    <span className="text-zinc-800 font-black text-[9px] md:text-[10px] uppercase tracking-widest truncate">{selectedCategory}</span>
+                                    <button onClick={() => setSelectedCategory(null)} className="p-1 md:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors shrink-0"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
+                                </div>
+                            )}
                             {!isRestricted && (
-                                <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-12 h-12 rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-6 h-6" /></button>
+                                <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-5 h-5 md:w-6 md:h-6" /></button>
                             )}
                         </div>
                     </div>
