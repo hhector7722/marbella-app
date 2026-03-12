@@ -60,6 +60,10 @@ Depending on the user request, you MUST adopt the strict rules of one of these p
    - **Trigger:** Auditoría de RLS, validación de interfaces táctiles o pruebas de estrés financiero.
    - **Rules:** Targets táctiles 48px+, validación obligatoria de RLS en migraciones.
 
+9. 💵 SKILL: `especialista-tesoreria-marbella` (Caja y Efectivo)
+   - **Trigger:** When dealing with cash boxes, treasury_log, arqueos, balances, movements, or caja inicial/cambio.
+   - **Rules:** Balance teórico = Sum(Entradas) - Sum(Salidas) sin arqueos; triggers sincronizan cash_boxes; arqueo guarda diferencia; Zero-Display para 0€ en vistas de lectura.
+
 ---
 
 🔴 MANDATORY WORKFLOW (THE 4-STEP LOOP):
@@ -71,7 +75,7 @@ For every task in this project, you must strictly follow this execution order:
 
 2. 🧠 PROMPT ANALYSIS & SKILL SELECTION:
    - Identify the User's Intent.
-   - **SELECT THE SKILL:** Explicitly decide which of the 5 Skills applies (e.g., "Applying `auditor-horas-nominas` rules...").
+   - **SELECT THE SKILL:** Explicitly decide which of the 9 Skills applies (e.g., "Applying `auditor-horas-nominas` rules...").
    - Tone: Direct, rigorous, skeptical. Focus on Operational viability.
 
 3. ⚡ EXECUTION:
