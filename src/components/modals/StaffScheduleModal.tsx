@@ -124,9 +124,10 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                 return;
             }
 
-            // Staff (no manager): solo ver tabla los días que él tenga turno; si hay turnos pero no es su día → "Sin turno"
-            const isManager = userRole === 'manager' || userRole === 'supervisor';
-            if (!isManager) {
+            // Manager/supervisor: siempre puede ver la tabla del día (todos los turnos publicados), aunque no tenga turno.
+            // Staff: solo ve la tabla los días que él tenga turno; si hay turnos pero no es su día → "Sin turno"
+            const canViewAnyDay = userRole === 'manager' || userRole === 'supervisor';
+            if (!canViewAnyDay) {
                 const uid = propsUserId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
                 const userHasShiftThisDay = uid && publishedShifts.some((s: any) => s.user_id === uid);
                 if (!userHasShiftThisDay) {
