@@ -144,16 +144,7 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                 })}
             </div>
 
-            <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
-                <div className="w-24 pl-3 shrink-0">
-                    <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                        SEMANA {week.weekNumber}
-                    </span>
-                </div>
-                <div className="flex-1 flex items-center justify-center pr-4">
-                    <span className="text-[8px] text-zinc-400 font-black uppercase tracking-tighter">Vista plantilla</span>
-                </div>
-            </div>
+            {/* Sin fila resumen en vista plantilla (manager sin empleado filtrado) */}
         </div>
     );
 }
