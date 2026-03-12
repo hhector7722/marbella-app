@@ -146,7 +146,7 @@ export default function IngredientsPage() {
             <Toaster position="top-right" />
 
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
-            <div className="max-w-7xl mx-auto bg-white rounded-[20px] shadow-xl overflow-hidden">
+            <div className="max-w-7xl mx-auto bg-[#8BA4AD] rounded-[20px] shadow-xl overflow-hidden">
                 <div className="bg-[#36606F] px-4 md:px-6 py-4 md:py-5">
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                         <div className="relative w-full sm:max-w-xs">

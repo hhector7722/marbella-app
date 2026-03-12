@@ -296,7 +296,7 @@ export default function NewOrderPage() {
             <Toaster position="top-right" />
 
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
-            <div className="max-w-7xl mx-auto bg-white rounded-[20px] shadow-xl overflow-hidden">
+            <div className="max-w-7xl mx-auto bg-[#8BA4AD] rounded-[20px] shadow-xl overflow-hidden">
                 {/* CABECERA COLOR PETRÓLEO */}
                 <div className="sticky top-0 z-50 bg-[#36606F] px-4 md:px-6 pt-4 pb-4">
                     <div className="flex flex-col gap-4">
