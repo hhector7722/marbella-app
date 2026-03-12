@@ -145,9 +145,8 @@ export default function IngredientsPage() {
         <div className="p-4 md:p-6 w-full bg-[#5B8FB9] min-h-screen pb-24">
             <Toaster position="top-right" />
 
-            {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
-            <div className="max-w-7xl mx-auto bg-[#36606F] rounded-[20px] shadow-xl overflow-hidden">
-                <div className="bg-[#36606F] px-4 md:px-6 py-4 md:py-5">
+            <div className="max-w-7xl mx-auto">
+                <div className="bg-[#36606F] rounded-2xl px-4 md:px-6 py-4 md:py-5">
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                         <div className="relative w-full sm:max-w-xs">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
@@ -219,7 +218,7 @@ export default function IngredientsPage() {
                 </div>
 
                 {!loading && (
-                    <div className="bg-[#36606F] p-4 md:p-6">
+                    <div className="pt-4 md:pt-6">
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6">
                             {filteredIngredients.map(ing => (
                                 <div key={ing.id} className="relative group">

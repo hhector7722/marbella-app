@@ -295,10 +295,8 @@ export default function NewOrderPage() {
         <div className="w-full bg-[#5B8FB9] min-h-screen p-4 md:p-6 pb-24">
             <Toaster position="top-right" />
 
-            {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
-            <div className="max-w-7xl mx-auto bg-[#36606F] rounded-[20px] shadow-xl overflow-hidden">
-                {/* CABECERA COLOR PETRÓLEO */}
-                <div className="sticky top-0 z-50 bg-[#36606F] px-4 md:px-6 pt-4 pb-4">
+            <div className="max-w-7xl mx-auto">
+                <div className="sticky top-0 z-50 bg-[#36606F] rounded-2xl px-4 md:px-6 pt-4 pb-4">
                     <div className="flex flex-col gap-4">
                         <div className="relative w-full">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
@@ -368,8 +366,7 @@ export default function NewOrderPage() {
                     </div>
                 </div>
 
-                {/* CUERPO: fondo blanco roto */}
-                <div className="bg-[#36606F] p-4 md:p-6">
+                <div className="pt-4 md:pt-6">
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6">
                         {filteredIngredients.map(ing => (
                             <OrderProductCard
