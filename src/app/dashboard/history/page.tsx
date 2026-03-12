@@ -21,8 +21,6 @@ import {
     Banknote,
     Plus,
     Minus,
-    LayoutGrid,
-    List
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -202,7 +200,6 @@ export default function HistoryPage() {
     };
 
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState<'grid' | 'calendar'>('calendar');
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
@@ -439,27 +436,6 @@ export default function HistoryPage() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <div className="bg-black/20 p-1 rounded-xl flex gap-1 mr-2">
-                                    <button
-                                        onClick={() => setViewMode('calendar')}
-                                        className={cn(
-                                            "p-1.5 md:p-2 rounded-lg transition-all",
-                                            viewMode === 'calendar' ? "bg-white text-[#36606F] shadow-sm" : "text-white/40 hover:text-white"
-                                        )}
-                                    >
-                                        <Calendar size={16} className="md:w-5 md:h-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('grid')}
-                                        className={cn(
-                                            "p-1.5 md:p-2 rounded-lg transition-all",
-                                            viewMode === 'grid' ? "bg-white text-[#36606F] shadow-sm" : "text-white/40 hover:text-white"
-                                        )}
-                                    >
-                                        <LayoutGrid size={16} className="md:w-5 md:h-5" />
-                                    </button>
-                                </div>
-
                                 <button
                                     onClick={() => setShowClosingModal(true)}
                                     className="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
@@ -578,70 +554,6 @@ export default function HistoryPage() {
                                     <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
                                         <Calendar size={32} />
                                         <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                    </div>
-                                ) : viewMode === 'grid' ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4 p-4 md:p-6">
-                                        {closings.map((c) => {
-                                            const mainVal = c[selectedMetric] || 0;
-                                            const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
-
-                                            return (
-                                                <div
-                                                    key={c.id}
-                                                    onClick={() => setSelectedClosing(c)}
-                                                    className="group relative bg-white rounded-2xl md:rounded-[2.5rem] shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
-                                                >
-                                                    <div className="bg-[#D64D5D] p-2.5 md:p-3 flex justify-center items-center shadow-sm">
-                                                        <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider">
-                                                            {(() => {
-                                                                const d = new Date(c.closed_at);
-                                                                return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee, d MMM', { locale: es });
-                                                            })()}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="p-4 md:p-5 flex flex-col">
-                                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                                            <span className="text-3xl md:text-5xl font-black text-zinc-900 tracking-tighter tabular-nums leading-none">
-                                                                {selectedMetric === 'tickets_count' ? mainVal : formatValue(mainVal, selectedMetric)}
-                                                            </span>
-                                                            <div className="flex flex-col items-end">
-                                                                <div className={cn(
-                                                                    "text-xs md:text-sm font-black uppercase tracking-tighter whitespace-nowrap leading-none",
-                                                                    parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-rose-600"
-                                                                )}>
-                                                                    {parseFloat(diffPerc) >= 0 ? '↗' : '↘'} {Math.abs(parseFloat(diffPerc))}%
-                                                                </div>
-                                                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tighter opacity-70">VS MEDIA</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-4">
-                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                        </span>
-
-                                                        <div className="grid grid-cols-4 gap-0 pt-3 border-t border-zinc-100 mt-auto">
-                                                            <div className="flex flex-col items-center">
-                                                                <span className="text-[10px] md:text-[11px] font-black text-zinc-900 tabular-nums">{Math.round(c.tpv_sales)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Ventas</span>
-                                                            </div>
-                                                            <div className="flex flex-col items-center border-l border-zinc-100 italic">
-                                                                <span className="text-[10px] md:text-[11px] font-black text-[#36606F] tabular-nums">{(c.tpv_sales / (c.tickets_count || 1)).toFixed(1)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Media</span>
-                                                            </div>
-                                                            <div className="flex flex-col items-center border-l border-zinc-100">
-                                                                <span className="text-[10px] md:text-[11px] font-black text-zinc-900 tabular-nums">{Math.round(c.sales_card || 0)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Tarjeta</span>
-                                                            </div>
-                                                            <div className="flex flex-col items-center border-l border-zinc-100">
-                                                                <span className="text-[10px] md:text-[11px] font-black text-emerald-600 tabular-nums">{(c.cash_counted || 0).toFixed(0)}€</span>
-                                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Cash</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
                                     </div>
                                 ) : (
                                     <div className="p-1 md:p-3 overflow-x-auto no-scrollbar">
