@@ -40,6 +40,8 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const [customUnit, setCustomUnit] = useState(isStartCustom ? startUnit : '');
     const [isUpdating, setIsUpdating] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    /** Mientras el usuario escribe, guardamos el texto del input; al blur/Enter se parsea y aplica. */
+    const [editingQty, setEditingQty] = useState<string | null>(null);
 
     // This ref tells us if the user is currently interacting and hasn't saved yet
     const isDirtyRef = useRef(false);
@@ -113,6 +115,16 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const handleIncrement = () => updateLocal(quantity + 1, unit, isCustomUnit, customUnit);
     const handleDecrement = () => updateLocal(Math.max(0, quantity - 1), unit, isCustomUnit, customUnit);
     const handleTrash = () => updateLocal(0, unit, isCustomUnit, customUnit);
+
+    const commitQtyInput = () => {
+        if (editingQty === null) return;
+        const n = parseFloat(editingQty.replace(',', '.'));
+        const final = (!Number.isNaN(n) && n >= 0) ? n : 0;
+        updateLocal(final, unit, isCustomUnit, customUnit);
+        setEditingQty(null);
+    };
+
+    const displayQty = editingQty !== null ? editingQty : (quantity === 0 ? '' : String(quantity));
 
     const renderCard = (isModal: boolean) => (
         <div className={cn(
@@ -218,24 +230,37 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     disabled={quantity === 0}
                     className={cn(
                         "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12 min-h-[48px]" : "w-6 h-6 md:w-7 md:h-7 min-h-[48px]"
                     )}
                 >
                     <Minus size={isModal ? 24 : 14} strokeWidth={3} />
                 </button>
 
-                <span className={cn(
-                    "font-black text-white tabular-nums px-1",
-                    isModal ? "text-lg sm:text-2xl" : "text-[11px] md:text-xs"
-                )}>
-                    {quantity === 0 ? " " : quantity}
-                </span>
+                <input
+                    type="text"
+                    inputMode="decimal"
+                    aria-label="Cantidad"
+                    value={displayQty}
+                    onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '' || /^\d*[,.]?\d*$/.test(v)) setEditingQty(v);
+                    }}
+                    onFocus={() => setEditingQty(quantity === 0 ? '' : String(quantity))}
+                    onBlur={commitQtyInput}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    }}
+                    className={cn(
+                        "font-black text-white tabular-nums text-center bg-transparent border-none outline-none w-10 min-w-0 min-h-[48px] rounded focus:ring-1 focus:ring-white/30",
+                        isModal ? "text-lg sm:text-2xl px-1" : "text-[11px] md:text-xs px-0.5"
+                    )}
+                />
 
                 <button
                     onClick={handleIncrement}
                     className={cn(
                         "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12 min-h-[48px]" : "w-6 h-6 md:w-7 md:h-7 min-h-[48px]"
                     )}
                 >
                     <Plus size={isModal ? 24 : 14} strokeWidth={3} />
