@@ -26,31 +26,42 @@ export interface WeeklyStats {
     staff: StaffWeeklyStats[];
 }
 
+const EMPTY_OVERTIME = {
+    weeksResult: [] as WeeklyStats[],
+    summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 }
+};
+
 export async function getOvertimeData(startDate: string, endDate: string, userId?: string) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    // 1. Invocamos la RPC centralizada que realiza la agregación, redondeo y balance en DB
-    // Ahora pasamos userId directamente para que el filtrado ocurra en PostgreSQL (Eficiencia Max)
-    const { data, error } = await supabase.rpc('get_weekly_worker_stats', {
-        p_start_date: startDate,
-        p_end_date: endDate,
-        p_user_id: userId
-    });
+        const { data, error } = await supabase.rpc('get_weekly_worker_stats', {
+            p_start_date: startDate,
+            p_end_date: endDate,
+            p_user_id: userId ?? null
+        });
 
-    if (error) {
-        console.error("Error fetching overtime data from RPC:", error);
-        return { weeksResult: [], summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 } };
-    }
-
-    // Node.js no realiza procesamiento de arrays; solo retorna el resultado de la RPC
-    return data as {
-        weeksResult: WeeklyStats[],
-        summary: {
-            totalCost: number;
-            totalHours: number;
-            totalOvertimeCost: number;
+        if (error) {
+            console.error("Error fetching overtime data from RPC:", error);
+            return EMPTY_OVERTIME;
         }
-    };
+
+        if (data == null) return EMPTY_OVERTIME;
+
+        const weeks = Array.isArray((data as any).weeksResult) ? (data as any).weeksResult : [];
+        const summary = (data as any).summary ?? EMPTY_OVERTIME.summary;
+        return {
+            weeksResult: weeks,
+            summary: {
+                totalCost: Number(summary.totalCost) || 0,
+                totalHours: Number(summary.totalHours) || 0,
+                totalOvertimeCost: Number(summary.totalOvertimeCost) || 0
+            }
+        };
+    } catch (e) {
+        console.error("getOvertimeData failed:", e);
+        return EMPTY_OVERTIME;
+    }
 }
 
 export async function togglePaidStatus(userId: string, weekStart: string, newStatus: boolean, stats?: { totalHours: number, overtimeHours: number }) {
