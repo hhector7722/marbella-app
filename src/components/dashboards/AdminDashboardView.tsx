@@ -201,6 +201,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const salesViewDateRef = useRef(salesViewDate);
     const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false);
     const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
+    // Tooltip gráfica ventas: hora seleccionada (null = sin filtro). Activa filtro en lista de tickets.
+    const [chartHoveredHour, setChartHoveredHour] = useState<number | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+    const chartContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsDesktop(window.innerWidth >= 768);
@@ -245,6 +249,22 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         } finally {
             setNewWorkerSaving(false);
         }
+    };
+
+    /** Extrae la hora (0-23) del ticket para filtrar lista por la hora del tooltip. */
+    const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string }): number => {
+        const raw = ticket.hora_cierre;
+        if (raw && typeof raw === 'string') {
+            const part = raw.includes('T') ? raw.split('T')[1] : raw;
+            const match = part?.match(/^(\d{1,2})/);
+            if (match) return Math.min(23, Math.max(0, parseInt(match[1], 10)));
+        }
+        if (ticket.fecha && typeof ticket.fecha === 'string' && ticket.fecha.includes('T')) {
+            const part = ticket.fecha.split('T')[1];
+            const match = part?.match(/^(\d{1,2})/);
+            if (match) return Math.min(23, Math.max(0, parseInt(match[1], 10)));
+        }
+        return 12;
     };
 
     const fetchHourlySales = async (targetDate?: string) => {
@@ -341,6 +361,22 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     useEffect(() => {
         fetchSalesForDate(salesViewDate);
     }, [salesViewDate]);
+
+    // En móvil: quitar filtro del tooltip al tocar fuera de la gráfica
+    useEffect(() => {
+        if (chartHoveredHour === null) return;
+        const handleTouchStart = (e: TouchEvent) => {
+            const el = chartContainerRef.current;
+            if (el && !el.contains(e.target as Node)) setChartHoveredHour(null);
+        };
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        return () => document.removeEventListener('touchstart', handleTouchStart);
+    }, [chartHoveredHour]);
+
+    // Lista de tickets: sin filtro o solo los de la hora del tooltip
+    const displayTickets = chartHoveredHour === null
+        ? salesTickets
+        : salesTickets.filter((t) => getTicketHour(t) === chartHoveredHour);
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
 
@@ -602,8 +638,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     </div>
                     {/* Gráfica en parte inferior, por encima del contenido desplegable */}
                     {(() => {
-                        // Ventas: el dashboard debe mostrar 24h. Recortar por BUSINESS_HOURS hace que parezca "plana"
-                        // cuando el grueso de ventas cae fuera (ej. después de las 20:00).
                         const chartData = salesChartData;
                         const maxMain = Math.max(...chartData.map(d => d.total), 0);
                         const scaleMax = Math.max(maxMain, 1);
@@ -618,9 +652,26 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             });
                             return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
                         };
+                        const updateHourFromClientX = (clientX: number) => {
+                            const el = chartContainerRef.current;
+                            if (!el) return;
+                            const rect = el.getBoundingClientRect();
+                            const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                            const hourIndex = Math.min(23, Math.max(0, Math.round(ratio * 23)));
+                            setChartHoveredHour(hourIndex);
+                            setTooltipPosition({ x: clientX, y: rect.top + rect.height / 2 });
+                        };
                         return (
-                            <div className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2">
-                                <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block" preserveAspectRatio="none">
+                            <div
+                                ref={chartContainerRef}
+                                className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2"
+                                onMouseMove={(e) => updateHourFromClientX(e.clientX)}
+                                onMouseLeave={() => setChartHoveredHour(null)}
+                                onTouchStart={(e) => {
+                                    if (e.touches.length) updateHourFromClientX(e.touches[0].clientX);
+                                }}
+                            >
+                                <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block touch-none" preserveAspectRatio="none">
                                     <path
                                         d={toPath(chartData)}
                                         fill="none"
@@ -631,6 +682,18 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         vectorEffect="non-scaling-stroke"
                                     />
                                 </svg>
+                                {chartHoveredHour !== null && (
+                                    <>
+                                        <div
+                                            className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-full px-2 py-1.5 rounded-lg bg-[#36606F] text-white text-[10px] md:text-xs font-bold shadow-lg whitespace-nowrap"
+                                            style={{ left: tooltipPosition.x, top: tooltipPosition.y - 8 }}
+                                        >
+                                            <span className="font-mono">{String(chartHoveredHour).padStart(2, '0')}:00</span>
+                                            <span className="mx-1.5 text-white/70">·</span>
+                                            <span className="tabular-nums">{(chartData[chartHoveredHour]?.total ?? 0).toFixed(2)}€</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         );
                     })()}
@@ -646,6 +709,20 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 </p>
                             ) : (
                                 <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0">
+                                    {chartHoveredHour !== null && (
+                                        <div className="flex items-center justify-between gap-2 px-2 py-1.5 bg-[#36606F]/10 border-b border-zinc-100">
+                                            <span className="text-[9px] font-bold text-zinc-600">
+                                                Tickets de las {String(chartHoveredHour).padStart(2, '0')}:00
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setChartHoveredHour(null)}
+                                                className="text-[8px] font-black uppercase tracking-wider text-[#36606F] hover:underline min-h-[32px] px-2"
+                                            >
+                                                Ver todos
+                                            </button>
+                                        </div>
+                                    )}
                                     <table className="w-full text-left border-collapse">
                                         <thead className="bg-[#36606F] text-white text-[8px] md:text-[9px] font-black uppercase tracking-wider">
                                             <tr>
@@ -655,7 +732,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="text-[10px] md:text-xs font-bold text-zinc-600">
-                                            {salesTickets.map((ticket, idx) => {
+                                            {displayTickets.length === 0 && chartHoveredHour !== null ? (
+                                                <tr>
+                                                    <td colSpan={3} className="py-4 text-center text-[9px] font-bold text-zinc-400">
+                                                        Ningún ticket a las {String(chartHoveredHour).padStart(2, '0')}:00
+                                                    </td>
+                                                </tr>
+                                            ) : displayTickets.map((ticket, idx) => {
                                                 const cleanDoc = ticket.numero_documento?.replace(/0+/, '') || '';
                                                 const rawTime = ticket.hora_cierre;
                                                 let hora = '---';

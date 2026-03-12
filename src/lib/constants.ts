@@ -1,5 +1,5 @@
 /** Horario comercial: hora de apertura y cierre (0-23). Modificar según negocio. */
-export const BUSINESS_HOURS = { start: 8, end: 20 };
+export const BUSINESS_HOURS = { start: 7, end: 23 };
 
 export const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
