@@ -230,7 +230,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     disabled={quantity === 0}
                     className={cn(
                         "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 disabled:opacity-30 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12 min-h-[48px]" : "w-6 h-6 md:w-7 md:h-7 min-h-[48px]"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
                     )}
                 >
                     <Minus size={isModal ? 24 : 14} strokeWidth={3} />
@@ -251,7 +251,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                     }}
                     className={cn(
-                        "font-black text-white tabular-nums text-center bg-transparent border-none outline-none w-10 min-w-0 min-h-[48px] rounded focus:ring-1 focus:ring-white/30",
+                        "font-black text-white tabular-nums text-center bg-transparent border-none outline-none w-10 min-w-0 rounded focus:ring-1 focus:ring-white/30",
                         isModal ? "text-lg sm:text-2xl px-1" : "text-[11px] md:text-xs px-0.5"
                     )}
                 />
@@ -260,7 +260,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     onClick={handleIncrement}
                     className={cn(
                         "flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-md active:scale-95 transition-all shrink-0 p-0",
-                        isModal ? "w-10 h-10 sm:w-12 sm:h-12 min-h-[48px]" : "w-6 h-6 md:w-7 md:h-7 min-h-[48px]"
+                        isModal ? "w-10 h-10 sm:w-12 sm:h-12" : "w-6 h-6 md:w-7 md:h-7"
                     )}
                 >
                     <Plus size={isModal ? 24 : 14} strokeWidth={3} />
