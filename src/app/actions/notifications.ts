@@ -39,7 +39,13 @@ export async function saveSubscription(subscription: any) {
 export async function sendScheduleNotifications(userIds: string[], dateStr: string) {
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
         console.error('Push: VAPID keys not set. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Vercel env.');
-        return { error: 'Notificaciones push no configuradas (falta VAPID en el servidor)', sentCount: 0 };
+        return {
+            success: false,
+            error: 'Notificaciones push no configuradas (falta VAPID en el servidor)',
+            sentCount: 0,
+            targetCount: userIds.length,
+            missingSubscriptionUserIds: userIds,
+        };
     }
 
     const supabase = await createClient();
@@ -51,11 +57,26 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
 
     if (error) {
         console.error('Error fetching subscriptions:', error);
-        return { error: error.message };
+        return {
+            success: false,
+            error: error.message,
+            sentCount: 0,
+            targetCount: userIds.length,
+            missingSubscriptionUserIds: userIds,
+        };
     }
 
-    if (!subscriptions || subscriptions.length === 0) {
-        return { success: true, sentCount: 0, message: 'No active subscriptions found for these users' };
+    const subs = subscriptions ?? [];
+    const subscriptionUserIds = new Set(subs.map(s => s.user_id));
+    const missingSubscriptionUserIds = userIds.filter(id => !subscriptionUserIds.has(id));
+    if (subs.length === 0) {
+        return {
+            success: false,
+            error: 'Ningún destinatario tiene notificaciones push activadas en este dispositivo.',
+            sentCount: 0,
+            targetCount: userIds.length,
+            missingSubscriptionUserIds,
+        };
     }
 
     const payload = JSON.stringify({
@@ -65,7 +86,7 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
     });
 
     const results = await Promise.allSettled(
-        subscriptions.map(sub =>
+        subs.map(sub =>
             webpush.sendNotification(sub.subscription as any, payload)
         )
     );
@@ -77,7 +98,7 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
     const expiredSubIds = failures
         .map((f: any, idx) => {
             if (f.reason?.statusCode === 404 || f.reason?.statusCode === 410) {
-                return subscriptions[idx].user_id;
+                return subs[idx].user_id;
             }
             return null;
         })
@@ -90,7 +111,12 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
             .in('user_id', expiredSubIds);
     }
 
-    return { success: true, sentCount };
+    return {
+        success: true,
+        sentCount,
+        targetCount: userIds.length,
+        missingSubscriptionUserIds,
+    };
 }
 
 export async function sendClosingNotification(data: { totalSales: number, netSales: number, avgTicket: number }) {

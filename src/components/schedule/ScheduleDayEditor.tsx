@@ -486,13 +486,24 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         try {
             const result = await sendScheduleNotifications(userIds, dateFormatted);
             toast.dismiss(loadingToast);
-            if (result?.error) {
-                toast.error(result.error);
-            } else if (result?.success) {
-                toast.success('Notificaciones enviadas');
-                onSuccess?.();
-                onClose();
+            if (result?.error || result?.success === false) {
+                toast.error(result?.error || 'Error al enviar notificaciones');
+                return;
             }
+            const sent = Number(result?.sentCount ?? 0);
+            const target = Number(result?.targetCount ?? userIds.length);
+            const missing = Array.isArray(result?.missingSubscriptionUserIds) ? result.missingSubscriptionUserIds.length : Math.max(0, target - sent);
+            if (sent <= 0) {
+                toast.error('No se ha enviado ninguna notificación. Activa notificaciones en el móvil/PC (permiso + dispositivo suscrito).');
+                return;
+            }
+            if (sent < target) {
+                toast.warning(`Enviadas ${sent}/${target}. Faltan ${missing} sin push activado.`);
+            } else {
+                toast.success('Notificaciones enviadas');
+            }
+            onSuccess?.();
+            onClose();
         } catch (error) {
             toast.dismiss(loadingToast);
             toast.error('Error al enviar');
@@ -887,12 +898,23 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             try {
                                                 const res = await sendScheduleNotifications(userIds, dateFormatted);
                                                 toast.dismiss(loadToast);
-                                                if (res?.error) {
-                                                    toast.error(res.error);
-                                                } else if (res?.success) {
-                                                    toast.success('Notificaciones enviadas');
-                                                    setIsDaySent(true);
+                                                if (res?.error || res?.success === false) {
+                                                    toast.error(res?.error || 'Error al enviar notificaciones');
+                                                    return;
                                                 }
+                                                const sent = Number(res?.sentCount ?? 0);
+                                                const target = Number(res?.targetCount ?? userIds.length);
+                                                const missing = Array.isArray(res?.missingSubscriptionUserIds) ? res.missingSubscriptionUserIds.length : Math.max(0, target - sent);
+                                                if (sent <= 0) {
+                                                    toast.error('No se ha enviado ninguna notificación. Activa notificaciones en el móvil/PC (permiso + dispositivo suscrito).');
+                                                    return;
+                                                }
+                                                if (sent < target) {
+                                                    toast.warning(`Enviadas ${sent}/${target}. Faltan ${missing} sin push activado.`);
+                                                } else {
+                                                    toast.success('Notificaciones enviadas');
+                                                }
+                                                setIsDaySent(true);
                                             } catch (e) {
                                                 toast.dismiss(loadToast);
                                                 toast.error('Error al enviar');
