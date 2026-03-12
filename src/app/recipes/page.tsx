@@ -180,7 +180,7 @@ function RecipesContent() {
                                 </div>
                             )}
                             {!isRestricted && (
-                                <button onClick={() => setShowCreateModal(true)} className="bg-[#5E35B1] text-white w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl shadow-lg hover:bg-[#4d2c91] transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-5 h-5 md:w-6 md:h-6" /></button>
+                                <button onClick={() => setShowCreateModal(true)} className="bg-emerald-600 text-white w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"><Plus className="w-5 h-5 md:w-6 md:h-6" /></button>
                             )}
                         </div>
                     </div>
