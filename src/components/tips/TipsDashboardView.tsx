@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Coins, Edit3, RefreshCw, X } from 'lucide-react';
+import { Edit3, Plus, RefreshCw } from 'lucide-react';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 
@@ -204,290 +204,146 @@ export default function TipsDashboardView() {
     <div className="min-h-screen bg-[#5B8FB9] p-2 sm:p-4 md:p-8 pb-24 text-zinc-900 overflow-x-hidden">
       <div className="max-w-5xl mx-auto space-y-3 md:space-y-6 min-w-0">
         <div className="bg-white rounded-xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl overflow-hidden min-w-0">
-          <div className="bg-[#36606F] p-3 md:p-6 space-y-3 md:space-y-4">
-            <div className="flex items-center justify-between gap-2">
+          <div className="bg-[#36606F] p-3 md:p-6 relative">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="min-w-0">
                 <h1 className="text-sm md:text-4xl font-black text-white uppercase tracking-tight italic truncate">
                   Propinas
                 </h1>
-                <p className="text-white/60 text-[7px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] mt-0.5 md:mt-1 truncate">
+                <p className="text-white text-[7px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] mt-0.5 md:mt-1 truncate">
                   Rango manual • {rangeLabel}
                 </p>
               </div>
-              <button
-                onClick={fetchPreview}
-                className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center text-white shrink-0 min-h-[44px]"
-              >
-                <RefreshCw size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-              <div className="bg-white/10 rounded-xl md:rounded-2xl p-1.5 md:p-2 border border-white/10">
-                <label className="block text-[6px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mb-0.5 md:mb-1 text-center">
-                  Inicio
-                </label>
+              <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full min-h-[44px] h-9 md:h-12 bg-white text-zinc-900 rounded-xl md:rounded-2xl px-2 md:px-4 text-xs md:text-base font-black outline-none"
+                  className="min-h-[44px] h-9 md:h-11 rounded-lg md:rounded-xl px-2 md:px-3 text-xs md:text-sm font-black bg-white/10 border border-white/20 text-white placeholder-white/60 outline-none [color-scheme:dark]"
                 />
-              </div>
-              <div className="bg-white/10 rounded-xl md:rounded-2xl p-1.5 md:p-2 border border-white/10">
-                <label className="block text-[6px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mb-0.5 md:mb-1 text-center">
-                  Fin
-                </label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full min-h-[44px] h-9 md:h-12 bg-white text-zinc-900 rounded-xl md:rounded-2xl px-2 md:px-4 text-xs md:text-base font-black outline-none"
+                  className="min-h-[44px] h-9 md:h-11 rounded-lg md:rounded-xl px-2 md:px-3 text-xs md:text-sm font-black bg-white/10 border border-white/20 text-white placeholder-white/60 outline-none [color-scheme:dark]"
                 />
+                <button
+                  onClick={fetchPreview}
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center text-white shrink-0 min-h-[44px]"
+                >
+                  <RefreshCw size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                </button>
               </div>
             </div>
           </div>
 
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
-              <div className="bg-white rounded-xl md:rounded-3xl border border-zinc-100 shadow-sm p-2.5 md:p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                      Bote entre semana (Lun–Vie)
-                    </p>
-                    <div className="text-base md:text-2xl font-black tabular-nums text-zinc-900 mt-0.5 md:mt-1">
-                      {weekdayPool ? fmtZeroBlank(weekdayPool.cashTotal, 2) : ' '}
-                      <span className="text-[10px] md:text-sm font-black text-zinc-400 ml-0.5 md:ml-1">€</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => openCash('weekday')}
-                    className="min-h-[44px] h-9 md:h-12 px-3 md:px-4 rounded-xl md:rounded-2xl bg-emerald-600 text-white font-black uppercase tracking-widest text-[8px] md:text-[11px] shadow-md shadow-emerald-200 active:scale-95 transition-all shrink-0 flex items-center gap-1 md:gap-2"
-                  >
-                    <Coins size={14} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    Efectivo
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-1 md:gap-2 mt-2 md:mt-3">
-                  <div className="bg-zinc-50 rounded-lg md:rounded-2xl border border-zinc-100 p-1.5 md:p-3 text-center">
-                    <div className="text-[6px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas</div>
-                    <div className="text-xs md:text-lg font-black tabular-nums text-[#36606F]">
-                      {preview ? fmtHours(preview.totals.weekdayHours) : ' '}
-                    </div>
-                  </div>
-                  <div className="bg-zinc-50 rounded-lg md:rounded-2xl border border-zinc-100 p-1.5 md:p-3 text-center">
-                    <div className="text-[6px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">€/hora</div>
-                    <div className="text-xs md:text-lg font-black tabular-nums text-[#36606F]">
-                      {preview && preview.totals.weekdayHours > 0
-                        ? fmtMoney((preview.totals.weekdayCash || 0) / preview.totals.weekdayHours)
-                        : ' '}
-                    </div>
-                  </div>
-                </div>
+            {/* Fila 1: etiquetas de contenido */}
+            <div className="grid grid-cols-2 gap-2 md:gap-4">
+              <div className="text-center py-1 md:py-2">
+                <p className="text-[10px] md:text-[13px] font-black text-zinc-600 uppercase tracking-widest">
+                  Lun – Vie
+                </p>
               </div>
-
-              <div className="bg-white rounded-xl md:rounded-3xl border border-zinc-100 shadow-sm p-2.5 md:p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                      Bote fin de semana (Sáb–Dom)
-                    </p>
-                    <div className="text-base md:text-2xl font-black tabular-nums text-zinc-900 mt-0.5 md:mt-1">
-                      {weekendPool ? fmtZeroBlank(weekendPool.cashTotal, 2) : ' '}
-                      <span className="text-[10px] md:text-sm font-black text-zinc-400 ml-0.5 md:ml-1">€</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => openCash('weekend')}
-                    className="min-h-[44px] h-9 md:h-12 px-3 md:px-4 rounded-xl md:rounded-2xl bg-orange-500 text-white font-black uppercase tracking-widest text-[8px] md:text-[11px] shadow-md shadow-orange-200 active:scale-95 transition-all shrink-0 flex items-center gap-1 md:gap-2"
-                  >
-                    <Coins size={14} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    Efectivo
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-1 md:gap-2 mt-2 md:mt-3">
-                  <div className="bg-zinc-50 rounded-lg md:rounded-2xl border border-zinc-100 p-1.5 md:p-3 text-center">
-                    <div className="text-[6px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Horas</div>
-                    <div className="text-xs md:text-lg font-black tabular-nums text-[#36606F]">
-                      {preview ? fmtHours(preview.totals.weekendHours) : ' '}
-                    </div>
-                  </div>
-                  <div className="bg-zinc-50 rounded-lg md:rounded-2xl border border-zinc-100 p-1.5 md:p-3 text-center">
-                    <div className="text-[6px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">€/hora</div>
-                    <div className="text-xs md:text-lg font-black tabular-nums text-[#36606F]">
-                      {preview && preview.totals.weekendHours > 0
-                        ? fmtMoney((preview.totals.weekendCash || 0) / preview.totals.weekendHours)
-                        : ' '}
-                    </div>
-                  </div>
-                </div>
+              <div className="text-center py-1 md:py-2">
+                <p className="text-[10px] md:text-[13px] font-black text-zinc-600 uppercase tracking-widest">
+                  Sáb – Dom
+                </p>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl md:rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
-              <div className="px-2.5 py-2 md:px-4 md:py-3 bg-[#f8fafb] border-b border-zinc-100 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <h2 className="text-[8px] md:text-[11px] font-black text-zinc-800 uppercase tracking-widest truncate">
-                    Reparto por horas (BD)
-                  </h2>
-                  <p className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-wider truncate">
-                    Total efectivo: {preview ? fmtMoney(preview.totals.grandCash) : ' '}
-                  </p>
+            {/* Fila 2: tarjetas verdes con total y botón + */}
+            <div className="grid grid-cols-2 gap-2 md:gap-4">
+              <div className="bg-emerald-600 rounded-xl md:rounded-2xl shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
+                <div className="min-w-0 text-white">
+                  <span className="text-base md:text-2xl font-black tabular-nums">
+                    {weekdayPool ? fmtZeroBlank(weekdayPool.cashTotal, 2) : ' '}
+                  </span>
+                  <span className="text-[10px] md:text-sm font-black opacity-90 ml-0.5 md:ml-1">€</span>
                 </div>
-                {loading && (
-                  <div className="flex items-center gap-1 md:gap-2 text-zinc-400 text-[7px] md:text-[10px] font-black uppercase tracking-widest shrink-0">
-                    <RefreshCw className="animate-spin shrink-0" size={12} strokeWidth={3} />
-                    Calculando…
-                  </div>
-                )}
+                <button
+                  onClick={() => openCash('weekday')}
+                  className="min-h-[48px] min-w-[48px] rounded-xl md:rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                  title="Introducir cantidades"
+                >
+                  <Plus size={24} strokeWidth={3} />
+                </button>
               </div>
-
-              {/* Vista smartphone: tarjetas por empleado compactas */}
-              <div className="md:hidden p-2 md:p-4 space-y-2">
-                {!preview || preview.staff.length === 0 ? (
-                  <div className="py-6 md:py-10 text-center text-zinc-400 font-bold text-xs md:text-sm">
-                    {loading ? ' ' : 'Sin datos'}
-                  </div>
-                ) : (
-                  preview.staff.map((s) => (
-                    <div
-                      key={s.id}
-                      className="bg-zinc-50/80 rounded-lg md:rounded-2xl border border-zinc-100 p-2 md:p-3 space-y-1.5 md:space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-1.5 min-w-0">
-                        <div className="min-w-0">
-                          <div className="text-[10px] md:text-[13px] font-black text-zinc-900 truncate">
-                            {s.name}
-                            {s.hasOverrides && (
-                              <span className="ml-1 text-[7px] md:text-[9px] font-black uppercase tracking-widest text-orange-500">
-                                OVERRIDE
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                            {s.role}
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-[6px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                            Total
-                          </div>
-                          <div className="text-[11px] md:text-[15px] font-black tabular-nums text-zinc-900">
-                            {fmtMoney(s.totalAmount)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1 md:gap-2 text-center">
-                        <div>
-                          <div className="text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                            L–V h
-                          </div>
-                          <div className="text-[9px] md:text-[12px] font-black tabular-nums text-[#36606F]">
-                            {fmtHours(s.weekdayHours)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                            S–D h
-                          </div>
-                          <div className="text-[9px] md:text-[12px] font-black tabular-nums text-[#36606F]">
-                            {fmtHours(s.weekendHours)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                            L–V €
-                          </div>
-                          <div className="text-[9px] md:text-[12px] font-black tabular-nums text-emerald-600">
-                            {fmtZeroBlank(s.weekdayAmount, 2)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[6px] md:text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                            S–D €
-                          </div>
-                          <div className="text-[9px] md:text-[12px] font-black tabular-nums text-orange-600">
-                            {fmtZeroBlank(s.weekendAmount, 2)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-1.5 md:gap-2 pt-0.5 md:pt-1">
-                        <button
-                          onClick={() =>
-                            setOverrideModal({
-                              open: true,
-                              poolType: 'weekday',
-                              staffId: s.id,
-                              staffName: s.name,
-                            })
-                          }
-                          className="flex-1 min-h-[44px] md:min-h-[48px] rounded-xl md:rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1 md:gap-2 active:scale-[0.98] transition-all py-1.5"
-                          title="Editar entre semana"
-                        >
-                          <Edit3 size={14} strokeWidth={3} className="shrink-0" />
-                          <span className="text-[8px] md:text-[11px] font-black uppercase tracking-wider">
-                            Lun–Vie
-                          </span>
-                        </button>
-                        <button
-                          onClick={() =>
-                            setOverrideModal({
-                              open: true,
-                              poolType: 'weekend',
-                              staffId: s.id,
-                              staffName: s.name,
-                            })
-                          }
-                          className="flex-1 min-h-[44px] md:min-h-[48px] rounded-xl md:rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center gap-1 md:gap-2 active:scale-[0.98] transition-all py-1.5"
-                          title="Editar fin de semana"
-                        >
-                          <Edit3 size={14} strokeWidth={3} className="shrink-0" />
-                          <span className="text-[8px] md:text-[11px] font-black uppercase tracking-wider">
-                            Sáb–Dom
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="bg-emerald-600 rounded-xl md:rounded-2xl shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
+                <div className="min-w-0 text-white">
+                  <span className="text-base md:text-2xl font-black tabular-nums">
+                    {weekendPool ? fmtZeroBlank(weekendPool.cashTotal, 2) : ' '}
+                  </span>
+                  <span className="text-[10px] md:text-sm font-black opacity-90 ml-0.5 md:ml-1">€</span>
+                </div>
+                <button
+                  onClick={() => openCash('weekend')}
+                  className="min-h-[48px] min-w-[48px] rounded-xl md:rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                  title="Introducir cantidades"
+                >
+                  <Plus size={24} strokeWidth={3} />
+                </button>
               </div>
+            </div>
 
-              {/* Vista escritorio: tabla */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full min-w-0">
-                  <thead className="bg-white">
-                    <tr className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                      <th className="text-left px-4 py-3 w-[34%]">Empleado</th>
-                      <th className="text-center px-2 py-3 w-[11%]">Lun–Vie h</th>
-                      <th className="text-center px-2 py-3 w-[11%]">Sáb–Dom h</th>
-                      <th className="text-center px-2 py-3 w-[14%]">Lun–Vie €</th>
-                      <th className="text-center px-2 py-3 w-[14%]">Sáb–Dom €</th>
-                      <th className="text-right px-4 py-3 w-[16%]">Total</th>
+            {/* Tabla sin bordes interiores, cabecera petroleo, subcabecera H/€/T */}
+            <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
+              {loading && (
+                <div className="px-4 py-2 flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+                  <RefreshCw className="animate-spin shrink-0" size={12} strokeWidth={3} />
+                  Calculando…
+                </div>
+              )}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-0 border-collapse">
+                  <thead>
+                    <tr className="bg-[#36606F] text-white">
+                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[20%] min-w-0">
+                        Staff
+                      </th>
+                      <th colSpan={3} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
+                        Lun – Vie
+                      </th>
+                      <th colSpan={3} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
+                        Sáb – Dom
+                      </th>
+                      <th className="text-right px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[12%]">
+                        Total
+                      </th>
+                    </tr>
+                    <tr className="bg-[#36606F]/90 text-white/90">
+                      <th className="text-left px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
+                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
+                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
+                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">T</th>
+                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
+                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
+                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">T</th>
+                      <th className="text-right px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-50">
+                  <tbody>
                     {!preview || preview.staff.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-zinc-400 font-bold">
+                        <td colSpan={8} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
                     ) : (
                       preview.staff.map((s) => (
                         <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-between gap-2">
+                          <td className="px-3 md:px-4 py-2 md:py-3">
+                            <div className="flex items-center justify-between gap-2 min-w-0">
                               <div className="min-w-0">
-                                <div className="text-[12px] font-black text-zinc-900 truncate">
+                                <div className="text-[11px] md:text-[13px] font-black text-zinc-900 truncate">
                                   {s.name}
                                   {s.hasOverrides && (
-                                    <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-orange-500">
+                                    <span className="ml-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500">
                                       OVERRIDE
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                <div className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                                   {s.role}
                                 </div>
                               </div>
@@ -501,10 +357,10 @@ export default function TipsDashboardView() {
                                       staffName: s.name,
                                     })
                                   }
-                                  className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center active:scale-95 transition-all"
-                                  title="Editar entre semana"
+                                  className="min-h-[44px] min-w-[44px] rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center active:scale-95 transition-all"
+                                  title="Editar Lun–Vie"
                                 >
-                                  <Edit3 size={16} strokeWidth={3} />
+                                  <Edit3 size={14} strokeWidth={3} />
                                 </button>
                                 <button
                                   onClick={() =>
@@ -515,27 +371,33 @@ export default function TipsDashboardView() {
                                       staffName: s.name,
                                     })
                                   }
-                                  className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center active:scale-95 transition-all"
-                                  title="Editar fin de semana"
+                                  className="min-h-[44px] min-w-[44px] rounded-xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center active:scale-95 transition-all"
+                                  title="Editar Sáb–Dom"
                                 >
-                                  <Edit3 size={16} strokeWidth={3} />
+                                  <Edit3 size={14} strokeWidth={3} />
                                 </button>
                               </div>
                             </div>
                           </td>
-                          <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums text-[#36606F]">
+                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-[#36606F]">
                             {fmtHours(s.weekdayHours)}
                           </td>
-                          <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums text-[#36606F]">
-                            {fmtHours(s.weekendHours)}
-                          </td>
-                          <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums text-emerald-600">
+                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-emerald-600">
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
-                          <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums text-orange-600">
+                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-zinc-700">
+                            {fmtZeroBlank(s.weekdayAmount, 2)}
+                          </td>
+                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-[#36606F]">
+                            {fmtHours(s.weekendHours)}
+                          </td>
+                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-orange-600">
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
-                          <td className="px-4 py-3 text-right text-[13px] font-black tabular-nums text-zinc-900">
+                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-zinc-700">
+                            {fmtZeroBlank(s.weekendAmount, 2)}
+                          </td>
+                          <td className="px-3 md:px-4 py-2 md:py-3 text-right text-[12px] md:text-[13px] font-black tabular-nums text-zinc-900">
                             {fmtMoney(s.totalAmount)}
                           </td>
                         </tr>
