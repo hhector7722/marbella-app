@@ -200,6 +200,15 @@ export default function TipsDashboardView() {
   const weekdayPool = preview?.pools.weekday;
   const weekendPool = preview?.pools.weekend;
 
+  const openOverride = (poolType: PoolType, staffId: string, staffName: string) => {
+    setOverrideModal({
+      open: true,
+      poolType,
+      staffId,
+      staffName,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#5B8FB9] p-2 sm:p-4 md:p-8 pb-24 text-zinc-900 overflow-x-hidden">
       <div className="max-w-5xl mx-auto space-y-3 md:space-y-6 min-w-0">
@@ -294,8 +303,8 @@ export default function TipsDashboardView() {
                   Calculando…
                 </div>
               )}
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-0 border-collapse">
+              <div>
+                <table className="w-full min-w-0 border-collapse table-fixed">
                   <thead>
                     <tr className="bg-[#36606F] text-white">
                       <th className="text-left px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[20%] min-w-0">
@@ -332,72 +341,61 @@ export default function TipsDashboardView() {
                     ) : (
                       preview.staff.map((s) => (
                         <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors">
-                          <td className="px-3 md:px-4 py-2 md:py-3">
-                            <div className="flex items-center justify-between gap-2 min-w-0">
-                              <div className="min-w-0">
-                                <div className="text-[11px] md:text-[13px] font-black text-zinc-900 truncate">
-                                  {s.name}
-                                  {s.hasOverrides && (
-                                    <span className="ml-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500">
-                                      OVERRIDE
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                                  {s.role}
-                                </div>
+                          <td
+                            className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
+                            onClick={() => openOverride('weekday', s.id, s.name)}
+                          >
+                            <div className="min-w-0">
+                              <div className="text-[10px] md:text-[13px] font-black text-zinc-900 truncate">
+                                {s.name}
+                                {s.hasOverrides && (
+                                  <span className="ml-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500">
+                                    OVERRIDE
+                                  </span>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                  onClick={() =>
-                                    setOverrideModal({
-                                      open: true,
-                                      poolType: 'weekday',
-                                      staffId: s.id,
-                                      staffName: s.name,
-                                    })
-                                  }
-                                  className="min-h-[44px] min-w-[44px] rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center active:scale-95 transition-all"
-                                  title="Editar Lun–Vie"
-                                >
-                                  <Edit3 size={14} strokeWidth={3} />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setOverrideModal({
-                                      open: true,
-                                      poolType: 'weekend',
-                                      staffId: s.id,
-                                      staffName: s.name,
-                                    })
-                                  }
-                                  className="min-h-[44px] min-w-[44px] rounded-xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center active:scale-95 transition-all"
-                                  title="Editar Sáb–Dom"
-                                >
-                                  <Edit3 size={14} strokeWidth={3} />
-                                </button>
+                              <div className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                {s.role}
                               </div>
                             </div>
                           </td>
-                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-[#36606F]">
+                          <td
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer"
+                            onClick={() => openOverride('weekday', s.id, s.name)}
+                          >
                             {fmtHours(s.weekdayHours)}
                           </td>
-                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-emerald-600">
+                          <td
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-emerald-600 cursor-pointer"
+                            onClick={() => openOverride('weekday', s.id, s.name)}
+                          >
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
-                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-zinc-700">
+                          <td
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer"
+                            onClick={() => openOverride('weekday', s.id, s.name)}
+                          >
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
-                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-[#36606F]">
+                          <td
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer"
+                            onClick={() => openOverride('weekend', s.id, s.name)}
+                          >
                             {fmtHours(s.weekendHours)}
                           </td>
-                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-orange-600">
+                          <td
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-orange-600 cursor-pointer"
+                            onClick={() => openOverride('weekend', s.id, s.name)}
+                          >
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
-                          <td className="px-1 md:px-2 py-2 md:py-3 text-center text-[11px] md:text-[12px] font-black tabular-nums text-zinc-700">
+                          <td
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer"
+                            onClick={() => openOverride('weekend', s.id, s.name)}
+                          >
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
-                          <td className="px-3 md:px-4 py-2 md:py-3 text-right text-[12px] md:text-[13px] font-black tabular-nums text-zinc-900">
+                          <td className="px-2 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-[13px] font-black tabular-nums text-zinc-900">
                             {fmtMoney(s.totalAmount)}
                           </td>
                         </tr>
