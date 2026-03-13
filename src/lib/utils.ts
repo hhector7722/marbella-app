@@ -23,6 +23,27 @@ export function formatDisplayValue(value: string | number): string | number {
  * - Si minutes <= 50 -> 0.5
  * - Si minutes > 50  -> 1.0
  */
+/**
+ * Extrae la hora (0-23) de hora_cierre o fecha para alineación con get_hourly_sales.
+ * Soporta: ISO (T), espacio (YYYY-MM-DD HH:MM:SS), tiempo plano (HH:MM:SS).
+ * Evita desfases por timezone usando solo la parte literal del string.
+ */
+export function getHourFromTicketTime(horaCierre?: string | null, fecha?: string | null): number {
+    const raw = horaCierre ?? fecha;
+    if (!raw || typeof raw !== 'string') return 12;
+    let part: string;
+    if (raw.includes('T')) {
+        part = raw.split('T')[1] ?? '';
+    } else if (raw.includes(' ')) {
+        part = raw.split(' ')[1] ?? '';
+    } else {
+        part = raw;
+    }
+    const match = part.replace(/\.\d+/, '').match(/^(\d{1,2})/);
+    if (match) return Math.min(23, Math.max(0, parseInt(match[1], 10)));
+    return 12;
+}
+
 export function calculateRoundedHours(hours: number): number {
     const integerPart = Math.floor(hours);
     const decimalPart = hours - integerPart;

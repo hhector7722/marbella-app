@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { getISOWeek, format, addDays, startOfWeek, parseISO } from 'date-fns';
-import { calculateRoundedHours } from '@/lib/utils'; // Ensure this utility is available or duplicate if simple
+import { getHourFromTicketTime } from '@/lib/utils';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -31,13 +31,7 @@ export async function getDashboardData() {
                 .lte('fecha', todayStr);
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
             (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
-                let hour = 12;
-                const raw = t.hora_cierre;
-                if (raw && typeof raw === 'string') {
-                    const part = raw.includes('T') ? raw.split('T')[1] : raw;
-                    const match = part?.match(/^(\d{1,2})/);
-                    if (match) hour = Math.min(23, Math.max(0, parseInt(match[1], 10)));
-                }
+                const hour = getHourFromTicketTime(t.hora_cierre);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
             return hourly;

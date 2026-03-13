@@ -21,7 +21,7 @@ import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { getISOWeek, format, addDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn, calculateRoundedHours } from '@/lib/utils';
+import { cn, calculateRoundedHours, getHourFromTicketTime } from '@/lib/utils';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import Image from 'next/image';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
@@ -253,21 +253,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
     };
 
-    /** Extrae la hora (0-23) del ticket para filtrar lista por la hora del tooltip. */
-    const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string }): number => {
-        const raw = ticket.hora_cierre;
-        if (raw && typeof raw === 'string') {
-            const part = raw.includes('T') ? raw.split('T')[1] : raw;
-            const match = part?.match(/^(\d{1,2})/);
-            if (match) return Math.min(23, Math.max(0, parseInt(match[1], 10)));
-        }
-        if (ticket.fecha && typeof ticket.fecha === 'string' && ticket.fecha.includes('T')) {
-            const part = ticket.fecha.split('T')[1];
-            const match = part?.match(/^(\d{1,2})/);
-            if (match) return Math.min(23, Math.max(0, parseInt(match[1], 10)));
-        }
-        return 12;
-    };
+    /** Extrae la hora (0-23) del ticket; alineado con get_hourly_sales y getHourFromTicketTime. */
+    const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string }): number =>
+        getHourFromTicketTime(ticket.hora_cierre, ticket.fecha);
 
     const fetchHourlySales = async (targetDate?: string) => {
         const dateStr = targetDate ?? format(new Date(), 'yyyy-MM-dd');
@@ -292,13 +280,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 .lte('fecha', dateStr);
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
             (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
-                let hour = 12;
-                const raw = t.hora_cierre;
-                if (raw && typeof raw === 'string') {
-                    const part = raw.includes('T') ? raw.split('T')[1] : raw;
-                    const match = part?.match(/^(\d{1,2})/);
-                    if (match) hour = Math.min(23, Math.max(0, parseInt(match[1], 10)));
-                }
+                const hour = getHourFromTicketTime(t.hora_cierre);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
             setSalesChartData(hourly);
@@ -378,23 +360,28 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         return () => document.removeEventListener('touchstart', handleTouchStart);
     }, [selectedChartHour]);
 
-    // Lista de tickets: filtro por rango de horas (modal fecha) o sin filtro
-    const displayTickets = filterHourRange === null
-        ? salesTickets
-        : salesTickets.filter((t) => {
+    // Lista de tickets: al pulsar gráfica = ventas hasta la hora; modal = rango; sin filtro = todos
+    const displayTickets = selectedChartHour !== null
+        ? salesTickets.filter((t) => {
             const h = getTicketHour(t);
-            const lo = Math.min(filterHourRange.start, filterHourRange.end);
-            const hi = Math.max(filterHourRange.start, filterHourRange.end);
-            return h >= lo && h <= hi;
-        });
+            return h >= BUSINESS_HOURS.start && h <= selectedChartHour;
+        })
+        : filterHourRange === null
+            ? salesTickets
+            : salesTickets.filter((t) => {
+                const h = getTicketHour(t);
+                const lo = Math.min(filterHourRange.start, filterHourRange.end);
+                const hi = Math.max(filterHourRange.start, filterHourRange.end);
+                return h >= lo && h <= hi;
+            });
 
-    // Resumen para KPIs: con filtro horario se calcula de displayTickets; sin filtro se usa liveTickets (RPC)
-    const displaySummary = filterHourRange === null
-        ? liveTickets
-        : {
+    // Resumen para KPIs: con filtro (gráfica o modal) = suma de displayTickets; sin filtro = liveTickets (RPC)
+    const displaySummary = selectedChartHour !== null || filterHourRange !== null
+        ? {
             total: displayTickets.reduce((s, t) => s + (Number(t.total_documento) || 0), 0),
             count: displayTickets.length
-        };
+        }
+        : liveTickets;
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
 
@@ -764,10 +751,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="text-[10px] md:text-xs font-bold text-zinc-600">
-                                            {displayTickets.length === 0 && filterHourRange !== null ? (
+                                            {displayTickets.length === 0 && (selectedChartHour !== null || filterHourRange !== null) ? (
                                                 <tr>
                                                     <td colSpan={3} className="py-4 text-center text-[9px] font-bold text-zinc-400">
-                                                        Ningún ticket entre {String(filterHourRange.start).padStart(2, '0')}:00 y {String(filterHourRange.end).padStart(2, '0')}:00
+                                                        {selectedChartHour !== null
+                                                            ? `Ningún ticket hasta las ${String(selectedChartHour).padStart(2, '0')}:00`
+                                                            : `Ningún ticket entre ${String(filterHourRange!.start).padStart(2, '0')}:00 y ${String(filterHourRange!.end).padStart(2, '0')}:00`}
                                                     </td>
                                                 </tr>
                                             ) : displayTickets.map((ticket, idx) => {
