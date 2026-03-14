@@ -490,10 +490,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         const list: PaymentSourceOption[] = [];
         const op = boxes.find((b: any) => b.type === 'operational');
         const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Caja inicial', hasInventory: true });
-        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, hasInventory: true }));
-        list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
-        list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true });
+        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true }));
+        list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
+        list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         return list;
     };
 

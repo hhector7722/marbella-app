@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Save, ShoppingCart, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+import { X, Save, ShoppingCart, Plus, Minus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -9,6 +9,7 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 export interface PaymentSourceOption {
     id: string;
     name: string;
+    shortLabel: string;
     hasInventory: boolean;
 }
 
@@ -35,12 +36,6 @@ interface PurchaseMultiSourceFormProps {
     onCancel: () => void;
 }
 
-const formatForInput = (dateStr?: string) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-};
-
 const nowStr = () => new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
 const calculateTotal = (c: Record<number, number>) =>
@@ -56,62 +51,66 @@ export function PurchaseMultiSourceForm({
     const [notes, setNotes] = useState('');
     const [selectedDate, setSelectedDate] = useState(nowStr());
     const [sources, setSources] = useState<SourceEntry[]>([]);
+    const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
     const [changeDestinationBoxId, setChangeDestinationBoxId] = useState<string | null>(null);
     const [changeBreakdown, setChangeBreakdown] = useState<Record<number, number>>({});
-    const [expandedSourceId, setExpandedSourceId] = useState<string | null>(null);
 
     const cashSources = paymentSources.filter(s => s.hasInventory);
-    const totalFromSources = sources.reduce((sum, s) => sum + s.amount, 0);
+    const selectedSource = selectedSourceId ? paymentSources.find(s => s.id === selectedSourceId) : null;
+
+    const getSourceEntry = (sourceId: string): SourceEntry =>
+        sources.find(s => s.sourceId === sourceId) ?? { sourceId, amount: 0, breakdown: {} };
+
+    const getDisplayAmount = (src: PaymentSourceOption): number => {
+        const entry = getSourceEntry(src.id);
+        if (src.hasInventory) return calculateTotal(entry.breakdown);
+        return entry.amount;
+    };
+
+    const totalFromSources = paymentSources.reduce((sum, src) => sum + getDisplayAmount(src), 0);
     const priceNum = price === '' ? 0 : price;
     const changeAmount = Math.max(0, totalFromSources - priceNum);
     const changeTotal = calculateTotal(changeBreakdown);
     const changeOk = changeAmount < 0.01 || Math.abs(changeTotal - changeAmount) < 0.01;
 
-    const getSourceHasInventory = (id: string) => paymentSources.find(s => s.id === id)?.hasInventory ?? false;
-
     const setSourceBreakdown = (sourceId: string, breakdown: Record<number, number>) => {
-        setSources(prev =>
-            prev.map(s => s.sourceId === sourceId ? { ...s, breakdown } : s)
-        );
-    };
-
-    const getSourceEntry = (sourceId: string): SourceEntry =>
-        sources.find(s => s.sourceId === sourceId) ?? { sourceId, amount: 0, breakdown: {} };
-
-    const addOrUpdateSource = (sourceId: string, amount: number) => {
         setSources(prev => {
             const idx = prev.findIndex(s => s.sourceId === sourceId);
-            const entry: SourceEntry = { sourceId, amount, breakdown: idx >= 0 ? prev[idx].breakdown : {} };
-            if (idx >= 0) {
-                const next = [...prev];
-                next[idx] = { ...next[idx], amount };
-                return next;
-            }
+            const next = idx >= 0 ? prev.map(s => s.sourceId === sourceId ? { ...s, breakdown } : s) : [...prev, { sourceId, amount: 0, breakdown }];
+            return next;
+        });
+    };
+
+    const setSourceTpvAmount = (sourceId: string, amount: number) => {
+        setSources(prev => {
+            const idx = prev.findIndex(s => s.sourceId === sourceId);
+            const entry = { sourceId, amount, breakdown: {} as Record<number, number> };
+            if (idx >= 0) return prev.map(s => s.sourceId === sourceId ? { ...s, amount } : s);
             return [...prev, entry];
         });
     };
 
-    const totalPaidFromCash = sources
-        .filter(s => getSourceHasInventory(s.sourceId))
-        .reduce((sum, s) => sum + s.amount, 0);
-    const totalFromCashBreakdowns = sources
-        .filter(s => getSourceHasInventory(s.sourceId))
-        .reduce((sum, s) => sum + calculateTotal(s.breakdown), 0);
-    const cashBreakdownsOk = totalPaidFromCash < 0.01 || Math.abs(totalFromCashBreakdowns - totalPaidFromCash) < 0.01;
-
     const canSubmit =
         priceNum > 0 &&
         totalFromSources >= priceNum - 0.01 &&
-        cashBreakdownsOk &&
         (changeAmount < 0.01 || (changeOk && changeDestinationBoxId));
+
+    const buildSourcesForPayload = (): SourceEntry[] => {
+        return paymentSources.map(src => {
+            const entry = getSourceEntry(src.id);
+            const amount = src.hasInventory ? calculateTotal(entry.breakdown) : entry.amount;
+            return { sourceId: src.id, amount, breakdown: entry.breakdown };
+        }).filter(s => s.amount >= 0.005);
+    };
 
     const handleConfirm = () => {
         if (!canSubmit) return;
+        const sourcesPayload = buildSourcesForPayload();
         onSubmit({
             price: priceNum,
             notes: notes || 'Compra',
             customDate: selectedDate ? new Date(selectedDate).toISOString() : undefined,
-            sources,
+            sources: sourcesPayload,
             changeAmount,
             changeDestinationBoxId: changeAmount >= 0.01 ? changeDestinationBoxId : null,
             changeBreakdown: changeAmount >= 0.01 ? changeBreakdown : {}
@@ -174,107 +173,112 @@ export function PurchaseMultiSourceForm({
                 </div>
 
                 <div>
-                    <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Orígenes de pago</h4>
-                    <p className="text-[9px] text-gray-400 mb-2">Indica cuánto pagas desde cada caja. Suma = precio (o más si hay cambio).</p>
-                    <div className="space-y-2">
+                    <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Origen de pago</h4>
+                    <div className="flex flex-wrap gap-2">
                         {paymentSources.map(src => {
-                            const entry = getSourceEntry(src.id);
-                            const isExpanded = expandedSourceId === src.id;
-                            const stock = src.hasInventory ? (inventoriesByBoxId[src.id] ?? {}) : {};
-                            const breakdownTotal = calculateTotal(entry.breakdown);
-                            const amountMatch = Math.abs(entry.amount - breakdownTotal) < 0.01;
-                            const needsBreakdown = src.hasInventory && entry.amount > 0.005;
-                            const breakdownValid = !needsBreakdown || amountMatch;
-
+                            const amount = getDisplayAmount(src);
+                            const isSelected = selectedSourceId === src.id;
                             return (
-                                <div key={src.id} className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-                                    <div className="flex items-center justify-between p-2 gap-2">
-                                        <span className="text-[10px] font-black text-zinc-700 truncate">{src.name}</span>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={entry.amount > 0 ? entry.amount : ''}
-                                                onChange={e => {
-                                                    const v = e.target.value;
-                                                    const num = v === '' ? 0 : parseFloat(v);
-                                                    addOrUpdateSource(src.id, num);
-                                                }}
-                                                placeholder="0"
-                                                className="w-16 text-right bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-[11px] font-black outline-none focus:ring-2 focus:ring-orange-200"
-                                            />
-                                            <span className="text-[10px] font-black text-zinc-400">€</span>
-                                            {src.hasInventory && entry.amount > 0.005 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setExpandedSourceId(isExpanded ? null : src.id)}
-                                                    className="p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-                                                    aria-label={isExpanded ? 'Cerrar desglose' : 'Desglose'}
-                                                >
-                                                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {!breakdownValid && needsBreakdown && (
-                                        <p className="text-[9px] text-rose-500 px-2 pb-1">Desglose debe sumar {entry.amount.toFixed(2)}€</p>
+                                <button
+                                    key={src.id}
+                                    type="button"
+                                    onClick={() => setSelectedSourceId(src.id)}
+                                    className={cn(
+                                        "min-h-[48px] px-3 py-2 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-0.5 shrink-0",
+                                        isSelected
+                                            ? "bg-orange-500 border-orange-500 text-white shadow-md"
+                                            : "bg-white border-zinc-200 text-zinc-700 hover:border-orange-300 hover:bg-orange-50"
                                     )}
-                                    {isExpanded && src.hasInventory && (
-                                        <div className="p-2 pt-0 border-t border-zinc-100">
-                                            <p className="text-[8px] font-black text-gray-400 uppercase mb-1.5">Desglose (billetes/monedas)</p>
-                                            <div className="grid grid-cols-4 gap-1">
-                                                {DENOMINATIONS.map(denom => {
-                                                    const qty = entry.breakdown[denom] ?? 0;
-                                                    const avail = stock[denom] ?? 0;
-                                                    const over = qty > avail;
-                                                    return (
-                                                        <div key={denom} className="flex flex-col items-center gap-0.5">
-                                                            <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={36} height={36} className="h-8 w-auto object-contain" />
-                                                            <div className="flex items-center gap-0.5 w-full justify-center">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const next = { ...entry.breakdown, [denom]: Math.max(0, (entry.breakdown[denom] ?? 0) - 1) };
-                                                                        if (next[denom] === 0) delete next[denom];
-                                                                        setSourceBreakdown(src.id, next);
-                                                                    }}
-                                                                    className="w-6 h-7 flex items-center justify-center rounded bg-rose-50 text-rose-500"
-                                                                >
-                                                                    <Minus size={10} />
-                                                                </button>
-                                                                <input
-                                                                    type="number"
-                                                                    value={qty || ''}
-                                                                    onChange={e => {
-                                                                        const v = parseInt(e.target.value, 10) || 0;
-                                                                        const next = { ...entry.breakdown, [denom]: v };
-                                                                        if (v === 0) delete next[denom];
-                                                                        setSourceBreakdown(src.id, next);
-                                                                    }}
-                                                                    className="w-8 h-7 text-center text-[10px] font-black rounded border border-zinc-200"
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setSourceBreakdown(src.id, { ...entry.breakdown, [denom]: (entry.breakdown[denom] ?? 0) + 1 })}
-                                                                    className="w-6 h-7 flex items-center justify-center rounded bg-emerald-50 text-emerald-600"
-                                                                >
-                                                                    <Plus size={10} />
-                                                                </button>
-                                                            </div>
-                                                            {avail > 0 && <span className={cn("text-[7px]", over && "text-rose-500")}>Disp: {avail}</span>}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
+                                >
+                                    <span>{src.shortLabel}</span>
+                                    {amount > 0.005 && (
+                                        <span className={cn("text-[9px] tabular-nums", isSelected ? "text-white/90" : "text-zinc-500")}>
+                                            {amount.toFixed(2)} €
+                                        </span>
                                     )}
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
-                    <p className="text-[9px] text-zinc-500 mt-1.5">Total orígenes: <span className="font-black">{totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €</span></p>
+                    <p className="text-[9px] text-zinc-500 mt-1.5">Total: <span className="font-black">{totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €</span></p>
                 </div>
+
+                {selectedSource && (
+                    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                            Desglose desde {selectedSource.shortLabel}
+                        </p>
+                        {selectedSource.hasInventory ? (
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                {DENOMINATIONS.map(denom => {
+                                    const entry = getSourceEntry(selectedSource.id);
+                                    const qty = entry.breakdown[denom] ?? 0;
+                                    const stock = inventoriesByBoxId[selectedSource.id] ?? {};
+                                    const avail = stock[denom] ?? 0;
+                                    const over = qty > avail;
+                                    return (
+                                        <div key={denom} className="flex flex-col items-center gap-1">
+                                            <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={48} height={48} className="h-10 w-auto object-contain" />
+                                            <span className="text-[8px] font-black text-gray-500">
+                                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                            </span>
+                                            <div className="flex items-center justify-between w-full gap-0.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const next = { ...entry.breakdown, [denom]: Math.max(0, (entry.breakdown[denom] ?? 0) - 1) };
+                                                        if (next[denom] === 0) delete next[denom];
+                                                        setSourceBreakdown(selectedSource.id, next);
+                                                    }}
+                                                    className="w-8 h-9 flex items-center justify-center rounded-lg bg-rose-50 text-rose-500 shrink-0 min-h-[36px]"
+                                                >
+                                                    <Minus size={14} strokeWidth={3} />
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    value={qty || ''}
+                                                    onChange={e => {
+                                                        const v = parseInt(e.target.value, 10) || 0;
+                                                        const next = { ...entry.breakdown, [denom]: v };
+                                                        if (v === 0) delete next[denom];
+                                                        setSourceBreakdown(selectedSource.id, next);
+                                                    }}
+                                                    className="w-10 h-9 text-center text-[11px] font-black rounded-lg border border-zinc-200 flex-1 min-w-0"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSourceBreakdown(selectedSource.id, { ...entry.breakdown, [denom]: (entry.breakdown[denom] ?? 0) + 1 })}
+                                                    className="w-8 h-9 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shrink-0 min-h-[36px]"
+                                                >
+                                                    <Plus size={14} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                            {avail > 0 && (
+                                                <span className={cn("text-[7px] font-bold uppercase", over && "text-rose-500")}>Disp: {avail}</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[8px] font-black text-gray-500 uppercase">Importe (€)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={getSourceEntry(selectedSource.id).amount > 0 ? getSourceEntry(selectedSource.id).amount : ''}
+                                    onChange={e => {
+                                        const v = e.target.value;
+                                        setSourceTpvAmount(selectedSource.id, v === '' ? 0 : parseFloat(v));
+                                    }}
+                                    placeholder="0.00"
+                                    className="w-full max-w-[120px] h-11 rounded-xl border-2 border-zinc-200 px-3 text-sm font-black outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {changeAmount >= 0.01 && (
                     <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-3 space-y-2">
@@ -284,11 +288,11 @@ export function PurchaseMultiSourceForm({
                             <select
                                 value={changeDestinationBoxId ?? ''}
                                 onChange={e => setChangeDestinationBoxId(e.target.value || null)}
-                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-emerald-200"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-emerald-200 min-h-[48px]"
                             >
                                 <option value="">Elige caja</option>
                                 {cashSources.map(s => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                    <option key={s.id} value={s.id}>{s.shortLabel}</option>
                                 ))}
                             </select>
                         </div>
@@ -308,15 +312,15 @@ export function PurchaseMultiSourceForm({
                                                         if (next[denom] === 0) delete next[denom];
                                                         return next;
                                                     })}
-                                                    className="w-5 h-6 flex items-center justify-center rounded bg-rose-50 text-rose-500"
+                                                    className="w-5 h-6 flex items-center justify-center rounded bg-rose-50 text-rose-500 min-h-[36px] min-w-[28px]"
                                                 >
                                                     <Minus size={8} />
                                                 </button>
-                                                <span className="w-6 text-center text-[10px] font-black">{qty}</span>
+                                                <span className="w-6 text-center text-[10px] font-black min-h-[36px] flex items-center justify-center">{qty}</span>
                                                 <button
                                                     type="button"
                                                     onClick={() => setChangeBreakdown(prev => ({ ...prev, [denom]: (prev[denom] ?? 0) + 1 }))}
-                                                    className="w-5 h-6 flex items-center justify-center rounded bg-emerald-50 text-emerald-600"
+                                                    className="w-5 h-6 flex items-center justify-center rounded bg-emerald-50 text-emerald-600 min-h-[36px] min-w-[28px]"
                                                 >
                                                     <Plus size={8} />
                                                 </button>
@@ -336,7 +340,7 @@ export function PurchaseMultiSourceForm({
                     onClick={handleConfirm}
                     disabled={!canSubmit}
                     className={cn(
-                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95",
+                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 min-h-[48px]",
                         canSubmit ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed"
                     )}
                 >
@@ -345,7 +349,7 @@ export function PurchaseMultiSourceForm({
                 </button>
                 <button
                     onClick={onCancel}
-                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200 min-h-[48px]"
                 >
                     <X size={14} strokeWidth={3} />
                     Salir
