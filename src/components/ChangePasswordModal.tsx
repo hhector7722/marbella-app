@@ -14,6 +14,7 @@ interface ChangePasswordModalProps {
 
 export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
     const supabase = createClient();
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +24,11 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!currentPassword.trim()) {
+            toast.error('Introduce tu contraseña actual');
+            return;
+        }
 
         if (newPassword.length < 6) {
             toast.error('La contraseña debe tener al menos 6 caracteres');
@@ -36,6 +42,24 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
         setLoading(true);
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user?.email) {
+                toast.error('No se pudo obtener tu sesión. Cierra sesión y vuelve a entrar.');
+                setLoading(false);
+                return;
+            }
+
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: currentPassword
+            });
+
+            if (signInError) {
+                toast.error(signInError.message?.includes('Invalid login') ? 'Contraseña actual incorrecta' : signInError.message);
+                setLoading(false);
+                return;
+            }
+
             const { error } = await supabase.auth.updateUser({
                 password: newPassword
             });
@@ -44,7 +68,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
             toast.success('Contraseña actualizada correctamente');
             onClose();
-            // Limpiar campos para la próxima vez
+            setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
         } catch (error: any) {
@@ -83,6 +107,32 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                 {/* Formulario */}
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
                     <div className="space-y-5">
+                        {/* Campo Contraseña Actual */}
+                        <div className="relative group">
+                            <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Contraseña Actual</label>
+                            <div className="relative">
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#36606F] transition-colors">
+                                    <Lock size={20} />
+                                </div>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={currentPassword}
+                                    onChange={e => setCurrentPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    autoComplete="current-password"
+                                    className="w-full h-16 pl-14 pr-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 text-gray-800 font-bold focus:border-[#36606F] focus:bg-white outline-none transition-all placeholder:text-gray-200"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Campo Nueva Contraseña */}
                         <div className="relative group">
                             <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Nueva Contraseña</label>
@@ -138,10 +188,10 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || !newPassword || !confirmPassword}
+                            disabled={loading || !currentPassword.trim() || !newPassword || !confirmPassword}
                             className={cn(
                                 "flex-[2] h-16 font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3",
-                                loading || !newPassword || !confirmPassword
+                                loading || !currentPassword.trim() || !newPassword || !confirmPassword
                                     ? "bg-gray-200 text-gray-400 shadow-none cursor-not-allowed"
                                     : "bg-[#36606F] text-white shadow-[#36606F]/25 hover:brightness-110"
                             )}
