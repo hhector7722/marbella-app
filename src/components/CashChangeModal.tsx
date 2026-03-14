@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 
-import { CURRENCY_IMAGES } from '@/lib/constants';
+import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 
 const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
@@ -253,50 +253,23 @@ export const CashChangeModal = ({
         </div>
     );
 
-    const TransferControl = ({
-        denom,
-        count,
-        setCounts,
-        stock,
-        showStockWarning
-    }: {
-        denom: number;
-        count: number;
-        setCounts: React.Dispatch<React.SetStateAction<Record<number, number>>>;
-        stock: Record<number, number>;
-        showStockWarning: boolean;
-    }) => (
-        <div className="relative flex items-center justify-between w-[84px] h-9 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20 mx-auto">
-            <button
-                onClick={() => handleAdjustTransfer(denom, {} as any, setCounts, -1)}
-                type="button"
-                className="w-6 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors shrink-0 min-h-[44px] hover:bg-rose-50 hover:text-rose-500"
-            >
-                <Minus size={14} strokeWidth={3} />
-            </button>
-            <input
-                type="number"
-                min="0"
-                value={count || ''}
-                onChange={(e) => handleCountChangeTransfer(denom, e.target.value, setCounts)}
-                placeholder="0"
-                className={cn(
-                    "flex-1 w-0 h-full bg-transparent text-center font-black outline-none p-0 text-[10px] tracking-tighter tabular-nums transition-colors focus:bg-blue-50/20",
-                    count > 0 ? "text-zinc-800" : "text-zinc-400"
-                )}
-            />
-            <button
-                onClick={() => handleAdjustTransfer(denom, {} as any, setCounts, 1)}
-                type="button"
-                className="w-6 h-full flex items-center justify-center text-zinc-400 active:bg-zinc-100 transition-colors shrink-0 min-h-[44px] hover:bg-emerald-50 hover:text-emerald-500"
-            >
-                <Plus size={14} strokeWidth={3} />
-            </button>
-            {showStockWarning && count > (stock[denom] || 0) && (
-                <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 rounded-full border-2 border-white animate-pulse shadow-sm" aria-hidden />
-            )}
-        </div>
-    );
+    const toggleBoxSelection = (opt: BoxOption) => {
+        if (boxA?.id === opt.id) {
+            setBoxA(null);
+            return;
+        }
+        if (boxB?.id === opt.id) {
+            setBoxB(null);
+            return;
+        }
+        if (!boxA) {
+            setBoxA(opt);
+            return;
+        }
+        if (!boxB && opt.id !== boxA.id) {
+            setBoxB(opt);
+        }
+    };
 
     // ——— Flujo legacy: una caja (SWAP) ———
     if (!useTwoBoxFlow) {
@@ -404,41 +377,29 @@ export const CashChangeModal = ({
                     </div>
                     <div className="flex-1 overflow-y-auto p-4">
                         <p className="text-zinc-600 text-[11px] font-bold text-center mb-4">Escoge dos cajas para el intercambio</p>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                {boxOptions.map((opt) => (
+                        <div className="flex flex-col gap-2">
+                            {boxOptions.map((opt) => {
+                                const isA = boxA?.id === opt.id;
+                                const isB = boxB?.id === opt.id;
+                                const selected = isA || isB;
+                                return (
                                     <button
                                         key={opt.id}
                                         type="button"
-                                        onClick={() => setBoxA(opt)}
+                                        onClick={() => toggleBoxSelection(opt)}
                                         className={cn(
-                                            "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide text-left px-3 transition-all",
-                                            boxA?.id === opt.id
+                                            "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide text-left px-3 transition-all flex items-center justify-between gap-2",
+                                            selected
                                                 ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]"
                                                 : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
                                         )}
                                     >
-                                        {opt.name}
+                                        <span>{opt.name}</span>
+                                        {isA && <span className="text-[10px] font-black bg-[#36606F] text-white px-2 py-0.5 rounded-md">A</span>}
+                                        {isB && <span className="text-[10px] font-black bg-[#36606F] text-white px-2 py-0.5 rounded-md">B</span>}
                                     </button>
-                                ))}
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                {boxOptions.map((opt) => (
-                                    <button
-                                        key={opt.id}
-                                        type="button"
-                                        onClick={() => setBoxB(opt)}
-                                        className={cn(
-                                            "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide text-left px-3 transition-all",
-                                            boxB?.id === opt.id
-                                                ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]"
-                                                : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
-                                        )}
-                                    >
-                                        {opt.name}
-                                    </button>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
                         {boxA && boxB && boxA.id === boxB.id && (
                             <p className="text-rose-600 text-[10px] font-bold mt-3 text-center">Elige dos cajas distintas</p>
@@ -477,7 +438,7 @@ export const CashChangeModal = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#f8fafb] w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
                     <div className="px-4 py-2.5 pb-3">
                         <div className="flex items-center justify-between mb-2">
@@ -506,45 +467,56 @@ export const CashChangeModal = ({
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
-                    <div className="flex flex-col">
-                        {ALL_DENOMS.map((denom) => (
-                            <div key={denom} className="grid grid-cols-[1fr_80px_1fr] items-stretch border-b border-zinc-50 relative min-h-[72px]">
-                                {/* Paso 1: izq rose, der emerald. Paso 2: misma posición columnas pero colores intercambiados (izq emerald, der rose) */}
-                                <div className={cn(
-                                    "flex justify-center items-center py-4 border-r border-zinc-100/50",
-                                    isStep1 ? "bg-rose-500/[0.06]" : "bg-emerald-500/[0.06]"
-                                )}>
-                                    <div className="relative">
-                                        <TransferControl
-                                            denom={denom}
-                                            count={counts[denom] || 0}
-                                            setCounts={setCounts}
-                                            stock={stock}
-                                            showStockWarning={!!fromBox?.hasInventory}
-                                        />
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
+                        {DENOMINATIONS.map((denom) => {
+                            const count = counts[denom] || 0;
+                            const hasStockIssue = !!fromBox?.hasInventory && count > (stock[denom] || 0);
+                            return (
+                                <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                    <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
+                                        <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
+                                    </div>
+                                    <div className="text-center w-full">
+                                        <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                            {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                        </span>
+                                        <div className={cn(
+                                            "flex items-center justify-between w-full h-10 min-h-[44px] bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
+                                            hasStockIssue
+                                                ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
+                                                : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
+                                        )}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAdjustTransfer(denom, {} as any, setCounts, -1)}
+                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                            >
+                                                <Minus size={14} strokeWidth={3} />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                value={count || ''}
+                                                onChange={(e) => handleCountChangeTransfer(denom, e.target.value, setCounts)}
+                                                placeholder=""
+                                                className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAdjustTransfer(denom, {} as any, setCounts, 1)}
+                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                            >
+                                                <Plus size={14} strokeWidth={3} />
+                                            </button>
+                                        </div>
+                                        {fromBox?.hasInventory && (stock[denom] || 0) > 0 && (
+                                            <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {stock[denom]}</span>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-center justify-center px-2 py-2 bg-white z-10">
-                                    <div className="relative h-6 w-9 flex items-center justify-center shrink-0 mb-1">
-                                        <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={40} height={32} className="h-full w-auto object-contain drop-shadow-sm select-none" />
-                                    </div>
-                                    <span className="text-[11px] font-black text-zinc-800 leading-none">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
-                                    {fromBox?.hasInventory && stock[denom] > 0 && <span className="text-[8px] font-bold text-zinc-400 uppercase mt-1">x{stock[denom]}</span>}
-                                </div>
-                                <div className={cn(
-                                    "flex justify-center items-center py-4 border-l border-zinc-100/50",
-                                    isStep1 ? "bg-emerald-500/[0.06]" : "bg-rose-500/[0.06]"
-                                )}>
-                                    <div className={cn(
-                                        "text-center font-black text-[11px] tabular-nums",
-                                        isStep1 ? "text-emerald-700" : "text-rose-700"
-                                    )}>
-                                        {counts[denom] || 0}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
