@@ -938,7 +938,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
                                     <button onClick={() => openPurchaseMultiSourceModal()} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
-                                        <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                        <div className="w-6 h-6 flex items-center justify-center bg-[#5B8FB9] rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <ShoppingCart size={12} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Compra</span>

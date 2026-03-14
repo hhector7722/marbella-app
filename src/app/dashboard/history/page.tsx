@@ -346,6 +346,7 @@ export default function HistoryPage() {
         return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: val < 100 ? 2 : 0 }).format(val);
     };
 
+    // Solo actualizan estado local; la base de datos no se toca hasta que el usuario pulse "Guardar Cierre".
     const handleFieldUpdate = (field: string, value: number) => {
         if (!editData) return;
         const newData = { ...editData, [field]: value };

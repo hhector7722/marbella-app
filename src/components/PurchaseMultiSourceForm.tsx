@@ -158,7 +158,7 @@ export function PurchaseMultiSourceForm({
                     </div>
                 </div>
 
-                <div>
+                <div className="relative">
                     <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Origen de pago</h4>
                     <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 items-stretch">
                         {paymentSources.map(src => {
@@ -185,12 +185,12 @@ export function PurchaseMultiSourceForm({
                                 </button>
                             );
                         })}
-                        <div className="min-h-[40px] px-2 py-1.5 rounded-lg border-2 border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-0 shrink-0 min-w-[70px]">
-                            <span className="text-[7px] font-black text-zinc-500 uppercase">Total</span>
-                            <span className="text-[10px] font-black tabular-nums text-zinc-800">
-                                {totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €
-                            </span>
-                        </div>
+                    </div>
+                    <div className="absolute -top-1 right-0 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-sm border border-zinc-200 shadow-lg flex flex-col items-end justify-center pointer-events-none">
+                        <span className="text-[7px] font-black text-zinc-500 uppercase">Total</span>
+                        <span className="text-sm font-black tabular-nums text-zinc-800">
+                            {totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €
+                        </span>
                     </div>
                 </div>
 

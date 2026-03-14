@@ -94,15 +94,14 @@ export const CashDenominationForm = ({
     // canSubmitPurchase allows submission if Math is Correct, OR if they are just doing a simple exit of money (given = price) without expecting change
     const canSubmitPurchase = isMathCorrect && (purchasePrice || 0) > 0 && totalGiven >= (purchasePrice || 0);
 
+    // Solo se llama al pulsar el botón Guardar/Confirmar; nunca en onChange, onBlur ni al cerrar.
     const handleConfirm = () => {
         if (isPurchaseMode) {
-            // Calculate net breakdown: Given - Received
             const netBreakdown: any = {};
             DENOMINATIONS.forEach(d => {
                 const net = (counts[d] || 0) - (receivedCounts[d] || 0);
                 if (net !== 0) netBreakdown[d] = net;
             });
-            // Total cost is purchasePrice, passing netBreakdown to deduct precise stock
             onSubmit((purchasePrice || 0), netBreakdown, notes || 'Compra', selectedDate ? new Date(selectedDate).toISOString() : undefined);
         } else {
             onSubmit(totalGiven, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined);

@@ -44,21 +44,17 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
         }
     };
 
+    // Persistencia solo al pulsar "Guardar Cambios" en el formulario (nunca en onChange/blur/cerrar).
     const handleUpdate = async (total: number, newBreakdown: any, newNotes: string, newDate?: string) => {
         try {
-            // Validar que el total coincida si es necesario, o confiar en el desglose
             const updatePayload: any = {
                 amount: total,
                 breakdown: newBreakdown,
                 notes: newNotes
             };
-
-            if (newDate) {
-                updatePayload.created_at = newDate;
-            }
+            if (newDate) updatePayload.created_at = newDate;
 
             const { error } = await supabase.from('treasury_log').update(updatePayload).eq('id', movement.id);
-
             if (error) throw error;
             toast.success('Movimiento actualizado');
             window.location.reload();
@@ -80,7 +76,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                         boxName="Editando Movimiento"
                         initialCounts={breakdown}
                         initialNotes={movement.notes}
-                        initialDate={movement.created_at} // Pass initial date
+                        initialDate={movement.created_at}
                         submitLabel="Guardar Cambios"
                         onSubmit={handleUpdate}
                         onCancel={() => setIsEditing(false)}
