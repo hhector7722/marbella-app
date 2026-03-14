@@ -190,14 +190,9 @@ export const CashChangeModal = ({
         }
     };
 
-    const handleSiguiente = async () => {
+    const handleSiguiente = () => {
         if (!boxA || !boxB || totalStep1 < 0.005 || hasStockIssueStep1) return;
-        try {
-            await persistTransfer(boxA, boxB, step1Counts, `De ${boxA.name} a ${boxB.name}`);
-            setStep('step2');
-        } catch (e: any) {
-            toast.error(e.message || 'Error al guardar');
-        }
+        setStep('step2');
     };
 
     const handleGuardarStep2 = async () => {
@@ -208,6 +203,7 @@ export const CashChangeModal = ({
             return;
         }
         try {
+            await persistTransfer(boxA, boxB, step1Counts, `De ${boxA.name} a ${boxB.name}`);
             await persistTransfer(boxB, boxA, step2Counts, `De ${boxB.name} a ${boxA.name}`);
             toast.success('Cambio entre cajas guardado');
             if (onSuccess) onSuccess();
@@ -388,15 +384,13 @@ export const CashChangeModal = ({
                                         type="button"
                                         onClick={() => toggleBoxSelection(opt)}
                                         className={cn(
-                                            "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide text-left px-3 transition-all flex items-center justify-between gap-2",
+                                            "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide transition-all flex items-center justify-center text-center px-3",
                                             selected
                                                 ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]"
                                                 : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
                                         )}
                                     >
-                                        <span>{opt.name}</span>
-                                        {isA && <span className="text-[10px] font-black bg-[#36606F] text-white px-2 py-0.5 rounded-md">A</span>}
-                                        {isB && <span className="text-[10px] font-black bg-[#36606F] text-white px-2 py-0.5 rounded-md">B</span>}
+                                        {opt.name}
                                     </button>
                                 );
                             })}
@@ -517,25 +511,32 @@ export const CashChangeModal = ({
                                 </div>
                             );
                         })}
-                    </div>
-                </div>
-
-                <div className="p-3 bg-white border-t border-zinc-100 shrink-0">
-                    <div className="flex gap-2 w-full">
-                        {isStep1 ? (
-                            <>
+                        {/* Botones en la misma fila que 1c (última fila del grid) */}
+                        <div className="self-stretch flex flex-col justify-end">
+                            {isStep1 ? (
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 h-10 min-h-[48px] bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px] shrink-0"
+                                    className="w-full h-10 min-h-[48px] bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px]"
                                 >
                                     <X size={14} strokeWidth={3} />
                                     Salir
                                 </button>
+                            ) : (
+                                <button
+                                    onClick={() => setStep('step1')}
+                                    className="w-full h-10 min-h-[48px] bg-zinc-200 text-zinc-700 font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 text-[11px]"
+                                >
+                                    Atrás
+                                </button>
+                            )}
+                        </div>
+                        <div className="self-stretch flex flex-col justify-end">
+                            {isStep1 ? (
                                 <button
                                     onClick={handleSiguiente}
                                     disabled={totalStep1 < 0.005 || hasStockIssueStep1}
                                     className={cn(
-                                        "flex-[2] h-10 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
+                                        "w-full h-10 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
                                         (totalStep1 >= 0.005 && !hasStockIssueStep1)
                                             ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
                                             : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
@@ -543,20 +544,12 @@ export const CashChangeModal = ({
                                 >
                                     Siguiente
                                 </button>
-                            </>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={() => setStep('step1')}
-                                    className="flex-1 h-10 min-h-[48px] bg-zinc-200 text-zinc-700 font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 text-[11px] shrink-0"
-                                >
-                                    Atrás
-                                </button>
+                            ) : (
                                 <button
                                     onClick={handleGuardarStep2}
                                     disabled={totalStep2 < 0.005 || hasStockIssueStep2}
                                     className={cn(
-                                        "flex-[2] h-10 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
+                                        "w-full h-10 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
                                         (totalStep2 >= 0.005 && !hasStockIssueStep2)
                                             ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
                                             : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
@@ -564,8 +557,8 @@ export const CashChangeModal = ({
                                 >
                                     Guardar
                                 </button>
-                            </>
-                        )}
+                            )}
+                        </div>
                     </div>
                     {hasStockIssue && (
                         <p className="text-center text-[10px] font-bold text-rose-500 mt-2 uppercase tracking-tight italic">
