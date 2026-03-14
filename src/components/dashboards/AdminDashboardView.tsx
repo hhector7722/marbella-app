@@ -1236,7 +1236,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             />
 
             <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} initialTotalSales={liveTickets.total} initialTicketsCount={liveTickets.count} />
-            {/* Modal semana: trabajadores + importe + checkbox; clic en nombre abre WorkerWeeklyHistoryModal */}
+            {/* Modal semana: trabajadores + importe + checkbox; clic en nombre abre WorkerWeeklyHistoryModal; flechas navegan semanas */}
             {weekDetailModal && (() => {
                 const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
                     const cost = (s.totalCost ?? s.amount ?? 0);
@@ -1245,16 +1245,43 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
                 const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
+                const allWeeks = Array.from(new Map([...(overtimeData || []), ...(overtimeWeeksData || [])].map((w: any) => [w.weekId, w])).values());
+                const sortedWeeks = [...allWeeks].sort((a: any, b: any) => a.weekId.localeCompare(b.weekId));
+                const currentIdx = sortedWeeks.findIndex((w: any) => w.weekId === weekDetailModal.week.weekId);
+                const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
+                const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
                 return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0">
                             <span className="text-base font-black text-white shrink-0">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
-                            <div className="flex-1 flex flex-col gap-0.5 min-w-0 text-center">
-                                <h3 className="text-sm font-black uppercase tracking-wider text-white">Semana {weekNum}</h3>
-                                <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{periodStr}</span>
+                            <div className="flex-1 flex items-center justify-center min-w-0">
+                                <div className="inline-flex items-center gap-1.5 sm:gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); if (prevWeek) setWeekDetailModal({ week: prevWeek }); }}
+                                        disabled={!prevWeek}
+                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-colors text-white shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+                                        aria-label="Semana anterior"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <div className="flex flex-col gap-0.5 text-center min-w-0">
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-white whitespace-nowrap">Semana {weekNum}</h3>
+                                        <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider whitespace-nowrap">{periodStr}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); if (nextWeek) setWeekDetailModal({ week: nextWeek }); }}
+                                        disabled={!nextWeek}
+                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-colors text-white shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+                                        aria-label="Semana siguiente"
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
-                            <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0"><X className="w-5 h-5" /></button>
+                            <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Cerrar"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-4 overflow-y-auto flex-1 space-y-2">
                             {weekStaff.map((s: any) => (
