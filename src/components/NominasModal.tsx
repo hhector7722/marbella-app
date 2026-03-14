@@ -178,15 +178,15 @@ export default function NominasModal({ isOpen, onClose, targetUserId }: NominasM
                 )}
                 onClick={e => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/50">
-                    <h2 className="text-base font-black text-[#36606F] uppercase tracking-wider">
+                {/* Header — petróleo Marbella (#36606F) */}
+                <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F]">
+                    <h2 className="text-base font-black text-white uppercase tracking-wider">
                         {targetUserId ? 'Nóminas del empleado' : 'Mis nóminas'}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-200/80 hover:text-zinc-800 transition-colors active:scale-95"
+                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors active:scale-95"
                         aria-label="Cerrar"
                     >
                         <X size={22} strokeWidth={2.5} />
