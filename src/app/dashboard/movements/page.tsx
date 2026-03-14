@@ -626,12 +626,12 @@ export default function MovementsPage() {
                                                                         mov.type === 'expense' ? "text-rose-500" :
                                                                             mov.amount > 0 ? "text-blue-500" : "text-orange-500"
                                                                 )}>
-                                                                    {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(0)}€
+                                                                    {mov.type === 'income' ? '+' : mov.type === 'expense' ? '-' : (mov.amount > 0 ? '+' : '')}{mov.amount.toFixed(2)}€
                                                                 </span>
                                                             </td>
                                                             <td className="px-3 md:px-8 py-3 text-right">
                                                                 <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">
-                                                                    {mov.running_balance.toFixed(0)}€
+                                                                    {mov.running_balance.toFixed(2)}€
                                                                 </span>
                                                             </td>
                                                         </tr>
