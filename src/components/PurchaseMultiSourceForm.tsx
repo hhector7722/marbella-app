@@ -173,8 +173,8 @@ export function PurchaseMultiSourceForm({
                 </div>
 
                 <div>
-                    <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Origen de pago</h4>
-                    <div className="flex flex-wrap gap-2">
+                    <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Origen de pago</h4>
+                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5">
                         {paymentSources.map(src => {
                             const amount = getDisplayAmount(src);
                             const isSelected = selectedSourceId === src.id;
@@ -184,23 +184,23 @@ export function PurchaseMultiSourceForm({
                                     type="button"
                                     onClick={() => setSelectedSourceId(src.id)}
                                     className={cn(
-                                        "min-h-[48px] px-3 py-2 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-0.5 shrink-0",
+                                        "min-h-[40px] min-w-0 px-2 py-1.5 rounded-lg border-2 font-black text-[8px] uppercase tracking-tight transition-all flex flex-col items-center justify-center gap-0 shrink-0",
                                         isSelected
                                             ? "bg-orange-500 border-orange-500 text-white shadow-md"
                                             : "bg-white border-zinc-200 text-zinc-700 hover:border-orange-300 hover:bg-orange-50"
                                     )}
                                 >
-                                    <span>{src.shortLabel}</span>
+                                    <span className="whitespace-nowrap">{src.shortLabel}</span>
                                     {amount > 0.005 && (
-                                        <span className={cn("text-[9px] tabular-nums", isSelected ? "text-white/90" : "text-zinc-500")}>
-                                            {amount.toFixed(2)} €
+                                        <span className={cn("text-[7px] tabular-nums leading-none", isSelected ? "text-white/90" : "text-zinc-500")}>
+                                            {amount.toFixed(2)}€
                                         </span>
                                     )}
                                 </button>
                             );
                         })}
                     </div>
-                    <p className="text-[9px] text-zinc-500 mt-1.5">Total: <span className="font-black">{totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €</span></p>
+                    <p className="text-[9px] text-zinc-500 mt-1">Total: <span className="font-black">{totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €</span></p>
                 </div>
 
                 {selectedSource && (
@@ -209,53 +209,63 @@ export function PurchaseMultiSourceForm({
                             Desglose desde {selectedSource.shortLabel}
                         </p>
                         {selectedSource.hasInventory ? (
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                                 {DENOMINATIONS.map(denom => {
                                     const entry = getSourceEntry(selectedSource.id);
                                     const qty = entry.breakdown[denom] ?? 0;
                                     const stock = inventoriesByBoxId[selectedSource.id] ?? {};
                                     const avail = stock[denom] ?? 0;
-                                    const over = qty > avail;
+                                    const hasStockIssue = qty > avail;
                                     return (
-                                        <div key={denom} className="flex flex-col items-center gap-1">
-                                            <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={48} height={48} className="h-10 w-auto object-contain" />
-                                            <span className="text-[8px] font-black text-gray-500">
-                                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                            </span>
-                                            <div className="flex items-center justify-between w-full gap-0.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const next = { ...entry.breakdown, [denom]: Math.max(0, (entry.breakdown[denom] ?? 0) - 1) };
-                                                        if (next[denom] === 0) delete next[denom];
-                                                        setSourceBreakdown(selectedSource.id, next);
-                                                    }}
-                                                    className="w-8 h-9 flex items-center justify-center rounded-lg bg-rose-50 text-rose-500 shrink-0 min-h-[36px]"
-                                                >
-                                                    <Minus size={14} strokeWidth={3} />
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    value={qty || ''}
-                                                    onChange={e => {
-                                                        const v = parseInt(e.target.value, 10) || 0;
-                                                        const next = { ...entry.breakdown, [denom]: v };
-                                                        if (v === 0) delete next[denom];
-                                                        setSourceBreakdown(selectedSource.id, next);
-                                                    }}
-                                                    className="w-10 h-9 text-center text-[11px] font-black rounded-lg border border-zinc-200 flex-1 min-w-0"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setSourceBreakdown(selectedSource.id, { ...entry.breakdown, [denom]: (entry.breakdown[denom] ?? 0) + 1 })}
-                                                    className="w-8 h-9 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shrink-0 min-h-[36px]"
-                                                >
-                                                    <Plus size={14} strokeWidth={3} />
-                                                </button>
+                                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
+                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
                                             </div>
-                                            {avail > 0 && (
-                                                <span className={cn("text-[7px] font-bold uppercase", over && "text-rose-500")}>Disp: {avail}</span>
-                                            )}
+                                            <div className="text-center w-full">
+                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                                </span>
+                                                <div className={cn(
+                                                    "flex items-center justify-between w-full h-10 bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
+                                                    hasStockIssue
+                                                        ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
+                                                        : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
+                                                )}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const next = { ...entry.breakdown, [denom]: Math.max(0, (entry.breakdown[denom] ?? 0) - 1) };
+                                                            if (next[denom] === 0) delete next[denom];
+                                                            setSourceBreakdown(selectedSource.id, next);
+                                                        }}
+                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                    >
+                                                        <Minus size={14} strokeWidth={3} />
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        value={qty || ''}
+                                                        onChange={e => {
+                                                            const v = parseInt(e.target.value, 10) || 0;
+                                                            const next = { ...entry.breakdown, [denom]: v };
+                                                            if (v === 0) delete next[denom];
+                                                            setSourceBreakdown(selectedSource.id, next);
+                                                        }}
+                                                        placeholder=""
+                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSourceBreakdown(selectedSource.id, { ...entry.breakdown, [denom]: (entry.breakdown[denom] ?? 0) + 1 })}
+                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                    >
+                                                        <Plus size={14} strokeWidth={3} />
+                                                    </button>
+                                                </div>
+                                                {avail > 0 && (
+                                                    <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {avail}</span>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -298,32 +308,52 @@ export function PurchaseMultiSourceForm({
                         </div>
                         <div>
                             <p className="text-[8px] font-black text-gray-500 uppercase mb-1.5">Desglose del cambio (opcional)</p>
-                            <div className="grid grid-cols-4 gap-1">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                                 {DENOMINATIONS.map(denom => {
                                     const qty = changeBreakdown[denom] ?? 0;
                                     return (
-                                        <div key={denom} className="flex flex-col items-center gap-0.5">
-                                            <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={32} height={32} className="h-7 w-auto object-contain" />
-                                            <div className="flex items-center gap-0.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setChangeBreakdown(prev => {
-                                                        const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) - 1) };
-                                                        if (next[denom] === 0) delete next[denom];
-                                                        return next;
-                                                    })}
-                                                    className="w-5 h-6 flex items-center justify-center rounded bg-rose-50 text-rose-500 min-h-[36px] min-w-[28px]"
-                                                >
-                                                    <Minus size={8} />
-                                                </button>
-                                                <span className="w-6 text-center text-[10px] font-black min-h-[36px] flex items-center justify-center">{qty}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setChangeBreakdown(prev => ({ ...prev, [denom]: (prev[denom] ?? 0) + 1 }))}
-                                                    className="w-5 h-6 flex items-center justify-center rounded bg-emerald-50 text-emerald-600 min-h-[36px] min-w-[28px]"
-                                                >
-                                                    <Plus size={8} />
-                                                </button>
+                                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
+                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
+                                            </div>
+                                            <div className="text-center w-full">
+                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                                </span>
+                                                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setChangeBreakdown(prev => {
+                                                            const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) - 1) };
+                                                            if (next[denom] === 0) delete next[denom];
+                                                            return next;
+                                                        })}
+                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                    >
+                                                        <Minus size={14} strokeWidth={3} />
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        value={qty || ''}
+                                                        onChange={e => {
+                                                            const v = parseInt(e.target.value, 10) || 0;
+                                                            setChangeBreakdown(prev => {
+                                                                const next = { ...prev, [denom]: v };
+                                                                if (v === 0) delete next[denom];
+                                                                return next;
+                                                            });
+                                                        }}
+                                                        placeholder=""
+                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setChangeBreakdown(prev => ({ ...prev, [denom]: (prev[denom] ?? 0) + 1 }))}
+                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                    >
+                                                        <Plus size={14} strokeWidth={3} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     );
