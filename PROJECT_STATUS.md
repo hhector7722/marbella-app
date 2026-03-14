@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-14 (Caja Inicial y Movements: mostrar dinero real en caja)
+**Última actualización:** 2026-03-14 (Manager: crear fichajes desde /staff/history)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
@@ -10,6 +10,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## ✅ COMPLETADO
+- [x] **Manager: crear fichajes desde Historial (2026-03-14)**: En `/staff/history`, el manager puede crear fichajes (entrada) en nombre de empleados. Sin filtro de empleado: al pulsar un día se abre el resumen; si hay empleados sin fichaje ese día, aparece un botón "+" en la cabecera que abre un modal para elegir empleado y hora de entrada. Con empleado filtrado: al abrir el detalle de un día sin fichaje, aparece el botón "+" en la cabecera para crear un fichaje (solo hora). Los registros se insertan en `time_logs` (mismo esquema que el fichaje del empleado) y se ejecuta `fn_recalc_and_propagate_snapshots` para la semana. Acción `createManagerFichaje` en `overtime.ts`; props `employees`, `onFichajeCreated`, `isManager` en `DaySummaryModal`.
 - [x] **Caja Inicial y Movements: dinero real (2026-03-14)**: En `/dashboard` el contenedor "Caja Inicial" muestra ahora el **dinero real** en caja (físico = teórico + diferencia) en lugar del saldo teórico. En `/dashboard/movements` la fila de resumen superior "SALDO ACTUAL" usa `physical_balance` de la RPC `get_operational_box_status` (suma de denominaciones en `cash_box_inventory`) en lugar del saldo teórico.
 - [x] **Recetas: precios albarán, unidades y coste con conversión (2026-03-26)**: Eliminado código redundante: vista materializada `recipe_financials` y trigger `refresh_recipe_financials` (no usada en app). Corregido trigger `handle_new_invoice_line`: historial de precios (`ingredient_price_history`) se registra con `old_price` real antes de actualizar el ingrediente. Precio de ingredientes = origen albarán (automatización email → `/api/webhooks/albaranes` → Gemini → `purchase_invoice_lines`; al mapear o al insertar línea con mapeo existente se actualiza `current_price`). En recetas: selector de unidad por ingrediente (g, kg, ml, L, ud) al añadir y editable en detalle; coste calculado con conversión (`src/lib/recipe-cost.ts`: `recipeLineCost` convierte cantidad receta → unidad compra × precio). `confirmarMapeoAction` actualiza precio del ingrediente e historial al confirmar mapeo manual. Migración `20260326100000_recipes_financials_cleanup_and_price_fix.sql`.
 - [x] **Propinas (Botes Weekday/Weekend) (2026-03-10)**: Nueva página `/dashboard/propinas` con rango manual. Dos botes (Lun–Vie, Sáb–Dom), captura de efectivo reutilizando `CashDenominationForm`, reparto y overrides calculados en PostgreSQL (RPC `get_tip_pool_preview`) con RLS (mutaciones solo manager/admin).

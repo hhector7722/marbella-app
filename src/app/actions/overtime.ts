@@ -377,3 +377,58 @@ export async function updateWeeklyWorkerConfig(
         return { success: false, error: e.message };
     }
 }
+
+/**
+ * Crea un fichaje (entrada) en nombre de un empleado. Solo managers.
+ * El registro es igual que si el empleado hubiera fichado: time_logs con clock_in, clock_out null.
+ * Tras insertar se ejecuta fn_recalc_and_propagate_snapshots para la semana del día.
+ */
+export async function createManagerFichaje(userId: string, dateStr: string, timeStr: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: 'No autenticado' };
+
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role !== 'manager') return { success: false, error: 'Solo managers pueden crear fichajes' };
+
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const [h, min] = timeStr.split(':').map(Number);
+        if (!y || !m || !d || h === undefined || min === undefined) return { success: false, error: 'Fecha u hora inválida' };
+        const clockInDate = new Date(y, m - 1, d, h, min, 0, 0);
+        const clockInIso = clockInDate.toISOString();
+
+        const { error: insertErr } = await supabase.from('time_logs').insert({
+            user_id: userId,
+            clock_in: clockInIso,
+            clock_out: null,
+            event_type: 'regular',
+            clock_out_show_no_registrada: false,
+        });
+
+        if (insertErr) throw insertErr;
+
+        const weekStart = (() => {
+            const date = new Date(y, m - 1, d);
+            const dayOfWeek = date.getDay();
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const monday = new Date(date);
+            monday.setDate(date.getDate() - daysToMonday);
+            return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+        })();
+
+        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+            p_user_id: userId,
+            p_start_date: weekStart,
+        });
+        if (rpcError) throw rpcError;
+
+        revalidatePath('/staff/history');
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/overtime');
+        return { success: true };
+    } catch (e: any) {
+        console.error('createManagerFichaje:', e);
+        return { success: false, error: e.message ?? 'Error al crear fichaje' };
+    }
+}

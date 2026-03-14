@@ -522,6 +522,9 @@ export default function HistoryPage() {
                     date={summaryDate ? new Date(summaryDate + 'T12:00:00') : null}
                     logs={summaryLogs}
                     onSelectLog={handleSelectLogFromSummary}
+                    employees={employees}
+                    onFichajeCreated={handleDetailModalSuccess}
+                    isManager={isManager}
                 />
 
                 <AttendanceDetailModal

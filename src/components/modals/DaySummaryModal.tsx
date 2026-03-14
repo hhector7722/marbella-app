@@ -1,9 +1,15 @@
 'use client';
 
-import React from 'react';
-import { X, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Clock, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { createManagerFichaje } from '@/app/actions/overtime';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { cn } from '@/lib/utils';
+
+export type EmployeeOption = { id: string; first_name: string; last_name: string };
 
 interface DaySummaryModalProps {
     isOpen: boolean;
@@ -11,9 +17,48 @@ interface DaySummaryModalProps {
     date: Date | null;
     logs: any[];
     onSelectLog: (userId: string) => void;
+    /** Lista de empleados (plantilla). Solo managers ven el botón + y empleados sin fichaje. */
+    employees?: EmployeeOption[];
+    /** Llamado tras crear un fichaje para refrescar datos. */
+    onFichajeCreated?: () => void;
+    isManager?: boolean;
 }
 
-export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: DaySummaryModalProps) {
+export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, employees = [], onFichajeCreated, isManager }: DaySummaryModalProps) {
+    const [showCreateFichaje, setShowCreateFichaje] = useState(false);
+    const [createUserId, setCreateUserId] = useState('');
+    const [createTime, setCreateTime] = useState('09:00');
+    const [creating, setCreating] = useState(false);
+
+    const employeeIdsWithLog = new Set((logs || []).map((l: { user_id: string }) => l.user_id));
+    const availableEmployees = (employees || []).filter((e) => !employeeIdsWithLog.has(e.id));
+    const canAddFichaje = isManager && availableEmployees.length > 0;
+
+    const handleCreateFichaje = async () => {
+        if (!date || !createUserId || !createTime.trim()) {
+            toast.error('Selecciona empleado y hora');
+            return;
+        }
+        setCreating(true);
+        try {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const result = await createManagerFichaje(createUserId, dateStr, createTime.trim());
+            if (result.success) {
+                toast.success('Fichaje creado');
+                setShowCreateFichaje(false);
+                setCreateUserId('');
+                setCreateTime('09:00');
+                onFichajeCreated?.();
+            } else {
+                toast.error(result.error ?? 'Error al crear fichaje');
+            }
+        } catch (e) {
+            toast.error('Error al crear fichaje');
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (!isOpen || !date) return null;
 
     return (
@@ -30,9 +75,21 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: Da
                             {format(date, "EEEE d 'de' MMMM", { locale: es })}
                         </span>
                     </div>
-                    <button onClick={onClose} className="text-white/50 hover:text-white transition-colors bg-white/10 p-2 rounded-xl">
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {canAddFichaje && (
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateFichaje(true)}
+                                className="min-h-[48px] min-w-[48px] flex items-center justify-center text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+                                title="Nuevo fichaje"
+                            >
+                                <Plus size={20} strokeWidth={2.5} />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors bg-white/10 p-2 rounded-xl min-h-[48px] min-w-[48px] flex items-center justify-center">
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Body */}
@@ -95,6 +152,57 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog }: Da
                     </button>
                 </div>
             </div>
+
+            {/* Modal crear fichaje (empleado + hora) */}
+            {showCreateFichaje && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-[142] p-4 rounded-[32px]" onClick={() => !creating && setShowCreateFichaje(false)}>
+                    <div className="w-full max-w-[280px] bg-white rounded-2xl shadow-2xl p-4 space-y-4" onClick={e => e.stopPropagation()}>
+                        <h4 className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">Nuevo fichaje</h4>
+                        <div>
+                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">Empleado</label>
+                            <select
+                                value={createUserId}
+                                onChange={(e) => setCreateUserId(e.target.value)}
+                                className="w-full h-12 px-3 rounded-xl border-2 border-zinc-200 text-[11px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
+                            >
+                                <option value="">Seleccionar</option>
+                                {availableEmployees.map((emp) => (
+                                    <option key={emp.id} value={emp.id}>
+                                        {emp.first_name} {emp.last_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">Hora entrada</label>
+                            <input
+                                type="time"
+                                value={createTime}
+                                onChange={(e) => setCreateTime(e.target.value)}
+                                className="w-full h-12 px-3 rounded-xl border-2 border-zinc-200 text-[11px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
+                            />
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                            <button
+                                type="button"
+                                onClick={() => !creating && setShowCreateFichaje(false)}
+                                className="flex-1 h-12 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[9px] uppercase tracking-widest active:scale-95"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateFichaje}
+                                disabled={creating || !createUserId}
+                                className={cn("flex-1 h-12 rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 min-h-[48px]", creating || !createUserId ? "bg-zinc-200 text-zinc-400" : "bg-emerald-500 text-white")}
+                            >
+                                {creating ? <LoadingSpinner size="sm" /> : <Plus size={14} />}
+                                Crear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

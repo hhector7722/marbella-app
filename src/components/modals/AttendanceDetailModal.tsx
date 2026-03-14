@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Coins, Landmark, Calendar } from 'lucide-react';
+import { X, Save, Coins, Landmark, Calendar, Plus } from 'lucide-react';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
+import { updateWeeklyWorkerConfig, createManagerFichaje } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
@@ -199,6 +199,9 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editWeekModalOpen, setEditWeekModalOpen] = useState(false);
+    const [showCreateFichaje, setShowCreateFichaje] = useState(false);
+    const [createTime, setCreateTime] = useState('09:00');
+    const [creating, setCreating] = useState(false);
     const isManager = userRole === 'manager';
 
     useEffect(() => {
@@ -338,6 +341,31 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
         return hours + fraction;
     };
 
+    const activeLogs = logs.filter(l => !l.is_deleted);
+    const showAddFichajeButton = isManager && !loading && activeLogs.length === 0 && !!userId && !!date;
+
+    const handleCreateFichaje = async () => {
+        if (!date || !userId || !createTime.trim()) return;
+        setCreating(true);
+        try {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const result = await createManagerFichaje(userId, dateStr, createTime.trim());
+            if (result.success) {
+                toast.success('Fichaje creado');
+                setShowCreateFichaje(false);
+                setCreateTime('09:00');
+                fetchDayLogs();
+                onSuccess();
+            } else {
+                toast.error(result.error ?? 'Error al crear fichaje');
+            }
+        } catch (e) {
+            toast.error('Error al crear fichaje');
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -347,9 +375,21 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                     <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em] drop-shadow-sm">
                         {date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
                     </h3>
-                    <button onClick={onClose} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-1">
-                        <X size={16} />
-                    </button>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {showAddFichajeButton && (
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateFichaje(true)}
+                                className="min-h-[40px] min-w-[40px] flex items-center justify-center text-white/80 hover:text-white rounded-lg transition-colors"
+                                title="Nuevo fichaje"
+                            >
+                                <Plus size={18} strokeWidth={2.5} />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1">
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="px-4 pb-4 pt-2 flex flex-col shrink-0">
@@ -360,8 +400,39 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                         </div>
                     ) : (
                         (() => {
-                            const activeLogs = logs.filter(l => !l.is_deleted);
-                            if (activeLogs.length === 0) {
+                            const activeLogsInner = logs.filter(l => !l.is_deleted);
+                            if (activeLogsInner.length === 0) {
+                                if (showCreateFichaje && isManager && userId && date) {
+                                    return (
+                                        <div className="space-y-3">
+                                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block">Nuevo fichaje — Hora entrada</span>
+                                            <input
+                                                type="time"
+                                                value={createTime}
+                                                onChange={(e) => setCreateTime(e.target.value)}
+                                                className="w-full h-12 px-3 rounded-xl border-2 border-zinc-200 text-[13px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowCreateFichaje(false)}
+                                                    className="flex-1 h-9 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[8px] uppercase tracking-widest active:scale-95"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCreateFichaje}
+                                                    disabled={creating}
+                                                    className="flex-1 h-9 rounded-xl bg-emerald-500 text-white font-black text-[8px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50 min-h-[48px]"
+                                                >
+                                                    {creating ? <LoadingSpinner size="sm" /> : <Plus size={12} />}
+                                                    Crear
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                }
                                 return (
                                     <div className="py-8 flex flex-col items-center justify-center">
                                         <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest text-center">Sin datos</span>
@@ -369,7 +440,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                 );
                             }
 
-                            const log = activeLogs[0];
+                            const log = activeLogsInner[0];
                             const workedHours = log.total_hours_override !== undefined
                                 ? log.total_hours_override
                                 : calculateLogHours(log.in_time || '', log.out_time || '');
