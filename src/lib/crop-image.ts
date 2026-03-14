@@ -33,6 +33,10 @@ export async function getCroppedImg(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2d not available');
 
+  // Fondo blanco por defecto (fotos sin fondo / transparencia se ven sobre blanco)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+
   if (circular) {
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
