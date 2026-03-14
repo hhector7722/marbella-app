@@ -360,28 +360,23 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         return () => document.removeEventListener('touchstart', handleTouchStart);
     }, [selectedChartHour]);
 
-    // Lista de tickets: al pulsar gráfica = ventas hasta la hora; modal = rango; sin filtro = todos
-    const displayTickets = selectedChartHour !== null
-        ? salesTickets.filter((t) => {
+    // Lista de tickets: solo el modal de rango aplica filtro; pulsar gráfica no filtra tabla ni KPIs
+    const displayTickets = filterHourRange === null
+        ? salesTickets
+        : salesTickets.filter((t) => {
             const h = getTicketHour(t);
-            return h >= BUSINESS_HOURS.start && h <= selectedChartHour;
-        })
-        : filterHourRange === null
-            ? salesTickets
-            : salesTickets.filter((t) => {
-                const h = getTicketHour(t);
-                const lo = Math.min(filterHourRange.start, filterHourRange.end);
-                const hi = Math.max(filterHourRange.start, filterHourRange.end);
-                return h >= lo && h <= hi;
-            });
+            const lo = Math.min(filterHourRange.start, filterHourRange.end);
+            const hi = Math.max(filterHourRange.start, filterHourRange.end);
+            return h >= lo && h <= hi;
+        });
 
-    // Resumen para KPIs: con filtro (gráfica o modal) = suma de displayTickets; sin filtro = liveTickets (RPC)
-    const displaySummary = selectedChartHour !== null || filterHourRange !== null
-        ? {
+    // Resumen para KPIs: solo filtro por rango (modal); sin filtro = liveTickets (RPC)
+    const displaySummary = filterHourRange === null
+        ? liveTickets
+        : {
             total: displayTickets.reduce((s, t) => s + (Number(t.total_documento) || 0), 0),
             count: displayTickets.length
-        }
-        : liveTickets;
+        };
 
     const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
 
@@ -575,7 +570,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
 
                 {/* 1. VENTAS */}
-                <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-visible">
                     <div className="bg-[#36606F] px-4 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
                         <button
                             onClick={() => {
@@ -650,6 +645,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         const hasData = maxMain > 0;
                         if (!hasData) return null;
                         const numPoints = rangeData.length;
+                        // No permitir seleccionar una hora que aún no ha ocurrido (solo si es el día actual)
+                        const maxSelectableHour = isToday(new Date(salesViewDate))
+                            ? new Date().getHours()
+                            : BUSINESS_HOURS.end;
                         const toPath = (data: { hora: number; total: number }[]) => {
                             const pts = data.map((d, i) => {
                                 const x = (i / (numPoints - 1 || 1)) * 120;
@@ -663,10 +662,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             if (!el) return BUSINESS_HOURS.start;
                             const rect = el.getBoundingClientRect();
                             const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-                            return Math.min(BUSINESS_HOURS.end, Math.max(BUSINESS_HOURS.start, BUSINESS_HOURS.start + Math.round(ratio * (numPoints - 1))));
+                            const rawHour = BUSINESS_HOURS.start + Math.round(ratio * (numPoints - 1));
+                            return Math.min(maxSelectableHour, Math.max(BUSINESS_HOURS.start, rawHour));
                         };
                         const handleChartTap = (clientX: number) => {
-                            setSelectedChartHour(getHourFromClientX(clientX));
+                            const hour = getHourFromClientX(clientX);
+                            if (hour <= maxSelectableHour) setSelectedChartHour(hour);
                         };
                         // Facturación acumulada desde las 7:00 hasta la hora seleccionada (inclusive)
                         const totalHastaHora = selectedChartHour === null ? 0 : Array.from(
@@ -676,7 +677,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         return (
                             <div
                                 ref={chartContainerRef}
-                                className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2"
+                                className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2 overflow-visible"
                                 onClick={(e) => handleChartTap(e.clientX)}
                                 onTouchEnd={(e) => {
                                     if (e.changedTouches.length) {
@@ -705,7 +706,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <>
                                             <div
                                                 ref={tooltipRef}
-                                                className="absolute z-10 rounded-lg bg-white border border-zinc-200 shadow-lg px-2.5 py-1.5 text-center min-w-[4rem] pointer-events-none"
+                                                className="absolute z-50 rounded-lg bg-white border border-zinc-200 shadow-lg px-2.5 py-1.5 text-center min-w-[4rem] pointer-events-none"
                                                 style={{
                                                     left: `${xPct}%`,
                                                     top: `${yPct}%`,
@@ -717,7 +718,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 <div className="text-[10px] md:text-xs font-black tabular-nums text-emerald-600 leading-tight">{totalHastaHora.toFixed(2)}€</div>
                                             </div>
                                             <div
-                                                className="absolute w-3 h-3 rounded-full bg-[#36606F] border-2 border-white shadow-sm pointer-events-none"
+                                                className="absolute w-3 h-3 rounded-full bg-[#36606F] border-2 border-white shadow-sm pointer-events-none z-50"
                                                 style={{
                                                     left: `${xPct}%`,
                                                     top: `${yPct}%`,
@@ -751,12 +752,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="text-[10px] md:text-xs font-bold text-zinc-600">
-                                            {displayTickets.length === 0 && (selectedChartHour !== null || filterHourRange !== null) ? (
+                                            {displayTickets.length === 0 && filterHourRange !== null ? (
                                                 <tr>
                                                     <td colSpan={3} className="py-4 text-center text-[9px] font-bold text-zinc-400">
-                                                        {selectedChartHour !== null
-                                                            ? `Ningún ticket hasta las ${String(selectedChartHour).padStart(2, '0')}:00`
-                                                            : `Ningún ticket entre ${String(filterHourRange!.start).padStart(2, '0')}:00 y ${String(filterHourRange!.end).padStart(2, '0')}:00`}
+                                                        Ningún ticket entre {String(filterHourRange.start).padStart(2, '0')}:00 y {String(filterHourRange.end).padStart(2, '0')}:00
                                                     </td>
                                                 </tr>
                                             ) : displayTickets.map((ticket, idx) => {
