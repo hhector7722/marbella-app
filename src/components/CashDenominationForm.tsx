@@ -18,6 +18,8 @@ interface CashDenominationFormProps {
     submitLabel?: string;
     isEditing?: boolean; // New prop
     forcePurchaseMode?: boolean; // New prop
+    /** Modal botes propinas: sin subtítulo, fecha ni concepto; cabecera con esquinas redondeadas */
+    variant?: 'default' | 'tipPool';
 }
 
 export const CashDenominationForm = ({
@@ -31,7 +33,8 @@ export const CashDenominationForm = ({
     initialDate,
     submitLabel,
     isEditing = false,
-    forcePurchaseMode = false
+    forcePurchaseMode = false,
+    variant = 'default',
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
 
@@ -110,10 +113,14 @@ export const CashDenominationForm = ({
 
     const isAudit = type === 'audit';
     const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
+    const isTipPool = variant === 'tipPool';
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl">
-            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
+        <div className={cn('flex flex-col h-full overflow-hidden bg-white', !isTipPool && 'rounded-2xl')}>
+            <div className={cn(
+                'bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0',
+                isTipPool && 'rounded-t-xl md:rounded-t-[2.5rem]'
+            )}>
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg",
@@ -125,7 +132,9 @@ export const CashDenominationForm = ({
                         <h3 className="text-lg font-black uppercase tracking-wider">
                             {isPurchaseMode ? 'Compra' : (isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida'))}
                         </h3>
-                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
+                        {!isTipPool && (
+                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{boxName}</p>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -160,8 +169,8 @@ export const CashDenominationForm = ({
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
 
-                {/* DATE & NOTES & PRICE ROW */}
-                {isPurchaseMode ? (
+                {/* DATE & NOTES & PRICE ROW (oculto en variant tipPool) */}
+                {!isTipPool && isPurchaseMode ? (
                     <div className="flex flex-col gap-2 px-1">
                         {/* ROW 1: Fecha y Concepto */}
                         <div className="grid grid-cols-2 gap-2">
@@ -231,7 +240,7 @@ export const CashDenominationForm = ({
                             </button>
                         </div>
                     </div>
-                ) : (
+                ) : !isTipPool ? (
                     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1">
                         <div className={cn(
                             "flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all",
@@ -258,7 +267,7 @@ export const CashDenominationForm = ({
                             </div>
                         )}
                     </div>
-                )}
+                ) : null}
 
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                     {DENOMINATIONS.map(denom => {

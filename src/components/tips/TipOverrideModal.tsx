@@ -2,7 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Save } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
 
 type PoolType = 'weekday' | 'weekend';
 
@@ -12,9 +14,14 @@ export type TipOverrideDraft = {
   notes: string;
 };
 
+function firstNameOnly(fullName: string): string {
+  return (fullName || '').trim().split(/\s+/)[0] || fullName || '';
+}
+
 export function TipOverrideModal({
   isOpen,
   onClose,
+  staffId,
   employeeName,
   poolType,
   initial,
@@ -22,6 +29,7 @@ export function TipOverrideModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
+  staffId: string;
   employeeName: string;
   poolType: PoolType;
   initial?: TipOverrideDraft;
@@ -31,15 +39,29 @@ export function TipOverrideModal({
   const [overrideAmount, setOverrideAmount] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setOverrideHours(initial?.overrideHours ?? '');
     setOverrideAmount(initial?.overrideAmount ?? '');
     setNotes(initial?.notes ?? '');
-  }, [isOpen, initial]);
+    setProfile(null);
+    if (staffId) {
+      const supabase = createClient();
+      supabase
+        .from('profiles')
+        .select('first_name, avatar_url')
+        .eq('id', staffId)
+        .single()
+        .then(({ data }) => setProfile(data || null));
+    }
+  }, [isOpen, staffId, initial]);
 
-  const title = useMemo(() => (poolType === 'weekday' ? 'Entre semana' : 'Fin de semana'), [poolType]);
+  const displayName = useMemo(
+    () => (profile?.first_name ? profile.first_name.trim() : firstNameOnly(employeeName)),
+    [profile?.first_name, employeeName]
+  );
 
   if (!isOpen) return null;
 
@@ -72,12 +94,10 @@ export function TipOverrideModal({
         className="bg-white w-full max-w-[520px] rounded-xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[#36606F] px-3 py-2.5 md:px-6 md:py-4 flex items-center justify-between text-white shrink-0">
-          <div className="min-w-0">
-            <h3 className="text-xs md:text-lg font-black uppercase tracking-wider leading-none truncate">Override propina</h3>
-            <p className="text-[7px] md:text-[10px] font-bold text-white/60 uppercase tracking-widest mt-0.5 md:mt-1 truncate">
-              {employeeName} • {title}
-            </p>
+        <div className="bg-[#36606F] px-3 py-2.5 md:px-6 md:py-4 flex items-center justify-between text-white shrink-0 rounded-t-xl md:rounded-t-3xl">
+          <div className="min-w-0 flex items-center gap-2 md:gap-3">
+            <Avatar src={profile?.avatar_url ?? undefined} alt={displayName} size="sm" className="shrink-0 ring-2 ring-white/30" />
+            <span className="text-sm md:text-lg font-black uppercase tracking-wider truncate">{displayName}</span>
           </div>
           <button
             onClick={onClose}
@@ -100,7 +120,7 @@ export function TipOverrideModal({
                 value={overrideHours}
                 onChange={(e) => setOverrideHours(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full min-h-[44px] h-10 md:h-12 rounded-xl md:rounded-2xl border border-zinc-200 px-3 md:px-4 text-sm md:text-base font-black text-zinc-800 outline-none focus:ring-2 focus:ring-[#5B8FB9]/20 focus:border-[#5B8FB9]/40"
-                placeholder="(vacío = usar horas reales)"
+                placeholder="Opcional"
               />
             </div>
 
@@ -116,7 +136,7 @@ export function TipOverrideModal({
                   value={overrideAmount}
                   onChange={(e) => setOverrideAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full min-h-[44px] h-10 md:h-12 rounded-xl md:rounded-2xl border border-zinc-200 px-3 md:px-4 pr-8 md:pr-10 text-sm md:text-base font-black text-zinc-800 outline-none focus:ring-2 focus:ring-[#5B8FB9]/20 focus:border-[#5B8FB9]/40"
-                  placeholder="(vacío = reparto por horas)"
+                  placeholder="Opcional"
                 />
                 <span className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-black text-sm md:text-base">€</span>
               </div>
@@ -133,18 +153,17 @@ export function TipOverrideModal({
               placeholder="Opcional…"
             />
           </div>
-
-          <div className="bg-white rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2 md:p-3">
-            <p className="text-[7px] md:text-[10px] font-bold text-zinc-500 leading-relaxed">
-              - Si pones <b>Horas</b>, el reparto por horas usa ese valor.<br />
-              - Si pones <b>Importe</b>, manda sobre el reparto calculado.<br />
-              - Si dejas ambos vacíos, se usa el cálculo 100% BD.
-            </p>
-          </div>
         </div>
 
         <div className="p-2 md:p-3 bg-white border-t border-zinc-100 shrink-0">
           <div className="flex gap-1.5 md:gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 min-h-[44px] h-10 md:h-12 bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-1.5 md:gap-2 shadow-md shadow-rose-200 text-[9px] md:text-[11px]"
+            >
+              <X size={14} strokeWidth={3} className="md:w-4 md:h-4" />
+              Salir
+            </button>
             <button
               onClick={handleSave}
               disabled={!canSave || saving}
@@ -157,13 +176,6 @@ export function TipOverrideModal({
             >
               <Save size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
               Guardar
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 min-h-[44px] h-10 md:h-12 bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-1.5 md:gap-2 shadow-md shadow-rose-200 text-[9px] md:text-[11px]"
-            >
-              <X size={14} strokeWidth={3} className="md:w-4 md:h-4" />
-              Salir
             </button>
           </div>
         </div>

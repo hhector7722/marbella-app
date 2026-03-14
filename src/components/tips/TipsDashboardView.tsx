@@ -190,6 +190,7 @@ export default function TipsDashboardView() {
         p_notes: draft.notes || null,
       });
       toast.success('Override guardado');
+      // Recalcula el reparto para todos los empleados (get_tip_pool_preview usa overrides y horas y reparte de nuevo)
       await fetchPreview();
     } catch (e: any) {
       console.error(e);
@@ -261,36 +262,44 @@ export default function TipsDashboardView() {
               </div>
             </div>
 
-            {/* Fila 2: tarjetas verdes con total y botón + */}
+            {/* Fila 2: contenedores bote (valor verde sin fondo; botón + pequeño circular) */}
             <div className="grid grid-cols-2 gap-2 md:gap-4">
-              <div className="bg-emerald-600 rounded-xl md:rounded-2xl shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
-                <div className="min-w-0 text-white">
-                  <span className="text-base md:text-2xl font-black tabular-nums">
-                    {weekdayPool ? fmtZeroBlank(weekdayPool.cashTotal, 2) : ' '}
-                  </span>
-                  <span className="text-[10px] md:text-sm font-black opacity-90 ml-0.5 md:ml-1">€</span>
+              <div className="bg-white/80 rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
+                <div className="min-w-0">
+                  {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
+                    <span className="text-base md:text-2xl font-black tabular-nums text-emerald-600">
+                      {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
+                      <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1">€</span>
+                    </span>
+                  ) : (
+                    <span className="text-base md:text-2xl font-black tabular-nums text-zinc-400"> </span>
+                  )}
                 </div>
                 <button
                   onClick={() => openCash('weekday')}
-                  className="min-h-[48px] min-w-[48px] rounded-xl md:rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#36606F]/90 hover:bg-[#36606F] text-white flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px]"
                   title="Introducir cantidades"
                 >
-                  <Plus size={24} strokeWidth={3} />
+                  <Plus size={18} strokeWidth={3} className="md:w-5 md:h-5" />
                 </button>
               </div>
-              <div className="bg-emerald-600 rounded-xl md:rounded-2xl shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
-                <div className="min-w-0 text-white">
-                  <span className="text-base md:text-2xl font-black tabular-nums">
-                    {weekendPool ? fmtZeroBlank(weekendPool.cashTotal, 2) : ' '}
-                  </span>
-                  <span className="text-[10px] md:text-sm font-black opacity-90 ml-0.5 md:ml-1">€</span>
+              <div className="bg-white/80 rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
+                <div className="min-w-0">
+                  {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
+                    <span className="text-base md:text-2xl font-black tabular-nums text-emerald-600">
+                      {fmtZeroBlank(weekendPool!.cashTotal, 2)}
+                      <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1">€</span>
+                    </span>
+                  ) : (
+                    <span className="text-base md:text-2xl font-black tabular-nums text-zinc-400"> </span>
+                  )}
                 </div>
                 <button
                   onClick={() => openCash('weekend')}
-                  className="min-h-[48px] min-w-[48px] rounded-xl md:rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#36606F]/90 hover:bg-[#36606F] text-white flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px]"
                   title="Introducir cantidades"
                 >
-                  <Plus size={24} strokeWidth={3} />
+                  <Plus size={18} strokeWidth={3} className="md:w-5 md:h-5" />
                 </button>
               </div>
             </div>
@@ -317,7 +326,7 @@ export default function TipsDashboardView() {
                         Sáb – Dom
                       </th>
                       <th className="text-right px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[12%]">
-                        Total
+                        Tot
                       </th>
                     </tr>
                     <tr className="bg-[#36606F]/90 text-white/90">
@@ -347,7 +356,7 @@ export default function TipsDashboardView() {
                           >
                             <div className="min-w-0">
                               <div className="text-[10px] md:text-[13px] font-black text-zinc-900 truncate">
-                                {s.name}
+                                {(s.name || '').trim().split(/\s+/)[0] || s.name}
                                 {s.hasOverrides && (
                                   <span className="ml-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500">
                                     OVERRIDE
@@ -372,7 +381,7 @@ export default function TipsDashboardView() {
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer"
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-[#36606F]"
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekdayAmount, 2)}
@@ -390,7 +399,7 @@ export default function TipsDashboardView() {
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer"
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-[#36606F]"
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekendAmount, 2)}
@@ -427,6 +436,7 @@ export default function TipsDashboardView() {
               initialCounts={breakdownToInitialCounts(cashModal.poolType === 'weekday' ? preview?.pools?.weekday?.cashBreakdown : preview?.pools?.weekend?.cashBreakdown)}
               availableStock={{}}
               submitLabel="Guardar bote"
+              variant="tipPool"
             />
           </div>
         </div>
@@ -436,6 +446,7 @@ export default function TipsDashboardView() {
         <TipOverrideModal
           isOpen={overrideModal.open}
           onClose={() => setOverrideModal(null)}
+          staffId={overrideModal.staffId}
           employeeName={overrideModal.staffName}
           poolType={overrideModal.poolType}
           onSave={handleSaveOverride}
