@@ -374,10 +374,10 @@ export default function StaffDashboardView() {
         const list: PaymentSourceOption[] = [];
         const op = allBoxes.find(b => b.type === 'operational');
         const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Caja inicial', hasInventory: true });
-        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, hasInventory: true }));
-        list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
-        list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true });
+        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true }));
+        list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
+        list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         return list;
     };
 
@@ -1005,14 +1005,11 @@ export default function StaffDashboardView() {
                 userId={userId}
             />
 
-            {/* MODAL: Cambio de Efectivo (Cambio 1) */}
-
-            {/* MODAL: Cambio de Efectivo (Cambio 1) */}
+            {/* MODAL: Cambio entre cajas (selector Caja A / Caja B, luego De A→B y De B→A) */}
             {
-                showSwapModal && changeBox && (
+                showSwapModal && (
                     <CashChangeModal
-                        boxId={changeBox.id}
-                        boxName={changeBox.name}
+                        boxOptions={buildPaymentSources()}
                         onClose={() => setShowSwapModal(false)}
                         onSuccess={() => { initialize(); setShowSwapModal(false); }}
                     />
@@ -1034,10 +1031,6 @@ export default function StaffDashboardView() {
                             <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
                                 <button
                                     onClick={() => {
-                                        if (!changeBox) {
-                                            toast.error('Caja de cambio no configurada');
-                                            return;
-                                        }
                                         setIsCashOptionsModalOpen(false);
                                         setShowSwapModal(true);
                                     }}
@@ -1048,7 +1041,7 @@ export default function StaffDashboardView() {
                                     </div>
                                     <div className="flex flex-col text-left">
                                         <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
-                                        <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas</span>
+                                        <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas entre cajas</span>
                                     </div>
                                 </button>
 
@@ -1110,59 +1103,6 @@ export default function StaffDashboardView() {
                     </div>
                 )
             }
-
-            {isCashOptionsModalOpen && (
-                <div className="fixed inset-0 bg-black/60 z-[110] backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setIsCashOptionsModalOpen(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-6 text-white text-center">
-                            <h3 className="text-lg font-black uppercase tracking-widest">Opciones de Caja</h3>
-                        </div>
-
-                        <div className="p-6 space-y-4">
-                            <button
-                                onClick={() => {
-                                    if (!changeBox) {
-                                        toast.error('Caja de cambio no configurada');
-                                        return;
-                                    }
-                                    setIsCashOptionsModalOpen(false);
-                                    setShowSwapModal(true);
-                                }}
-                                className="w-full bg-white border border-gray-100 shadow-sm hover:border-purple-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
-                            >
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                    <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
-                                </div>
-                                <div className="flex flex-col text-left">
-                                    <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
-                                    <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas</span>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change');
-                                    if (cashBoxes.length === 0) {
-                                        toast.error('No hay cajas configuradas');
-                                        return;
-                                    }
-                                    setIsCashOptionsModalOpen(false);
-                                    openPurchaseMultiSourceModal();
-                                }}
-                                className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
-                            >
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                    <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="w-full h-full object-contain" />
-                                </div>
-                                <div className="flex flex-col text-left">
-                                    <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
-                                    <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {showPurchaseMultiSourceModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
