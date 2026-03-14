@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, memo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
@@ -570,7 +571,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
 
                 {/* 1. VENTAS */}
-                <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-visible">
+                <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-[#36606F] px-4 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
                         <button
                             onClick={() => {
@@ -677,7 +678,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         return (
                             <div
                                 ref={chartContainerRef}
-                                className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2 overflow-visible"
+                                className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2"
                                 onClick={(e) => handleChartTap(e.clientX)}
                                 onTouchEnd={(e) => {
                                     if (e.changedTouches.length) {
@@ -702,31 +703,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     const xPct = (idx / (numPoints - 1 || 1)) * 100;
                                     const yView = 22 - ((chartData[selectedChartHour]?.total ?? 0) / scaleMax) * 18;
                                     const yPct = (yView / 24) * 100;
-                                    return (
-                                        <>
-                                            <div
-                                                ref={tooltipRef}
-                                                className="absolute z-50 rounded-lg bg-white border border-zinc-200 shadow-lg px-2.5 py-1.5 text-center min-w-[4rem] pointer-events-none"
-                                                style={{
-                                                    left: `${xPct}%`,
-                                                    top: `${yPct}%`,
-                                                    transform: 'translate(-50%, -100%)',
-                                                    marginTop: '-4px'
-                                                }}
-                                            >
+                                    const rect = chartContainerRef.current?.getBoundingClientRect();
+                                    const pointLeft = rect ? rect.left + (xPct / 100) * rect.width : 0;
+                                    const pointTop = rect ? rect.top + (yPct / 100) * rect.height : 0;
+                                    const tooltipEl = (
+                                        <div className="fixed z-[100] pointer-events-none" style={{ left: pointLeft, top: pointTop, transform: 'translate(-50%, -100%)', marginTop: '-4px' }}>
+                                            <div ref={tooltipRef} className="rounded-lg bg-white border border-zinc-200 shadow-lg px-2.5 py-1.5 text-center min-w-[4rem]">
                                                 <div className="text-[10px] md:text-xs font-mono font-bold text-zinc-800 leading-tight">{String(selectedChartHour).padStart(2, '0')}:00</div>
                                                 <div className="text-[10px] md:text-xs font-black tabular-nums text-emerald-600 leading-tight">{totalHastaHora.toFixed(2)}€</div>
                                             </div>
-                                            <div
-                                                className="absolute w-3 h-3 rounded-full bg-[#36606F] border-2 border-white shadow-sm pointer-events-none z-50"
-                                                style={{
-                                                    left: `${xPct}%`,
-                                                    top: `${yPct}%`,
-                                                    transform: 'translate(-50%, -50%)'
-                                                }}
-                                            />
-                                        </>
+                                            <div className="absolute left-1/2 top-full w-3 h-3 rounded-full bg-[#36606F] border-2 border-white shadow-sm -translate-x-1/2 -translate-y-1/2" />
+                                        </div>
                                     );
+                                    return typeof document !== 'undefined' ? createPortal(tooltipEl, document.body) : null;
                                 })()}
                             </div>
                         );
