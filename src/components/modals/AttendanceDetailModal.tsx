@@ -410,7 +410,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                 type="time"
                                                 value={createTime}
                                                 onChange={(e) => setCreateTime(e.target.value)}
-                                                className="w-full h-12 px-3 rounded-xl border-2 border-zinc-200 text-[13px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
+                                                className="w-full max-w-[140px] mx-auto h-12 px-3 rounded-xl border-2 border-zinc-200 text-[13px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none block"
                                             />
                                             <div className="flex gap-2">
                                                 <button
