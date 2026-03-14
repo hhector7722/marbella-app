@@ -776,8 +776,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         strokeLinejoin="miter"
                                         vectorEffect="non-scaling-stroke"
                                     />
-                                    <text x={0} y={23} fill="#a1a1aa" fontFamily="ui-monospace, monospace" fontWeight="bold" fontSize="8">7</text>
-                                    <text x={114} y={23} fill="#a1a1aa" fontFamily="ui-monospace, monospace" fontWeight="bold" fontSize="8" textAnchor="end">23</text>
+                                    <text x={0} y={23} fill="#36606F" fontFamily="ui-monospace, monospace" fontSize="6" opacity="0.85">7</text>
+                                    <text x={114} y={23} fill="#36606F" fontFamily="ui-monospace, monospace" fontSize="6" textAnchor="end" opacity="0.85">23</text>
                                 </svg>
                                 {selectedChartHour !== null && (() => {
                                     const idx = selectedChartHour - BUSINESS_HOURS.start;
