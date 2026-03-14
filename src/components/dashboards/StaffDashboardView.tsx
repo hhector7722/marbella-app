@@ -18,6 +18,7 @@ import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { differenceInMinutes, startOfWeek, addDays, format, isSameDay, parseISO } from 'date-fns';
@@ -114,11 +115,14 @@ export default function StaffDashboardView() {
 
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
     const [operationalBox, setOperationalBox] = useState<any>(null);
+    const [allBoxes, setAllBoxes] = useState<any[]>([]);
     const [isCashOptionsModalOpen, setIsCashOptionsModalOpen] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
+    const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
+    const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
 
     useEffect(() => { initialize(); }, []);
 
@@ -273,6 +277,7 @@ export default function StaffDashboardView() {
             if (boxError) console.error("Initialize Boxes Error:", boxError);
 
             if (allBoxes && allBoxes.length > 0) {
+                setAllBoxes(allBoxes);
                 const cBox = allBoxes.find(b => b.type === 'change') || allBoxes[0];
                 const oBox = allBoxes.find(b => b.type === 'operational') || allBoxes[0];
                 setChangeBox(cBox);
@@ -362,6 +367,82 @@ export default function StaffDashboardView() {
         } catch (error) {
             console.error(error);
             toast.error("Error al registrar movimiento");
+        }
+    };
+
+    const buildPaymentSources = (): PaymentSourceOption[] => {
+        const list: PaymentSourceOption[] = [];
+        const op = allBoxes.find(b => b.type === 'operational');
+        const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        if (op) list.push({ id: op.id, name: 'Caja inicial', hasInventory: true });
+        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, hasInventory: true }));
+        list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
+        list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+        return list;
+    };
+
+    const openPurchaseMultiSourceModal = async () => {
+        const op = allBoxes.find((b: any) => b.type === 'operational');
+        const changeBoxes = allBoxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const boxesToLoad = [op, ...changeBoxes].filter(Boolean);
+        const inv: Record<string, Record<number, number>> = {};
+        for (const box of boxesToLoad) {
+            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const map: Record<number, number> = {};
+            data?.forEach((d: any) => { map[Number(d.denomination)] = d.quantity; });
+            inv[box.id] = map;
+        }
+        setPurchaseInventoriesByBoxId(inv);
+        setShowPurchaseMultiSourceModal(true);
+    };
+
+    const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
+        try {
+            const baseNotes = payload.notes || 'Compra';
+            const tpvParts = payload.sources
+                .filter(s => s.sourceId === 'tpv1' || s.sourceId === 'tpv2')
+                .filter(s => s.amount > 0.005)
+                .map(s => `${s.sourceId === 'tpv1' ? 'TPV 1' : 'TPV 2'}: ${s.amount.toFixed(2)}€`);
+            const notesWithTpv = tpvParts.length > 0 ? `${baseNotes} | ${tpvParts.join(', ')}` : baseNotes;
+            const customDate = payload.customDate;
+
+            for (const entry of payload.sources) {
+                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
+                if (entry.amount < 0.005) continue;
+                const breakdownForDb: Record<string, number> = {};
+                Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
+                const row: any = {
+                    box_id: entry.sourceId,
+                    type: 'OUT',
+                    amount: entry.amount,
+                    breakdown: breakdownForDb,
+                    notes: notesWithTpv
+                };
+                if (customDate) row.created_at = customDate;
+                await supabase.from('treasury_log').insert(row);
+            }
+
+            if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
+                const changeBreakdownForDb: Record<string, number> = {};
+                Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
+                const inRow: any = {
+                    box_id: payload.changeDestinationBoxId,
+                    type: 'IN',
+                    amount: payload.changeAmount,
+                    breakdown: changeBreakdownForDb,
+                    notes: 'Cambio (compra)'
+                };
+                if (customDate) inRow.created_at = customDate;
+                await supabase.from('treasury_log').insert(inRow);
+            }
+
+            setShowPurchaseMultiSourceModal(false);
+            setPurchaseInventoriesByBoxId({});
+            initialize();
+            toast.success('Compra registrada');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al registrar la compra');
         }
     };
 
@@ -973,12 +1054,13 @@ export default function StaffDashboardView() {
 
                                 <button
                                     onClick={() => {
-                                        if (!operationalBox) {
-                                            toast.error('Caja operacional no configurada');
+                                        const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change');
+                                        if (cashBoxes.length === 0) {
+                                            toast.error('No hay cajas configuradas');
                                             return;
                                         }
                                         setIsCashOptionsModalOpen(false);
-                                        openTreasuryModal(operationalBox, 'out');
+                                        openPurchaseMultiSourceModal();
                                     }}
                                     className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
                                 >
@@ -996,9 +1078,22 @@ export default function StaffDashboardView() {
                 )
             }
 
-            {/* MODAL: Salida (Compra) de Caja */}
+            {showPurchaseMultiSourceModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
+                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                        <PurchaseMultiSourceForm
+                            paymentSources={buildPaymentSources()}
+                            inventoriesByBoxId={purchaseInventoriesByBoxId}
+                            onSubmit={handlePurchaseMultiSourceSubmit}
+                            onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Legacy single-box compra modal (mantener por si se abre Salida desde otra ruta) */}
             {
-                cashModalMode === 'out' && (
+                cashModalMode === 'out' && !showPurchaseMultiSourceModal && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
                         <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
                             <CashDenominationForm
@@ -1046,13 +1141,13 @@ export default function StaffDashboardView() {
 
                             <button
                                 onClick={() => {
-                                    if (!operationalBox) {
-                                        toast.error('Caja operacional no configurada');
+                                    const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change');
+                                    if (cashBoxes.length === 0) {
+                                        toast.error('No hay cajas configuradas');
                                         return;
                                     }
                                     setIsCashOptionsModalOpen(false);
-                                    setCashModalMode('out');
-                                    setSelectedBox(operationalBox);
+                                    openPurchaseMultiSourceModal();
                                 }}
                                 className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
                             >
@@ -1069,18 +1164,14 @@ export default function StaffDashboardView() {
                 </div>
             )}
 
-            {cashModalMode === 'out' && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
+            {showPurchaseMultiSourceModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
                     <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-                        <CashDenominationForm
-                            key={'out' + (selectedBox?.id || '')}
-                            type={'out'}
-                            boxName={selectedBox?.name || 'Caja Inicial'}
-                            initialCounts={{}}
-                            availableStock={boxInventoryMap}
-                            onCancel={() => setCashModalMode('none')}
-                            onSubmit={handleCashTransaction}
-                            forcePurchaseMode={true}
+                        <PurchaseMultiSourceForm
+                            paymentSources={buildPaymentSources()}
+                            inventoriesByBoxId={purchaseInventoriesByBoxId}
+                            onSubmit={handlePurchaseMultiSourceSubmit}
+                            onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
                         />
                     </div>
                 </div>

@@ -35,6 +35,7 @@ import { getDashboardData } from '@/app/actions/get-dashboard-data';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
+import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 
 // Sub-components
 const StaffOvertimeRow = memo(({
@@ -182,6 +183,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
+    const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
+    const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
     const [newWorkerSaving, setNewWorkerSaving] = useState(false);
@@ -481,6 +484,82 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             setSelectedBox(null);
             fetchData();
         } catch (error) { console.error(error); alert("Error"); }
+    };
+
+    const buildPaymentSources = (): PaymentSourceOption[] => {
+        const list: PaymentSourceOption[] = [];
+        const op = boxes.find((b: any) => b.type === 'operational');
+        const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        if (op) list.push({ id: op.id, name: 'Caja inicial', hasInventory: true });
+        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, hasInventory: true }));
+        list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
+        list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+        return list;
+    };
+
+    const openPurchaseMultiSourceModal = async () => {
+        const op = boxes.find((b: any) => b.type === 'operational');
+        const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const boxesToLoad = [op, ...changeBoxes].filter(Boolean);
+        const inv: Record<string, Record<number, number>> = {};
+        for (const box of boxesToLoad) {
+            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const map: Record<number, number> = {};
+            data?.forEach((d: any) => { map[Number(d.denomination)] = d.quantity; });
+            inv[box.id] = map;
+        }
+        setPurchaseInventoriesByBoxId(inv);
+        setShowPurchaseMultiSourceModal(true);
+    };
+
+    const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
+        try {
+            const baseNotes = payload.notes || 'Compra';
+            const tpvParts = payload.sources
+                .filter(s => s.sourceId === 'tpv1' || s.sourceId === 'tpv2')
+                .filter(s => s.amount > 0.005)
+                .map(s => `${s.sourceId === 'tpv1' ? 'TPV 1' : 'TPV 2'}: ${s.amount.toFixed(2)}€`);
+            const notesWithTpv = tpvParts.length > 0 ? `${baseNotes} | ${tpvParts.join(', ')}` : baseNotes;
+            const customDate = payload.customDate;
+
+            for (const entry of payload.sources) {
+                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
+                if (entry.amount < 0.005) continue;
+                const breakdownForDb: Record<string, number> = {};
+                Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
+                const row: any = {
+                    box_id: entry.sourceId,
+                    type: 'OUT',
+                    amount: entry.amount,
+                    breakdown: breakdownForDb,
+                    notes: notesWithTpv
+                };
+                if (customDate) row.created_at = customDate;
+                await supabase.from('treasury_log').insert(row);
+            }
+
+            if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
+                const changeBreakdownForDb: Record<string, number> = {};
+                Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
+                const inRow: any = {
+                    box_id: payload.changeDestinationBoxId,
+                    type: 'IN',
+                    amount: payload.changeAmount,
+                    breakdown: changeBreakdownForDb,
+                    notes: 'Cambio (compra)'
+                };
+                if (customDate) inRow.created_at = customDate;
+                await supabase.from('treasury_log').insert(inRow);
+            }
+
+            setShowPurchaseMultiSourceModal(false);
+            setPurchaseInventoriesByBoxId({});
+            fetchData();
+            toast.success('Compra registrada');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al registrar la compra');
+        }
     };
 
     const handleRecalculate = async () => {
@@ -858,8 +937,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         </div>
                                         <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
                                     </button>
-                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
+                                    <button onClick={() => openPurchaseMultiSourceModal()} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
                                         <div className="w-6 h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                                            <ShoppingCart size={12} className="text-white" strokeWidth={2.5} />
+                                        </div>
+                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Compra</span>
+                                    </button>
+                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
+                                        <div className="w-6 h-6 flex items-center justify-center bg-orange-400 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                             <RefreshCw size={12} className="text-white" strokeWidth={2.5} />
                                         </div>
                                         <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
@@ -1151,6 +1236,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         />
                     )}
                 </>
+            )}
+
+            {showPurchaseMultiSourceModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
+                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                        <PurchaseMultiSourceForm
+                            paymentSources={buildPaymentSources()}
+                            inventoriesByBoxId={purchaseInventoriesByBoxId}
+                            onSubmit={handlePurchaseMultiSourceSubmit}
+                            onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                        />
+                    </div>
+                </div>
             )}
 
             <StaffSelectionModal
