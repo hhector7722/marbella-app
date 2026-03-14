@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Minus, Plus } from 'lucide-react';
+import { X, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -202,6 +202,11 @@ export const CashChangeModal = ({
 
     const handleGuardarStep2 = async () => {
         if (!boxA || !boxB || totalStep2 < 0.005 || hasStockIssueStep2) return;
+        const sameTotal = Math.abs(totalStep1 - totalStep2) < 0.005;
+        if (!sameTotal) {
+            toast.error('El total del paso 2 debe coincidir con el total del paso 1 para poder guardar.');
+            return;
+        }
         try {
             await persistTransfer(boxB, boxA, step2Counts, `De ${boxB.name} a ${boxA.name}`);
             toast.success('Cambio entre cajas guardado');
@@ -391,17 +396,16 @@ export const CashChangeModal = ({
                 <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 px-4 py-3">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio entre cajas</h2>
+                            <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
                             <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
                                 <X size={20} strokeWidth={3} />
                             </button>
                         </div>
-                        <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mt-1">Elige caja A y caja B (distintas)</p>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4">
+                        <p className="text-zinc-600 text-[11px] font-bold text-center mb-4">Escoge dos cajas para el intercambio</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Caja A</span>
                                 {boxOptions.map((opt) => (
                                     <button
                                         key={opt.id}
@@ -419,7 +423,6 @@ export const CashChangeModal = ({
                                 ))}
                             </div>
                             <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Caja B</span>
                                 {boxOptions.map((opt) => (
                                     <button
                                         key={opt.id}
@@ -483,20 +486,16 @@ export const CashChangeModal = ({
                                 <X size={20} strokeWidth={3} />
                             </button>
                         </div>
-                        {/* Cabeceras: Caja A | De A a B | Caja B (nombres reales) */}
+                        {/* Cabeceras: nombre izquierda | Dirección (flecha) | nombre derecha */}
                         <div className="grid grid-cols-[1fr_80px_1fr] gap-1 items-center mb-2">
                             <div className="text-center">
-                                <span className="text-[9px] font-black text-rose-300/80 uppercase tracking-widest block">Sale</span>
                                 <span className="text-[10px] font-bold text-white truncate block" title={leftHeaderName}>{leftHeaderName}</span>
                             </div>
-                            <div className="text-center">
+                            <div className="text-center flex flex-col items-center justify-center">
                                 <span className="text-[8px] font-black text-white/70 uppercase tracking-widest block">Dirección</span>
-                                <span className="text-[9px] font-bold text-white">
-                                    {isStep1 ? 'De A a B' : 'De B a A'}
-                                </span>
+                                {isStep1 ? <ArrowRight size={20} className="text-white" strokeWidth={3} /> : <ArrowLeft size={20} className="text-white" strokeWidth={3} />}
                             </div>
                             <div className="text-center">
-                                <span className="text-[9px] font-black text-emerald-300/80 uppercase tracking-widest block">Entra</span>
                                 <span className="text-[10px] font-bold text-white truncate block" title={rightHeaderName}>{rightHeaderName}</span>
                             </div>
                         </div>
@@ -511,7 +510,11 @@ export const CashChangeModal = ({
                     <div className="flex flex-col">
                         {ALL_DENOMS.map((denom) => (
                             <div key={denom} className="grid grid-cols-[1fr_80px_1fr] items-stretch border-b border-zinc-50 relative min-h-[72px]">
-                                <div className="flex justify-center items-center py-4 bg-rose-500/[0.06] border-r border-zinc-100/50">
+                                {/* Paso 1: izq rose, der emerald. Paso 2: misma posición columnas pero colores intercambiados (izq emerald, der rose) */}
+                                <div className={cn(
+                                    "flex justify-center items-center py-4 border-r border-zinc-100/50",
+                                    isStep1 ? "bg-rose-500/[0.06]" : "bg-emerald-500/[0.06]"
+                                )}>
                                     <div className="relative">
                                         <TransferControl
                                             denom={denom}
@@ -529,8 +532,14 @@ export const CashChangeModal = ({
                                     <span className="text-[11px] font-black text-zinc-800 leading-none">{denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}</span>
                                     {fromBox?.hasInventory && stock[denom] > 0 && <span className="text-[8px] font-bold text-zinc-400 uppercase mt-1">x{stock[denom]}</span>}
                                 </div>
-                                <div className="flex justify-center items-center py-4 bg-emerald-500/[0.06] border-l border-zinc-100/50">
-                                    <div className="text-center font-black text-[11px] tabular-nums text-emerald-700">
+                                <div className={cn(
+                                    "flex justify-center items-center py-4 border-l border-zinc-100/50",
+                                    isStep1 ? "bg-emerald-500/[0.06]" : "bg-rose-500/[0.06]"
+                                )}>
+                                    <div className={cn(
+                                        "text-center font-black text-[11px] tabular-nums",
+                                        isStep1 ? "text-emerald-700" : "text-rose-700"
+                                    )}>
                                         {counts[denom] || 0}
                                     </div>
                                 </div>
@@ -544,6 +553,13 @@ export const CashChangeModal = ({
                         {isStep1 ? (
                             <>
                                 <button
+                                    onClick={onClose}
+                                    className="flex-1 h-10 min-h-[48px] bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px] shrink-0"
+                                >
+                                    <X size={14} strokeWidth={3} />
+                                    Salir
+                                </button>
+                                <button
                                     onClick={handleSiguiente}
                                     disabled={totalStep1 < 0.005 || hasStockIssueStep1}
                                     className={cn(
@@ -554,13 +570,6 @@ export const CashChangeModal = ({
                                     )}
                                 >
                                     Siguiente
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="flex-1 h-10 min-h-[48px] bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px]"
-                                >
-                                    <X size={14} strokeWidth={3} />
-                                    Salir
                                 </button>
                             </>
                         ) : (
