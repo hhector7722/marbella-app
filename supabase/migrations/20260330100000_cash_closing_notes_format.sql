@@ -1,4 +1,4 @@
--- Formato de notas en /movements para cierres de caja: "Cierre 'd-mm-aa'" en lugar de "Cierre TPV: aaaa-mm-dd"
+-- Formato de notas en /movements para cierres de caja: "Cierre dd-mm-aa" (sin comillas)
 
 CREATE OR REPLACE FUNCTION public.fn_on_cash_closing_confirmed()
 RETURNS TRIGGER
@@ -10,7 +10,7 @@ DECLARE
     v_op_box_id UUID;
     v_notes TEXT;
 BEGIN
-    v_notes := 'Cierre ''' || ltrim(to_char(NEW.closing_date, 'DD'), '0') || '-' || to_char(NEW.closing_date, 'MM-YY') || '''';
+    v_notes := 'Cierre ' || ltrim(to_char(NEW.closing_date, 'DD'), '0') || '-' || to_char(NEW.closing_date, 'MM-YY');
 
     SELECT id INTO v_op_box_id FROM cash_boxes WHERE type = 'operational' LIMIT 1;
 
@@ -46,7 +46,7 @@ AS $$
 DECLARE
     v_notes TEXT;
 BEGIN
-    v_notes := 'Cierre ''' || ltrim(to_char(NEW.closing_date, 'DD'), '0') || '-' || to_char(NEW.closing_date, 'MM-YY') || '''';
+    v_notes := 'Cierre ' || ltrim(to_char(NEW.closing_date, 'DD'), '0') || '-' || to_char(NEW.closing_date, 'MM-YY');
 
     IF TG_OP = 'INSERT' THEN
         IF NEW.cash_withdrawn > 0 THEN
