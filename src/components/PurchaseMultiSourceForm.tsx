@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save, ShoppingCart, Plus, Minus } from 'lucide-react';
+import { X, Save, Plus, Minus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -119,33 +119,20 @@ export function PurchaseMultiSourceForm({
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl">
-            <div className="bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-orange-500">
-                        <ShoppingCart size={20} className="text-white" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
-                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">Varias cajas</p>
-                    </div>
-                </div>
-                <div className="text-right">
-                    <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black">Total a pagar</span>
-                    <span className="text-xl font-black tabular-nums">{priceNum > 0.005 ? priceNum.toFixed(2) : ' '} €</span>
-                </div>
+            <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between text-white shrink-0 relative">
+                <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
+                <input
+                    type="datetime-local"
+                    value={selectedDate}
+                    onChange={e => setSelectedDate(e.target.value)}
+                    className="absolute left-1/2 -translate-x-1/2 bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark]"
+                />
+                <div className="w-[80px] shrink-0" aria-hidden />
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm">
-                        <input
-                            type="datetime-local"
-                            value={selectedDate}
-                            onChange={e => setSelectedDate(e.target.value)}
-                            className="w-full bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center"
-                        />
-                    </div>
-                    <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm min-w-0">
                         <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
                         <input
                             type="text"
@@ -155,26 +142,25 @@ export function PurchaseMultiSourceForm({
                             className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
                         />
                     </div>
-                </div>
-
-                <div className="flex flex-col p-1.5 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm">
-                    <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 text-center">Precio (€)</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        value={price}
-                        onChange={e => {
-                            const val = e.target.value;
-                            setPrice(val === '' ? '' : parseFloat(val));
-                        }}
-                        placeholder="0.00"
-                        className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none text-center"
-                    />
+                    <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm w-[100px] shrink-0">
+                        <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio (€)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            value={price}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setPrice(val === '' ? '' : parseFloat(val));
+                            }}
+                            placeholder="0.00"
+                            className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none text-center"
+                        />
+                    </div>
                 </div>
 
                 <div>
                     <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Origen de pago</h4>
-                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5">
+                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 items-stretch">
                         {paymentSources.map(src => {
                             const amount = getDisplayAmount(src);
                             const isSelected = selectedSourceId === src.id;
@@ -199,8 +185,13 @@ export function PurchaseMultiSourceForm({
                                 </button>
                             );
                         })}
+                        <div className="min-h-[40px] px-2 py-1.5 rounded-lg border-2 border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-0 shrink-0 min-w-[70px]">
+                            <span className="text-[7px] font-black text-zinc-500 uppercase">Total</span>
+                            <span className="text-[10px] font-black tabular-nums text-zinc-800">
+                                {totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €
+                            </span>
+                        </div>
                     </div>
-                    <p className="text-[9px] text-zinc-500 mt-1">Total: <span className="font-black">{totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €</span></p>
                 </div>
 
                 {selectedSource && (
