@@ -147,11 +147,12 @@ export default function MovementsPage() {
 
             const status = Array.isArray(statusRows) ? statusRows[0] : statusRows;
             if (status?.box_id != null) {
-                setBoxData({ id: status.box_id, current_balance: status.theoretical_balance, name: status.box_name ?? '' });
+                const physical = Number(status.physical_balance ?? 0);
+                setBoxData({ id: status.box_id, current_balance: physical, name: status.box_name ?? '' });
 
                 setCurrentBoxStatus({
                     theoreticalBalance: Number(status.theoretical_balance ?? 0),
-                    physicalBalance: Number(status.theoretical_balance ?? 0),
+                    physicalBalance: physical,
                     difference: Number(status.difference ?? 0),
                     loading: false
                 });

@@ -44,13 +44,15 @@ export async function getDashboardData() {
         salesChartDataRaw,
         { data: lastClose },
         { data: allBoxes },
-        { data: allProfiles }
+        { data: allProfiles },
+        { data: opBoxStatusRows }
     ] = await Promise.all([
         supabase.rpc('get_daily_sales_stats', { target_date: todayStr }),
         chartPromise,
         supabase.from('cash_closings').select('*').order('closed_at', { ascending: false }).limit(1).single(),
         supabase.from('cash_boxes').select('*').order('name'),
-        supabase.from('profiles').select('*')
+        supabase.from('profiles').select('*'),
+        supabase.rpc('get_operational_box_status')
     ]);
     const salesChartData = Array.isArray(salesChartDataRaw) ? salesChartDataRaw : Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
 
@@ -87,8 +89,15 @@ export async function getDashboardData() {
     let actualBalance = 0;
     let difference = 0;
 
+    // Una sola fuente: RPC get_operational_box_status (igual que /dashboard/movements)
+    const opStatus = Array.isArray(opBoxStatusRows) ? opBoxStatusRows[0] : opBoxStatusRows;
+    if (opStatus?.box_id != null) {
+        theoreticalBalance = Number(opStatus.theoretical_balance ?? 0);
+        actualBalance = Number(opStatus.physical_balance ?? 0);
+        difference = Number(opStatus.difference ?? 0);
+    }
+
     if (allBoxes) {
-        // Orden: Caja Operativa primero, luego Cambio 1 y Cambio 2 por nombre (NUNCA invertir entre cajas cambio)
         const sorted = [...allBoxes].sort((a, b) => {
             if (a.type === 'operational' && b.type !== 'operational') return -1;
             if (a.type !== 'operational' && b.type === 'operational') return 1;
@@ -103,12 +112,7 @@ export async function getDashboardData() {
                 .neq('type', 'ADJUSTMENT')
                 .order('created_at', { ascending: false })
                 .limit(3);
-
             boxMovements = moves || [];
-
-            actualBalance = opBox.current_balance || 0;
-            difference = opBox.difference || 0;
-            theoreticalBalance = actualBalance - difference;
         }
     }
 
