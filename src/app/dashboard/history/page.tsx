@@ -208,6 +208,7 @@ export default function HistoryPage() {
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
+    const [viewMode, setViewMode] = useState<'calendar' | 'table'>('calendar');
 
     const calendarDays = useMemo(() => {
         const base = filterMode === 'range' && rangeStart ? new Date(rangeStart) : new Date(selectedDate);
@@ -427,40 +428,43 @@ export default function HistoryPage() {
         <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20">
             <div className="max-w-5xl mx-auto">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-                    <div className="bg-[#36606F] p-2 md:p-4 space-y-3 relative">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 md:gap-4">
-                                <button onClick={() => router.back()} className="flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95 md:w-10 md:h-10 md:bg-white/10 md:rounded-full md:border md:border-white/10">
-                                    <ArrowLeft className="w-5 md:w-5 h-5 md:h-5" strokeWidth={3} />
+                    <div className="bg-[#36606F] p-1.5 md:p-3 relative">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={() => router.back()} className="flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95 w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/10 border border-white/10">
+                                    <ArrowLeft className="w-5 h-5" strokeWidth={3} />
                                 </button>
-                                <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
+                                <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0">
+                                <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <button onClick={() => setShowMonthPicker(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[100px] sm:max-w-[140px]">
+                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                        : 'MES'}
+                                </button>
+                                <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
                                 <button
                                     onClick={() => setShowClosingModal(true)}
-                                    className="flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
+                                    className="flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
                                 >
-                                    <div className="bg-emerald-500 text-white p-1 md:p-1.5 rounded-full shadow-lg group-hover:scale-110 transition-transform">
-                                        <Plus size={12} className="md:w-3.5 md:h-3.5" strokeWidth={4} />
+                                    <div className="bg-emerald-500 text-white p-1 rounded-full shadow-lg group-hover:scale-110 transition-transform">
+                                        <Plus size={10} className="md:w-3 md:h-3" strokeWidth={4} />
                                     </div>
-                                    <span className="text-[10px] md:text-xs font-black text-white uppercase tracking-widest hidden sm:inline">Cierre</span>
+                                    <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest hidden sm:inline">Cierre</span>
                                 </button>
-                            </div>
-                        </div>
-
-                        {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="flex items-center justify-between gap-1 pb-2 relative min-h-[40px]">
-                            {/* FILTROS SECUNDARIOS REDUCIDOS (A la Izquierda) */}
-                            <div className="flex items-center gap-1.5 shrink-0 z-10 w-[120px] md:w-[150px]">
                                 <button
-                                    onClick={() => {
-                                        setRangeStart(null);
-                                        setRangeEnd(null);
-                                        setShowCalendar('range');
-                                    }}
+                                    onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
                                     className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
+                                        "px-2 py-1 md:py-1.5 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
                                         filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                             ? "bg-white border-white text-zinc-800 shadow-sm"
                                             : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
@@ -471,39 +475,11 @@ export default function HistoryPage() {
                                 <button
                                     onClick={() => setShowCalendar('single')}
                                     className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
+                                        "px-2 py-1 md:py-1.5 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
                                         filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
                                     )}
                                 >
                                     FECHA
-                                </button>
-                            </div>
-
-                            {/* NAVEGADOR MENSUAL PRINCIPAL (Centrado Absoluto) */}
-                            <div className="absolute left-0 right-0 flex items-center justify-center pointer-events-none">
-                                <div className="flex items-center gap-0.5 md:gap-1 pointer-events-auto">
-                                    <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
-                                        <ChevronLeft size={18} />
-                                    </button>
-                                    <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[10px] sm:text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
-                                        {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                            : 'MES'}
-                                    </button>
-                                    <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
-                                        <ChevronRight size={18} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* BOTÓN DE VENTAS (A la Derecha) */}
-                            <div className="flex items-center justify-end shrink-0 z-10 w-[120px] md:w-[150px]">
-                                <button
-                                    onClick={() => router.push('/dashboard/ventas')}
-                                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all outline-none bg-white text-[#36606F] hover:bg-white/90 shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
-                                >
-                                    <TrendingUp size={12} strokeWidth={3} className="hidden sm:block" />
-                                    VENTAS
                                 </button>
                             </div>
                         </div>
@@ -525,7 +501,92 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
+                        <div className="px-4 py-2 flex items-center gap-2 border-b border-zinc-100">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Vista</span>
+                            <div className="flex rounded-xl border border-zinc-200 overflow-hidden bg-zinc-50 p-0.5">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shrink-0 min-h-[32px]",
+                                        viewMode === 'table' ? "bg-white text-[#36606F] shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+                                    )}
+                                >
+                                    Tabla
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('calendar')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shrink-0 min-h-[32px]",
+                                        viewMode === 'calendar' ? "bg-white text-[#36606F] shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+                                    )}
+                                >
+                                    Calendario
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
+                            {viewMode === 'table' ? (
+                                <div className="overflow-x-auto no-scrollbar">
+                                    {loading ? (
+                                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                            <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                        </div>
+                                    ) : closings.length === 0 ? (
+                                        <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                            <Calendar size={32} />
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                        </div>
+                                    ) : (
+                                        <table className="w-full border-collapse text-left">
+                                            <thead>
+                                                <tr className="border-b-2 border-zinc-200 bg-zinc-50/80">
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap">Fecha</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Ventas</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Venta Neta</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Tickets</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Ticket Medio</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Efectivo</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Tarjeta</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Pendiente</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Deuda Rec.</th>
+                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Diferencia</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[...closings]
+                                                    .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
+                                                    .map((c) => {
+                                                        const d = new Date(c.closed_at);
+                                                        const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
+                                                        return (
+                                                            <tr
+                                                                key={c.id}
+                                                                onClick={() => setSelectedClosing(c)}
+                                                                className="border-b border-zinc-100 hover:bg-zinc-50/80 cursor-pointer transition-colors"
+                                                            >
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-bold text-zinc-900 whitespace-nowrap">
+                                                                    {format(d, 'dd/MM/yyyy', { locale: es })}
+                                                                </td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.tpv_sales ?? 0, 'tpv_sales')}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-emerald-600 text-right tabular-nums">{formatValue(c.net_sales ?? 0, 'net_sales')}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.tickets_count ?? 0, 'tickets_count')}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-[#36606F] text-right tabular-nums">{avgTicket === 0 ? ' ' : avgTicket.toFixed(1) + '€'}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.cash_counted ?? 0, 'tpv_sales')}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.sales_card ?? 0, 'tpv_sales')}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.sales_pending ?? 0, 'tpv_sales')}</td>
+                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.debt_recovered ?? 0, 'tpv_sales')}</td>
+                                                                <td className={cn("py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-right tabular-nums", (c.difference ?? 0) === 0 ? "text-emerald-600" : "text-rose-600")}>
+                                                                    {(c.difference ?? 0) === 0 ? ' ' : (c.difference ?? 0).toFixed(2) + '€'}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            ) : (
                             <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
                                 <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
                                     <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
@@ -647,6 +708,7 @@ export default function HistoryPage() {
                                     </div>
                                 )}
                             </div>
+                            )}
                         </div>
                     </div>
                 </div>
