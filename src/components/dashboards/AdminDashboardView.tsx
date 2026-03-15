@@ -802,11 +802,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             (_, i) => chartData[BUSINESS_HOURS.start + i]?.total ?? 0
                         ).reduce((a, b) => a + Number(b), 0);
                         return (
-                            <div className="w-full pb-2 pt-0 -mt-1 shrink-0 flex items-end gap-0 px-3">
-                                <span className="shrink-0 w-5 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none text-left">7</span>
+                            <div className="w-full pb-1 pt-0 -mt-1 shrink-0">
                                 <div
                                     ref={chartContainerRef}
-                                    className="flex-1 min-w-0 relative"
+                                    className="w-full relative"
                                     onClick={(e) => handleChartTap(e.clientX)}
                                     onTouchEnd={(e) => {
                                         if (e.changedTouches.length) {
@@ -827,7 +826,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         />
                                     </svg>
                                 </div>
-                                <span className="shrink-0 w-5 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none text-right">23</span>
+                                <div className="flex justify-between px-0 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
+                                    <span>7</span>
+                                    <span>23</span>
+                                </div>
                                 {selectedChartHour !== null && (() => {
                                     const idx = selectedChartHour - BUSINESS_HOURS.start;
                                     const xPct = (idx / (numPoints - 1 || 1)) * 100;
