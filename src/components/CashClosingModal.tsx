@@ -253,18 +253,19 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[150] flex items-start justify-center pt-0 p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-4xl max-h-[100vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mt-0 rounded-b-2xl" onClick={e => e.stopPropagation()} style={{ boxShadow: 'none', border: 'none' }}>
 
-                {/* Header (Detail View Style) */}
+                {/* Header: fecha sin tarjeta/marco, flota sobre cabecera */}
                 <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
                     <div className="flex flex-col">
-                        <div
-                            className="flex items-center gap-2 bg-blue-500 px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer hover:bg-blue-600 transition-all shadow-sm"
+                        <button
+                            type="button"
+                            className="flex items-center gap-2 cursor-pointer text-left outline-none border-0 bg-transparent p-0 hover:opacity-90 transition-opacity min-h-[48px] min-w-[48px]"
                             onClick={() => datePickerRef.current?.showPicker()}
                         >
-                            <Calendar size={14} className="text-white/60" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white">
+                            <Calendar size={16} className="text-white/80" aria-hidden />
+                            <span className="text-sm font-black uppercase tracking-wide text-white">
                                 {format(new Date(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
                             </span>
                             <input
@@ -274,7 +275,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 value={selectedDateTime}
                                 onChange={(e) => setSelectedDateTime(e.target.value)}
                             />
-                        </div>
+                        </button>
                         <div className="flex items-center gap-4 mt-1">
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'tpv_data' ? 'text-white' : 'text-white/40')}>1. Datos</div>
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'count' ? 'text-white' : 'text-white/40')}>2. Arqueo</div>
