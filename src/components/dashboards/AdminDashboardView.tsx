@@ -19,7 +19,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
-import { getISOWeek, format, addDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
+import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours, getHourFromTicketTime } from '@/lib/utils';
@@ -651,34 +651,81 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-[#36606F] px-4 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
-                        <button
-                            onClick={() => {
-                                const [y, m, d] = salesViewDate.split('-').map(Number);
-                                setSalesCalendarBaseDate(new Date(y, (m || 1) - 1, d || 1));
-                                setIsSalesDateModalOpen(true);
-                            }}
-                            className="shrink-0 min-h-[48px] flex flex-col items-center justify-center -m-2 p-2 rounded-xl hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer"
-                        >
-                            {isToday(new Date(salesViewDate)) ? (
-                                <LiveClock />
-                            ) : (
-                                <>
-                                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90">
-                                        {(() => {
-                                            const [y, m, d] = salesViewDate.split('-').map(Number);
-                                            return format(new Date(y, (m || 1) - 1, d || 1), "eee d MMM", { locale: es }).replace('.', '');
-                                        })()}
-                                    </span>
-                                    <span className="text-[8px] font-medium text-white/60">histórico</span>
-                                </>
+                    <div className="bg-[#36606F] px-2 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
+                        <Link
+                            href="/dashboard/ventas"
+                            className={cn(
+                                "min-h-[36px] md:min-h-[40px] flex items-center justify-center px-3 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest",
+                                "bg-[#407080] text-white hover:bg-[#467888] active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none"
                             )}
-                        </button>
+                        >
+                            Ventas
+                        </Link>
+                        <div className="flex-1 flex items-center justify-center min-w-0">
+                            <div className="inline-flex items-center gap-1 md:gap-1.5 rounded-lg">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const [y, m, d] = salesViewDate.split('-').map(Number);
+                                        const current = new Date(y, (m || 1) - 1, d || 1);
+                                        const prev = subDays(current, 1);
+                                        setSalesViewDate(format(prev, 'yyyy-MM-dd'));
+                                    }}
+                                    className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
+                                    aria-label="Día anterior"
+                                >
+                                    <ChevronLeft className="w-5 h-5 md:w-5 md:h-5 text-white" />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const [y, m, d] = salesViewDate.split('-').map(Number);
+                                        setSalesCalendarBaseDate(new Date(y, (m || 1) - 1, d || 1));
+                                        setIsSalesDateModalOpen(true);
+                                    }}
+                                    className="shrink-0 min-h-[48px] flex flex-col items-center justify-center py-1 px-2 rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer"
+                                >
+                                    {isToday(new Date(salesViewDate)) ? (
+                                        <LiveClock />
+                                    ) : (
+                                        <>
+                                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90 whitespace-nowrap">
+                                                {(() => {
+                                                    const [y, m, d] = salesViewDate.split('-').map(Number);
+                                                    return format(new Date(y, (m || 1) - 1, d || 1), "eee d MMM", { locale: es }).replace('.', '');
+                                                })()}
+                                            </span>
+                                            <span className="text-[8px] font-medium text-white/60">histórico</span>
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const [y, m, d] = salesViewDate.split('-').map(Number);
+                                        const current = new Date(y, (m || 1) - 1, d || 1);
+                                        const next = addDays(current, 1);
+                                        if (format(next, 'yyyy-MM-dd') <= format(new Date(), 'yyyy-MM-dd')) setSalesViewDate(format(next, 'yyyy-MM-dd'));
+                                    }}
+                                    className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation disabled:opacity-50 disabled:pointer-events-none"
+                                    aria-label="Día siguiente"
+                                    disabled={(() => {
+                                        const [y, m, d] = salesViewDate.split('-').map(Number);
+                                        const next = addDays(new Date(y, (m || 1) - 1, d || 1), 1);
+                                        return format(next, 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd');
+                                    })()}
+                                >
+                                    <ChevronRight className="w-5 h-5 md:w-5 md:h-5 text-white" />
+                                </button>
+                            </div>
+                        </div>
                         <Link
                             href="/dashboard/history"
-                            className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest shrink-0"
+                            className={cn(
+                                "min-h-[36px] md:min-h-[40px] flex items-center justify-center px-3 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest",
+                                "bg-[#407080] text-white hover:bg-[#467888] active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none"
+                            )}
                         >
-                            Ver más
+                            Cierres
                         </Link>
                     </div>
                     <div className={cn("p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 items-center shrink-0 transition-all duration-300", isSalesExpanded ? "pb-1" : "pb-0")}>
