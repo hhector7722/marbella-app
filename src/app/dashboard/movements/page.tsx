@@ -552,10 +552,10 @@ export default function MovementsPage() {
                                     <table className="w-full text-left font-sans">
                                         <thead className="bg-[#36606F] text-white">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[20%] md:w-[22%]">FECHA</th>
-                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[44%] md:w-[38%]">CONCEPTO</th>
+                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[20%] md:w-[22%] text-center">FECHA</th>
+                                                <th className="px-1 md:px-6 py-2 md:py-4 w-[44%] md:w-[38%] text-center">CONCEPTO</th>
                                                 <th className="px-0.5 md:px-6 py-2 md:py-4 text-center w-[18%] md:w-[20%]">IMPORTE</th>
-                                                <th className="px-1 md:px-8 py-2 md:py-4 text-right w-[18%] md:w-[20%]">SALDO</th>
+                                                <th className="px-1 md:px-8 py-2 md:py-4 text-center w-[18%] md:w-[20%]">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
