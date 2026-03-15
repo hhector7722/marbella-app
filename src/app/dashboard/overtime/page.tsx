@@ -136,10 +136,10 @@ export default function OvertimePage() {
 
     return (
         <>
-            <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
+            <div className="bg-[#5B8FB9] p-4 md:p-6 pb-24">
                 <div className="max-w-4xl mx-auto">
-                    {/* Vista detalle: contenedor grande con cabecera petróleo y dentro el widget */}
-                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-[85vh]">
+                    {/* Vista detalle: contenedor que se adapta al contenido (calendario + filas) */}
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col w-full">
                         {/* Cabecera petróleo (vista detalle) */}
                         <div className="bg-[#36606F] px-6 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
@@ -157,8 +157,8 @@ export default function OvertimePage() {
                             </button>
                         </div>
 
-                        {/* Cuerpo: widget grande (calendario + semanas) */}
-                        <div className="p-4 md:p-6 flex-1 flex flex-col min-h-0">
+                        {/* Cuerpo: calendario + filas de semanas (altura por contenido) */}
+                        <div className="p-4 md:p-6 flex flex-col shrink-0">
                             {/* Navegación mes (como widget) */}
                             <div className="flex items-center justify-center gap-2 mb-3 md:mb-4">
                                 <button
