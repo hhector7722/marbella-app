@@ -379,12 +379,12 @@ export default function VentasPage() {
                     </div>
 
                     {/* TOGGLE PRODUCTOS / TICKETS (cuerpo, debajo de resumen) */}
-                    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-3 md:py-4">
-                        <div className="flex rounded-xl overflow-hidden border-2 border-[#36606F] w-full max-w-xs mx-auto shadow-sm">
+                    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 flex justify-center">
+                        <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
                             <button
                                 onClick={() => setActiveTab('TICKETS')}
                                 className={cn(
-                                    "flex-1 min-h-[48px] flex items-center justify-center text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors outline-none",
+                                    "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
                                     activeTab === 'TICKETS'
                                         ? "bg-[#36606F] text-white"
                                         : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
@@ -395,7 +395,7 @@ export default function VentasPage() {
                             <button
                                 onClick={() => setActiveTab('PRODUCTOS')}
                                 className={cn(
-                                    "flex-1 min-h-[48px] flex items-center justify-center text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors outline-none",
+                                    "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
                                     activeTab === 'PRODUCTOS'
                                         ? "bg-[#36606F] text-white"
                                         : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
