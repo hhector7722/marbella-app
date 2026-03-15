@@ -483,7 +483,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             toast.info('No hay nadie con horario ese día para notificar');
             return;
         }
-        const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+        const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
         const loadingToast = toast.loading('Enviando notificaciones...');
         try {
             const result = await sendScheduleNotifications(dateFormatted, userShifts);
@@ -897,7 +897,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 toast.info('No hay nadie con horario ese día para notificar');
                                                 return;
                                             }
-                                            const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+                                            const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
                                             const loadToast = toast.loading('Enviando...');
                                             try {
                                                 const res = await sendScheduleNotifications(dateFormatted, userShifts);
