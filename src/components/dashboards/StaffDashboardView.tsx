@@ -29,6 +29,7 @@ import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -117,6 +118,7 @@ export default function StaffDashboardView() {
     const [operationalBox, setOperationalBox] = useState<any>(null);
     const [allBoxes, setAllBoxes] = useState<any[]>([]);
     const [isCashOptionsModalOpen, setIsCashOptionsModalOpen] = useState(false);
+    const [cashOptionsCalculatorOpen, setCashOptionsCalculatorOpen] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
@@ -1023,12 +1025,13 @@ export default function StaffDashboardView() {
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4" onClick={() => setIsCashOptionsModalOpen(false)}>
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
-                                <div>
-                                    <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
-                                    <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Selecciona una operación</p>
+                                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    <CalculatorHeaderButton isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
+                                    <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"><X size={20} strokeWidth={3} /></button>
                                 </div>
-                                <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"><X size={20} strokeWidth={3} /></button>
                             </div>
+                            <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
                             <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
                                 <button
                                     onClick={() => {
