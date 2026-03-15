@@ -87,10 +87,9 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     const results = await Promise.allSettled(
         subs.map(sub => {
             const shift = shiftByUser.get(sub.user_id);
-            const timeLine = shift ? `🟢 ${shift.start} - ${shift.end}` : '🟢 —';
-            const body = `📅 ${dateStr}\n${timeLine}`;
+            const body = shift ? `🕒 ${shift.start} - ${shift.end}` : '🕒 —';
             const payload = JSON.stringify({
-                title: '',
+                title: `📅 Horario ${dateStr}`,
                 body,
                 url: '/staff/dashboard/'
             });
@@ -126,7 +125,7 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     };
 }
 
-export async function sendClosingNotification(data: { totalSales: number, netSales: number, avgTicket: number }) {
+export async function sendClosingNotification(data: { dateStr: string; totalSales: number; netSales: number; avgTicket?: number }) {
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
         console.error('Push: VAPID keys not set.');
         return { success: false, error: 'Notificaciones push no configuradas (falta VAPID en el servidor)', sentCount: 0 };
@@ -164,7 +163,7 @@ export async function sendClosingNotification(data: { totalSales: number, netSal
     }
 
     const payload = JSON.stringify({
-        title: '📊 Cierre',
+        title: `🔒 Cierre ${data.dateStr}`,
         body: `Ventas: ${data.totalSales.toFixed(2)}€\nVenta Neta: ${data.netSales.toFixed(2)}€`,
         url: '/dashboard/history'
     });

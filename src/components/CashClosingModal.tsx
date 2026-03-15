@@ -232,7 +232,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
             // Enviar notificación a los managers
             const avgTicket = tpvData.ticketsCount > 0 ? (totalSalesGross / tpvData.ticketsCount) : 0;
+            const closingDateStr = format(chosenDate, "EEEE dd/MM", { locale: es });
             sendClosingNotification({
+                dateStr: closingDateStr,
                 totalSales: totalSalesGross,
                 netSales: netSalesCalculated,
                 avgTicket: avgTicket
