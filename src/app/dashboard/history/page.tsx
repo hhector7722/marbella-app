@@ -6,20 +6,15 @@ import {
     Calendar,
     CloudSun,
     Receipt,
-    ArrowLeft,
     ChevronLeft,
     ChevronRight,
     X,
-    Filter,
     TrendingUp,
-    TrendingDown,
     Pencil,
     Trash2,
     Save,
-    Search,
     ChevronRight as ChevronRightIcon,
     Banknote,
-    Plus,
     Minus,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -436,12 +431,7 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative">
                         <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 shrink-0">
-                                <button onClick={() => router.back()} className="flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95 w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/10 border border-white/10">
-                                    <ArrowLeft className="w-5 h-5" strokeWidth={3} />
-                                </button>
-                                <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-tight italic text-nowrap">Cierres</h1>
-                            </div>
+                            <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
 
                             <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0">
                                 <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
@@ -458,15 +448,6 @@ export default function HistoryPage() {
                             </div>
 
                             <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                    onClick={() => setShowClosingModal(true)}
-                                    className="flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-xl hover:bg-white/5 transition-all active:scale-95 group"
-                                >
-                                    <div className="bg-emerald-500 text-white p-1 rounded-full shadow-lg group-hover:scale-110 transition-transform">
-                                        <Plus size={10} className="md:w-3 md:h-3" strokeWidth={4} />
-                                    </div>
-                                    <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest hidden sm:inline">Cierre</span>
-                                </button>
                                 <button
                                     onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
                                     className={cn(
@@ -492,7 +473,7 @@ export default function HistoryPage() {
                     </div>
 
                     <div className="bg-white">
-                        <div className="pt-1 md:pt-1.5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -507,14 +488,13 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        <div className="px-4 py-2 flex items-center gap-2 border-b border-zinc-100">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Vista</span>
-                            <div className="flex rounded-xl border border-zinc-200 overflow-hidden bg-zinc-50 p-0.5">
+                        <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center">
+                            <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
                                 <button
                                     onClick={() => setViewMode('table')}
                                     className={cn(
-                                        "px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shrink-0 min-h-[32px]",
-                                        viewMode === 'table' ? "bg-white text-[#36606F] shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+                                        "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
+                                        viewMode === 'table' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
                                     )}
                                 >
                                     Tabla
@@ -522,8 +502,8 @@ export default function HistoryPage() {
                                 <button
                                     onClick={() => setViewMode('calendar')}
                                     className={cn(
-                                        "px-3 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shrink-0 min-h-[32px]",
-                                        viewMode === 'calendar' ? "bg-white text-[#36606F] shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+                                        "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
+                                        viewMode === 'calendar' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
                                     )}
                                 >
                                     Calendario
@@ -533,7 +513,7 @@ export default function HistoryPage() {
 
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             {viewMode === 'table' ? (
-                                <div className="overflow-x-auto no-scrollbar">
+                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto no-scrollbar">
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                                             <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -544,52 +524,58 @@ export default function HistoryPage() {
                                             <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                         </div>
                                     ) : (
-                                        <table className="w-full border-collapse text-left">
-                                            <thead>
-                                                <tr className="border-b-2 border-zinc-200 bg-zinc-50/80">
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap">Fecha</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Ventas</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Venta Neta</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Tickets</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Ticket Medio</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Efectivo</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Tarjeta</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Pendiente</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Deuda Rec.</th>
-                                                    <th className="text-[9px] font-black text-zinc-500 uppercase tracking-widest py-2 px-2 md:px-3 whitespace-nowrap text-right">Diferencia</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {[...closings]
-                                                    .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
-                                                    .map((c) => {
-                                                        const d = new Date(c.closed_at);
-                                                        const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
-                                                        return (
-                                                            <tr
-                                                                key={c.id}
-                                                                onClick={() => setSelectedClosing(c)}
-                                                                className="border-b border-zinc-100 hover:bg-zinc-50/80 cursor-pointer transition-colors"
-                                                            >
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-bold text-zinc-900 whitespace-nowrap">
-                                                                    {format(d, 'dd/MM/yyyy', { locale: es })}
-                                                                </td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.tpv_sales ?? 0, 'tpv_sales')}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-emerald-600 text-right tabular-nums">{formatValue(c.net_sales ?? 0, 'net_sales')}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.tickets_count ?? 0, 'tickets_count')}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-[#36606F] text-right tabular-nums">{avgTicket === 0 ? ' ' : avgTicket.toFixed(1) + '€'}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.cash_counted ?? 0, 'tpv_sales')}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.sales_card ?? 0, 'tpv_sales')}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.sales_pending ?? 0, 'tpv_sales')}</td>
-                                                                <td className="py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-zinc-900 text-right tabular-nums">{formatValue(c.debt_recovered ?? 0, 'tpv_sales')}</td>
-                                                                <td className={cn("py-2 px-2 md:px-3 text-[10px] md:text-xs font-black text-right tabular-nums", (c.difference ?? 0) === 0 ? "text-emerald-600" : "text-rose-600")}>
-                                                                    {(c.difference ?? 0) === 0 ? ' ' : (c.difference ?? 0).toFixed(2) + '€'}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                            </tbody>
-                                        </table>
+                                        <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
+                                                    <tr>
+                                                        <th className="py-4 px-3 md:px-6 whitespace-nowrap">Fecha</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Ventas</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Venta Neta</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Tickets</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Ticket Medio</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Efectivo</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Tarjeta</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Pendiente</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Deuda Rec.</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Diferencia</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                                    {[...closings]
+                                                        .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
+                                                        .map((c) => {
+                                                            const d = new Date(c.closed_at);
+                                                            const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
+                                                            const diff = c.difference ?? 0;
+                                                            return (
+                                                                <tr
+                                                                    key={c.id}
+                                                                    onClick={() => setSelectedClosing(c)}
+                                                                    className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100"
+                                                                >
+                                                                    <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
+                                                                        {format(d, 'dd/MM/yyyy', { locale: es })}
+                                                                    </td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.tpv_sales ?? 0, 'tpv_sales')}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm text-emerald-600">{formatValue(c.net_sales ?? 0, 'net_sales')}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.tickets_count ?? 0, 'tickets_count')}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm text-[#36606F]">{avgTicket === 0 ? ' ' : avgTicket.toFixed(1) + '€'}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.cash_counted ?? 0, 'tpv_sales')}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.sales_card ?? 0, 'tpv_sales')}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.sales_pending ?? 0, 'tpv_sales')}</td>
+                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.debt_recovered ?? 0, 'tpv_sales')}</td>
+                                                                    <td className={cn(
+                                                                        "py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm",
+                                                                        diff > 0 ? "text-emerald-600" : diff < 0 ? "text-rose-600" : "text-zinc-400"
+                                                                    )}>
+                                                                        {diff === 0 ? ' ' : diff.toFixed(2) + '€'}
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     )}
                                 </div>
                             ) : (
