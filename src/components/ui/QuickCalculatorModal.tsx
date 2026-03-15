@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { X, Copy, Calculator } from 'lucide-react';
+import { X, Copy, Calculator, Delete } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -23,8 +23,8 @@ interface QuickCalculatorModalProps {
     onClose: () => void;
 }
 
-const BTN_VALUES = [
-    ['C', '±', '%', '/'],
+const BTN_VALUES: (string | 'back')[][] = [
+    ['C', 'back', '±', '%', '/'],
     ['7', '8', '9', '*'],
     ['4', '5', '6', '-'],
     ['1', '2', '3', '+'],
@@ -39,6 +39,11 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         if (key === 'C') {
             setDisplay('');
             setResult(null);
+            return;
+        }
+        if (key === 'back') {
+            setResult(null);
+            setDisplay((prev) => prev.slice(0, -1));
             return;
         }
         if (key === '=') {
@@ -57,7 +62,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             if (val !== null) setDisplay(String(val / 100));
             return;
         }
-        if (key === '') return;
+        if (key === '' || key === 'back') return;
         setResult(null);
         setDisplay((prev) => prev + key);
     }, [display]);
@@ -103,15 +108,17 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 type="button"
                                 onClick={() => handlePress(key)}
                                 className={cn(
-                                    'min-h-[48px] rounded-xl font-black text-sm transition-all active:scale-95',
+                                    'min-h-[48px] rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center',
                                     key === 'C' && 'bg-rose-100 text-rose-700 hover:bg-rose-200',
+                                    key === 'back' && 'bg-amber-100 text-amber-700 hover:bg-amber-200',
                                     key === '=' && 'bg-[#5B8FB9] text-white col-span-1 hover:bg-[#4a7ea3]',
-                                    ['+', '-', '*', '/'].includes(key) && 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300',
-                                    !['C', '=', ''].includes(key) && !['+', '-', '*', '/'].includes(key) && 'bg-white border border-zinc-200 text-zinc-800 hover:bg-zinc-50',
+                                    ['+', '-', '*', '/', '%'].includes(key) && 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300',
+                                    !['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%'].includes(key) && key !== '±' && 'bg-white border border-zinc-200 text-zinc-800 hover:bg-zinc-50',
+                                    key === '±' && 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300',
                                     key === '' && 'invisible pointer-events-none'
                                 )}
                             >
-                                {key || ''}
+                                {key === 'back' ? <Delete size={18} strokeWidth={2.5} /> : (key || '')}
                             </button>
                         ))}
                     </div>
