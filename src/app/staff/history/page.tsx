@@ -36,8 +36,8 @@ function WeekSeparator() {
         <div className="flex justify-center" aria-hidden>
             <div
                 className={cn(
-                    'h-px w-[70%] max-w-[280px]',
-                    'bg-[linear-gradient(90deg,transparent_0%,rgb(239_68_68/0.2)_12%,rgb(220_38_38)_50%,rgb(239_68_68/0.2)_88%,transparent_100%)]'
+                    'h-0.5 w-[70%] max-w-[280px]',
+                    'bg-[linear-gradient(90deg,transparent_0%,rgb(220_38_38)_8%,rgb(220_38_38)_92%,transparent_100%)]'
                 )}
             />
         </div>
