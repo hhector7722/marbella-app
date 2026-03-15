@@ -953,11 +953,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     {boxes.filter(b => b.type === 'operational').map(box => (
                         <div key={box.id} className="flex flex-col h-full">
                             <div className="flex flex-row gap-1.5 md:gap-2 items-center">
-                                <button onClick={() => router.push('/dashboard/movements')} className="shrink-0 px-3 py-2 md:py-2 rounded-xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-row items-center gap-2 text-white active:scale-95">
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
+                                <button onClick={() => router.push('/dashboard/movements')} className="shrink-0 w-fit min-w-0 px-3 py-2 md:py-2 rounded-xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 text-white active:scale-95">
                                     <span className="text-sm md:text-base font-black leading-none">
                                         {Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}
                                     </span>
+                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
                                 </button>
                                 <div className="flex items-center justify-center min-w-0 flex-1">
                                     {Math.abs(difference || 0) < 0.01 ? (
