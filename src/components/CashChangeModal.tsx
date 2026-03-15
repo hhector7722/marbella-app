@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Minus, Plus, ArrowRight, ArrowLeft, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Minus, Plus, ArrowRight, ArrowLeft, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -446,7 +446,7 @@ export const CashChangeModal = ({
                                         className="w-10 h-10 flex items-center justify-center text-white min-h-[48px] min-w-[48px] opacity-90 hover:opacity-100 transition-opacity"
                                         aria-label="Histórico de intercambios"
                                     >
-                                        <Search size={22} strokeWidth={2.5} className="stroke-current fill-none" />
+                                        <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
                                     </button>
                                 )}
                                 <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
