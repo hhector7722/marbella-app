@@ -826,7 +826,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         />
                                     </svg>
                                 </div>
-                                <div className="flex justify-between px-0 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
+                                <div className="flex justify-between px-3 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
                                     <span>7</span>
                                     <span>23</span>
                                 </div>
