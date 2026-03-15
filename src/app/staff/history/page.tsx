@@ -30,13 +30,13 @@ import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import { WeekCard } from './WeekCard';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 
-/** Línea roja fina con gradiente y difuminado en los extremos como referencia visual de salto de semana */
+/** Línea roja fina con gradiente y difuminado en los extremos; forma parte del borde visual entre semanas (sin añadir espacio). */
 function WeekSeparator() {
     return (
-        <div className="flex justify-center py-2" aria-hidden>
+        <div className="flex justify-center" aria-hidden>
             <div
                 className={cn(
-                    'h-0.5 w-[70%] max-w-[280px] rounded-full',
+                    'h-px w-[70%] max-w-[280px]',
                     'bg-[linear-gradient(90deg,transparent_0%,rgb(239_68_68/0.2)_12%,rgb(220_38_38)_50%,rgb(239_68_68/0.2)_88%,transparent_100%)]'
                 )}
             />
