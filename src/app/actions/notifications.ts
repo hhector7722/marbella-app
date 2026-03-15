@@ -90,7 +90,7 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
             const timeLine = shift ? `⏰ ${shift.start} - ${shift.end}` : '⏰ —';
             const body = `📆 ${dateStr}\n${timeLine}`;
             const payload = JSON.stringify({
-                title: '🟢 Horario',
+                title: '🟢 Horario · Marbella',
                 body,
                 url: '/staff/dashboard/'
             });
