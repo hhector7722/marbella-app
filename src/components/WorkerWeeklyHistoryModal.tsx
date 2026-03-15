@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
 import { format, isSameDay, addDays, parseISO } from 'date-fns';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
@@ -60,6 +61,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     const [loading, setLoading] = useState(true);
     const [weekData, setWeekData] = useState<WeeklyData | null>(null);
     const [workerName, setWorkerName] = useState('');
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     useEffect(() => {
         if (isOpen && workerId && weekStart) {
@@ -187,10 +189,14 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             {format(parseISO(weekStart), 'd MMM', { locale: es })} - {format(addDays(parseISO(weekStart), 6), 'd MMM yyyy', { locale: es })} • {workerName}
                         </p>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 shrink-0">
-                        <X size={20} strokeWidth={3} />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                        <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]">
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
                 </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
 
                 {/* Content: contenedor se adapta al tamaño de la tabla */}
                 <div className="p-4 overflow-auto shrink-0">

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
@@ -20,6 +21,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
     const supabase = createClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     if (!movement) return null;
 
@@ -156,9 +158,12 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                                 <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Detalle de movimiento</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-95">
-                            <X size={20} strokeWidth={3} />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                            <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-95 min-h-[48px] min-w-[48px]">
+                                <X size={20} strokeWidth={3} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* MAIN AMOUNT */}
@@ -275,6 +280,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                         </>
                     )}
                 </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             </div>
         </div>
     );

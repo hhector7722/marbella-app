@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 
@@ -80,6 +81,7 @@ export const CashChangeModal = ({
     const [exchangeHistoryList, setExchangeHistoryList] = useState<ExchangeHistoryItem[]>([]);
     const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     useEffect(() => {
         if (!useTwoBoxFlow && boxId) {
@@ -345,6 +347,7 @@ export const CashChangeModal = ({
                                     <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
                                     <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] border-l border-white/20 pl-2 leading-none mb-[1px]">Caja {boxName}</p>
                                 </div>
+                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                             </div>
                             <div className="flex items-center justify-between gap-1.5 px-0.5">
                                 <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
@@ -364,6 +367,7 @@ export const CashChangeModal = ({
                             </div>
                         </div>
                     </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
                         <div className="flex flex-col">
                             {ALL_DENOMS.map((denom) => (
@@ -433,7 +437,8 @@ export const CashChangeModal = ({
                     <div className="bg-[#36606F] shrink-0 px-4 py-3">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 shrink-0">
+                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                                 {isManager && (
                                     <button
                                         type="button"
@@ -450,6 +455,7 @@ export const CashChangeModal = ({
                             </div>
                         </div>
                     </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                     <div className="flex-1 overflow-y-auto p-4">
                         <p className="text-zinc-600 text-[11px] font-bold text-center mb-4">Escoge dos cajas para el intercambio</p>
                         <div className="flex flex-col gap-2">
@@ -533,6 +539,7 @@ export const CashChangeModal = ({
                                 ) : (
                                     <button type="button" onClick={() => setSelectedExchangeDetail(null)} className="text-white font-black text-sm underline">Volver</button>
                                 )}
+                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                                 <button
                                     type="button"
                                     onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}
@@ -582,6 +589,7 @@ export const CashChangeModal = ({
                                 </ul>
                             )}
                         </div>
+                        <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                     </div>
                 </div>
             )}
@@ -610,9 +618,12 @@ export const CashChangeModal = ({
                     <div className="px-4 py-2.5 pb-3">
                         <div className="flex items-center justify-between mb-2">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px] shrink-0">
-                                <X size={20} strokeWidth={3} />
-                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
                         </div>
                         {/* Cabeceras: nombre izquierda | Dirección (flecha) | nombre derecha */}
                         <div className="grid grid-cols-[1fr_80px_1fr] gap-1 items-center mb-2">
@@ -739,6 +750,7 @@ export const CashChangeModal = ({
                         </p>
                     )}
                 </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             </div>
         </div>
     );

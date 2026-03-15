@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
+import { Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 
 interface CashDenominationFormProps {
     type: 'in' | 'out' | 'audit';
@@ -65,6 +66,7 @@ export const CashDenominationForm = ({
     const [purchasePrice, setPurchasePrice] = useState<number | ''>('');
     const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
     const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     const calculateTotal = (c: Record<number, number>) => DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
 
@@ -137,7 +139,7 @@ export const CashDenominationForm = ({
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <div className="text-right">
                         <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black leading-none mb-0.5">
                             {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
@@ -165,8 +167,10 @@ export const CashDenominationForm = ({
                             </button>
                         </div>
                     )}
+                    <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                 </div>
             </div>
+            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
 
                 {/* DATE & NOTES & PRICE ROW (oculto en variant tipPool) */}

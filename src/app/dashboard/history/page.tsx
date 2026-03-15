@@ -29,6 +29,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -103,6 +104,7 @@ const DonutChart = ({ size = 60, percentage = 75, color = "#10b981" }: { size?: 
 };
 
 const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing = false, onUpdate }: { isOpen: boolean, onClose: () => void, breakdown: any, date: string, total: number, isEditing?: boolean, onUpdate?: (den: string, qty: number) => void }) => {
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
     if (!isOpen) return null;
 
     const displayBreakdown = isEditing ? {
@@ -115,7 +117,10 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
         <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] p-8 text-white text-center relative">
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-xl transition-all"><X size={20} /></button>
+                    <div className="absolute top-6 right-6 flex items-center gap-1">
+                        <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all min-h-[48px] min-w-[48px] flex items-center justify-center"><X size={20} /></button>
+                    </div>
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 block">Arqueo de Efectivo</span>
                     <h3 className="text-xl font-black uppercase tracking-tighter">
                         {(() => {
@@ -124,6 +129,7 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
                         })()}
                     </h3>
                 </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     <div className="space-y-2">
                         {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => (

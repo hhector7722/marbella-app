@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    X, Save, Banknote, Coins, Calculator, Calendar,
+    X, Save, Banknote, Coins, Calendar,
     CreditCard, UserMinus, ArchiveRestore, Store,
     AlertTriangle, CloudSun, Receipt, ArrowLeft, ArrowRight,
     CheckCircle2, TrendingUp, RefreshCw, Minus, Plus
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -50,6 +51,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     // 1. STATE: TPVs
     const [tpvData, setTpvData] = useState({
@@ -277,10 +279,16 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
-                        <X size={20} strokeWidth={3} />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                        {(step === 'tpv_data' || step === 'count') && (
+                            <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                        )}
+                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20 min-h-[48px] min-w-[48px]">
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
                 </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {/* STEP 1: SALES DATA */}

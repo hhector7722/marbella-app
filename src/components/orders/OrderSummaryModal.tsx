@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { X, Trash2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 
 interface Ingredient {
     id: string;
@@ -20,6 +22,7 @@ interface OrderSummaryModalProps {
 }
 
 export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcessing }: OrderSummaryModalProps) {
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
     if (!isOpen) return null;
 
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -30,10 +33,14 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                 {/* Header */}
                 <div className="bg-[#36606F] py-2 px-4 sm:py-4 sm:px-8 flex justify-between items-center shrink-0">
                     <h2 className="text-sm sm:text-xl font-black text-white uppercase tracking-widest">Pedido</h2>
-                    <button onClick={onClose} className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                        <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                        <button onClick={onClose} className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
+                            <X className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+                        </button>
+                    </div>
                 </div>
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
 
                 {/* Table Content */}
                 <div className="flex-1 overflow-y-auto px-1 sm:px-6 py-2 sm:py-6">

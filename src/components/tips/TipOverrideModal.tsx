@@ -5,6 +5,7 @@ import { X, Save } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
+import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
 
 type PoolType = 'weekday' | 'weekend';
 
@@ -40,6 +41,7 @@ export function TipOverrideModal({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -99,13 +101,17 @@ export function TipOverrideModal({
             <Avatar src={profile?.avatar_url ?? undefined} alt={displayName} size="sm" className="shrink-0 ring-2 ring-white/30" />
             <span className="text-sm md:text-lg font-black uppercase tracking-wider truncate">{displayName}</span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-white/10 rounded-xl md:rounded-2xl hover:bg-white/20 transition-all active:scale-95 shrink-0 min-h-[44px]"
-          >
-            <X size={18} strokeWidth={3} className="md:w-5 md:h-5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+            <button
+              onClick={onClose}
+              className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-white/10 rounded-xl md:rounded-2xl hover:bg-white/20 transition-all active:scale-95 min-h-[44px] min-w-[48px]"
+            >
+              <X size={18} strokeWidth={3} className="md:w-5 md:h-5" />
+            </button>
+          </div>
         </div>
+        <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
 
         <div className="p-2.5 md:p-4 bg-gray-50 flex-1 overflow-y-auto space-y-2 md:space-y-3">
           <div className="grid grid-cols-2 gap-2 md:gap-3">
