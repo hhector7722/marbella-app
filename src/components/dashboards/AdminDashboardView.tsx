@@ -651,11 +651,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
                 {/* 1. VENTAS */}
                 <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-[#36606F] px-2 py-1 md:py-1.5 flex items-center justify-between gap-2 text-white shrink-0 min-h-[36px] md:min-h-[40px]">
+                    <div className="bg-[#36606F] px-2 py-1 flex items-center justify-between gap-2 text-white shrink-0">
                         <Link
                             href="/dashboard/ventas"
                             className={cn(
-                                "min-h-[36px] md:min-h-[40px] flex items-center justify-center px-3 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest",
+                                "py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest",
                                 "bg-[#407080] text-white hover:bg-[#467888] active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none"
                             )}
                         >
@@ -721,7 +721,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         <Link
                             href="/dashboard/history"
                             className={cn(
-                                "min-h-[36px] md:min-h-[40px] flex items-center justify-center px-3 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest",
+                                "py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest",
                                 "bg-[#407080] text-white hover:bg-[#467888] active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none"
                             )}
                         >
