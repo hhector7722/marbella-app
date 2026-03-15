@@ -88,9 +88,9 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
         subs.map(sub => {
             const shift = shiftByUser.get(sub.user_id);
             const timeLine = shift ? `⏰ ${shift.start} - ${shift.end}` : '⏰ —';
-            const body = `📆 ${dateStr}\n${timeLine}`;
+            const body = `📅 ${dateStr}\n${timeLine}`;
             const payload = JSON.stringify({
-                title: '🟢 Horario · Marbella',
+                title: '🟢 Horario',
                 body,
                 url: '/staff/dashboard/'
             });
