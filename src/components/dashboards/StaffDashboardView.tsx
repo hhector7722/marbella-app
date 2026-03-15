@@ -1010,6 +1010,7 @@ export default function StaffDashboardView() {
                 showSwapModal && (
                     <CashChangeModal
                         boxOptions={buildPaymentSources()}
+                        isManager={userRole === 'manager'}
                         onClose={() => setShowSwapModal(false)}
                         onSuccess={() => { initialize(); setShowSwapModal(false); }}
                     />

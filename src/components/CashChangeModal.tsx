@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
+import { X, Minus, Plus, ArrowRight, ArrowLeft, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -21,8 +21,20 @@ interface CashChangeModalProps {
     boxName?: string;
     /** Nuevo flujo: elegir Caja A y Caja B, luego De A→B y De B→A. */
     boxOptions?: BoxOption[];
+    /** Si true, muestra lupa en cabecera (paso selección) para abrir histórico de intercambios. */
+    isManager?: boolean;
     onClose: () => void;
     onSuccess?: () => void;
+}
+
+export interface ExchangeHistoryItem {
+    exchange_group_id: string;
+    created_at: string;
+    first_name: string;
+    amount: number;
+    from_box_name: string;
+    to_box_name: string;
+    legs: { from_box_name: string; to_box_name: string; breakdown: Record<string, number>; amount: number }[];
 }
 
 function buildBreakdown(counts: Record<number, number>): Record<string, number> {
@@ -38,6 +50,7 @@ export const CashChangeModal = ({
     boxId,
     boxName,
     boxOptions = [],
+    isManager = false,
     onClose,
     onSuccess
 }: CashChangeModalProps) => {
@@ -58,6 +71,15 @@ export const CashChangeModal = ({
     const [step2Counts, setStep2Counts] = useState<Record<number, number>>({});
     const [stockA, setStockA] = useState<Record<number, number>>({});
     const [stockB, setStockB] = useState<Record<number, number>>({});
+    // Histórico de intercambios (solo manager)
+    const [showExchangeHistoryModal, setShowExchangeHistoryModal] = useState(false);
+    const [exchangeHistoryYearMonth, setExchangeHistoryYearMonth] = useState(() => {
+        const d = new Date();
+        return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    });
+    const [exchangeHistoryList, setExchangeHistoryList] = useState<ExchangeHistoryItem[]>([]);
+    const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
+    const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
 
     useEffect(() => {
         if (!useTwoBoxFlow && boxId) {
@@ -97,6 +119,63 @@ export const CashChangeModal = ({
         };
         fetchStock();
     }, [useTwoBoxFlow, step, boxB?.id, boxB?.hasInventory, supabase]);
+
+    useEffect(() => {
+        if (!showExchangeHistoryModal || !useTwoBoxFlow) return;
+        const { year, month } = exchangeHistoryYearMonth;
+        const start = new Date(year, month - 1, 1);
+        const end = new Date(year, month, 0, 23, 59, 59, 999);
+        setExchangeHistoryLoading(true);
+        (async () => {
+            const { data: rows } = await supabase
+                .from('treasury_log')
+                .select('id, exchange_group_id, created_at, amount, box_id, to_box_id, breakdown, user_id')
+                .eq('type', 'EXCHANGE')
+                .gte('created_at', start.toISOString())
+                .lte('created_at', end.toISOString())
+                .order('created_at', { ascending: false });
+            if (!rows?.length) {
+                setExchangeHistoryList([]);
+                setExchangeHistoryLoading(false);
+                return;
+            }
+            const userIds = [...new Set((rows as any[]).map((r: any) => r.user_id).filter(Boolean))];
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name').in('id', userIds);
+            const profileMap: Record<string, string> = {};
+            (profiles || []).forEach((p: any) => { profileMap[p.id] = p.first_name || ''; });
+            const boxIds = [...new Set((rows as any[]).flatMap((r: any) => [r.box_id, r.to_box_id]).filter(Boolean))];
+            const { data: boxes } = await supabase.from('cash_boxes').select('id, name').in('id', boxIds);
+            const boxMap: Record<string, string> = {};
+            (boxes || []).forEach((b: any) => { boxMap[b.id] = b.name || ''; });
+            const byGroup = new Map<string, any[]>();
+            (rows as any[]).forEach((r: any) => {
+                const g = r.exchange_group_id || r.id;
+                if (!byGroup.has(g)) byGroup.set(g, []);
+                byGroup.get(g)!.push(r);
+            });
+            const list: ExchangeHistoryItem[] = [];
+            byGroup.forEach((legs, exchange_group_id) => {
+                const first = legs[0];
+                list.push({
+                    exchange_group_id,
+                    created_at: first.created_at,
+                    first_name: profileMap[first.user_id] || '',
+                    amount: Number(first.amount) || 0,
+                    from_box_name: boxMap[first.box_id] || '',
+                    to_box_name: boxMap[first.to_box_id] || '',
+                    legs: legs.map((l: any) => ({
+                        from_box_name: boxMap[l.box_id] || '',
+                        to_box_name: boxMap[l.to_box_id] || '',
+                        breakdown: (l.breakdown as Record<string, number>) || {},
+                        amount: Number(l.amount) || 0
+                    }))
+                });
+            });
+            list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            setExchangeHistoryList(list);
+            setExchangeHistoryLoading(false);
+        })();
+    }, [showExchangeHistoryModal, exchangeHistoryYearMonth, useTwoBoxFlow, supabase]);
 
     const totalIn = ALL_DENOMS.reduce((acc, val) => acc + (val * (inCounts[val] || 0)), 0);
     const totalOut = ALL_DENOMS.reduce((acc, val) => acc + (val * (outCounts[val] || 0)), 0);
@@ -157,39 +236,6 @@ export const CashChangeModal = ({
         onClose();
     };
 
-    const persistTransfer = async (fromBox: BoxOption | null, toBox: BoxOption | null, counts: Record<number, number>, directionLabel: string) => {
-        const breakdown = buildBreakdown(counts);
-        const amount = ALL_DENOMS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
-        if (amount < 0.005) return;
-
-        if (fromBox?.hasInventory && fromBox.id !== 'tpv1' && fromBox.id !== 'tpv2') {
-            const { error: errOut } = await supabase.from('treasury_log').insert({
-                box_id: fromBox.id,
-                type: 'OUT',
-                amount,
-                breakdown,
-                notes: `Cambio: ${directionLabel}`
-            });
-            if (errOut) {
-                console.error('CashChangeModal OUT:', errOut);
-                throw new Error(errOut.message);
-            }
-        }
-        if (toBox?.hasInventory && toBox.id !== 'tpv1' && toBox.id !== 'tpv2') {
-            const { error: errIn } = await supabase.from('treasury_log').insert({
-                box_id: toBox.id,
-                type: 'IN',
-                amount,
-                breakdown,
-                notes: `Cambio: ${directionLabel}`
-            });
-            if (errIn) {
-                console.error('CashChangeModal IN:', errIn);
-                throw new Error(errIn.message);
-            }
-        }
-    };
-
     const handleSiguiente = () => {
         if (!boxA || !boxB || totalStep1 < 0.005 || hasStockIssueStep1) return;
         setStep('step2');
@@ -203,8 +249,28 @@ export const CashChangeModal = ({
             return;
         }
         try {
-            await persistTransfer(boxA, boxB, step1Counts, `De ${boxA.name} a ${boxB.name}`);
-            await persistTransfer(boxB, boxA, step2Counts, `De ${boxB.name} a ${boxA.name}`);
+            const { data: { user } } = await supabase.auth.getUser();
+            const exchangeGroupId = crypto.randomUUID();
+            const insertExchange = async (fromBox: BoxOption, toBox: BoxOption, counts: Record<number, number>, directionLabel: string) => {
+                if (fromBox.id === 'tpv1' || fromBox.id === 'tpv2' || toBox.id === 'tpv1' || toBox.id === 'tpv2') return;
+                if (!fromBox.hasInventory || !toBox.hasInventory) return;
+                const breakdown = buildBreakdown(counts);
+                const amount = ALL_DENOMS.reduce((acc, val) => acc + (val * (counts[val] || 0)), 0);
+                if (amount < 0.005) return;
+                const { error } = await supabase.from('treasury_log').insert({
+                    box_id: fromBox.id,
+                    to_box_id: toBox.id,
+                    type: 'EXCHANGE',
+                    amount,
+                    breakdown,
+                    notes: `Intercambio: ${directionLabel}`,
+                    user_id: user?.id ?? null,
+                    exchange_group_id: exchangeGroupId
+                });
+                if (error) throw new Error(error.message);
+            };
+            await insertExchange(boxA, boxB, step1Counts, `De ${boxA.name} a ${boxB.name}`);
+            await insertExchange(boxB, boxA, step2Counts, `De ${boxB.name} a ${boxA.name}`);
             toast.success('Cambio entre cajas guardado');
             if (onSuccess) onSuccess();
             onClose();
@@ -361,14 +427,27 @@ export const CashChangeModal = ({
     if (step === 'select') {
         const canContinue = boxA && boxB && boxA.id !== boxB.id;
         return (
+            <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
                 <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 px-4 py-3">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
-                                <X size={20} strokeWidth={3} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {isManager && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowExchangeHistoryModal(true)}
+                                        className="w-10 h-10 flex items-center justify-center text-white min-h-[48px] min-w-[48px] opacity-90 hover:opacity-100 transition-opacity"
+                                        aria-label="Histórico de intercambios"
+                                    >
+                                        <Search size={22} strokeWidth={2.5} className="stroke-current fill-none" />
+                                    </button>
+                                )}
+                                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4">
@@ -413,6 +492,100 @@ export const CashChangeModal = ({
                     </div>
                 </div>
             </div>
+
+            {/* Modal histórico de intercambios (manager) */}
+            {showExchangeHistoryModal && (
+                <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/70" onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between shrink-0">
+                            <h3 className="text-lg font-black text-white uppercase tracking-tighter">
+                                {selectedExchangeDetail ? 'Desglose del intercambio' : 'Histórico de intercambios'}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {!selectedExchangeDetail ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => setExchangeHistoryYearMonth(prev => {
+                                                const m = prev.month === 1 ? 12 : prev.month - 1;
+                                                const y = prev.month === 1 ? prev.year - 1 : prev.year;
+                                                return { year: y, month: m };
+                                            })}
+                                            className="w-9 h-9 flex items-center justify-center text-white rounded-lg hover:bg-white/10 min-h-[44px] min-w-[44px]"
+                                        >
+                                            <ChevronLeft size={20} strokeWidth={3} />
+                                        </button>
+                                        <span className="text-white font-bold text-sm min-w-[120px] text-center">
+                                            {new Date(exchangeHistoryYearMonth.year, exchangeHistoryYearMonth.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setExchangeHistoryYearMonth(prev => {
+                                                const m = prev.month === 12 ? 1 : prev.month + 1;
+                                                const y = prev.month === 12 ? prev.year + 1 : prev.year;
+                                                return { year: y, month: m };
+                                            })}
+                                            className="w-9 h-9 flex items-center justify-center text-white rounded-lg hover:bg-white/10 min-h-[44px] min-w-[44px]"
+                                        >
+                                            <ChevronRight size={20} strokeWidth={3} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button type="button" onClick={() => setSelectedExchangeDetail(null)} className="text-white font-black text-sm underline">Volver</button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}
+                                    className="w-10 h-10 flex items-center justify-center text-white rounded-xl hover:bg-white/10 min-h-[44px] min-w-[44px]"
+                                >
+                                    <X size={20} strokeWidth={3} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            {selectedExchangeDetail ? (
+                                <div className="space-y-4">
+                                    {selectedExchangeDetail.legs.map((leg, idx) => (
+                                        <div key={idx} className="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                                            <p className="text-[10px] font-black text-zinc-500 uppercase mb-2">{leg.from_box_name} → {leg.to_box_name} ({leg.amount.toFixed(2)}€)</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {Object.entries(leg.breakdown).filter(([, q]) => Number(q) > 0).map(([denom, q]) => (
+                                                    <span key={denom} className="text-xs font-bold text-zinc-700 bg-white px-2 py-1 rounded">
+                                                        {Number(denom) >= 1 ? `${denom}€` : `${(Number(denom) * 100).toFixed(0)}c`}: {q}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : exchangeHistoryLoading ? (
+                                <p className="text-center text-zinc-500 text-sm">Cargando...</p>
+                            ) : exchangeHistoryList.length === 0 ? (
+                                <p className="text-center text-zinc-500 text-sm">No hay intercambios en este mes.</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {exchangeHistoryList.map((item) => (
+                                        <li
+                                            key={item.exchange_group_id}
+                                            role="button"
+                                            onClick={() => setSelectedExchangeDetail(item)}
+                                            className="flex items-center justify-between gap-2 p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50 hover:border-[#5B8FB9]/30 transition-all cursor-pointer"
+                                        >
+                                            <span className="text-[10px] text-zinc-500">
+                                                {new Date(item.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            <span className="font-bold text-zinc-800 truncate">{item.first_name}</span>
+                                            <span className="font-black text-zinc-800 tabular-nums">{item.amount.toFixed(2)}€</span>
+                                            <span className="text-[10px] text-zinc-600 truncate">{item.from_box_name} → {item.to_box_name}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
         );
     }
 
