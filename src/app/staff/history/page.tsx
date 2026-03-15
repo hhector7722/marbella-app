@@ -30,6 +30,20 @@ import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
 import { WeekCard } from './WeekCard';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 
+/** Línea roja fina con gradiente y difuminado en los extremos como referencia visual de salto de semana */
+function WeekSeparator() {
+    return (
+        <div className="flex justify-center py-2" aria-hidden>
+            <div
+                className={cn(
+                    'h-0.5 w-[70%] max-w-[280px] rounded-full',
+                    'bg-[linear-gradient(90deg,transparent_0%,rgb(239_68_68/0.2)_12%,rgb(220_38_38)_50%,rgb(239_68_68/0.2)_88%,transparent_100%)]'
+                )}
+            />
+        </div>
+    );
+}
+
 // --- TIPOS ---
 interface DayData {
     date: string;
@@ -489,28 +503,30 @@ export default function HistoryPage() {
                     ) : (
                         <div className="p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (
-                                <WeekCard
-                                    key={week.weekNumber}
-                                    week={week}
-                                    idx={idx}
-                                    filterMonth={filterMonth}
-                                    filterYear={filterYear}
-                                    onDayClick={handleDayClick}
-                                    showWeekOverrides={false}
-                                    userId={selectedEmployeeId || currentUserId}
-                                    onApplyWeekOverrides={async (contractedHours, preferStock) => {
-                                        const uid = selectedEmployeeId || currentUserId;
-                                        const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
-                                        const result = await updateWeeklyWorkerConfig(uid, weekStart, { contractedHours, preferStock });
-                                        if (result.success) {
-                                            toast.success('Semana actualizada');
-                                            fetchCalendar();
-                                        } else {
-                                            toast.error(result.error ?? 'Error al guardar');
-                                        }
-                                        return result;
-                                    }}
-                                />
+                                <React.Fragment key={week.weekNumber}>
+                                    <WeekCard
+                                        week={week}
+                                        idx={idx}
+                                        filterMonth={filterMonth}
+                                        filterYear={filterYear}
+                                        onDayClick={handleDayClick}
+                                        showWeekOverrides={false}
+                                        userId={selectedEmployeeId || currentUserId}
+                                        onApplyWeekOverrides={async (contractedHours, preferStock) => {
+                                            const uid = selectedEmployeeId || currentUserId;
+                                            const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
+                                            const result = await updateWeeklyWorkerConfig(uid, weekStart, { contractedHours, preferStock });
+                                            if (result.success) {
+                                                toast.success('Semana actualizada');
+                                                fetchCalendar();
+                                            } else {
+                                                toast.error(result.error ?? 'Error al guardar');
+                                            }
+                                            return result;
+                                        }}
+                                    />
+                                    {idx < weeksData.length - 1 && <WeekSeparator />}
+                                </React.Fragment>
                             ))}
                         </div>
                     )}
