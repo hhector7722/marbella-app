@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
+import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
