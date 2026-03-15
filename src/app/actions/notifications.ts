@@ -87,13 +87,12 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
     const results = await Promise.allSettled(
         subs.map(sub => {
             const shift = shiftByUser.get(sub.user_id);
-            const body = shift
-                ? `⏰ ${shift.start} - ${shift.end}`
-                : `⏰ —`;
+            const timeLine = shift ? `⏰ ${shift.start} - ${shift.end}` : '⏰ —';
+            const body = `📆 ${dateStr}\n${timeLine}`;
             const payload = JSON.stringify({
-                title: `🗓️ Horario ${dateStr}.`,
+                title: '🟢 Horario',
                 body,
-                url: '/staff/schedule'
+                url: '/staff/dashboard/'
             });
             return webpush.sendNotification(sub.subscription as any, payload);
         })
