@@ -476,22 +476,24 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         const saved = await handleSave(true, true);
         if (!saved) return;
         // Solo usuarios que tienen turno ese día (activo y con hora inicio/fin)
-        const userIds = shifts.filter(s => s.active && s.start && s.end).map(s => s.employeeId);
-        if (userIds.length === 0) {
+        const userShifts = shifts
+            .filter(s => s.active && s.start && s.end)
+            .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
+        if (userShifts.length === 0) {
             toast.info('No hay nadie con horario ese día para notificar');
             return;
         }
         const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
         const loadingToast = toast.loading('Enviando notificaciones...');
         try {
-            const result = await sendScheduleNotifications(userIds, dateFormatted);
+            const result = await sendScheduleNotifications(dateFormatted, userShifts);
             toast.dismiss(loadingToast);
             if (result?.error || result?.success === false) {
                 toast.error(result?.error || 'Error al enviar notificaciones');
                 return;
             }
-            const sent = Number(result?.sentCount ?? 0);
-            const target = Number(result?.targetCount ?? userIds.length);
+                                            const sent = Number(result?.sentCount ?? 0);
+                                            const target = Number(result?.targetCount ?? userShifts.length);
             const missing = Array.isArray(result?.missingSubscriptionUserIds) ? result.missingSubscriptionUserIds.length : Math.max(0, target - sent);
             if (sent <= 0) {
                 toast.error('No se ha enviado ninguna notificación. Activa notificaciones en el móvil/PC (permiso + dispositivo suscrito).');
@@ -888,22 +890,24 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         const saved = await handleSave(true, true);
                                         if (saved || isDayPublished) {
                                             // Solo usuarios con turno ese día (activo y con hora inicio/fin)
-                                            const userIds = shifts.filter(s => s.active && s.start && s.end).map(s => s.employeeId);
-                                            if (userIds.length === 0) {
+                                            const userShifts = shifts
+                                                .filter(s => s.active && s.start && s.end)
+                                                .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
+                                            if (userShifts.length === 0) {
                                                 toast.info('No hay nadie con horario ese día para notificar');
                                                 return;
                                             }
                                             const dateFormatted = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
                                             const loadToast = toast.loading('Enviando...');
                                             try {
-                                                const res = await sendScheduleNotifications(userIds, dateFormatted);
+                                                const res = await sendScheduleNotifications(dateFormatted, userShifts);
                                                 toast.dismiss(loadToast);
                                                 if (res?.error || res?.success === false) {
                                                     toast.error(res?.error || 'Error al enviar notificaciones');
                                                     return;
                                                 }
                                                 const sent = Number(res?.sentCount ?? 0);
-                                                const target = Number(res?.targetCount ?? userIds.length);
+                                                const target = Number(res?.targetCount ?? userShifts.length);
                                                 const missing = Array.isArray(res?.missingSubscriptionUserIds) ? res.missingSubscriptionUserIds.length : Math.max(0, target - sent);
                                                 if (sent <= 0) {
                                                     toast.error('No se ha enviado ninguna notificación. Activa notificaciones en el móvil/PC (permiso + dispositivo suscrito).');

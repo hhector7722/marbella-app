@@ -36,7 +36,10 @@ export async function saveSubscription(subscription: any) {
     return { success: true };
 }
 
-export async function sendScheduleNotifications(userIds: string[], dateStr: string) {
+export type UserShiftForNotification = { userId: string; start: string; end: string };
+
+export async function sendScheduleNotifications(dateStr: string, userShifts: UserShiftForNotification[]) {
+    const userIds = [...new Set(userShifts.map(s => s.userId))];
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
         console.error('Push: VAPID keys not set. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Vercel env.');
         return {
@@ -79,16 +82,21 @@ export async function sendScheduleNotifications(userIds: string[], dateStr: stri
         };
     }
 
-    const payload = JSON.stringify({
-        title: '🗓️ Nuevo Horario Disponible',
-        body: `Se ha publicado el horario para el ${dateStr}. ¡Consúltalo ya!`,
-        url: '/staff/schedule'
-    });
+    const shiftByUser = new Map(userShifts.map(s => [s.userId, s]));
 
     const results = await Promise.allSettled(
-        subs.map(sub =>
-            webpush.sendNotification(sub.subscription as any, payload)
-        )
+        subs.map(sub => {
+            const shift = shiftByUser.get(sub.user_id);
+            const body = shift
+                ? `⏰ ${shift.start} - ${shift.end}`
+                : `⏰ —`;
+            const payload = JSON.stringify({
+                title: `🗓️ Horario ${dateStr}.`,
+                body,
+                url: '/staff/schedule'
+            });
+            return webpush.sendNotification(sub.subscription as any, payload);
+        })
     );
 
     const sentCount = results.filter(r => r.status === 'fulfilled').length;
@@ -157,8 +165,8 @@ export async function sendClosingNotification(data: { totalSales: number, netSal
     }
 
     const payload = JSON.stringify({
-        title: '📊 Cierre de Caja Realizado',
-        body: `Ventas: ${data.totalSales.toFixed(2)}€ | Neta: ${data.netSales.toFixed(2)}€ | Ticket Medio: ${data.avgTicket.toFixed(2)}€`,
+        title: '📊 Cierre',
+        body: `Ventas: ${data.totalSales.toFixed(2)}€\nVenta Neta: ${data.netSales.toFixed(2)}€`,
         url: '/dashboard/history'
     });
 
