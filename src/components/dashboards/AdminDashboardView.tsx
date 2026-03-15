@@ -802,30 +802,32 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             (_, i) => chartData[BUSINESS_HOURS.start + i]?.total ?? 0
                         ).reduce((a, b) => a + Number(b), 0);
                         return (
-                            <div
-                                ref={chartContainerRef}
-                                className="w-screen min-w-full pb-2 pt-0 -mt-1 shrink-0 relative left-1/2 -translate-x-1/2"
-                                onClick={(e) => handleChartTap(e.clientX)}
-                                onTouchEnd={(e) => {
-                                    if (e.changedTouches.length) {
-                                        e.preventDefault();
-                                        handleChartTap(e.changedTouches[0].clientX);
-                                    }
-                                }}
-                            >
-                                <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
-                                    <path
-                                        d={toPath(rangeData)}
-                                        fill="none"
-                                        stroke="#36606F"
-                                        strokeWidth="2"
-                                        strokeLinecap="butt"
-                                        strokeLinejoin="miter"
-                                        vectorEffect="non-scaling-stroke"
-                                    />
-                                </svg>
-                                <span className="absolute left-1 bottom-0 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none">7</span>
-                                <span className="absolute right-1 bottom-0 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none">23</span>
+                            <div className="w-full pb-2 pt-0 -mt-1 shrink-0 flex items-end gap-0 px-3">
+                                <span className="shrink-0 w-5 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none text-left">7</span>
+                                <div
+                                    ref={chartContainerRef}
+                                    className="flex-1 min-w-0 relative"
+                                    onClick={(e) => handleChartTap(e.clientX)}
+                                    onTouchEnd={(e) => {
+                                        if (e.changedTouches.length) {
+                                            e.preventDefault();
+                                            handleChartTap(e.changedTouches[0].clientX);
+                                        }
+                                    }}
+                                >
+                                    <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
+                                        <path
+                                            d={toPath(rangeData)}
+                                            fill="none"
+                                            stroke="#36606F"
+                                            strokeWidth="2"
+                                            strokeLinecap="butt"
+                                            strokeLinejoin="miter"
+                                            vectorEffect="non-scaling-stroke"
+                                        />
+                                    </svg>
+                                </div>
+                                <span className="shrink-0 w-5 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none text-right">23</span>
                                 {selectedChartHour !== null && (() => {
                                     const idx = selectedChartHour - BUSINESS_HOURS.start;
                                     const xPct = (idx / (numPoints - 1 || 1)) * 100;
