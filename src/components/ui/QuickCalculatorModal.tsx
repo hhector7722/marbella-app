@@ -181,52 +181,44 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                     )}
                     {tab === 'breakdown' && (
                         <>
-                            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 text-center">
-                                Recuento rápido (no se guarda)
-                            </p>
-                            <div className="space-y-2 mb-4">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5 mb-3">
                                 {DENOMINATIONS.map((denom) => {
                                     const qty = breakdownCounts[denom] || 0;
-                                    const subtotal = denom * qty;
                                     return (
-                                        <div
-                                            key={denom}
-                                            className="flex items-center gap-2 p-2 bg-white rounded-xl border border-zinc-200 shadow-sm"
-                                        >
-                                            <div className="w-10 h-7 flex items-center justify-center shrink-0">
+                                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <Image
                                                     src={CURRENCY_IMAGES[denom]}
                                                     alt={`${denom}€`}
-                                                    width={48}
-                                                    height={32}
-                                                    className="h-full w-auto object-contain"
+                                                    width={140}
+                                                    height={140}
+                                                    className="h-full w-auto object-contain drop-shadow-lg"
                                                 />
                                             </div>
-                                            <span className="text-[10px] font-black text-zinc-500 w-8 shrink-0">
-                                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                            </span>
-                                            <div className="flex items-center flex-1 min-w-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleBreakdownAdjust(denom, -1)}
-                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 shrink-0"
-                                                >
-                                                    <Minus size={16} strokeWidth={3} />
-                                                </button>
-                                                <span className="flex-1 text-center font-black text-zinc-800 tabular-nums text-sm min-w-0">
-                                                    {qty > 0 ? qty : ' '}
+                                            <div className="text-center w-full">
+                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleBreakdownAdjust(denom, 1)}
-                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 shrink-0"
-                                                >
-                                                    <Plus size={16} strokeWidth={3} />
-                                                </button>
+                                                <div className="flex items-center justify-between w-full h-10 min-h-[48px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleBreakdownAdjust(denom, -1)}
+                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                    >
+                                                        <Minus size={14} strokeWidth={3} />
+                                                    </button>
+                                                    <span className="flex-1 text-center font-black text-zinc-700 text-[10px] tracking-tighter tabular-nums">
+                                                        {qty > 0 ? qty : ' '}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleBreakdownAdjust(denom, 1)}
+                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                    >
+                                                        <Plus size={14} strokeWidth={3} />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <span className="text-[11px] font-black text-[#36606F] tabular-nums w-12 text-right shrink-0">
-                                                {subtotal > 0.005 ? `${subtotal.toFixed(2)}€` : ' '}
-                                            </span>
                                         </div>
                                     );
                                 })}
