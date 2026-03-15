@@ -308,14 +308,6 @@ export default function VentasPage() {
                                         </button>
                                     </>
                                 )}
-
-                                {/* TOGGLE TICKETS/PRODUCTOS (Simificado: Solo muestra el inactivo) */}
-                                <button
-                                    onClick={() => setActiveTab(activeTab === 'TICKETS' ? 'PRODUCTOS' : 'TICKETS')}
-                                    className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white text-[#36606F] shadow-sm hover:bg-zinc-50 transition-all uppercase tracking-widest outline-none shrink-0"
-                                >
-                                    {activeTab === 'TICKETS' ? 'Productos' : 'Tickets'}
-                                </button>
                             </div>
                         </div>
 
@@ -383,6 +375,34 @@ export default function VentasPage() {
                                 {summary.avgTicket > 0 ? `${summary.avgTicket.toFixed(2)}€` : " "}
                             </span>
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ticket Medio</span>
+                        </div>
+                    </div>
+
+                    {/* TOGGLE PRODUCTOS / TICKETS (cuerpo, debajo de resumen) */}
+                    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-3 md:py-4">
+                        <div className="flex rounded-xl overflow-hidden border-2 border-[#36606F] w-full max-w-xs mx-auto shadow-sm">
+                            <button
+                                onClick={() => setActiveTab('TICKETS')}
+                                className={cn(
+                                    "flex-1 min-h-[48px] flex items-center justify-center text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors outline-none",
+                                    activeTab === 'TICKETS'
+                                        ? "bg-[#36606F] text-white"
+                                        : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                )}
+                            >
+                                Tickets
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('PRODUCTOS')}
+                                className={cn(
+                                    "flex-1 min-h-[48px] flex items-center justify-center text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors outline-none",
+                                    activeTab === 'PRODUCTOS'
+                                        ? "bg-[#36606F] text-white"
+                                        : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                )}
+                            >
+                                Productos
+                            </button>
                         </div>
                     </div>
 
