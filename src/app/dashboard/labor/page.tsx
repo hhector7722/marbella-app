@@ -2,18 +2,13 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import {
-    Calendar,
-    ChevronLeft,
-    ChevronRight,
-    X,
-    TrendingUp,
-    Clock,
-    Euro,
-    ArrowLeft
-} from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { calculateRoundedHours } from '@/lib/utils';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import { format } from 'date-fns';
 
 interface DailyLaborStats {
     date: string;
@@ -77,9 +72,8 @@ export default function LaborHistoryPage() {
     const [rangeEnd, setRangeEnd] = useState<string | null>(null);
 
     // Estados de UI
-    const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
-    const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [loading, setLoading] = useState(true);
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     // Datos
     const [history, setHistory] = useState<DailyLaborStats[]>([]);
@@ -255,86 +249,46 @@ export default function LaborHistoryPage() {
         }
     }
 
-    // Funciones Calendario
-    const generateCalendarDays = () => {
-        const year = calendarBaseDate.getFullYear();
-        const month = calendarBaseDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const days: (number | null)[] = [];
-        const startDay = (firstDay.getDay() + 6) % 7;
-        for (let i = 0; i < startDay; i++) days.push(null);
-        for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
-        return days;
-    };
-
-    const handleDateSelect = (day: number) => {
-        const dateStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        if (showCalendar === 'single') {
-            setSelectedDate(dateStr);
-            setFilterMode('single');
-            setShowCalendar(null);
-        } else if (showCalendar === 'range') {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-                setRangeStart(dateStr);
-                setRangeEnd(null);
-            } else {
-                if (new Date(dateStr) < new Date(rangeStart)) {
-                    setRangeStart(dateStr);
-                } else {
-                    setRangeEnd(dateStr);
-                    setFilterMode('range');
-                    setShowCalendar(null);
-                }
-            }
-        }
-    };
-
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-6 pb-24">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
 
                     {/* CABECERA ESTRECHA MARBELLA DETAIL */}
-                    <div className="bg-[#36606F] px-8 py-5 flex items-center justify-between">
-                        <h1 className="text-xl font-black text-white uppercase tracking-wider">
+                    <div className="bg-[#36606F] px-6 md:px-8 py-5 flex items-center justify-between gap-2">
+                        <h1 className="text-xl font-black text-white uppercase tracking-wider shrink-0">
                             Coste Laboral
                         </h1>
-                        <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors p-2">
-                            <X size={24} />
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <TimeFilterButton
+                                onClick={() => setIsTimeFilterOpen(true)}
+                                hasActiveFilter={filterMode === 'range' && !!(rangeStart && rangeEnd)}
+                                onClear={() => {
+                                    setFilterMode('single');
+                                    setRangeStart(null);
+                                    setRangeEnd(null);
+                                }}
+                            />
+                            <button onClick={() => router.back()} className="p-2 text-white/60 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Volver">
+                                <X size={24} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="p-6 md:p-8 flex-1 flex flex-col">
-                        {/* FILTROS EN UNA FILA COMPACTA */}
-                        <div className="mb-6 space-y-4">
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">Día:</span>
-                                    <button
-                                        onClick={() => setShowCalendar('single')}
-                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'single' ? 'bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
-                                    >
-                                        <Calendar size={12} />
-                                        {new Date(selectedDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                                    </button>
-                                </div>
-
-                                <div className="h-4 w-px bg-gray-200 shrink-0 mx-1"></div>
-
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase">Rango:</span>
-                                    <button
-                                        onClick={() => setShowCalendar('range')}
-                                        className={`h-8 px-3 rounded-lg text-[10px] font-bold border-2 transition-all flex items-center gap-1.5 ${filterMode === 'range' ? 'bg-[#5B8FB9] border-[#5B8FB9] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}
-                                    >
-                                        <Calendar size={12} />
-                                        {rangeStart && rangeEnd
-                                            ? `${new Date(rangeStart).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} - ${new Date(rangeEnd).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}`
-                                            : 'Selec...'}
-                                    </button>
-                                </div>
-                            </div>
+                        {/* Indicador de filtro activo (solo lectura, abre modal al pulsar) */}
+                        <div className="mb-6">
+                            <button
+                                type="button"
+                                onClick={() => setIsTimeFilterOpen(true)}
+                                className="text-[10px] font-black text-gray-500 hover:text-[#5B8FB9] uppercase tracking-widest transition-colors"
+                            >
+                                {filterMode === 'single'
+                                    ? new Date(selectedDate).toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' })
+                                    : rangeStart && rangeEnd
+                                        ? `${new Date(rangeStart).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} – ${new Date(rangeEnd).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}`
+                                        : 'Elegir periodo'}
+                            </button>
                         </div>
 
                         {/* KPI SUMMARY CLEAN (Sin tarjetas, solo texto y color) */}
@@ -395,61 +349,46 @@ export default function LaborHistoryPage() {
                     </div>
                 </div>
 
-                {/* MODAL CALENDARIO */}
-                {showCalendar && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
-                        <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                                <h3 className="font-black text-gray-800 uppercase text-xs tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
-                                <button onClick={() => setShowCalendar(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
-                            </div>
-
-                            <div className="p-4">
-                                <div className="flex items-center justify-between mb-4 px-2">
-                                    <button onClick={() => setCalendarBaseDate(new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() - 1, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><ChevronLeft size={20} className="text-gray-600" /></button>
-                                    <span className="font-black text-gray-800 text-sm uppercase tracking-tighter">{calendarBaseDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                                    <button onClick={() => setCalendarBaseDate(new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() + 1, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><ChevronRight size={20} className="text-gray-600" /></button>
-                                </div>
-
-                                <div className="grid grid-cols-7 gap-1">
-                                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                        <div key={d} className="text-center text-[9px] font-black text-gray-300 py-2">{d}</div>
-                                    ))}
-                                    {generateCalendarDays().map((day, i) => {
-                                        if (!day) return <div key={i} />;
-                                        const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-                                        const isSelected = showCalendar === 'single'
-                                            ? selectedDate === dStr
-                                            : (rangeStart === dStr || rangeEnd === dStr);
-
-                                        const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-
-                                        return (
-                                            <button
-                                                key={i}
-                                                onClick={() => handleDateSelect(day)}
-                                                className={`aspect-square flex items-center justify-center rounded-xl text-xs font-black transition-all
-                                                ${isSelected ? 'bg-[#5B8FB9] text-white shadow-md' : isInRange ? 'bg-blue-50 text-[#5B8FB9]' : 'hover:bg-gray-100 text-gray-700'}
-                                            `}
-                                            >
-                                                {day}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {showCalendar === 'range' && rangeStart && !rangeEnd && (
-                                <div className="px-6 pb-6 text-center">
-                                    <span className="inline-block px-3 py-1 bg-amber-50 text-amber-700 text-[9px] font-black rounded-full uppercase tracking-widest animate-pulse">
-                                        Selecciona fecha final
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
+                <TimeFilterModal
+                    isOpen={isTimeFilterOpen}
+                    onClose={() => setIsTimeFilterOpen(false)}
+                    allowedKinds={['date', 'range', 'week', 'month', 'year']}
+                    initialValue={
+                        filterMode === 'single'
+                            ? ({ kind: 'date', date: selectedDate } satisfies TimeFilterValue)
+                            : rangeStart && rangeEnd
+                                ? ({ kind: 'range', startDate: rangeStart, endDate: rangeEnd } satisfies TimeFilterValue)
+                                : ({ kind: 'date', date: selectedDate } satisfies TimeFilterValue)
+                    }
+                    onApply={(v) => {
+                        if (v.kind === 'date') {
+                            setSelectedDate(v.date);
+                            setFilterMode('single');
+                            return;
+                        }
+                        if (v.kind === 'range' || v.kind === 'week') {
+                            setRangeStart(v.startDate);
+                            setRangeEnd(v.endDate);
+                            setFilterMode('range');
+                            return;
+                        }
+                        if (v.kind === 'month') {
+                            const s = new Date(v.year, v.month - 1, 1);
+                            const e = new Date(v.year, v.month, 0);
+                            setRangeStart(format(s, 'yyyy-MM-dd'));
+                            setRangeEnd(format(e, 'yyyy-MM-dd'));
+                            setFilterMode('range');
+                            return;
+                        }
+                        if (v.kind === 'year') {
+                            const s = new Date(v.year, 0, 1);
+                            const e = new Date(v.year, 11, 31);
+                            setRangeStart(format(s, 'yyyy-MM-dd'));
+                            setRangeEnd(format(e, 'yyyy-MM-dd'));
+                            setFilterMode('range');
+                        }
+                    }}
+                />
             </div>
         </div>
     );

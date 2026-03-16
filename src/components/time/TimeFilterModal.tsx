@@ -44,7 +44,6 @@ export function TimeFilterModal({
   allowedKinds,
   initialValue,
   defaultKind,
-  title = "Filtrar",
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -52,7 +51,6 @@ export function TimeFilterModal({
   allowedKinds: TimeFilterKind[];
   initialValue?: TimeFilterValue;
   defaultKind?: TimeFilterKind;
-  title?: string;
 }) {
   const initialKind = useMemo<TimeFilterKind>(() => {
     const candidate = defaultKind ?? initialValue?.kind ?? allowedKinds[0] ?? "date";
@@ -136,9 +134,9 @@ export function TimeFilterModal({
       type="button"
       onClick={() => setActiveKind(kind)}
       className={cn(
-        "flex-1 min-h-[48px] rounded-xl px-2",
+        "flex-1 min-h-[36px] px-1",
         "text-[9px] font-black uppercase tracking-widest transition-all",
-        activeKind === kind ? "bg-zinc-900 text-white shadow-sm" : "bg-zinc-50 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100"
+        activeKind === kind ? "text-white bg-[#36606F]" : "text-[#36606F]"
       )}
     >
       {KIND_LABEL[kind]}
@@ -204,13 +202,13 @@ export function TimeFilterModal({
           }
         }}
         className={cn(
-          "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all",
+          "aspect-square flex items-center justify-center text-[11px] font-black transition-all",
           isMuted ? "opacity-20" : "opacity-100",
           selected
-            ? "bg-zinc-900 text-white shadow-xl scale-[1.03]"
+            ? "bg-[#36606F] text-white"
             : inRange
-              ? "bg-blue-50 text-[#5B8FB9]"
-              : "hover:bg-zinc-50 text-zinc-600"
+              ? "text-[#36606F]"
+              : "text-zinc-600"
         )}
         aria-label={format(day, "yyyy-MM-dd")}
       >
@@ -228,8 +226,7 @@ export function TimeFilterModal({
         <div className="bg-[#36606F] p-5 text-white relative">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">{title}</div>
-              <div className="text-lg font-black uppercase tracking-tight italic">Filtro temporal</div>
+              <div className="text-lg font-black uppercase tracking-tight italic">Filtro</div>
             </div>
             <button
               type="button"

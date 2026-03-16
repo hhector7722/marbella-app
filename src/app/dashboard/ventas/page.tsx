@@ -340,7 +340,11 @@ export default function VentasPage() {
                                 <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
                             </div>
 
-                            <TimeFilterButton onClick={() => setIsTimeFilterOpen(true)} />
+                            <TimeFilterButton
+                                onClick={() => setIsTimeFilterOpen(true)}
+                                hasActiveFilter={!!hourFilter}
+                                onClear={() => setHourFilter(null)}
+                            />
                         </div>
 
                         {/* FILTRO ACTIVO CENTRADO */}

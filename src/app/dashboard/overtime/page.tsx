@@ -11,6 +11,9 @@ import { es } from 'date-fns/locale';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus, type WeeklyStats } from '@/app/actions/overtime';
 import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
 const formatDisplay = (val: number, suffix: string = '') => {
@@ -70,6 +73,7 @@ export default function OvertimePage() {
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     useEffect(() => {
         const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
@@ -145,16 +149,23 @@ export default function OvertimePage() {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => router.push('/dashboard')}
-                                    className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                                    className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                                     aria-label="Volver"
                                 >
                                     <ArrowLeft size={20} strokeWidth={2.5} />
                                 </button>
                                 <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider">Horas Extras</h1>
                             </div>
-                            <button onClick={() => router.push('/dashboard')} className="p-2 text-white/60 hover:text-white transition-colors" aria-label="Cerrar">
-                                <X size={24} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <TimeFilterButton
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    hasActiveFilter={true}
+                                    onClear={() => setViewMonth(startOfMonth(new Date()))}
+                                />
+                                <button onClick={() => router.push('/dashboard')} className="p-2 text-white/60 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Cerrar">
+                                    <X size={24} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Cuerpo: calendario + filas de semanas (altura por contenido) */}
@@ -164,18 +175,22 @@ export default function OvertimePage() {
                                 <button
                                     type="button"
                                     onClick={() => setViewMonth(prev => subMonths(prev, 1))}
-                                    className="p-2 rounded-xl hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0"
+                                    className="p-2 rounded-xl hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center"
                                     aria-label="Mes anterior"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
-                                <span className="text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 min-w-[140px] text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    className="text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 min-w-[140px] text-center hover:text-purple-700 transition-colors py-2"
+                                >
                                     {format(viewMonth, 'MMMM yyyy', { locale: es })}
-                                </span>
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() => setViewMonth(prev => addMonths(prev, 1))}
-                                    className="p-2 rounded-xl hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0"
+                                    className="p-2 rounded-xl hover:bg-purple-50 text-zinc-600 hover:text-purple-700 transition-colors shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center"
                                     aria-label="Mes siguiente"
                                 >
                                     <ChevronRight className="w-5 h-5" />
@@ -307,6 +322,23 @@ export default function OvertimePage() {
                     </div>
                 );
             })()}
+
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                allowedKinds={['month', 'year']}
+                defaultKind="month"
+                initialValue={{ kind: 'month', year: viewMonth.getFullYear(), month: viewMonth.getMonth() + 1 } satisfies TimeFilterValue}
+                onApply={(v) => {
+                    if (v.kind === 'month') {
+                        setViewMonth(new Date(v.year, v.month - 1, 1));
+                        return;
+                    }
+                    if (v.kind === 'year') {
+                        setViewMonth(new Date(v.year, 0, 1));
+                    }
+                }}
+            />
 
             <WorkerWeeklyHistoryModal
                 isOpen={!!selectedHistory}

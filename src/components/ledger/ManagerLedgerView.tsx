@@ -19,6 +19,9 @@ import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 
 interface LedgerRow {
     id: string;
@@ -50,10 +53,7 @@ export default function ManagerLedgerView() {
         const d = endOfMonth(new Date());
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     });
-    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
-    const [showMonthPicker, setShowMonthPicker] = useState(false);
-    const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
-    const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -162,40 +162,6 @@ export default function ManagerLedgerView() {
         setRangeStart(format(startOfMonth(next), 'yyyy-MM-dd'));
         setRangeEnd(format(endOfMonth(next), 'yyyy-MM-dd'));
         setFilterMode('range');
-    };
-
-    const generateCalendarDays = () => {
-        const year = calendarBaseDate.getFullYear();
-        const month = calendarBaseDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const days: (number | null)[] = [];
-        const startDay = (firstDay.getDay() + 6) % 7;
-        for (let i = 0; i < startDay; i++) days.push(null);
-        for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
-        return days;
-    };
-
-    const handleDateSelect = (day: number) => {
-        const dateStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        if (showCalendar === 'single') {
-            setSelectedDate(dateStr);
-            setFilterMode('single');
-            setShowCalendar(null);
-        } else if (showCalendar === 'range') {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-                setRangeStart(dateStr);
-                setRangeEnd(null);
-            } else {
-                if (new Date(dateStr) < new Date(rangeStart)) {
-                    setRangeStart(dateStr);
-                } else {
-                    setRangeEnd(dateStr);
-                    setFilterMode('range');
-                    setShowCalendar(null);
-                }
-            }
-        }
     };
 
     const openCreateModal = () => {
@@ -329,42 +295,34 @@ export default function ManagerLedgerView() {
                             </div>
                         </div>
 
-                        {/* FILTROS (mes, periodo, fecha única) */}
+                        {/* FILTROS (unificado) */}
                         <div className="flex items-center justify-between gap-2 pb-2">
                             <div className="flex items-center gap-0.5 md:gap-1">
-                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center">
                                     <ChevronLeft size={18} />
                                 </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
+                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
                                         ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'SELECCIONAR MES'}
                                 </button>
-                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
+                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center">
                                     <ChevronRight size={18} />
                                 </button>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                    onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
-                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                            ? "bg-white border-white text-zinc-800 shadow-sm"
-                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    PERIODO
-                                </button>
-                                <button
-                                    onClick={() => setShowCalendar('single')}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
-                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    FECHA
-                                </button>
+                                <TimeFilterButton
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    hasActiveFilter={filterMode === 'single' || !!(rangeStart && rangeEnd && !isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd)))}
+                                    onClear={() => {
+                                        const d = new Date();
+                                        const s = startOfMonth(d);
+                                        const e = endOfMonth(d);
+                                        setFilterMode('range');
+                                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -485,87 +443,46 @@ export default function ManagerLedgerView() {
             </div>
 
             {/* Modal calendario */}
-            {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
-                            <button onClick={() => setShowCalendar(null)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6 px-2">
-                                <button onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                                <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                                <button onClick={() => setCalendarBaseDate(addMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
-                            </div>
-                            <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                    <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
-                                ))}
-                                {generateCalendarDays().map((day, i) => {
-                                    if (!day) return <div key={i} />;
-                                    const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                    const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
-                                    const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => handleDateSelect(day)}
-                                            className={cn(
-                                                "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all",
-                                                isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
-                                            )}
-                                        >
-                                            {day}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
-                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-8 px-2">
-                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const date = new Date(pickerYear, i, 1);
-                                    const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                setRangeStart(format(startOfMonth(date), 'yyyy-MM-dd'));
-                                                setRangeEnd(format(endOfMonth(date), 'yyyy-MM-dd'));
-                                                setFilterMode('range');
-                                                setShowMonthPicker(false);
-                                            }}
-                                            className={cn(
-                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                                isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
-                                            )}
-                                        >
-                                            {format(date, 'MMM', { locale: es })}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                allowedKinds={['date', 'range', 'week', 'month', 'year']}
+                initialValue={
+                    filterMode === 'single'
+                        ? ({ kind: 'date', date: selectedDate } satisfies TimeFilterValue)
+                        : rangeStart && rangeEnd
+                            ? ({ kind: 'range', startDate: rangeStart, endDate: rangeEnd } satisfies TimeFilterValue)
+                            : ({ kind: 'date', date: selectedDate } satisfies TimeFilterValue)
+                }
+                onApply={(v) => {
+                    if (v.kind === 'date') {
+                        setSelectedDate(v.date);
+                        setFilterMode('single');
+                        return;
+                    }
+                    if (v.kind === 'range' || v.kind === 'week') {
+                        setRangeStart(v.startDate);
+                        setRangeEnd(v.endDate);
+                        setFilterMode('range');
+                        return;
+                    }
+                    if (v.kind === 'month') {
+                        const s = startOfMonth(new Date(v.year, v.month - 1, 1));
+                        const e = endOfMonth(new Date(v.year, v.month - 1, 1));
+                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                        setFilterMode('range');
+                        return;
+                    }
+                    if (v.kind === 'year') {
+                        const s = new Date(v.year, 0, 1);
+                        const e = new Date(v.year, 11, 31);
+                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                        setFilterMode('range');
+                    }
+                }}
+            />
 
             {/* Modal Nuevo/Editar */}
             {(modalOpen || editModalOpen) && (

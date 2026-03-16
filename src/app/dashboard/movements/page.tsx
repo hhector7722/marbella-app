@@ -483,9 +483,20 @@ export default function MovementsPage() {
                                 </button>
                             </div>
 
-                            {/* FILTROS SECUNDARIOS REDUCIDOS */}
+                            {/* FILTRO UNIFICADO */}
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <TimeFilterButton onClick={() => setIsTimeFilterOpen(true)} />
+                                <TimeFilterButton
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    hasActiveFilter={filterMode === 'single'}
+                                    onClear={() => {
+                                        const d = new Date();
+                                        const s = startOfMonth(d);
+                                        const e = endOfMonth(d);
+                                        setFilterMode('range');
+                                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>

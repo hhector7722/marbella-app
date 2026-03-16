@@ -4,9 +4,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit3, Plus, RefreshCw } from 'lucide-react';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 
@@ -69,6 +72,7 @@ export default function TipsDashboardView() {
     return format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
   });
 
+  const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
   const [cashModal, setCashModal] = useState<{ open: boolean; poolType: PoolType } | null>(null);
   const [overrideModal, setOverrideModal] = useState<{
     open: boolean;
@@ -225,21 +229,20 @@ export default function TipsDashboardView() {
                 </p>
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="min-h-[44px] h-9 md:h-11 rounded-lg md:rounded-xl px-2 md:px-3 text-xs md:text-sm font-black bg-white/10 border border-white/20 text-white placeholder-white/60 outline-none [color-scheme:dark]"
-                />
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="min-h-[44px] h-9 md:h-11 rounded-lg md:rounded-xl px-2 md:px-3 text-xs md:text-sm font-black bg-white/10 border border-white/20 text-white placeholder-white/60 outline-none [color-scheme:dark]"
+                <TimeFilterButton
+                  onClick={() => setIsTimeFilterOpen(true)}
+                  hasActiveFilter={true}
+                  onClear={() => {
+                    const now = new Date();
+                    const start = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                    const end = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                    setStartDate(start);
+                    setEndDate(end);
+                  }}
                 />
                 <button
                   onClick={fetchPreview}
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center text-white shrink-0 min-h-[44px]"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center text-white shrink-0 min-h-[48px]"
                 >
                   <RefreshCw size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                 </button>
@@ -457,6 +460,38 @@ export default function TipsDashboardView() {
           }}
         />
       )}
+
+      <TimeFilterModal
+        isOpen={isTimeFilterOpen}
+        onClose={() => setIsTimeFilterOpen(false)}
+        allowedKinds={['date', 'range', 'week', 'month', 'year']}
+        initialValue={{ kind: 'range', startDate, endDate } satisfies TimeFilterValue}
+        onApply={(v) => {
+          if (v.kind === 'date') {
+            setStartDate(v.date);
+            setEndDate(v.date);
+            return;
+          }
+          if (v.kind === 'range' || v.kind === 'week') {
+            setStartDate(v.startDate);
+            setEndDate(v.endDate);
+            return;
+          }
+          if (v.kind === 'month') {
+            const s = startOfMonth(new Date(v.year, v.month - 1, 1));
+            const e = endOfMonth(new Date(v.year, v.month - 1, 1));
+            setStartDate(format(s, 'yyyy-MM-dd'));
+            setEndDate(format(e, 'yyyy-MM-dd'));
+            return;
+          }
+          if (v.kind === 'year') {
+            const s = new Date(v.year, 0, 1);
+            const e = new Date(v.year, 11, 31);
+            setStartDate(format(s, 'yyyy-MM-dd'));
+            setEndDate(format(e, 'yyyy-MM-dd'));
+          }
+        }}
+      />
     </div>
   );
 }
