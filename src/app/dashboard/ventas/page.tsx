@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, X, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -313,7 +313,7 @@ export default function VentasPage() {
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
                     {/* CABECERA Y FILTROS */}
-                    <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3">
+                    <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3 print:hidden">
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 md:gap-3 shrink-0">
                                 <button onClick={() => router.back()} className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-7 h-7 md:w-10 md:h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0">
@@ -420,7 +420,7 @@ export default function VentasPage() {
                     </div>
 
                     {/* SECCIÓN DE KPIs */}
-                    <div className="py-4 px-2 grid grid-cols-3 border-b border-zinc-50">
+                    <div className="py-4 px-2 grid grid-cols-3 border-b border-zinc-50 print:hidden">
                         <div className="flex flex-col items-center justify-center text-center px-1">
                             <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-emerald-500">
                                 {summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}
@@ -479,7 +479,7 @@ export default function VentasPage() {
                             (_, i) => chartData[BUSINESS_HOURS.start + i]?.total ?? 0
                         ).reduce((a, b) => a + Number(b), 0);
                         return (
-                            <div className="w-full pb-1 pt-2 px-4 border-b border-zinc-50 shrink-0">
+                            <div className="w-full pb-1 pt-2 px-4 border-b border-zinc-50 shrink-0 print:hidden">
                                 <div
                                     ref={chartContainerRef}
                                     className="w-full relative"
@@ -531,7 +531,7 @@ export default function VentasPage() {
                     })()}
 
                     {/* TOGGLE PRODUCTOS / TICKETS (cuerpo, debajo de resumen) */}
-                    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 flex justify-center">
+                    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center relative print:hidden">
                         <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
                             <button
                                 onClick={() => setActiveTab('TICKETS')}
@@ -556,10 +556,21 @@ export default function VentasPage() {
                                 Productos
                             </button>
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => window.print()}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
+                            title="Imprimir"
+                        >
+                            <Printer size={20} />
+                        </button>
                     </div>
 
                     {/* TABLAS */}
-                    <div className="p-4 md:p-6 bg-zinc-50/50">
+                    <div className="p-4 md:p-6 bg-zinc-50/50 print:bg-white print:p-4">
+                        <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">
+                            Ventas — {activeTab === 'TICKETS' ? 'Tickets' : 'Productos'}
+                        </div>
                         <div className="bg-transparent w-full">
                             {loading ? (
                                 <div className="flex justify-center items-center py-20">
@@ -571,7 +582,7 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                 <tr>
@@ -623,7 +634,7 @@ export default function VentasPage() {
                                                                 </td>
                                                             </tr>
                                                             {expandedTicket === ticket.numero_documento && (
-                                                                <tr className="bg-zinc-50/30">
+                                                                <tr className="bg-zinc-50/30 print:hidden">
                                                                     <td colSpan={3} className="px-1 py-2 md:p-4">
                                                                         <div className="bg-[#fcfcfc] rounded-2xl p-2 md:p-4 animate-in slide-in-from-top-2 duration-200">
                                                                             {loadingLines ? (
@@ -669,8 +680,8 @@ export default function VentasPage() {
                                                                 </tr>
                                                             )}
                                                         </React.Fragment>
-                                                    );
-                                                })}
+                                                            );
+                                                        })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -681,7 +692,7 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                 <tr>

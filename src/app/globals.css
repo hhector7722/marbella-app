@@ -58,7 +58,7 @@
 /* Imprimir: sin cabecera/pie del navegador (URL, fecha, hora, página) y tabla con cabecera/fin por hoja */
 @page {
   size: auto;
-  margin: 0;
+  margin: 15mm;
 }
 
 @media print {
@@ -80,11 +80,16 @@
     display: table-header-group !important;
   }
 
-  .print-table-cierres tfoot {
-    display: table-footer-group !important;
+  .print-table-cierres tbody tr {
+    page-break-inside: avoid;
   }
 
-  .print-table-cierres tbody tr {
+  /* Tabla Ventas (Tickets / Productos): cabecera repetida y pie "Fin de tabla" */
+  .print-table-ventas thead {
+    display: table-header-group !important;
+  }
+
+  .print-table-ventas tbody tr {
     page-break-inside: avoid;
   }
 }

@@ -586,13 +586,6 @@ export default function HistoryPage() {
                                                             );
                                                         })}
                                                 </tbody>
-                                                <tfoot className="hidden print:table-footer-group">
-                                                    <tr>
-                                                        <td colSpan={10} className="py-2 px-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-t border-zinc-200">
-                                                            Fin de tabla
-                                                        </td>
-                                                    </tr>
-                                                </tfoot>
                                             </table>
                                         </div>
                                     )}
