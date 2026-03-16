@@ -104,10 +104,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
             <div
                 className={cn(
-                    'bg-white rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]',
+                    'bg-white rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
                     tab === 'breakdown' ? 'max-w-[320px]' : 'max-w-[280px]'
                 )}
                 onClick={(e) => e.stopPropagation()}

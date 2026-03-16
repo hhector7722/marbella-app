@@ -50,13 +50,13 @@ export function DenominationZoomModal({
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+            className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-3 sm:p-4"
             onClick={onClose}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                    'bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-[280px] animate-in zoom-in-95 duration-200 flex flex-col',
+                    'bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-[280px] animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
                     className
                 )}
             >
@@ -73,7 +73,7 @@ export function DenominationZoomModal({
                         <X size={20} strokeWidth={3} />
                     </button>
                 </div>
-                <div className="p-6 flex flex-col items-center gap-4">
+                <div className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-4">
                     <div className="w-full h-28 flex items-center justify-center bg-gray-50 rounded-xl border border-zinc-100">
                         <Image
                             src={CURRENCY_IMAGES[denomination]}
