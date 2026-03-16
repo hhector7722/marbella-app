@@ -1440,6 +1440,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     return cost > 0.05 && s.preferStock !== true;
                 });
                 const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const paidTotal = weekStaff
+                    .filter((s: any) => paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid)
+                    .reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
                 const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
                 const allWeeks = Array.from(new Map([...(overtimeData || []), ...(overtimeWeeksData || [])].map((w: any) => [w.weekId, w])).values());
@@ -1450,8 +1453,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0">
-                            <span className="text-base font-black text-white shrink-0">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
+                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0 relative">
+                            <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-base font-black text-white">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
+                                {paidTotal > 0.05 && (
+                                    <span className="bg-emerald-500 text-white text-sm font-black px-2 py-1 rounded-md shrink-0 shadow-md" title="Total pagado">
+                                        {paidTotal.toFixed(0)}€ pagado
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex-1 flex items-center justify-center min-w-0">
                                 <div className="inline-flex items-center gap-1.5 sm:gap-2">
                                     <button
