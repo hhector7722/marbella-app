@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, getHourFromTicketTime } from '@/lib/utils';
 import { toast } from 'sonner';
+import { BUSINESS_HOURS } from '@/lib/constants';
 
 interface TicketSummary {
     numero_documento: string;
@@ -61,9 +63,72 @@ export default function VentasPage() {
     const [ticketLines, setTicketLines] = useState<any[]>([]);
     const [loadingLines, setLoadingLines] = useState(false);
 
+    // Gráfica ventas por hora (contenedor tipo dashboard)
+    const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>(() => Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
+    const [selectedChartHour, setSelectedChartHour] = useState<number | null>(null);
+    const chartContainerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+
+    // Fecha usada para la gráfica: día único o primer día del rango
+    const chartDate = filterMode === 'single' ? selectedDate : (rangeStart ?? selectedDate);
+
     useEffect(() => {
         fetchVentas();
     }, [rangeStart, rangeEnd, selectedDate, filterMode]);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchHourly() {
+            try {
+                const { data, error } = await supabase.rpc('get_hourly_sales', {
+                    p_start_date: chartDate,
+                    p_end_date: chartDate
+                });
+                if (cancelled) return;
+                if (!error && data && data.length > 0) {
+                    const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+                    data.forEach((r: { hora: number; total: number }) => {
+                        const h = Number(r.hora);
+                        if (h >= 0 && h < 24) hourly[h] = { hora: h, total: Number(r.total) || 0 };
+                    });
+                    setSalesChartData(hourly);
+                    return;
+                }
+                const { data: ticketsData } = await supabase
+                    .from('tickets_marbella')
+                    .select('hora_cierre, total_documento, fecha')
+                    .gte('fecha', chartDate)
+                    .lte('fecha', chartDate);
+                const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+                (ticketsData || []).forEach((t: { hora_cierre?: string; total_documento?: number; fecha?: string }) => {
+                    const hour = getHourFromTicketTime(t.hora_cierre, t.fecha);
+                    hourly[hour].total += Number(t.total_documento) || 0;
+                });
+                setSalesChartData(hourly);
+            } catch {
+                if (!cancelled) setSalesChartData(Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
+            }
+        }
+        fetchHourly();
+        return () => { cancelled = true; };
+    }, [chartDate]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+            if (selectedChartHour === null) return;
+            const target = e.target as Node;
+            const chartEl = chartContainerRef.current;
+            const tooltipEl = tooltipRef.current;
+            if (chartEl?.contains(target) || tooltipEl?.contains(target)) return;
+            setSelectedChartHour(null);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [selectedChartHour]);
 
     const parseLocalSafe = (dateStr: string | null) => {
         if (!dateStr) return new Date();
@@ -377,6 +442,93 @@ export default function VentasPage() {
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ticket Medio</span>
                         </div>
                     </div>
+
+                    {/* Gráfica ventas por hora (7–23h), igual que contenedor Ventas del dashboard */}
+                    {(() => {
+                        const chartData = salesChartData;
+                        const rangeData = chartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
+                        const maxMain = Math.max(...rangeData.map(d => d.total), 0);
+                        const scaleMax = Math.max(maxMain, 1);
+                        const hasData = maxMain > 0;
+                        if (!hasData) return null;
+                        const numPoints = rangeData.length;
+                        const isChartDateToday = chartDate === format(new Date(), 'yyyy-MM-dd');
+                        const maxSelectableHour = isChartDateToday ? new Date().getHours() : BUSINESS_HOURS.end;
+                        const toPath = (data: { hora: number; total: number }[]) => {
+                            const pts = data.map((d, i) => {
+                                const x = (i / (numPoints - 1 || 1)) * 120;
+                                const y = 22 - (d.total / scaleMax) * 18;
+                                return `${x},${y}`;
+                            });
+                            return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
+                        };
+                        const getHourFromClientX = (clientX: number): number => {
+                            const el = chartContainerRef.current;
+                            if (!el) return BUSINESS_HOURS.start;
+                            const rect = el.getBoundingClientRect();
+                            const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                            const rawHour = BUSINESS_HOURS.start + Math.round(ratio * (numPoints - 1));
+                            return Math.min(maxSelectableHour, Math.max(BUSINESS_HOURS.start, rawHour));
+                        };
+                        const handleChartTap = (clientX: number) => {
+                            const hour = getHourFromClientX(clientX);
+                            if (hour <= maxSelectableHour) setSelectedChartHour(hour);
+                        };
+                        const totalHastaHora = selectedChartHour === null ? 0 : Array.from(
+                            { length: selectedChartHour - BUSINESS_HOURS.start + 1 },
+                            (_, i) => chartData[BUSINESS_HOURS.start + i]?.total ?? 0
+                        ).reduce((a, b) => a + Number(b), 0);
+                        return (
+                            <div className="w-full pb-1 pt-2 px-4 border-b border-zinc-50 shrink-0">
+                                <div
+                                    ref={chartContainerRef}
+                                    className="w-full relative"
+                                    onClick={(e) => handleChartTap(e.clientX)}
+                                    onTouchEnd={(e) => {
+                                        if (e.changedTouches.length) {
+                                            e.preventDefault();
+                                            handleChartTap(e.changedTouches[0].clientX);
+                                        }
+                                    }}
+                                >
+                                    <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
+                                        <path
+                                            d={toPath(rangeData)}
+                                            fill="none"
+                                            stroke="#36606F"
+                                            strokeWidth="2"
+                                            strokeLinecap="butt"
+                                            strokeLinejoin="miter"
+                                            vectorEffect="non-scaling-stroke"
+                                        />
+                                    </svg>
+                                </div>
+                                <div className="flex justify-between px-0 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
+                                    <span>7h</span>
+                                    <span>23h</span>
+                                </div>
+                                {selectedChartHour !== null && typeof document !== 'undefined' && (() => {
+                                    const idx = selectedChartHour - BUSINESS_HOURS.start;
+                                    const xPct = (idx / (numPoints - 1 || 1)) * 100;
+                                    const yView = 22 - ((chartData[selectedChartHour]?.total ?? 0) / scaleMax) * 18;
+                                    const yPct = (yView / 24) * 100;
+                                    const rect = chartContainerRef.current?.getBoundingClientRect();
+                                    const pointLeft = rect ? rect.left + (xPct / 100) * rect.width : 0;
+                                    const pointTop = rect ? rect.top + (yPct / 100) * rect.height : 0;
+                                    const tooltipEl = (
+                                        <div className="fixed z-[100] pointer-events-none" style={{ left: pointLeft, top: pointTop, transform: 'translate(-50%, -100%)', marginTop: '-4px' }}>
+                                            <div ref={tooltipRef} className="rounded-lg bg-white border border-zinc-200 shadow-lg px-2.5 py-1.5 text-center min-w-[4rem]">
+                                                <div className="text-[10px] md:text-xs font-mono font-bold text-zinc-800 leading-tight">{String(selectedChartHour).padStart(2, '0')}:00</div>
+                                                <div className="text-[10px] md:text-xs font-black tabular-nums text-emerald-600 leading-tight">{totalHastaHora.toFixed(2)}€</div>
+                                            </div>
+                                            <div className="absolute left-1/2 top-full w-3 h-3 rounded-full bg-[#36606F] border-2 border-white shadow-sm -translate-x-1/2 -translate-y-1/2" />
+                                        </div>
+                                    );
+                                    return createPortal(tooltipEl, document.body);
+                                })()}
+                            </div>
+                        );
+                    })()}
 
                     {/* TOGGLE PRODUCTOS / TICKETS (cuerpo, debajo de resumen) */}
                     <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 flex justify-center">
