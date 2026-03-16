@@ -513,7 +513,7 @@ export default function HistoryPage() {
 
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             {viewMode === 'table' ? (
-                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto no-scrollbar">
+                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar">
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                                             <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -524,8 +524,8 @@ export default function HistoryPage() {
                                             <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                         </div>
                                     ) : (
-                                        <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
-                                            <table className="w-full text-left border-collapse">
+                                        <div className="min-w-max w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+                                            <table className="w-full min-w-[800px] text-left border-collapse">
                                                 <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                     <tr>
                                                         <th className="py-4 px-3 md:px-6 whitespace-nowrap">Fecha</th>
