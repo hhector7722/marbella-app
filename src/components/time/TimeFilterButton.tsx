@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar } from "lucide-react";
+import { Calendar, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TimeFilterButton({
@@ -15,7 +15,7 @@ export function TimeFilterButton({
   onClear?: () => void;
 }) {
   return (
-    <div className={cn("relative inline-flex shrink-0", className)}>
+    <div className={cn("inline-flex items-center gap-2 shrink-0", className)}>
       <button
         type="button"
         onClick={onClick}
@@ -30,6 +30,7 @@ export function TimeFilterButton({
         <Calendar className="w-4 h-4 md:w-[18px] md:h-[18px]" />
         <span>Filtrar</span>
       </button>
+
       {hasActiveFilter && onClear && (
         <button
           type="button"
@@ -37,11 +38,14 @@ export function TimeFilterButton({
             e.stopPropagation();
             onClear();
           }}
-          aria-label="Limpiar filtro"
-          className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-md"
+          aria-label="Restablecer filtro"
+          className={cn(
+            "min-h-[48px] min-w-[48px] w-12 h-12",
+            "rounded-2xl bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200",
+            "active:scale-95 transition-all flex items-center justify-center"
+          )}
         >
-          <span className="block w-2 h-[1.5px] bg-white rotate-45" />
-          <span className="block w-2 h-[1.5px] bg-white -rotate-45 absolute" />
+          <X size={18} strokeWidth={3.5} />
         </button>
       )}
     </div>

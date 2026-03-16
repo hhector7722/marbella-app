@@ -159,7 +159,7 @@ export default function OvertimePage() {
                             <div className="flex items-center gap-2 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    hasActiveFilter={true}
+                                    hasActiveFilter={!isSameMonth(viewMonth, new Date()) || viewMonth.getFullYear() !== new Date().getFullYear()}
                                     onClear={() => setViewMonth(startOfMonth(new Date()))}
                                 />
                                 <button onClick={() => router.push('/dashboard')} className="p-2 text-white/60 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Cerrar">

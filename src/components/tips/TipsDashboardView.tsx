@@ -231,7 +231,12 @@ export default function TipsDashboardView() {
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
                 <TimeFilterButton
                   onClick={() => setIsTimeFilterOpen(true)}
-                  hasActiveFilter={true}
+                  hasActiveFilter={(() => {
+                    const now = new Date();
+                    const start = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                    const end = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                    return startDate !== start || endDate !== end;
+                  })()}
                   onClear={() => {
                     const now = new Date();
                     const start = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');

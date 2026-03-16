@@ -465,7 +465,13 @@ export default function HistoryPage() {
                             <div className="flex items-center gap-1 shrink-0 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    hasActiveFilter={filterMode === 'single' || !!(rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd)))}
+                                    hasActiveFilter={(() => {
+                                        const now = new Date();
+                                        const defS = format(startOfMonth(now), 'yyyy-MM-dd');
+                                        const defE = format(endOfMonth(now), 'yyyy-MM-dd');
+                                        const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
+                                        return !isDefault;
+                                    })()}
                                     onClear={() => {
                                         const now = new Date();
                                         setFilterMode('range');

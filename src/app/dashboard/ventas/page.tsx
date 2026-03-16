@@ -342,8 +342,17 @@ export default function VentasPage() {
 
                             <TimeFilterButton
                                 onClick={() => setIsTimeFilterOpen(true)}
-                                hasActiveFilter={!!hourFilter}
-                                onClear={() => setHourFilter(null)}
+                                hasActiveFilter={(() => {
+                                    const today = new Date().toISOString().split('T')[0];
+                                    const isDefault = filterMode === 'single' && selectedDate === today && !hourFilter;
+                                    return !isDefault;
+                                })()}
+                                onClear={() => {
+                                    const today = new Date().toISOString().split('T')[0];
+                                    setHourFilter(null);
+                                    setFilterMode('single');
+                                    setSelectedDate(today);
+                                }}
                                 className="text-white"
                             />
                         </div>
