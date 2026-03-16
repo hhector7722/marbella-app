@@ -40,12 +40,12 @@ export function TimeFilterButton({
           }}
           aria-label="Restablecer filtro"
           className={cn(
-            "min-h-[48px] min-w-[48px] w-12 h-12",
-            "rounded-2xl bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200",
+            "min-h-[36px] min-w-[36px] w-9 h-9 rounded-xl",
+            "bg-rose-500 hover:bg-rose-600 text-white",
             "active:scale-95 transition-all flex items-center justify-center"
           )}
         >
-          <X size={18} strokeWidth={3.5} />
+          <X size={14} strokeWidth={3} />
         </button>
       )}
     </div>
