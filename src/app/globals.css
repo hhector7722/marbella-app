@@ -54,3 +54,11 @@
     -moz-appearance: textfield;
   }
 }
+
+/* Imprimir: sin padding en main para que solo se vea el contenido imprimible (ej. tabla Cierres) */
+@media print {
+  main {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+}

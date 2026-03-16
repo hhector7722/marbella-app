@@ -429,11 +429,26 @@ export default function HistoryPage() {
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20 print:bg-white print:p-0 print:pb-0">
             <div className="max-w-5xl mx-auto print:max-w-none">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
-                        <div className="flex items-center justify-between gap-1 min-w-0">
-                            <div className="flex items-center gap-1 md:gap-2 shrink-0 min-w-0">
-                                <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+                        <div className="relative flex items-center justify-between gap-1 min-w-0">
+                            <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+
+                            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                                <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <button onClick={() => setShowMonthPicker(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[90px] sm:max-w-[120px]">
+                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
+                                        : 'MES'}
+                                </button>
+                                <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
                                 <button
                                     onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
                                     className={cn(
@@ -455,20 +470,6 @@ export default function HistoryPage() {
                                     Fecha
                                 </button>
                             </div>
-
-                            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0">
-                                <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
-                                    <ChevronLeft size={16} />
-                                </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[90px] sm:max-w-[120px]">
-                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'MES'}
-                                </button>
-                                <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
-                                    <ChevronRight size={16} />
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -488,7 +489,7 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center gap-2 print:hidden">
+                        <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center relative print:hidden">
                             <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
                                 <button
                                     onClick={() => setViewMode('table')}
@@ -513,7 +514,7 @@ export default function HistoryPage() {
                                 <button
                                     type="button"
                                     onClick={() => window.print()}
-                                    className="p-2 rounded-lg border border-[#36606F] text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
                                     title="Imprimir tabla"
                                 >
                                     <Printer size={20} />
@@ -539,16 +540,16 @@ export default function HistoryPage() {
                                             <table className="w-full min-w-[800px] text-left border-collapse">
                                                 <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                     <tr>
-                                                        <th className="py-4 px-3 md:px-6 whitespace-nowrap">Fecha</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Ventas</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Venta Neta</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Tickets</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Ticket Medio</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Efectivo</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Tarjeta</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Pendiente</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Deuda Rec.</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Diferencia</th>
+                                                        <th className="py-4 px-3 md:px-6 whitespace-nowrap print:border-r-0">Fecha</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Ventas</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Venta Neta</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Tickets</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Ticket Medio</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Efectivo</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Tarjeta</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Pendiente</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Deuda Rec.</th>
+                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Diferencia</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="text-xs font-bold text-zinc-600 bg-white">
@@ -722,61 +723,59 @@ export default function HistoryPage() {
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
-                            <div className="flex items-center justify-between mb-2 relative z-10">
+                            <div className="flex items-center justify-end gap-1 mb-3 relative z-10">
+                                {!isEditing && isManager && (
+                                    <>
+                                        <button
+                                            onClick={handleDeleteClosing}
+                                            className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                            title="Eliminar Cierre"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                            className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                            title="Editar Cierre"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                    </>
+                                )}
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group"
-                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
-                                    title="Día Anterior"
+                                    onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                    className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
                                 >
-                                    <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
-                                </button>
-
-                                <div className="flex items-center gap-2">
-                                    {!isEditing && isManager && (
-                                        <>
-                                            <button
-                                                onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
-                                                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95"
-                                                title="Editar Cierre"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button
-                                                onClick={handleDeleteClosing}
-                                                className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95"
-                                                title="Eliminar Cierre"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </>
-                                    )}
-                                    <button
-                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                        className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 ml-2"
-                                    >
-                                        <X size={16} strokeWidth={3} />
-                                    </button>
-                                </div>
-
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 group"
-                                    disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
-                                    title="Día Siguiente"
-                                >
-                                    <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                                    <X size={16} strokeWidth={3} />
                                 </button>
                             </div>
 
-                            <div className="mt-4">
+                            <div className="mt-2">
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
-                                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mx-auto max-w-[90%] break-words">
-                                    {(() => {
-                                        const d = new Date(selectedClosing.closed_at);
-                                        return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
-                                    })()}
-                                </h2>
+                                <div className="flex items-center justify-center gap-1 md:gap-2 min-w-0">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
+                                        className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
+                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                        title="Día Anterior"
+                                    >
+                                        <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+                                    </button>
+                                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter break-words min-w-0 flex-1">
+                                        {(() => {
+                                            const d = new Date(selectedClosing.closed_at);
+                                            return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
+                                        })()}
+                                    </h2>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
+                                        className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
+                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                        title="Día Siguiente"
+                                    >
+                                        <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
+                                </div>
                                 <div className="flex items-center justify-center gap-4 mt-6">
                                     <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
                                         <CloudSun size={14} className="text-amber-400" />

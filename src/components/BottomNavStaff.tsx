@@ -125,7 +125,7 @@ export default function BottomNavStaff() {
     return (
         <>
             {/* UNIVERSAL: Bottom Bar (Scaled for Desktop) */}
-            <nav className="fixed bottom-0 left-0 right-0 h-20 md:h-16 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <nav className="fixed bottom-0 left-0 right-0 h-20 md:h-16 pb-safe bg-[#5B8FB9] border-t border-white/10 z-30 flex justify-around items-center px-2 md:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur-md print:hidden">
                 {staffItems.map((item) => (
                     <Link
                         key={item.href}
