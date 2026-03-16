@@ -16,6 +16,7 @@ import {
     ChevronRight as ChevronRightIcon,
     Banknote,
     Minus,
+    Printer,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
@@ -426,18 +427,40 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20">
-            <div className="max-w-5xl mx-auto">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-                    <div className="bg-[#36606F] p-1.5 md:p-3 relative">
-                        <div className="flex items-center justify-between gap-2">
-                            <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+        <div className="min-h-screen bg-[#5B8FB9] p-1 md:p-3 pb-20 print:bg-white print:p-0 print:pb-0">
+            <div className="max-w-5xl mx-auto print:max-w-none">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
+                    <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
+                        <div className="flex items-center justify-between gap-1 min-w-0">
+                            <div className="flex items-center gap-1 md:gap-2 shrink-0 min-w-0">
+                                <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+                                <button
+                                    onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
+                                    className={cn(
+                                        "px-1.5 py-1 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
+                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
+                                            ? "bg-white border-white text-zinc-800 shadow-sm"
+                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    )}
+                                >
+                                    Periodo
+                                </button>
+                                <button
+                                    onClick={() => setShowCalendar('single')}
+                                    className={cn(
+                                        "px-1.5 py-1 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
+                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
+                                    )}
+                                >
+                                    Fecha
+                                </button>
+                            </div>
 
                             <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0">
                                 <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
                                     <ChevronLeft size={16} />
                                 </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[100px] sm:max-w-[140px]">
+                                <button onClick={() => setShowMonthPicker(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[90px] sm:max-w-[120px]">
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'MES'}
@@ -446,34 +469,11 @@ export default function HistoryPage() {
                                     <ChevronRight size={16} />
                                 </button>
                             </div>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                    onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
-                                    className={cn(
-                                        "px-2 py-1 md:py-1.5 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
-                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? "bg-white border-white text-zinc-800 shadow-sm"
-                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    PERIODO
-                                </button>
-                                <button
-                                    onClick={() => setShowCalendar('single')}
-                                    className={cn(
-                                        "px-2 py-1 md:py-1.5 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
-                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    FECHA
-                                </button>
-                            </div>
                         </div>
                     </div>
 
                     <div className="bg-white">
-                        <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-lg md:text-2xl font-black text-zinc-900 tabular-nums leading-none">{formatValue(summary.totalGross, 'tpv_sales')}</span>
                                 <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">VENTAS</span>
@@ -488,7 +488,7 @@ export default function HistoryPage() {
                             </div>
                         </div>
 
-                        <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center">
+                        <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center gap-2 print:hidden">
                             <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
                                 <button
                                     onClick={() => setViewMode('table')}
@@ -509,11 +509,22 @@ export default function HistoryPage() {
                                     Calendario
                                 </button>
                             </div>
+                            {viewMode === 'table' && (
+                                <button
+                                    type="button"
+                                    onClick={() => window.print()}
+                                    className="p-2 rounded-lg border border-[#36606F] text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                    title="Imprimir tabla"
+                                >
+                                    <Printer size={20} />
+                                </button>
+                            )}
                         </div>
 
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             {viewMode === 'table' ? (
-                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar">
+                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-0">
+                                    <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">Cierres — Historial</div>
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                                             <LoadingSpinner size="lg" className="text-[#36606F]" />
