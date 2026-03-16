@@ -134,7 +134,7 @@ export function TimeFilterModal({
       type="button"
       onClick={() => setActiveKind(kind)}
       className={cn(
-        "flex-1 min-h-[36px] px-1",
+        "flex-1 min-h-[36px] px-1 rounded-xl",
         "text-[9px] font-black uppercase tracking-widest transition-all",
         activeKind === kind ? "text-white bg-[#36606F]" : "text-[#36606F]"
       )}
@@ -145,24 +145,27 @@ export function TimeFilterModal({
 
   const CalendarCell = ({ day }: { day: Date }) => {
     const dStr = ymd(day);
+    const isWeekMode = activeKind === "week";
     const selected =
       activeKind === "date"
         ? singleDate === dStr
         : activeKind === "range"
           ? (rangeStart === dStr || rangeEnd === dStr)
-          : activeKind === "week"
-            ? (() => {
-                if (!rangeStart || !rangeEnd) return false;
-                return dStr >= rangeStart && dStr <= rangeEnd;
-              })()
-            : false;
+          : false;
 
     const inRange =
-      (activeKind === "range" || activeKind === "week") &&
+      activeKind === "range" &&
       rangeStart &&
       rangeEnd &&
       dStr > rangeStart &&
       dStr < rangeEnd;
+
+    const inWeek =
+      isWeekMode &&
+      rangeStart &&
+      rangeEnd &&
+      dStr >= rangeStart &&
+      dStr <= rangeEnd;
 
     const isMuted = !isSameMonth(day, calendarBaseDate);
 
@@ -202,13 +205,16 @@ export function TimeFilterModal({
           }
         }}
         className={cn(
-          "aspect-square flex items-center justify-center text-[11px] font-black transition-all",
+          "aspect-square flex items-center justify-center text-[11px] font-black transition-all rounded-2xl",
           isMuted ? "opacity-20" : "opacity-100",
-          selected
+          // Semana: bloque completo
+          inWeek
             ? "bg-[#36606F] text-white"
-            : inRange
-              ? "text-[#36606F]"
-              : "text-zinc-600"
+            : selected
+              ? "bg-[#36606F] text-white"
+              : inRange
+                ? "text-[#36606F]"
+                : "text-zinc-600"
         )}
         aria-label={format(day, "yyyy-MM-dd")}
       >

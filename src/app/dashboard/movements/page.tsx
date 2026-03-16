@@ -484,7 +484,7 @@ export default function MovementsPage() {
                             </div>
 
                             {/* FILTRO UNIFICADO */}
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     hasActiveFilter={filterMode === 'single'}

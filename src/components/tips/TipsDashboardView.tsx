@@ -228,7 +228,7 @@ export default function TipsDashboardView() {
                   Rango manual • {rangeLabel}
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
                 <TimeFilterButton
                   onClick={() => setIsTimeFilterOpen(true)}
                   hasActiveFilter={true}

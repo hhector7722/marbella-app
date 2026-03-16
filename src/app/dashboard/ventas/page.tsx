@@ -344,6 +344,7 @@ export default function VentasPage() {
                                 onClick={() => setIsTimeFilterOpen(true)}
                                 hasActiveFilter={!!hourFilter}
                                 onClear={() => setHourFilter(null)}
+                                className="text-white"
                             />
                         </div>
 

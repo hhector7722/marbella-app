@@ -259,7 +259,7 @@ export default function LaborHistoryPage() {
                         <h1 className="text-xl font-black text-white uppercase tracking-wider shrink-0">
                             Coste Laboral
                         </h1>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 text-white">
                             <TimeFilterButton
                                 onClick={() => setIsTimeFilterOpen(true)}
                                 hasActiveFilter={filterMode === 'range' && !!(rangeStart && rangeEnd)}

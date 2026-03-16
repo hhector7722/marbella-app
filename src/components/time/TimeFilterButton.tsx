@@ -22,12 +22,13 @@ export function TimeFilterButton({
         className={cn(
           "inline-flex items-center gap-1.5",
           "text-[9px] md:text-[10px] font-black uppercase tracking-widest",
-          "text-[#36606F] hover:text-[#24414b] transition-colors outline-none",
+          "transition-colors outline-none",
           "min-h-[32px]"
         )}
-        aria-label="Filtro"
+        aria-label="Filtrar"
       >
         <Calendar className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+        <span>Filtrar</span>
       </button>
       {hasActiveFilter && onClear && (
         <button

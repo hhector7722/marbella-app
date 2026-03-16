@@ -156,7 +156,7 @@ export default function OvertimePage() {
                                 </button>
                                 <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider">Horas Extras</h1>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     hasActiveFilter={true}
