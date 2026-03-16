@@ -89,6 +89,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             [denom]: Math.max(0, (prev[denom] || 0) + delta),
         }));
     }, []);
+    const handleBreakdownCountChange = useCallback((denom: number, value: string) => {
+        const num = value === '' ? 0 : Math.max(0, parseInt(value, 10) || 0);
+        setBreakdownCounts((prev) => ({ ...prev, [denom]: num }));
+    }, []);
     const handleBreakdownCopy = useCallback(() => {
         navigator.clipboard.writeText(breakdownTotal.toFixed(2)).then(() => {
             toast.success('Total copiado al portapapeles');
@@ -207,9 +211,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                     >
                                                         <Minus size={14} strokeWidth={3} />
                                                     </button>
-                                                    <span className="flex-1 text-center font-black text-zinc-700 text-[10px] tracking-tighter tabular-nums">
-                                                        {qty > 0 ? qty : ' '}
-                                                    </span>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={qty > 0 ? qty : ''}
+                                                        onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
+                                                        placeholder=""
+                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    />
                                                     <button
                                                         type="button"
                                                         onClick={() => handleBreakdownAdjust(denom, 1)}
