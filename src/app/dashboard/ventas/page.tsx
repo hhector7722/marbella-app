@@ -308,7 +308,7 @@ export default function VentasPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900">
+        <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900 print:bg-white">
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
 
@@ -562,7 +562,7 @@ export default function VentasPage() {
                             className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
                             title="Imprimir"
                         >
-                            <Printer size={20} />
+                            <Printer size={16} />
                         </button>
                     </div>
 

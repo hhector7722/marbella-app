@@ -67,12 +67,17 @@
     padding-bottom: 0 !important;
   }
 
-  /* Quitar márgenes del cuerpo para que el navegador no dibuje URL/fecha/página en la zona de márgenes */
+  /* Fondo blanco al imprimir (evitar azul de la app) y márgenes del cuerpo */
   body {
     margin: 0 !important;
     padding: 0 !important;
+    background: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  html {
+    background: #fff !important;
   }
 
   /* Tabla Cierres: cabecera repetida en cada hoja y pie "Fin de tabla" al final */

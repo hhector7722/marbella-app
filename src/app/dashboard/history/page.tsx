@@ -517,7 +517,7 @@ export default function HistoryPage() {
                                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
                                     title="Imprimir tabla"
                                 >
-                                    <Printer size={20} />
+                                    <Printer size={16} />
                                 </button>
                             )}
                         </div>
