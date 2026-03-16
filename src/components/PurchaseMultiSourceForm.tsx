@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 export interface PaymentSourceOption {
     id: string;
@@ -56,6 +57,8 @@ export function PurchaseMultiSourceForm({
     const [changeDestinationBoxId, setChangeDestinationBoxId] = useState<string | null>(null);
     const [changeBreakdown, setChangeBreakdown] = useState<Record<number, number>>({});
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [zoomDenom, setZoomDenom] = useState<number | null>(null);
+    const [zoomContext, setZoomContext] = useState<'change' | string | null>(null);
 
     const cashSources = paymentSources.filter(s => s.hasInventory);
     const selectedSource = selectedSourceId ? paymentSources.find(s => s.id === selectedSourceId) : null;
@@ -199,6 +202,29 @@ export function PurchaseMultiSourceForm({
                     </div>
                 </div>
 
+                {zoomDenom !== null && zoomContext !== null && (
+                    <DenominationZoomModal
+                        isOpen={true}
+                        onClose={() => { setZoomDenom(null); setZoomContext(null); }}
+                        denomination={zoomDenom}
+                        value={zoomContext === 'change' ? (changeBreakdown[zoomDenom] ?? 0) : (getSourceEntry(zoomContext).breakdown[zoomDenom] ?? 0)}
+                        onValueChange={(v) => {
+                            if (zoomContext === 'change') {
+                                setChangeBreakdown(prev => {
+                                    const next = { ...prev, [zoomDenom]: v };
+                                    if (v === 0) delete next[zoomDenom];
+                                    return next;
+                                });
+                            } else {
+                                const entry = getSourceEntry(zoomContext).breakdown;
+                                const next = { ...entry, [zoomDenom]: v };
+                                if (v === 0) delete next[zoomDenom];
+                                setSourceBreakdown(zoomContext, next);
+                            }
+                        }}
+                        availableStock={zoomContext !== 'change' ? (inventoriesByBoxId[zoomContext]?.[zoomDenom] ?? 0) : undefined}
+                    />
+                )}
                 {selectedSource && (
                     <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3">
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
@@ -214,8 +240,15 @@ export function PurchaseMultiSourceForm({
                                     const hasStockIssue = qty > avail;
                                     return (
                                         <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
-                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
+                                            <div
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => { setZoomDenom(denom); setZoomContext(selectedSource.id); }}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setZoomDenom(denom); setZoomContext(selectedSource.id); } }}
+                                                className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                                aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                            >
+                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
                                             </div>
                                             <div className="text-center w-full">
                                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
@@ -309,8 +342,15 @@ export function PurchaseMultiSourceForm({
                                     const qty = changeBreakdown[denom] ?? 0;
                                     return (
                                         <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
-                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
+                                            <div
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => { setZoomDenom(denom); setZoomContext('change'); }}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setZoomDenom(denom); setZoomContext('change'); } }}
+                                                className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                                aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                            >
+                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
                                             </div>
                                             <div className="text-center w-full">
                                                 <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">

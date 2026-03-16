@@ -6,6 +6,7 @@ import { X, Copy, Calculator, Delete, Minus, Plus, Banknote } from 'lucide-react
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
+import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 type ModalTab = 'calculator' | 'breakdown';
 
@@ -40,6 +41,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [display, setDisplay] = useState('');
     const [result, setResult] = useState<number | null>(null);
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
+    const [zoomDenom, setZoomDenom] = useState<number | null>(null);
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {
@@ -185,18 +187,34 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                     )}
                     {tab === 'breakdown' && (
                         <>
+                            {zoomDenom !== null && (
+                                <DenominationZoomModal
+                                    isOpen={true}
+                                    onClose={() => setZoomDenom(null)}
+                                    denomination={zoomDenom}
+                                    value={breakdownCounts[zoomDenom] || 0}
+                                    onValueChange={(v) => setBreakdownCounts((prev) => ({ ...prev, [zoomDenom]: v }))}
+                                />
+                            )}
                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5 mb-3">
                                 {DENOMINATIONS.map((denom) => {
                                     const qty = breakdownCounts[denom] || 0;
                                     return (
                                         <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                            <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <div
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => setZoomDenom(denom)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
+                                                className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                                aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                            >
                                                 <Image
                                                     src={CURRENCY_IMAGES[denom]}
                                                     alt={`${denom}€`}
                                                     width={140}
                                                     height={140}
-                                                    className="h-full w-auto object-contain drop-shadow-lg"
+                                                    className="h-full w-auto object-contain drop-shadow-lg pointer-events-none"
                                                 />
                                             </div>
                                             <div className="text-center w-full">

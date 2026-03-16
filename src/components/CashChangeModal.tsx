@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 
@@ -82,6 +83,7 @@ export const CashChangeModal = ({
     const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [zoomDenom, setZoomDenom] = useState<number | null>(null);
 
     useEffect(() => {
         if (!useTwoBoxFlow && boxId) {
@@ -646,14 +648,31 @@ export const CashChangeModal = ({
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2">
+                    {zoomDenom !== null && (
+                        <DenominationZoomModal
+                            isOpen={true}
+                            onClose={() => setZoomDenom(null)}
+                            denomination={zoomDenom}
+                            value={counts[zoomDenom] || 0}
+                            onValueChange={(v) => setCounts(prev => ({ ...prev, [zoomDenom]: v }))}
+                            availableStock={fromBox?.hasInventory ? (stock[zoomDenom] || 0) : undefined}
+                        />
+                    )}
                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                         {DENOMINATIONS.map((denom) => {
                             const count = counts[denom] || 0;
                             const hasStockIssue = !!fromBox?.hasInventory && count > (stock[denom] || 0);
                             return (
                                 <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                    <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
-                                        <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => setZoomDenom(denom)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
+                                        className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                        aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                    >
+                                        <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
                                     </div>
                                     <div className="text-center w-full">
                                         <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">

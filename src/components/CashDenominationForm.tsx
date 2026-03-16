@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 interface CashDenominationFormProps {
     type: 'in' | 'out' | 'audit';
@@ -67,6 +68,7 @@ export const CashDenominationForm = ({
     const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
     const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [zoomDenom, setZoomDenom] = useState<number | null>(null);
 
     const calculateTotal = (c: Record<number, number>) => DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
 
@@ -171,6 +173,16 @@ export const CashDenominationForm = ({
                 </div>
             </div>
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+            {zoomDenom !== null && (
+                <DenominationZoomModal
+                    isOpen={true}
+                    onClose={() => setZoomDenom(null)}
+                    denomination={zoomDenom}
+                    value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[zoomDenom] : counts[zoomDenom]) || 0}
+                    onValueChange={(v) => handleCountChange(zoomDenom, String(v))}
+                    availableStock={((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) ? (availableStock[zoomDenom] || 0) : undefined}
+                />
+            )}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
 
                 {/* DATE & NOTES & PRICE ROW (oculto en variant tipPool) */}
@@ -276,10 +288,18 @@ export const CashDenominationForm = ({
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                     {DENOMINATIONS.map(denom => {
                         const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && (counts[denom] || 0) > (availableStock[denom] || 0);
+                        const currentCounts = isPurchaseMode && purchaseTab === 'received' ? receivedCounts : counts;
                         return (
                             <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                <div className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110">
-                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg" />
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => setZoomDenom(denom)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
+                                    className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                    aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                >
+                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
                                 </div>
                                 <div className="text-center w-full">
                                     <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
