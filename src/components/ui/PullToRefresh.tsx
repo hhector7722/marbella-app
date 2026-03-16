@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const PULL_THRESHOLD_PX = 56;
 const MAX_PULL_PX = 80;
@@ -75,7 +76,7 @@ export function PullToRefresh({ children, className, enabled = true }: PullToRef
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
         >
-            {/* Indicador fijo arriba: solo visible al tirar o durante refresh */}
+            {/* Mismo indicador que carga de página (LoadingSpinner): solo visible al tirar o durante refresh */}
             <div
                 className={cn(
                     'pointer-events-none absolute left-0 right-0 top-0 z-10 flex min-h-12 items-center justify-center gap-2 transition-all duration-200',
@@ -87,7 +88,7 @@ export function PullToRefresh({ children, className, enabled = true }: PullToRef
             >
                 <div className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full bg-white/90 shadow-sm">
                     {isRefreshing ? (
-                        <RefreshCw className="h-6 w-6 text-[#5B8FB9] animate-spin" aria-hidden />
+                        <LoadingSpinner size="md" className="text-[#5B8FB9]" />
                     ) : (
                         <RefreshCw
                             className={cn('h-6 w-6 text-[#5B8FB9]', pullY >= PULL_THRESHOLD_PX && 'text-emerald-600')}
@@ -95,9 +96,11 @@ export function PullToRefresh({ children, className, enabled = true }: PullToRef
                         />
                     )}
                 </div>
-                <span className="text-sm font-medium text-white drop-shadow-md">
-                    {isRefreshing ? 'Actualizando…' : pullY >= PULL_THRESHOLD_PX ? 'Suelta para actualizar' : 'Desliza para actualizar'}
-                </span>
+                {!isRefreshing && (
+                    <span className="text-sm font-medium text-white drop-shadow-md">
+                        {pullY >= PULL_THRESHOLD_PX ? 'Suelta para actualizar' : 'Desliza para actualizar'}
+                    </span>
+                )}
             </div>
             {children}
         </div>
