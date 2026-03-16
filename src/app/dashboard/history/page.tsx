@@ -432,7 +432,17 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
                     <div className="bg-[#36606F] p-1.5 md:p-3 relative print:hidden">
                         <div className="relative flex items-center justify-between gap-1 min-w-0">
-                            <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+                            <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0">
+                                <button
+                                    type="button"
+                                    onClick={() => router.back()}
+                                    className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-8 h-8 md:w-9 md:h-9 hover:bg-white/20 transition-all active:scale-95 shrink-0 min-h-[48px] min-w-[48px] md:min-h-0 md:min-w-0 md:w-8 md:h-8"
+                                    aria-label="Volver"
+                                >
+                                    <ChevronLeft size={20} strokeWidth={2.5} />
+                                </button>
+                                <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Cierres</h1>
+                            </div>
 
                             <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                                 <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
@@ -591,7 +601,7 @@ export default function HistoryPage() {
                                     )}
                                 </div>
                             ) : (
-                            <div className="bg-[#EFEDED] rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
+                            <div className="bg-[#EFEDED] rounded-2xl border border-zinc-100 shadow-xl overflow-hidden">
                                 <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
                                     <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
                                         {METRICS.map(m => (
