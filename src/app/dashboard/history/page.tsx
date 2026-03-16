@@ -524,7 +524,7 @@ export default function HistoryPage() {
 
                         <div className="px-1.5 md:px-3 pb-2 md:pb-4 pt-1 md:pt-1.5">
                             {viewMode === 'table' ? (
-                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-0">
+                                <div className="p-4 md:p-6 bg-zinc-50/50 overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print:p-4">
                                     <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">Cierres — Historial</div>
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -536,7 +536,7 @@ export default function HistoryPage() {
                                             <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                         </div>
                                     ) : (
-                                        <div className="min-w-max w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+                                        <div className="min-w-max w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-cierres">
                                             <table className="w-full min-w-[800px] text-left border-collapse">
                                                 <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
                                                     <tr>
@@ -586,6 +586,13 @@ export default function HistoryPage() {
                                                             );
                                                         })}
                                                 </tbody>
+                                                <tfoot className="hidden print:table-footer-group">
+                                                    <tr>
+                                                        <td colSpan={10} className="py-2 px-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-t border-zinc-200">
+                                                            Fin de tabla
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
                                             </table>
                                         </div>
                                     )}

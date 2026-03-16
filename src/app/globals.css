@@ -55,10 +55,36 @@
   }
 }
 
-/* Imprimir: sin padding en main para que solo se vea el contenido imprimible (ej. tabla Cierres) */
+/* Imprimir: sin cabecera/pie del navegador (URL, fecha, hora, página) y tabla con cabecera/fin por hoja */
+@page {
+  size: auto;
+  margin: 0;
+}
+
 @media print {
   main {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+  }
+
+  /* Quitar márgenes del cuerpo para que el navegador no dibuje URL/fecha/página en la zona de márgenes */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Tabla Cierres: cabecera repetida en cada hoja y pie "Fin de tabla" al final */
+  .print-table-cierres thead {
+    display: table-header-group !important;
+  }
+
+  .print-table-cierres tfoot {
+    display: table-footer-group !important;
+  }
+
+  .print-table-cierres tbody tr {
+    page-break-inside: avoid;
   }
 }
