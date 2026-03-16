@@ -89,7 +89,7 @@ export async function sendScheduleNotifications(dateStr: string, userShifts: Use
             const shift = shiftByUser.get(sub.user_id);
             const body = shift ? `🕒 ${shift.start} - ${shift.end}` : '🕒 —';
             const payload = JSON.stringify({
-                title: `📅 Horario ${dateStr}`,
+                title: `📅 Horario - ${dateStr}`,
                 body,
                 url: '/staff/dashboard/'
             });
@@ -138,7 +138,7 @@ export async function sendClosingNotification(data: { dateStr: string; totalSale
         .from('profiles')
         .select('id')
         .eq('role', 'manager')
-        .eq('email', 'hhector7722@gmail.com');
+        .in('email', ['hhector7722@gmail.com', 'fogotorrat@gmail.com']);
 
     if (managerError || !managers || managers.length === 0) {
         console.error('Specific manager not found or error:', managerError);
@@ -163,7 +163,7 @@ export async function sendClosingNotification(data: { dateStr: string; totalSale
     }
 
     const payload = JSON.stringify({
-        title: `🔒 Cierre ${data.dateStr}`,
+        title: `✅ Cierre ${data.dateStr}`,
         body: `Ventas: ${data.totalSales.toFixed(2)}€\nVenta Neta: ${data.netSales.toFixed(2)}€`,
         url: '/dashboard/history'
     });
