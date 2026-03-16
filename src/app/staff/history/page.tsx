@@ -37,7 +37,7 @@ function WeekSeparator() {
             <div
                 className={cn(
                     'h-0.5 w-[70%] max-w-[280px]',
-                    'bg-[linear-gradient(90deg,transparent_0%,rgb(220_38_38)_8%,rgb(220_38_38)_92%,transparent_100%)]'
+                    'bg-[linear-gradient(90deg,transparent_0%,rgb(220_38_38/0.3)_4%,rgb(220_38_38)_8%,rgb(220_38_38)_92%,rgb(220_38_38/0.3)_96%,transparent_100%)]'
                 )}
             />
         </div>
