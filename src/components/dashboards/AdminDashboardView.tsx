@@ -825,8 +825,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     </svg>
                                 </div>
                                 <div className="flex justify-between px-3 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
-                                    <span>7</span>
-                                    <span>23</span>
+                                    <span>7h</span>
+                                    <span>23h</span>
                                 </div>
                                 {selectedChartHour !== null && (() => {
                                     const idx = selectedChartHour - BUSINESS_HOURS.start;

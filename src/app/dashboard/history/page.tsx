@@ -731,27 +731,29 @@ export default function HistoryPage() {
             {selectedClosing && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                    <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h/[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
-                            <div className="flex items-center justify-end gap-1 mb-3 relative z-10">
-                                {!isEditing && isManager && (
-                                    <>
-                                        <button
-                                            onClick={handleDeleteClosing}
-                                            className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                            title="Eliminar Cierre"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
-                                            className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                            title="Editar Cierre"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                    </>
-                                )}
+                            <div className="flex items-center justify-between mb-3 relative z-10">
+                                <div className="flex-1 flex items-center justify-center gap-2">
+                                    {!isEditing && isManager && (
+                                        <>
+                                            <button
+                                                onClick={handleDeleteClosing}
+                                                className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                                title="Eliminar cierre"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                                title="Editar cierre"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                                 <button
                                     onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
                                     className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
@@ -761,7 +763,6 @@ export default function HistoryPage() {
                             </div>
 
                             <div className="mt-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 block">Cierre de Caja</span>
                                 <div className="flex items-center justify-center gap-1 md:gap-2 min-w-0">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
@@ -800,57 +801,112 @@ export default function HistoryPage() {
                         </div>
 
                         <div className="p-8 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 flex flex-col justify-between">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 block">Facturación Total</span>
-                                    {isEditing ? (
-                                        <input type="number" className="w-full bg-transparent text-2xl font-black text-gray-900 border-b-2 border-[#5B8FB9] outline-none pb-1" value={editData?.tpv_sales || ''} onChange={e => handleFieldUpdate('tpv_sales', parseFloat(e.target.value) || 0)} />
-                                    ) : (
-                                        <span className="text-2xl font-black text-gray-900">{selectedClosing.tpv_sales.toFixed(2)}€</span>
-                                    )}
-                                </div>
-                                <div className="bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100">
-                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-6">Venta Neta</span>
-                                    <span className="text-2xl font-black text-emerald-600">
-                                        {(isEditing ? editData?.net_sales : selectedClosing.net_sales).toFixed(2)}€
-                                    </span>
-                                </div>
-                            </div>
+                            {(() => {
+                                const current = isEditing ? editData : selectedClosing;
+                                const formatMoneyModal = (val: number) => val === 0 ? " " : `${val.toFixed(2)}€`;
+                                const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
+                                const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
 
-                            <div className="space-y-4">
-                                <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Desglose Operativo</h3>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {[
-                                        { label: 'Efectivo en Caja', key: 'cash_counted', highlight: true, icon: Banknote, hasBreakdown: true },
-                                        { label: 'Cobro Tarjeta', key: 'sales_card' },
-                                        { label: 'Pendiente Pago', key: 'sales_pending' },
-                                        { label: 'Diferencia Caja', key: 'difference', highlight: true },
-                                    ].map((row) => {
-                                        const val = isEditing ? editData[row.key] : selectedClosing[row.key];
-                                        const isDiff = row.key === 'difference';
-                                        const isCash = row.key === 'cash_counted';
+                                const MetricItem = ({
+                                    label,
+                                    value,
+                                    fieldKey,
+                                    editable = false,
+                                }: {
+                                    label: string;
+                                    value: number;
+                                    fieldKey?: string;
+                                    editable?: boolean;
+                                }) => (
+                                    <div className="flex flex-col items-center justify-center text-center min-w-[80px]">
+                                        {isEditing && editable && fieldKey ? (
+                                            <input
+                                                type="number"
+                                                className="bg-transparent text-2xl font-black text-gray-900 text-center outline-none border-b border-black/10 pb-0.5"
+                                                value={value || ''}
+                                                onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
+                                            />
+                                        ) : (
+                                            <span className="text-2xl font-black text-gray-900 leading-none">
+                                                {formatMoneyModal(value)}
+                                            </span>
+                                        )}
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                            {label}
+                                        </span>
+                                    </div>
+                                );
 
-                                        return (
-                                            <div key={row.key} className={cn(
-                                                "flex items-center justify-between p-5 rounded-[1.5rem] transition-all",
-                                                isDiff ? (val === 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600") :
-                                                    isCash ? "bg-[#36606F]/5 text-[#36606F] cursor-pointer hover:bg-[#36606F]/10 active:scale-[0.98]" : "bg-gray-50/50"
-                                            )} onClick={() => isCash && setShowCashDetails(true)}>
-                                                <div className="flex items-center gap-3">
-                                                    {row.icon && <row.icon size={16} className="opacity-40" />}
-                                                    <span className="text-[11px] font-black uppercase tracking-widest">{row.label}</span>
-                                                    {isCash && <ChevronRightIcon size={14} className="opacity-40" />}
-                                                </div>
-                                                {isEditing && !['difference', 'cash_counted'].includes(row.key) ? (
-                                                    <input type="number" className="bg-transparent text-right font-black outline-none border-b border-black/10 text-lg" value={val || ''} onChange={e => handleFieldUpdate(row.key, parseFloat(e.target.value) || 0)} />
-                                                ) : (
-                                                    <span className="text-lg font-black">{val.toFixed(2)}€</span>
-                                                )}
+                                return (
+                                    <div className="space-y-8">
+                                        {/* Fila 1: solo Ventas */}
+                                        <div className="flex justify-center">
+                                            <MetricItem
+                                                label="Ventas"
+                                                value={getValue('tpv_sales')}
+                                                fieldKey="tpv_sales"
+                                                editable={true}
+                                            />
+                                        </div>
+
+                                        {/* Fila 2: Venta neta, Tarjeta, Efectivo */}
+                                        <div className="flex flex-wrap justify-center gap-6">
+                                            <MetricItem
+                                                label="Venta Neta"
+                                                value={getValue('net_sales')}
+                                            />
+                                            <MetricItem
+                                                label="Tarjeta"
+                                                value={getValue('sales_card')}
+                                                fieldKey="sales_card"
+                                                editable={true}
+                                            />
+                                            <div
+                                                className="flex flex-col items-center justify-center text-center min-w-[80px] cursor-pointer"
+                                                onClick={() => !isEditing && setShowCashDetails(true)}
+                                            >
+                                                <span className="text-2xl font-black text-gray-900 leading-none">
+                                                    {formatMoneyModal(getValue('cash_counted'))}
+                                                </span>
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    Efectivo
+                                                </span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                        </div>
+
+                                        {/* Fila 3: Pendiente pago, Cobros pendientes, Diferencia */}
+                                        <div className="flex flex-wrap justify-center gap-6">
+                                            <MetricItem
+                                                label="Pendiente Pago"
+                                                value={getValue('sales_pending')}
+                                                fieldKey="sales_pending"
+                                                editable={true}
+                                            />
+                                            <MetricItem
+                                                label="Cobros Pendientes"
+                                                value={collectionsValue}
+                                                fieldKey="debt_recovered"
+                                                editable={true}
+                                            />
+                                            <div className="flex flex-col items-center justify-center text-center min-w-[80px]">
+                                                <span className={cn(
+                                                    "text-2xl font-black leading-none",
+                                                    getValue('difference') > 0
+                                                        ? "text-emerald-600"
+                                                        : getValue('difference') < 0
+                                                            ? "text-rose-600"
+                                                            : "text-gray-400"
+                                                )}>
+                                                    {formatMoneyModal(getValue('difference'))}
+                                                </span>
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    Diferencia
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {isEditing && (
                                 <button onClick={handleSaveEdit} disabled={loading} className="w-full h-16 bg-[#36606F] text-white rounded-[2rem] shadow-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2">
