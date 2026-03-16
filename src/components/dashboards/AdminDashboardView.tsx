@@ -645,12 +645,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         </div>
     );
 
-    return (
-        <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
-            <div className="px-4 w-full max-w-sm md:max-w-xl mx-auto space-y-4 md:space-y-2">
+    // ====== BLOQUES REUTILIZABLES (para móvil / escritorio) ======
 
-                {/* 1. VENTAS */}
-                <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+    const ventasSection = (
+        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-[#36606F] px-2 py-1 flex items-center justify-between gap-2 text-white shrink-0">
                         <Link
                             href="/dashboard/ventas"
@@ -951,10 +949,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                     </div>
                 </div>
+    );
 
-                {/* 2. CAJA INICIAL */}
-                <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-2 pb-0.5")}>
-                    {boxes.filter(b => b.type === 'operational').map(box => (
+    const cajaInicialSection = (
+        <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-2 pb-0.5")}>
+            {boxes.filter(b => b.type === 'operational').map(box => (
                         <div key={box.id} className="flex flex-col h-full">
                             <div className="flex flex-row gap-1.5 md:gap-2 items-center">
                                 <button onClick={() => router.push('/dashboard/movements')} className="shrink-0 w-fit min-w-0 px-3 py-2 md:py-2 rounded-xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 text-white active:scale-95">
@@ -1040,10 +1039,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             </div>
                         </div>
                     ))}
-                </div>
+        </div>
+    );
 
-                {/* 3. HORAS EXTRAS — Vista mensual: calendario + semanas (1 fila derecha = 1 fila calendario) */}
-                <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+    const horasExtrasSection = (
+        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
                     <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0 relative">
                         <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">
                             <span className="md:hidden">H. EXTRAS</span>
@@ -1155,102 +1155,150 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             })()}
                         </div>
                     </div>
-                </div>
+        </div>
+    );
 
-                {/* 4. CAJAS CAMBIO (dos contenedores) + ICONOS — misma altura que iconos, contenido centrado */}
-                <div className="grid grid-cols-2 gap-4 items-stretch">
-                    <div className="flex flex-col gap-3 md:gap-4 min-h-0 aspect-square md:aspect-auto md:min-h-0">
-                        <div className="flex flex-col gap-3 md:gap-4 flex-1 min-h-0 max-w-[85%] md:max-w-none w-full h-full self-center md:self-stretch">
-                        {(() => {
-                            // Orden explícito por nombre: Cambio 1 → idx 0, Cambio 2 → idx 1 (independencia total entre cajas)
-                            const changeBoxes = boxes
-                                .filter(b => b.type === 'change')
-                                .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-                                .slice(0, 2);
-                            const formatEur = (v: number) => (v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ");
-                            return (
-                                <>
-                                    {["Caja cambio 1", "Caja cambio 2"].map((title, idx) => {
-                                        const box = changeBoxes[idx];
-                                        if (!box) return null;
-                                        const diff = box.current_balance - 300;
-                                        const isOk = Math.abs(diff) < 0.01;
-                                        return (
-                                            <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
-                                                <div className="bg-[#36606F] pl-4 pr-2 md:pl-6 md:pr-4 py-1 md:py-1.5 flex items-center justify-start text-white shrink-0">
-                                                    <h3 className="text-[9px] md:text-sm font-black uppercase tracking-wider truncate">{title}</h3>
+    const cajasCambioColumn = (
+        <div className="flex flex-col gap-3 md:gap-3 min-h-0 h-full">
+            <div className="flex flex-col gap-3 md:gap-3 flex-1 min-h-0 max-w-[85%] md:max-w-none w-full h-full self-center md:self-stretch">
+                {(() => {
+                    // Orden explícito por nombre: Cambio 1 → idx 0, Cambio 2 → idx 1
+                    const changeBoxes = boxes
+                        .filter(b => b.type === 'change')
+                        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                        .slice(0, 2);
+                    const formatEur = (v: number) =>
+                        v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ";
+                    return (
+                        <>
+                            {["Caja cambio 1", "Caja cambio 2"].map((title, idx) => {
+                                const box = changeBoxes[idx];
+                                if (!box) return null;
+                                const diff = box.current_balance - 300;
+                                const isOk = Math.abs(diff) < 0.01;
+                                return (
+                                    <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
+                                        <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-start text-white shrink-0">
+                                            <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
+                                        </div>
+                                        <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5">
+                                            <div className="flex flex-row gap-2 md:gap-2 items-center justify-between md:justify-center md:px-3 w-full">
+                                                <div className="px-0.5 md:px-1 flex flex-col items-start min-w-0 mr-4 md:mr-0">
+                                                    <span className="text-sm md:text-base font-black text-zinc-800">
+                                                        {formatEur(box.current_balance)}
+                                                    </span>
+                                                    {!isOk && Math.abs(diff) > 0.005 && (
+                                                        <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
+                                                            {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-2">
-                                                    <div className="flex flex-row gap-2 md:gap-2 items-center justify-between md:justify-center md:px-4 w-full">
-                                                        <div className="px-0.5 md:px-1 flex flex-col items-start min-w-0 mr-4 md:mr-0">
-                                                            <span className="text-sm md:text-lg font-black text-zinc-800">
-                                                                {formatEur(box.current_balance)}
-                                                            </span>
-                                                            {!isOk && Math.abs(diff) > 0.005 && (
-                                                                <span className={cn("text-[7px] md:text-[9px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
-                                                                    {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
-                                                                </span>
-                                                            )}
+                                                <div className="flex gap-1 md:gap-1 shrink-0 -translate-x-2 md:translate-x-0 md:ml-5">
+                                                    <button
+                                                        onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group translate-x-1 md:translate-x-0 min-h-[48px] min-w-[48px]"
+                                                    >
+                                                        <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                            <ArrowRightLeft size={9} strokeWidth={2.5} />
                                                         </div>
-                                                        <div className="flex gap-1 md:gap-1 shrink-0 -translate-x-2 md:translate-x-0 md:ml-5">
-                                                            <button
-                                                                onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                                className="bg-zinc-50/50 p-1.5 md:p-1.5 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-2 transition-all active:scale-95 group translate-x-1 md:translate-x-0"
-                                                            >
-                                                                <div className="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                                    <ArrowRightLeft size={10} strokeWidth={2.5} />
-                                                                </div>
-                                                                <span className="text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => openTreasuryModal(box, 'audit')}
-                                                                className="bg-zinc-50/50 p-1.5 md:p-1.5 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-2 transition-all active:scale-95 group"
-                                                            >
-                                                                <div className="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
-                                                                    <RefreshCw size={10} strokeWidth={2.5} />
-                                                                </div>
-                                                                <span className="text-[5px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
-                                                            </button>
+                                                        <span className="text-[5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openTreasuryModal(box, 'audit')}
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"
+                                                    >
+                                                        <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                            <RefreshCw size={9} strokeWidth={2.5} />
                                                         </div>
-                                                    </div>
+                                                        <span className="text-[5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </>
-                            );
-                        })()}
-                        </div>
-                    </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </>
+                    );
+                })()}
+            </div>
+        </div>
+    );
 
-                    <div className="grid grid-cols-2 gap-3 md:gap-4 min-h-0 self-start md:self-stretch">
-                        {[
-                            { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
-                            { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
-                            { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
-                            { title: 'Producto', img: '/icons/suppliers.png', link: '/ingredients' },
-                        ].map((card, i) => (
-                            <button
-                                key={i}
-                                onClick={() => {
-                                    if (card.title === 'Plantilla') setIsStaffModalOpen(true);
-                                    else if (card.title === 'Producto') setIsProductModalOpen(true);
-                                    else if (card.link) router.push(card.link);
-                                }}
-                                className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all group aspect-square w-full h-full min-h-0"
-                            >
-                                <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-none">
-                                    <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
-                                </div>
-                                <span className="text-[9px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">
-                                    {card.title}
-                                </span>
-                            </button>
-                        ))}
+    const quickActionsColumn = (
+        <div className="grid grid-cols-2 gap-3 md:gap-3 min-h-0 self-start md:self-stretch h-full">
+            {[
+                { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
+                { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
+                { title: 'Plantilla', img: '/icons/admin.png', link: '/staff' },
+                { title: 'Producto', img: '/icons/suppliers.png', link: '/ingredients' },
+            ].map((card, i) => (
+                <button
+                    key={i}
+                    onClick={() => {
+                        if (card.title === 'Plantilla') setIsStaffModalOpen(true);
+                        else if (card.title === 'Producto') setIsProductModalOpen(true);
+                        else if (card.link) router.push(card.link);
+                    }}
+                    className={cn(
+                        "bg-white rounded-2xl p-2 md:p-1.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-1 active:scale-95 transition-all group w-full h-full min-h-0",
+                        "aspect-square md:aspect-auto"
+                    )}
+                >
+                    <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-xl">
+                        <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
+                    </div>
+                    <span className="text-[9px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">
+                        {card.title}
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
+            <div className="px-4 w-full max-w-sm md:max-w-6xl mx-auto space-y-4 md:space-y-4">
+
+                {/* ===== LAYOUT MÓVIL: igual que antes ===== */}
+                <div className="space-y-4 md:hidden">
+                    {ventasSection}
+                    {cajaInicialSection}
+                    {horasExtrasSection}
+
+                    <div className="grid grid-cols-2 gap-4 items-stretch">
+                        {cajasCambioColumn}
+                        {quickActionsColumn}
                     </div>
                 </div>
 
-            </div> {/* Close max-w-2xl */}
+                {/* ===== LAYOUT ESCRITORIO ===== */}
+                <div className="hidden md:flex md:flex-col md:gap-4">
+                    {/* Fila superior: Ventas + Caja Inicial centrados al ancho del centro */}
+                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-start">
+                        <div />
+                        <div className="flex flex-col gap-4">
+                            {ventasSection}
+                            {cajaInicialSection}
+                        </div>
+                        <div />
+                    </div>
+
+                    {/* Fila inferior: Cajas cambio | Horas Extras | Iconos con misma altura */}
+                    <div className="grid grid-cols-[0.9fr,1.6fr,0.9fr] gap-4 items-stretch">
+                        <div className="h-full flex flex-col min-h-0">
+                            {cajasCambioColumn}
+                        </div>
+                        <div className="h-full flex flex-col min-h-0">
+                            {horasExtrasSection}
+                        </div>
+                        <div className="h-full flex flex-col min-h-0">
+                            {quickActionsColumn}
+                        </div>
+                    </div>
+                </div>
+
+            </div> {/* Close max-w-6xl */}
 
             {cashModalMode !== 'none' && (
                 <>
