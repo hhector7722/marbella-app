@@ -15,8 +15,8 @@ const inter = Inter({ subsets: ["latin"] });
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
   themeColor: "#5B8FB9",
 };
@@ -58,7 +58,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className="light">
-      <body className={`${inter.className} bg-[#5B8FB9]`}>
+      <body className={`${inter.className} bg-[#5B8FB9] touch-manipulation`}>
         <SileoProvider />
         <ServiceWorkerRegistration />
         <Navbar />
