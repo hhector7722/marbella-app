@@ -26,6 +26,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -206,6 +209,7 @@ export default function HistoryPage() {
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showCashDetails, setShowCashDetails] = useState(false);
@@ -448,7 +452,7 @@ export default function HistoryPage() {
                                 <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0">
                                     <ChevronLeft size={16} />
                                 </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[90px] sm:max-w-[120px]">
+                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none whitespace-nowrap truncate max-w-[90px] sm:max-w-[120px]">
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'MES'}
@@ -459,26 +463,7 @@ export default function HistoryPage() {
                             </div>
 
                             <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                    onClick={() => { setRangeStart(null); setRangeEnd(null); setShowCalendar('range'); }}
-                                    className={cn(
-                                        "px-1.5 py-1 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
-                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? "bg-white border-white text-zinc-800 shadow-sm"
-                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    Periodo
-                                </button>
-                                <button
-                                    onClick={() => setShowCalendar('single')}
-                                    className={cn(
-                                        "px-1.5 py-1 rounded-lg text-[7px] md:text-[8px] font-black border transition-all uppercase tracking-widest outline-none shrink-0",
-                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    Fecha
-                                </button>
+                                <TimeFilterButton onClick={() => setIsTimeFilterOpen(true)} />
                             </div>
                         </div>
                     </div>
@@ -1042,6 +1027,47 @@ export default function HistoryPage() {
                     </div>
                 </div>
             )}
+
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                allowedKinds={["date", "range", "week", "month", "year"]}
+                initialValue={
+                    filterMode === "single"
+                        ? ({ kind: "date", date: selectedDate } satisfies TimeFilterValue)
+                        : rangeStart && rangeEnd
+                            ? ({ kind: "range", startDate: rangeStart, endDate: rangeEnd } satisfies TimeFilterValue)
+                            : ({ kind: "date", date: selectedDate } satisfies TimeFilterValue)
+                }
+                onApply={(v) => {
+                    if (v.kind === "date") {
+                        setSelectedDate(v.date);
+                        setFilterMode("single");
+                        return;
+                    }
+                    if (v.kind === "range" || v.kind === "week") {
+                        setRangeStart(v.startDate);
+                        setRangeEnd(v.endDate);
+                        setFilterMode("range");
+                        return;
+                    }
+                    if (v.kind === "month") {
+                        const s = new Date(v.year, v.month - 1, 1);
+                        const e = new Date(v.year, v.month, 0);
+                        setRangeStart(format(s, "yyyy-MM-dd"));
+                        setRangeEnd(format(e, "yyyy-MM-dd"));
+                        setFilterMode("range");
+                        return;
+                    }
+                    if (v.kind === "year") {
+                        const s = new Date(v.year, 0, 1);
+                        const e = new Date(v.year, 11, 31);
+                        setRangeStart(format(s, "yyyy-MM-dd"));
+                        setRangeEnd(format(e, "yyyy-MM-dd"));
+                        setFilterMode("range");
+                    }
+                }}
+            />
         </div>
     );
 }

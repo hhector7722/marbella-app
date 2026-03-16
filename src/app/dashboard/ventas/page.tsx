@@ -11,6 +11,9 @@ import { es } from 'date-fns/locale';
 import { cn, getHourFromTicketTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 
 interface TicketSummary {
     numero_documento: string;
@@ -44,6 +47,8 @@ export default function VentasPage() {
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+    const [hourFilter, setHourFilter] = useState<{ startTime: string; endTime: string } | null>(null);
 
     const calendarDays = useMemo(() => {
         const base = filterMode === 'range' && rangeStart ? new Date(rangeStart) : new Date(selectedDate);
@@ -74,7 +79,7 @@ export default function VentasPage() {
 
     useEffect(() => {
         fetchVentas();
-    }, [rangeStart, rangeEnd, selectedDate, filterMode]);
+    }, [rangeStart, rangeEnd, selectedDate, filterMode, hourFilter]);
 
     useEffect(() => {
         let cancelled = false;
@@ -208,10 +213,23 @@ export default function VentasPage() {
             const activeData = ticketsRes.data || [];
             const activeProducts = productsRes.data || [];
 
-            const total = activeData.reduce((acc, t) => acc + (Number(t.total_documento) || 0), 0);
-            const count = activeData.length;
+            const filteredTickets = (() => {
+                if (!hourFilter) return activeData;
+                const [sH, sM] = hourFilter.startTime.split(':').map(Number);
+                const [eH, eM] = hourFilter.endTime.split(':').map(Number);
+                const startTotal = (Number.isFinite(sH) ? sH : 0) * 60 + (Number.isFinite(sM) ? sM : 0);
+                const endTotal = (Number.isFinite(eH) ? eH : 0) * 60 + (Number.isFinite(eM) ? eM : 0);
+                return activeData.filter((t: any) => {
+                    const hour = getHourFromTicketTime(t.hora_cierre, t.fecha);
+                    const minutes = hour * 60; // aproximación por hora
+                    return minutes >= startTotal && minutes <= endTotal;
+                });
+            })();
 
-            setTickets(activeData as any);
+            const total = filteredTickets.reduce((acc, t) => acc + (Number((t as any).total_documento) || 0), 0);
+            const count = filteredTickets.length;
+
+            setTickets(filteredTickets as any);
             setProducts(activeProducts.map((p: any, i: number) => ({ ...p, rank: i + 1 })) as ProductRanking[]);
             setSummary({
                 totalSales: total,
@@ -322,58 +340,7 @@ export default function VentasPage() {
                                 <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
                             </div>
 
-                            <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-1">
-                                {/* FILTROS INACTIVOS */}
-                                {filterMode === 'single' ? (
-                                    <>
-                                        <button
-                                            onClick={() => {
-                                                const s = startOfMonth(new Date());
-                                                const e = endOfMonth(new Date());
-                                                setRangeStart(format(s, 'yyyy-MM-dd'));
-                                                setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                                setFilterMode('range');
-                                            }}
-                                            className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
-                                        >
-                                            MES
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setRangeStart(null);
-                                                setRangeEnd(null);
-                                                setShowCalendar('range');
-                                            }}
-                                            className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
-                                        >
-                                            PERIODO
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        {(!rangeStart || !rangeEnd || !isSameMonth(new Date(rangeStart), new Date(rangeEnd))) && (
-                                            <button
-                                                onClick={() => {
-                                                    const s = startOfMonth(new Date());
-                                                    const e = endOfMonth(new Date());
-                                                    setRangeStart(format(s, 'yyyy-MM-dd'));
-                                                    setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                                    setFilterMode('range');
-                                                }}
-                                                className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
-                                            >
-                                                MES
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => setShowCalendar('single')}
-                                            className="px-2 md:px-3 py-1.5 rounded-xl text-[9px] md:text-[10px] font-black border bg-white/5 border-white/20 text-white/70 hover:bg-white/10 transition-all uppercase tracking-widest outline-none shrink-0"
-                                        >
-                                            FECHA
-                                        </button>
-                                    </>
-                                )}
-                            </div>
+                            <TimeFilterButton onClick={() => setIsTimeFilterOpen(true)} />
                         </div>
 
                         {/* FILTRO ACTIVO CENTRADO */}
@@ -393,7 +360,7 @@ export default function VentasPage() {
                             </button>
 
                             <button
-                                onClick={() => filterMode === 'range' ? setShowMonthPicker(true) : setShowCalendar('single')}
+                                onClick={() => setIsTimeFilterOpen(true)}
                                 className="px-2 md:px-6 text-[13px] sm:text-[15px] md:text-[18px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center"
                             >
                                 {filterMode === 'single'
@@ -834,6 +801,54 @@ export default function VentasPage() {
                     </div>
                 </div>
             )}
+
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                allowedKinds={["hours", "date", "range", "week", "month", "year"]}
+                initialValue={
+                    hourFilter
+                        ? ({ kind: "hours", startTime: hourFilter.startTime, endTime: hourFilter.endTime } satisfies TimeFilterValue)
+                        : filterMode === "single"
+                            ? ({ kind: "date", date: selectedDate } satisfies TimeFilterValue)
+                            : rangeStart && rangeEnd
+                                ? ({ kind: "range", startDate: rangeStart, endDate: rangeEnd } satisfies TimeFilterValue)
+                                : ({ kind: "date", date: selectedDate } satisfies TimeFilterValue)
+                }
+                onApply={(v) => {
+                    if (v.kind === "hours") {
+                        setHourFilter({ startTime: v.startTime, endTime: v.endTime });
+                        return;
+                    }
+                    setHourFilter(null);
+                    if (v.kind === "date") {
+                        setSelectedDate(v.date);
+                        setFilterMode("single");
+                        return;
+                    }
+                    if (v.kind === "range" || v.kind === "week") {
+                        setRangeStart(v.startDate);
+                        setRangeEnd(v.endDate);
+                        setFilterMode("range");
+                        return;
+                    }
+                    if (v.kind === "month") {
+                        const s = new Date(v.year, v.month - 1, 1);
+                        const e = new Date(v.year, v.month, 0);
+                        setRangeStart(format(s, "yyyy-MM-dd"));
+                        setRangeEnd(format(e, "yyyy-MM-dd"));
+                        setFilterMode("range");
+                        return;
+                    }
+                    if (v.kind === "year") {
+                        const s = new Date(v.year, 0, 1);
+                        const e = new Date(v.year, 11, 31);
+                        setRangeStart(format(s, "yyyy-MM-dd"));
+                        setRangeEnd(format(e, "yyyy-MM-dd"));
+                        setFilterMode("range");
+                    }
+                }}
+            />
         </div>
     );
 }

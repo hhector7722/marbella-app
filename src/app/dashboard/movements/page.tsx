@@ -37,6 +37,9 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
 import CashClosingModal from '@/components/CashClosingModal';
+import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 
 interface Movement {
     id: string;
@@ -98,6 +101,7 @@ export default function MovementsPage() {
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [loading, setLoading] = useState(true);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
@@ -469,7 +473,7 @@ export default function MovementsPage() {
                                 <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
                                     <ChevronLeft size={18} />
                                 </button>
-                                <button onClick={() => setShowMonthPicker(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
+                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'SELECCIONAR MES'}
@@ -481,30 +485,7 @@ export default function MovementsPage() {
 
                             {/* FILTROS SECUNDARIOS REDUCIDOS */}
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                    onClick={() => {
-                                        setRangeStart(null);
-                                        setRangeEnd(null);
-                                        setShowCalendar('range');
-                                    }}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
-                                        filterMode === 'range' && rangeStart && rangeEnd && !isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                            ? "bg-white border-white text-zinc-800 shadow-sm"
-                                            : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    PERIODO
-                                </button>
-                                <button
-                                    onClick={() => setShowCalendar('single')}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black border transition-all uppercase tracking-widest outline-none",
-                                        filterMode === 'single' ? "bg-white border-white text-zinc-800 shadow-sm" : "bg-white/5 border-white/20 text-white/70 hover:bg-white/10"
-                                    )}
-                                >
-                                    FECHA
-                                </button>
+                                <TimeFilterButton onClick={() => setIsTimeFilterOpen(true)} />
                             </div>
                         </div>
                     </div>
@@ -750,6 +731,47 @@ export default function MovementsPage() {
                     </div>
                 </div>
             )}
+
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                allowedKinds={["date", "range", "week", "month", "year"]}
+                initialValue={
+                    filterMode === "single"
+                        ? ({ kind: "date", date: selectedDate } satisfies TimeFilterValue)
+                        : rangeStart && rangeEnd
+                            ? ({ kind: "range", startDate: rangeStart, endDate: rangeEnd } satisfies TimeFilterValue)
+                            : ({ kind: "date", date: selectedDate } satisfies TimeFilterValue)
+                }
+                onApply={(v) => {
+                    if (v.kind === "date") {
+                        setSelectedDate(v.date);
+                        setFilterMode("single");
+                        return;
+                    }
+                    if (v.kind === "range" || v.kind === "week") {
+                        setRangeStart(v.startDate);
+                        setRangeEnd(v.endDate);
+                        setFilterMode("range");
+                        return;
+                    }
+                    if (v.kind === "month") {
+                        const s = new Date(v.year, v.month - 1, 1);
+                        const e = new Date(v.year, v.month, 0);
+                        setRangeStart(format(s, "yyyy-MM-dd"));
+                        setRangeEnd(format(e, "yyyy-MM-dd"));
+                        setFilterMode("range");
+                        return;
+                    }
+                    if (v.kind === "year") {
+                        const s = new Date(v.year, 0, 1);
+                        const e = new Date(v.year, 11, 31);
+                        setRangeStart(format(s, "yyyy-MM-dd"));
+                        setRangeEnd(format(e, "yyyy-MM-dd"));
+                        setFilterMode("range");
+                    }
+                }}
+            />
 
             {cashModalMode !== 'none' && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300" onClick={() => setCashModalMode('none')}>
