@@ -731,7 +731,7 @@ export default function HistoryPage() {
             {selectedClosing && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h/[90vh]" onClick={e => e.stopPropagation()}>
+                    <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
                             <div className="flex items-center justify-between mb-3 relative z-10">
                                 <div className="flex-1 flex items-center justify-center gap-2">
@@ -739,14 +739,14 @@ export default function HistoryPage() {
                                         <>
                                             <button
                                                 onClick={handleDeleteClosing}
-                                                className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                                className="p-1.5 md:p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
                                                 title="Eliminar cierre"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
                                             <button
                                                 onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
-                                                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                                className="p-1.5 md:p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
                                                 title="Editar cierre"
                                             >
                                                 <Pencil size={16} />
@@ -756,7 +756,7 @@ export default function HistoryPage() {
                                 </div>
                                 <button
                                     onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                    className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
                                 >
                                     <X size={16} strokeWidth={3} />
                                 </button>
@@ -818,21 +818,29 @@ export default function HistoryPage() {
                                     fieldKey?: string;
                                     editable?: boolean;
                                 }) => (
-                                    <div className="flex flex-col items-center justify-center text-center min-w-[80px]">
+                                    <div className="flex flex-col items-center justify-center text-center min-w-[70px]">
                                         {isEditing && editable && fieldKey ? (
                                             <input
                                                 type="number"
-                                                className="bg-transparent text-2xl font-black text-gray-900 text-center outline-none border-b border-black/10 pb-0.5"
+                                                className="bg-transparent text-xl md:text-2xl font-black text-gray-900 text-center outline-none border-b border-black/10 pb-0.5"
                                                 value={value || ''}
                                                 onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
                                             />
                                         ) : (
-                                            <span className="text-2xl font-black text-gray-900 leading-none">
+                                            <span className="text-xl md:text-2xl font-black text-gray-900 leading-none">
                                                 {formatMoneyModal(value)}
                                             </span>
                                         )}
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                            {label}
+                                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
+                                            {label === 'Pendiente Pago' || label === 'Cobros Pendientes'
+                                                ? (
+                                                    <>
+                                                        {label.split(' ')[0]}
+                                                        <br />
+                                                        {label.split(' ').slice(1).join(' ')}
+                                                    </>
+                                                )
+                                                : label}
                                         </span>
                                     </div>
                                 );
@@ -840,7 +848,7 @@ export default function HistoryPage() {
                                 return (
                                     <div className="space-y-8">
                                         {/* Fila 1: solo Ventas */}
-                                        <div className="flex justify-center">
+                                        <div className="grid grid-cols-1 place-items-center">
                                             <MetricItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
@@ -850,7 +858,7 @@ export default function HistoryPage() {
                                         </div>
 
                                         {/* Fila 2: Venta neta, Tarjeta, Efectivo */}
-                                        <div className="flex flex-wrap justify-center gap-6">
+                                        <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-center">
                                             <MetricItem
                                                 label="Venta Neta"
                                                 value={getValue('net_sales')}
@@ -862,20 +870,20 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                             <div
-                                                className="flex flex-col items-center justify-center text-center min-w-[80px] cursor-pointer"
+                                                className="flex flex-col items-center justify-center text-center min-w-[70px] cursor-pointer"
                                                 onClick={() => !isEditing && setShowCashDetails(true)}
                                             >
-                                                <span className="text-2xl font-black text-gray-900 leading-none">
+                                                <span className="text-xl md:text-2xl font-black text-gray-900 leading-none">
                                                     {formatMoneyModal(getValue('cash_counted'))}
                                                 </span>
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
                                                     Efectivo
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* Fila 3: Pendiente pago, Cobros pendientes, Diferencia */}
-                                        <div className="flex flex-wrap justify-center gap-6">
+                                        <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-center">
                                             <MetricItem
                                                 label="Pendiente Pago"
                                                 value={getValue('sales_pending')}
@@ -888,9 +896,9 @@ export default function HistoryPage() {
                                                 fieldKey="debt_recovered"
                                                 editable={true}
                                             />
-                                            <div className="flex flex-col items-center justify-center text-center min-w-[80px]">
+                                            <div className="flex flex-col items-center justify-center text-center min-w-[70px]">
                                                 <span className={cn(
-                                                    "text-2xl font-black leading-none",
+                                                    "text-xl md:text-2xl font-black leading-none",
                                                     getValue('difference') > 0
                                                         ? "text-emerald-600"
                                                         : getValue('difference') < 0
@@ -899,7 +907,7 @@ export default function HistoryPage() {
                                                 )}>
                                                     {formatMoneyModal(getValue('difference'))}
                                                 </span>
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
                                                     Diferencia
                                                 </span>
                                             </div>
