@@ -59,8 +59,8 @@ BEGIN
         WHERE (tl.clock_in AT TIME ZONE 'Europe/Madrid')::date >= p_start_date
           AND (tl.clock_in AT TIME ZONE 'Europe/Madrid')::date <= p_end_date
           AND COALESCE(tl.total_hours, 0) > 0
-          -- Propinas: SOLO horas regulares trabajadas. Eventos especiales (festivo, baja, personal, enfermedad, etc.) nunca cuentan.
-          AND (tl.event_type IS NULL OR tl.event_type IN ('regular', 'weekend'))
+          -- Propinas: solo horas trabajadas (regular + overtime + weekend). Eventos especiales (festivo, baja, personal, enfermedad, etc.) nunca cuentan.
+          AND (tl.event_type IS NULL OR tl.event_type IN ('regular', 'overtime', 'weekend'))
     ),
     hours_by_user AS (
         SELECT
