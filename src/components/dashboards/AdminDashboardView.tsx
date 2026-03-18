@@ -1454,10 +1454,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0 relative">
-                            <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-base font-black text-white">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
+                            <div className="flex flex-col items-start gap-1 shrink-0">
+                                <span className="text-base font-black text-white leading-none">
+                                    {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                </span>
                                 {paidTotal > 0.05 && (
-                                    <span className="bg-emerald-500 text-white text-sm font-black px-2 py-1 rounded-md shrink-0 shadow-md" title="Total pagado">
+                                    <span
+                                        className="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md leading-none"
+                                        title="Total pagado"
+                                    >
                                         {paidTotal.toFixed(0)}€ pagado
                                     </span>
                                 )}
