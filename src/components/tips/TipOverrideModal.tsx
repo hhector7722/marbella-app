@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Save } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -87,13 +88,13 @@ export function TipOverrideModal({
     }
   };
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200 relative"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200 relative"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-[520px] rounded-xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white w-full max-w-[520px] rounded-xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-[10000]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#36606F] px-3 py-2.5 md:px-6 md:py-4 flex items-center justify-between text-white shrink-0 rounded-t-xl md:rounded-t-3xl">
@@ -188,5 +189,8 @@ export function TipOverrideModal({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return modal;
+  return createPortal(modal, document.body);
 }
 
