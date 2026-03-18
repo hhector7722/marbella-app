@@ -43,7 +43,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
-    const [captureMode, setCaptureMode] = useState(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const exportRef = useRef<HTMLDivElement | null>(null);
 
@@ -224,40 +223,36 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             });
             if (!blob) throw new Error('No se pudo generar la imagen');
 
-            const file = new File([blob], `${breakdownTitle}.png`, { type: 'image/png' });
-
-            // 1) Native share (mobile) if available
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Desglose',
-                    text: 'Captura del desglose',
-                });
-                toast.success('Imagen lista para enviar');
+            // Copiar al portapapeles como imagen (mismo patrón que /orders/new)
+            let copied = false;
+            if (navigator.clipboard?.write) {
+                try {
+                    // eslint-disable-next-line no-undef
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    copied = true;
+                } catch {
+                    try {
+                        // eslint-disable-next-line no-undef
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(blob) })]);
+                        copied = true;
+                    } catch {
+                        copied = false;
+                    }
+                }
+            }
+            if (copied) {
+                toast.success('Imagen copiada al portapapeles');
                 return;
             }
 
-            // 2) Clipboard image (Chrome/Edge)
-            const anyClipboard = navigator.clipboard as any;
-            if (anyClipboard?.write) {
-                try {
-                    // eslint-disable-next-line no-undef
-                    await anyClipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                    toast.success('Imagen copiada al portapapeles');
-                    return;
-                } catch {
-                    // fallthrough to download
-                }
-            }
-
-            // 3) Fallback: download
+            // Fallback: descargar (si el navegador no permite clipboard image)
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `${breakdownTitle}.png`;
             a.click();
             URL.revokeObjectURL(url);
-            toast.info('Imagen descargada. Envíala por WhatsApp.');
+            toast.info('Imagen descargada. Adjúntala en WhatsApp.');
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
             toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
@@ -365,50 +360,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 </div>
                             </div>
 
-                            {/* Modo captura a pantalla completa (captura de pantalla real del móvil) */}
-                            {captureMode && (
-                                <div
-                                    className="fixed inset-0 z-[400] bg-black/70 backdrop-blur-md p-3 sm:p-6 flex items-center justify-center"
-                                    onClick={() => setCaptureMode(false)}
-                                >
-                                    <div
-                                        className="w-full h-full flex flex-col items-center justify-center gap-3"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <div className="flex items-center justify-between w-full max-w-3xl text-white shrink-0">
-                                            <div className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/80">
-                                                Modo captura • encuadrado para WhatsApp
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setCaptureMode(false)}
-                                                className="min-h-[48px] px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] transition-all active:scale-95"
-                                            >
-                                                Cerrar
-                                            </button>
-                                        </div>
-
-                                        <div className="flex-1 w-full flex items-center justify-center">
-                                            <div
-                                                className={cn(
-                                                    'bg-white rounded-3xl shadow-2xl overflow-hidden',
-                                                    // Mantener proporción exacta del arte (1080x1350)
-                                                    'aspect-[1080/1350]',
-                                                    // Encajar completo en pantalla (sin scroll)
-                                                    'max-h-[calc(100dvh-120px)] max-w-[min(100%,900px)] w-full'
-                                                )}
-                                            >
-                                                <BreakdownCaptureCard className="w-full h-full" showHeaderHint />
-                                            </div>
-                                        </div>
-
-                                        <div className="text-center text-white/75 text-[10px] sm:text-xs font-black uppercase tracking-widest shrink-0">
-                                            Haz la captura ahora. Luego adjunta la imagen en WhatsApp.
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
                             {zoomDenom !== null && (
                                 <DenominationZoomModal
                                     isOpen={true}
@@ -488,14 +439,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setCaptureMode(true)}
-                                className="w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md"
-                            >
-                                <Banknote size={16} />
-                                Modo captura WhatsApp
-                            </button>
-                            <button
-                                type="button"
                                 onClick={handleBreakdownSend}
                                 disabled={isSending}
                                 className={cn(
@@ -504,7 +447,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 )}
                             >
                                 <Send size={16} />
-                                {isSending ? 'Preparando…' : 'Enviar captura'}
+                                {isSending ? 'Preparando…' : 'Copiar imagen'}
                             </button>
                         </>
                     )}
