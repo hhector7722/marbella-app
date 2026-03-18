@@ -14,6 +14,7 @@ import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
 const formatDisplay = (val: number, suffix: string = '') => {
@@ -74,6 +75,7 @@ export default function OvertimePage() {
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     useEffect(() => {
         const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
@@ -303,6 +305,8 @@ export default function OvertimePage() {
                                 </div>
                                 <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0"><X className="w-5 h-5" /></button>
                             </div>
+                            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                            <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                             <div className="p-4 overflow-y-auto flex-1 space-y-2">
                                 {weekStaff.map((s: any) => (
                                     <StaffOvertimeRow
