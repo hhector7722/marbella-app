@@ -340,7 +340,7 @@ export const CashChangeModal = ({
     // ——— Flujo legacy: una caja (SWAP) ———
     if (!useTwoBoxFlow) {
         return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200 relative" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
                 <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
                         <div className="px-4 py-2.5 pb-3">
@@ -434,7 +434,7 @@ export const CashChangeModal = ({
         const canContinue = boxA && boxB && boxA.id !== boxB.id;
         return (
             <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200 relative" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
                 <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 px-4 py-3">
                         <div className="flex items-center justify-between">
@@ -503,7 +503,7 @@ export const CashChangeModal = ({
 
             {/* Modal histórico de intercambios (manager) */}
             {showExchangeHistoryModal && (
-                <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/70" onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}>
+                <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}>
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between shrink-0">
                             <h3 className="text-lg font-black text-white uppercase tracking-tighter">
@@ -613,7 +613,7 @@ export const CashChangeModal = ({
     const rightHeaderName = isStep1 ? (boxB?.name ?? '') : (boxA?.name ?? '');
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200 relative" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-[#f8fafb] w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
                     <div className="px-4 py-2.5 pb-3">
