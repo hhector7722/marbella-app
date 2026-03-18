@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
-import { X, Copy, Calculator, Delete, Minus, Plus, Banknote } from 'lucide-react';
+import { X, Copy, Calculator, Delete, Minus, Plus, Banknote, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
@@ -42,6 +42,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [result, setResult] = useState<number | null>(null);
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
+    const [isSending, setIsSending] = useState(false);
+    const modalRef = useRef<HTMLDivElement | null>(null);
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {
@@ -101,11 +103,81 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         }).catch(() => toast.error('No se pudo copiar'));
     }, [breakdownTotal]);
 
+    const breakdownTitle = useMemo(() => {
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `Desglose_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    }, []);
+
+    const handleBreakdownSend = useCallback(async () => {
+        if (tab !== 'breakdown') {
+            toast.error('Abre primero la pestaña Desglose');
+            return;
+        }
+        const el = modalRef.current;
+        if (!el) {
+            toast.error('No se pudo capturar el modal');
+            return;
+        }
+        setIsSending(true);
+        try {
+            // Lazy import to keep main bundle small.
+            const { toBlob } = await import('html-to-image');
+            const blob = await toBlob(el, {
+                backgroundColor: '#ffffff',
+                pixelRatio: 2,
+                cacheBust: true,
+            });
+            if (!blob) throw new Error('No se pudo generar la imagen');
+
+            const file = new File([blob], `${breakdownTitle}.png`, { type: 'image/png' });
+
+            // 1) Native share (mobile) if available
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Desglose',
+                    text: 'Captura del desglose',
+                });
+                toast.success('Imagen lista para enviar');
+                return;
+            }
+
+            // 2) Clipboard image (Chrome/Edge)
+            const anyClipboard = navigator.clipboard as any;
+            if (anyClipboard?.write) {
+                try {
+                    // eslint-disable-next-line no-undef
+                    await anyClipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    toast.success('Imagen copiada al portapapeles');
+                    return;
+                } catch {
+                    // fallthrough to download
+                }
+            }
+
+            // 3) Fallback: download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${breakdownTitle}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.info('Imagen descargada. Envíala por WhatsApp.');
+        } catch (e: any) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
+        } finally {
+            setIsSending(false);
+        }
+    }, [tab, breakdownTitle]);
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
             <div
+                ref={modalRef}
                 className={cn(
                     'bg-white rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
                     tab === 'breakdown' ? 'max-w-[320px]' : 'max-w-[280px]'
@@ -263,6 +335,18 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             >
                                 <Copy size={16} />
                                 Copiar total
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBreakdownSend}
+                                disabled={isSending}
+                                className={cn(
+                                    "w-full mt-2 min-h-[48px] rounded-xl bg-[#7C4DBC] text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-[#6A3DAA] active:scale-[0.98] shadow-md",
+                                    isSending && "opacity-60 cursor-not-allowed"
+                                )}
+                            >
+                                <Send size={16} />
+                                {isSending ? 'Preparando…' : 'Enviar captura'}
                             </button>
                         </>
                     )}
