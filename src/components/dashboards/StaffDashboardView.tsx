@@ -1022,7 +1022,10 @@ export default function StaffDashboardView() {
             {/* MODAL: Opciones de Caja */}
             {
                 isCashOptionsModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 relative" onClick={() => setIsCashOptionsModalOpen(false)}>
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-in fade-in duration-200"
+                        onClick={() => setIsCashOptionsModalOpen(false)}
+                    >
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
