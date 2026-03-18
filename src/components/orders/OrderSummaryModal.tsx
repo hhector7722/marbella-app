@@ -28,8 +28,14 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300 relative">
-            <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
+        <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="bg-[#36606F] py-2 px-4 sm:py-4 sm:px-8 flex justify-between items-center shrink-0">
                     <h2 className="text-sm sm:text-xl font-black text-white uppercase tracking-widest">Pedido</h2>
