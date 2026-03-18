@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
-import { useAIStore } from '@/store/aiStore';
 
 type ModalTab = 'calculator' | 'breakdown';
 
@@ -44,14 +43,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
-    const [generatedBreakdownBlob, setGeneratedBreakdownBlob] = useState<Blob | null>(null);
-    const [showBreakdownChoice, setShowBreakdownChoice] = useState(false);
-    const [showBreakdownConfirmSend, setShowBreakdownConfirmSend] = useState(false);
-    const [pendingBreakdownSend, setPendingBreakdownSend] = useState(false);
-    const isChatOpen = useAIStore((s) => s.isOpen);
-    const toggleChat = useAIStore((s) => s.toggleChat);
     const modalRef = useRef<HTMLDivElement | null>(null);
-    const exportRef = useRef<HTMLDivElement | null>(null);
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {
@@ -205,115 +197,45 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             toast.error('Abre primero la pestaña Desglose');
             return;
         }
-        const el = exportRef.current || modalRef.current;
+
+        const el = modalRef.current;
         if (!el) {
             toast.error('No se pudo capturar el modal');
             return;
         }
+
         setIsSending(true);
-        setGeneratedBreakdownBlob(null);
-        setShowBreakdownChoice(false);
-        setShowBreakdownConfirmSend(false);
-        setPendingBreakdownSend(false);
         try {
-            // Lazy import to keep main bundle small.
             const { toBlob } = await import('html-to-image');
-            // Export size tuned for WhatsApp preview (vertical, full-bleed but readable)
-            const exportWidth = 1080;
-            const exportHeight = 1350;
+            const pixelRatio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
             const blob = await toBlob(el, {
                 backgroundColor: '#ffffff',
-                pixelRatio: 1,
+                pixelRatio,
                 cacheBust: true,
-                width: exportWidth,
-                height: exportHeight,
-                style: {
-                    width: `${exportWidth}px`,
-                    height: `${exportHeight}px`,
-                },
             });
+
             if (!blob) throw new Error('No se pudo generar la imagen');
-            setGeneratedBreakdownBlob(blob);
-            setShowBreakdownChoice(true);
+            if (!navigator.clipboard?.write) {
+                toast.error('Tu navegador no permite copiar imágenes al portapapeles');
+                return;
+            }
+
+            // Copia la "captura smartphone" del modal visible al portapapeles.
+            // Luego abrimos WhatsApp para que el usuario pegue manualmente.
+            // eslint-disable-next-line no-undef
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+
+            toast.success('Captura copiada. Abriendo WhatsApp...');
+            const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
+            window.open(waUrl, '_blank', 'noopener,noreferrer');
+            onClose();
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
             toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
         } finally {
             setIsSending(false);
         }
-    }, [tab, breakdownTitle]);
-
-    const handleBreakdownDownload = useCallback(() => {
-        if (!generatedBreakdownBlob) {
-            toast.error('La imagen aún no está lista');
-            return;
-        }
-        const url = URL.createObjectURL(generatedBreakdownBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${breakdownTitle}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('Imagen descargada');
-        setShowBreakdownChoice(false);
-        setGeneratedBreakdownBlob(null);
-    }, [generatedBreakdownBlob, breakdownTitle]);
-
-    const handleBreakdownChooseSend = useCallback(() => {
-        if (!generatedBreakdownBlob) {
-            toast.error('La imagen aún no está lista');
-            return;
-        }
-        setShowBreakdownChoice(false);
-        setPendingBreakdownSend(true);
-        setShowBreakdownConfirmSend(true);
-    }, [generatedBreakdownBlob]);
-
-    const handleBreakdownConfirmSend = useCallback(async () => {
-        if (!pendingBreakdownSend) return;
-        if (!generatedBreakdownBlob) {
-            toast.error('La imagen aún no está lista');
-            setShowBreakdownConfirmSend(false);
-            setPendingBreakdownSend(false);
-            return;
-        }
-        setIsSending(true);
-        try {
-            // Ejecucion correcta: copiar imagen al portapapeles SIN adjuntar nada.
-            if (!navigator.clipboard?.write) {
-                toast.error('Tu navegador no permite copiar imágenes al portapapeles');
-                return;
-            }
-
-            let copied = false;
-            try {
-                // eslint-disable-next-line no-undef
-                await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedBreakdownBlob })]);
-                copied = true;
-            } catch {
-                // eslint-disable-next-line no-undef
-                await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(generatedBreakdownBlob) })]);
-                copied = true;
-            }
-
-            if (copied) {
-                toast.success('Imagen copiada. Pégala en la conversación.');
-                // Conducir a la conversación (chat de IA) para que el usuario pegue manualmente.
-                if (!isChatOpen) toggleChat();
-            } else {
-                toast.error('No se pudo copiar la imagen');
-            }
-        } catch (e: any) {
-            const msg = e instanceof Error ? e.message : String(e);
-            toast.error(`Error al enviar: ${msg.slice(0, 80)}`);
-        } finally {
-            setIsSending(false);
-            setPendingBreakdownSend(false);
-            setShowBreakdownConfirmSend(false);
-            setShowBreakdownChoice(false);
-            setGeneratedBreakdownBlob(null);
-        }
-    }, [pendingBreakdownSend, generatedBreakdownBlob, breakdownTitle, isChatOpen, toggleChat]);
+    }, [tab, onClose]);
 
     if (!isOpen) return null;
 
@@ -402,18 +324,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                     )}
                     {tab === 'breakdown' && (
                         <>
-                            {/* Tarjeta offscreen para export WhatsApp (1080x1350) */}
-                            <div className="fixed left-[-99999px] top-0 pointer-events-none opacity-0">
-                                <div
-                                    ref={exportRef}
-                                    className={cn(
-                                        'w-[1080px] h-[1350px]'
-                                    )}
-                                >
-                                    <BreakdownCaptureCard className="w-[1080px] h-[1350px]" />
-                                </div>
-                            </div>
-
                             {zoomDenom !== null && (
                                 <DenominationZoomModal
                                     isOpen={true}
@@ -503,108 +413,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 <Send size={16} />
                                 {isSending ? 'Generando…' : 'Enviar'}
                             </button>
-
-                            {showBreakdownChoice && (
-                                <div
-                                    className="fixed inset-0 z-[420] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3"
-                                    onClick={() => {
-                                        setShowBreakdownChoice(false);
-                                        setGeneratedBreakdownBlob(null);
-                                    }}
-                                >
-                                    <div
-                                        className="bg-white rounded-2xl shadow-2xl w-full max-w-[320px] overflow-hidden"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0">
-                                            <div className="text-[10px] font-black uppercase tracking-widest">
-                                                Imagen lista
-                                            </div>
-                                            <div className="text-[12px] font-black uppercase tracking-wider leading-tight mt-0.5">
-                                                Descarga o envío
-                                            </div>
-                                        </div>
-                                        <div className="p-4 space-y-2">
-                                            <button
-                                                type="button"
-                                                onClick={handleBreakdownDownload}
-                                                className="w-full min-h-[48px] rounded-xl bg-white border border-zinc-200 text-[#36606F] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-zinc-50 active:scale-[0.99]"
-                                            >
-                                                Descargar PNG
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={handleBreakdownChooseSend}
-                                                className="w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.99]"
-                                            >
-                                                Abrir conversación
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setShowBreakdownChoice(false);
-                                                    setGeneratedBreakdownBlob(null);
-                                                }}
-                                                className="w-full min-h-[48px] rounded-xl bg-zinc-100 text-zinc-700 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-zinc-200 active:scale-[0.99]"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {showBreakdownConfirmSend && (
-                                <div
-                                    className="fixed inset-0 z-[430] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3"
-                                    onClick={() => {
-                                        setShowBreakdownConfirmSend(false);
-                                        setPendingBreakdownSend(false);
-                                    }}
-                                >
-                                    <div
-                                        className="bg-white rounded-2xl shadow-2xl w-full max-w-[320px] overflow-hidden"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0">
-                                            <div className="text-[10px] font-black uppercase tracking-widest">
-                                                Confirmación
-                                            </div>
-                                            <div className="text-[12px] font-black uppercase tracking-wider leading-tight mt-0.5">
-                                                Ir a la conversación
-                                            </div>
-                                        </div>
-                                        <div className="p-4 space-y-3">
-                                            <div className="text-zinc-700 text-[13px] font-bold leading-snug">
-                                                Se copiará la imagen para que la pegues en la conversación.
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setShowBreakdownConfirmSend(false);
-                                                        setPendingBreakdownSend(false);
-                                                    }}
-                                                    className="min-h-[48px] rounded-xl bg-zinc-100 text-zinc-700 font-black uppercase tracking-widest text-xs hover:bg-zinc-200 active:scale-[0.99]"
-                                                >
-                                                    Atrás
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleBreakdownConfirmSend}
-                                                    disabled={isSending}
-                                                    className={cn(
-                                                        "min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs hover:bg-purple-500 active:scale-[0.99] transition-all",
-                                                        isSending && "opacity-60 cursor-not-allowed"
-                                                    )}
-                                                >
-                                                    Confirmar envío
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </>
                     )}
                 </div>
