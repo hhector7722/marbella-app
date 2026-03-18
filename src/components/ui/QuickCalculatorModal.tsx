@@ -299,3 +299,37 @@ export function CalculatorHeaderButton({
         </button>
     );
 }
+
+/**
+ * Botón flotante tipo "chat" para abrir la calculadora mientras un modal está abierto.
+ * Úsalo dentro del overlay del modal (idealmente en un contenedor `relative`).
+ */
+export function FloatingCalculatorFab({
+    isOpen,
+    onToggle,
+    className,
+    ariaLabel = 'Abrir calculadora',
+}: {
+    isOpen: boolean;
+    onToggle: () => void;
+    className?: string;
+    ariaLabel?: string;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-label={ariaLabel}
+            className={cn(
+                'absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-[220]',
+                'w-14 h-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl shadow-black/20',
+                'bg-[#36606F] text-white border border-white/10',
+                'hover:brightness-110 active:scale-95 transition-all',
+                isOpen && 'opacity-0 pointer-events-none',
+                className
+            )}
+        >
+            <Calculator size={22} strokeWidth={2.75} className="mx-auto" />
+        </button>
+    );
+}

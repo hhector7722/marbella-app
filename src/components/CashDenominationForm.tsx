@@ -5,7 +5,7 @@ import { X, Save, Calendar, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plu
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
-import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 interface CashDenominationFormProps {
@@ -120,7 +120,7 @@ export const CashDenominationForm = ({
     const isTipPool = variant === 'tipPool';
 
     return (
-        <div className={cn('flex flex-col h-full overflow-hidden bg-white', !isTipPool && 'rounded-2xl')}>
+        <div className={cn('flex flex-col h-full overflow-hidden bg-white relative', !isTipPool && 'rounded-2xl')}>
             <div className={cn(
                 'bg-[#36606F] px-6 py-2.5 flex justify-between items-center text-white shrink-0',
                 isTipPool && 'rounded-t-xl md:rounded-t-[2.5rem]'
@@ -169,10 +169,15 @@ export const CashDenominationForm = ({
                             </button>
                         </div>
                     )}
-                    <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                    <span className="w-10 h-10 min-h-[48px] min-w-[48px]" aria-hidden />
                 </div>
             </div>
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+            <FloatingCalculatorFab
+                isOpen={calculatorOpen}
+                onToggle={() => setCalculatorOpen(true)}
+                className="bottom-20 right-4 sm:bottom-24 sm:right-6"
+            />
             {zoomDenom !== null && (
                 <DenominationZoomModal
                     isOpen={true}

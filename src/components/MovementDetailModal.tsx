@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
@@ -135,7 +135,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={onClose}>
             <div
                 className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
@@ -159,7 +159,6 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                             </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                            <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                             <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-95 min-h-[48px] min-w-[48px]">
                                 <X size={20} strokeWidth={3} />
                             </button>
@@ -280,6 +279,7 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
                         </>
                     )}
                 </div>
+                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             </div>
         </div>

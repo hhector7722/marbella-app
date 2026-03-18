@@ -9,7 +9,7 @@ import {
     CheckCircle2, TrendingUp, RefreshCw, Minus, Plus
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -253,7 +253,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative">
             <div
                 className={cn(
                     "bg-white w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 rounded-2xl",
@@ -291,7 +291,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                         {(step === 'tpv_data' || step === 'count') && (
-                            <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                            <span className="w-10 h-10 min-h-[48px] min-w-[48px]" aria-hidden />
                         )}
                         <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20 min-h-[48px] min-w-[48px]">
                             <X size={20} strokeWidth={3} />
@@ -299,6 +299,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     </div>
                 </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                {(step === 'tpv_data' || step === 'count') && (
+                    <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                )}
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {/* STEP 1: SALES DATA */}

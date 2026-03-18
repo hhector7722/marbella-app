@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { X, Trash2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 
 interface Ingredient {
     id: string;
@@ -28,19 +28,19 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300 relative">
             <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in duration-300">
                 {/* Header */}
                 <div className="bg-[#36606F] py-2 px-4 sm:py-4 sm:px-8 flex justify-between items-center shrink-0">
                     <h2 className="text-sm sm:text-xl font-black text-white uppercase tracking-widest">Pedido</h2>
                     <div className="flex items-center gap-1 shrink-0">
-                        <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                         <button onClick={onClose} className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
                             <X className="text-white w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </div>
                 </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
                 {/* Table Content */}
                 <div className="flex-1 overflow-y-auto px-1 sm:px-6 py-2 sm:py-6">

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
-import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -340,7 +340,7 @@ export const CashChangeModal = ({
     // ——— Flujo legacy: una caja (SWAP) ———
     if (!useTwoBoxFlow) {
         return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200 relative" onClick={onClose}>
                 <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
                         <div className="px-4 py-2.5 pb-3">
@@ -349,7 +349,6 @@ export const CashChangeModal = ({
                                     <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
                                     <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] border-l border-white/20 pl-2 leading-none mb-[1px]">Caja {boxName}</p>
                                 </div>
-                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                             </div>
                             <div className="flex items-center justify-between gap-1.5 px-0.5">
                                 <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
@@ -370,6 +369,7 @@ export const CashChangeModal = ({
                         </div>
                     </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                    <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
                         <div className="flex flex-col">
                             {ALL_DENOMS.map((denom) => (
@@ -434,13 +434,12 @@ export const CashChangeModal = ({
         const canContinue = boxA && boxB && boxA.id !== boxB.id;
         return (
             <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200 relative" onClick={onClose}>
                 <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="bg-[#36606F] shrink-0 px-4 py-3">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
                             <div className="flex items-center gap-1 shrink-0">
-                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                                 {isManager && (
                                     <button
                                         type="button"
@@ -458,6 +457,7 @@ export const CashChangeModal = ({
                         </div>
                     </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                     <div className="flex-1 overflow-y-auto p-4">
                         <p className="text-zinc-600 text-[11px] font-bold text-center mb-4">Escoge dos cajas para el intercambio</p>
                         <div className="flex flex-col gap-2">
@@ -541,7 +541,6 @@ export const CashChangeModal = ({
                                 ) : (
                                     <button type="button" onClick={() => setSelectedExchangeDetail(null)} className="text-white font-black text-sm underline">Volver</button>
                                 )}
-                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                                 <button
                                     type="button"
                                     onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}
@@ -614,14 +613,13 @@ export const CashChangeModal = ({
     const rightHeaderName = isStep1 ? (boxB?.name ?? '') : (boxA?.name ?? '');
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200 relative" onClick={onClose}>
             <div className="bg-[#f8fafb] w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
                     <div className="px-4 py-2.5 pb-3">
                         <div className="flex items-center justify-between mb-2">
                             <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
                             <div className="flex items-center gap-1 shrink-0">
-                                <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                                 <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
                                     <X size={20} strokeWidth={3} />
                                 </button>
@@ -646,6 +644,7 @@ export const CashChangeModal = ({
                         </div>
                     </div>
                 </div>
+                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2">
                     {zoomDenom !== null && (

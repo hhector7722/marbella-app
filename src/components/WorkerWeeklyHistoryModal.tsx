@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
 import { format, isSameDay, addDays, parseISO } from 'date-fns';
-import { QuickCalculatorModal, CalculatorHeaderButton } from '@/components/ui/QuickCalculatorModal';
+import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
@@ -178,7 +178,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col w-fit max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
                 {/* Header */}
@@ -190,13 +190,13 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                         </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                        <CalculatorHeaderButton isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                         <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]">
                             <X size={20} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
                 {/* Content: contenedor se adapta al tamaño de la tabla */}
                 <div className="p-4 overflow-auto shrink-0">
