@@ -253,11 +253,18 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-start justify-center pt-0 p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-4xl max-h-[100vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 mt-0 rounded-b-2xl" onClick={e => e.stopPropagation()} style={{ boxShadow: 'none', border: 'none' }}>
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div
+                className={cn(
+                    "bg-white w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 rounded-2xl",
+                    "max-h-[calc(100dvh-2rem)]",
+                    "shadow-2xl shadow-black/20 border border-white/10"
+                )}
+                onClick={e => e.stopPropagation()}
+            >
 
                 {/* Header: fecha sin tarjeta/marco, flota sobre cabecera */}
-                <div className="bg-[#36606F] px-8 py-4 flex items-center justify-between text-white relative shrink-0">
+                <div className="bg-[#36606F] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between text-white relative shrink-0">
                     <div className="flex flex-col">
                         <button
                             type="button"
@@ -265,7 +272,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             onClick={() => datePickerRef.current?.showPicker()}
                         >
                             <Calendar size={16} className="text-white/80" aria-hidden />
-                            <span className="text-sm font-black uppercase tracking-wide text-white">
+                            <span className="text-[12px] sm:text-sm font-black uppercase tracking-wide text-white">
                                 {format(new Date(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
                             </span>
                             <input
@@ -276,7 +283,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 onChange={(e) => setSelectedDateTime(e.target.value)}
                             />
                         </button>
-                        <div className="flex items-center gap-4 mt-1">
+                        <div className="flex items-center gap-3 mt-1">
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'tpv_data' ? 'text-white' : 'text-white/40')}>1. Datos</div>
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'count' ? 'text-white' : 'text-white/40')}>2. Arqueo</div>
                             <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
@@ -296,8 +303,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
-                        <div className="p-8 space-y-6">
-                            <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100 transition-all">
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                            <div className="p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-100 transition-all">
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ventas</label>
                                 <div className="flex items-center gap-4">
                                     <div className="flex-1 flex items-center justify-between h-14 bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
@@ -353,7 +360,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                            <div className="grid grid-cols-2 gap-4 sm:gap-6 bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
                                 <div className="space-y-4">
                                     <div>
                                         <label className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase mb-1"><CreditCard size={12} /> Tarjeta</label>
@@ -402,7 +409,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     {/* STEP 2: COUNT */}
                     {step === 'count' && (
                         <div className="flex flex-col h-full overflow-hidden">
-                            <div className="p-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
+                            <div className="p-4 sm:p-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
                                 <div>
                                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Arqueo en Caja</h3>
                                     <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted.toFixed(2)}€</span>
@@ -412,8 +419,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     <div className="text-lg font-bold text-gray-500">{expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : " "}</div>
                                 </div>
                             </div>
-                            <div className="p-4 flex flex-col gap-4">
-                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-6 gap-x-4">
+                            <div className="p-3 sm:p-4 flex flex-col gap-4">
+                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-5 sm:gap-y-6 gap-x-3 sm:gap-x-4">
                                     {BILLS.map(bill => (
                                         <div key={bill} className="flex flex-col items-center gap-1.5 group transition-all">
                                             <div className="h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
@@ -467,12 +474,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
                     {/* STEP 3: SUMMARY */}
                     {step === 'summary' && (
-                        <div className="p-8 space-y-8 animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-4 duration-300">
                             <div className="text-center">
                                 <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Cierre de Caja</h3>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-50">
+                            <div className="grid grid-cols-2 gap-6 sm:gap-8 py-6 sm:py-8 border-y border-gray-50">
                                 <div className="flex flex-col items-center justify-center text-center col-span-2">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Efectivo Contado (Total Retirado)</span>
                                     <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted > 0.005 ? `${totalCounted.toFixed(2)}€` : " "}</span>
@@ -495,11 +502,11 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-6 bg-gray-50 border-t flex gap-4 shrink-0">
+                <div className="p-3 sm:p-4 bg-gray-50 border-t flex gap-3 sm:gap-4 shrink-0">
                     {step !== 'tpv_data' && (
                         <button
                             onClick={() => setStep(step === 'summary' ? 'count' : 'tpv_data')}
-                            className="px-8 font-black text-gray-400 uppercase tracking-widest text-xs hover:text-gray-600 transition-colors"
+                            className="px-4 sm:px-6 min-h-[48px] font-black text-gray-400 uppercase tracking-widest text-xs hover:text-gray-600 transition-colors rounded-xl hover:bg-white/60 active:bg-white/80"
                         >
                             Atrás
                         </button>
@@ -512,7 +519,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                         }}
                         disabled={loading}
                         className={cn(
-                            "flex-1 h-14 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
+                            "flex-1 min-h-[48px] h-14 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
                             step === 'summary' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-[#5B8FB9] shadow-blue-900/20'
                         )}
                     >
