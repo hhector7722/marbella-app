@@ -228,8 +228,18 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             });
             if (!dataUrl) throw new Error('No se pudo generar la imagen');
 
-            const blob = await (await fetch(dataUrl)).blob();
-            const pngBlob = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
+            // Convertimos el dataUrl a Blob SIN fetch (evita restricciones de "not allowed by the user agent").
+            const parts = dataUrl.split(',');
+            if (parts.length !== 2) throw new Error('Formato dataUrl inválido');
+            const header = parts[0];
+            const base64 = parts[1];
+            const mimeMatch = header.match(/data:(.*?);base64/);
+            const mime = mimeMatch?.[1] || 'image/png';
+            const byteString = atob(base64);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+            const pngBlob = mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
 
             if (!navigator.clipboard?.write) {
                 toast.error('Tu navegador no permite copiar imágenes al portapapeles');
