@@ -262,16 +262,22 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
 
             await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
 
-            toast.success('Captura copiada. Abriendo WhatsApp...');
+            toast.success('Captura copiada al portapapeles.');
             const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
-            window.open(waUrl, '_blank', 'noopener,noreferrer');
-            onClose();
+            const opened = window.open(waUrl, '_blank', 'noopener,noreferrer');
+            if (!opened) {
+                toast.info('WhatsApp bloqueado por el navegador. Ábrelo manualmente y pega la imagen.');
+            }
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
             toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
         } finally {
             setIsSending(false);
-            toast.dismiss(toastId);
+            try {
+                toast.dismiss(toastId);
+            } catch {
+                // No hacer nada: el estado ya se ha restaurado.
+            }
         }
     }, [tab, onClose]);
 
