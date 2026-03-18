@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
+import { useAIStore } from '@/store/aiStore';
 
 type ModalTab = 'calculator' | 'breakdown';
 
@@ -47,6 +48,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [showBreakdownChoice, setShowBreakdownChoice] = useState(false);
     const [showBreakdownConfirmSend, setShowBreakdownConfirmSend] = useState(false);
     const [pendingBreakdownSend, setPendingBreakdownSend] = useState(false);
+    const isChatOpen = useAIStore((s) => s.isOpen);
+    const toggleChat = useAIStore((s) => s.toggleChat);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const exportRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,7 +137,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             </div>
                             {showHeaderHint && (
                                 <div className="text-white/70 text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] mt-2">
-                                    Haz captura de pantalla y envía por WhatsApp
+                                    Haz captura y pégala en la conversación
                                 </div>
                             )}
                         </div>
@@ -276,34 +279,29 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         }
         setIsSending(true);
         try {
-            const file = new File([generatedBreakdownBlob], `${breakdownTitle}.png`, { type: 'image/png' });
-
-            // Paso honesto: primero copiamos la imagen al portapapeles (como /orders/new),
-            // y luego intentamos abrir el selector de apps/contactos vía `navigator.share`.
-            let copied = false;
-            if (navigator.clipboard?.write) {
-                try {
-                    // eslint-disable-next-line no-undef
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedBreakdownBlob })]);
-                    copied = true;
-                } catch {
-                    // eslint-disable-next-line no-undef
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(generatedBreakdownBlob) })]);
-                    copied = true;
-                }
+            // Ejecucion correcta: copiar imagen al portapapeles SIN adjuntar nada.
+            if (!navigator.clipboard?.write) {
+                toast.error('Tu navegador no permite copiar imágenes al portapapeles');
+                return;
             }
 
-            if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Desglose',
-                    text: 'Captura del desglose',
-                });
-                toast.success(copied ? 'Envío iniciado (y imagen copiada)' : 'Envío iniciado');
-            } else if (copied) {
-                toast.success('Imagen copiada. Pégala en WhatsApp/contactos.');
+            let copied = false;
+            try {
+                // eslint-disable-next-line no-undef
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedBreakdownBlob })]);
+                copied = true;
+            } catch {
+                // eslint-disable-next-line no-undef
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(generatedBreakdownBlob) })]);
+                copied = true;
+            }
+
+            if (copied) {
+                toast.success('Imagen copiada. Pégala en la conversación.');
+                // Conducir a la conversación (chat de IA) para que el usuario pegue manualmente.
+                if (!isChatOpen) toggleChat();
             } else {
-                toast.error('No se pudo compartir ni copiar la imagen.');
+                toast.error('No se pudo copiar la imagen');
             }
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
@@ -315,7 +313,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             setShowBreakdownChoice(false);
             setGeneratedBreakdownBlob(null);
         }
-    }, [pendingBreakdownSend, generatedBreakdownBlob, breakdownTitle]);
+    }, [pendingBreakdownSend, generatedBreakdownBlob, breakdownTitle, isChatOpen, toggleChat]);
 
     if (!isOpen) return null;
 
@@ -539,7 +537,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                 onClick={handleBreakdownChooseSend}
                                                 className="w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.99]"
                                             >
-                                                Enviar a contactos
+                                                Abrir conversación
                                             </button>
                                             <button
                                                 type="button"
@@ -573,12 +571,12 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                 Confirmación
                                             </div>
                                             <div className="text-[12px] font-black uppercase tracking-wider leading-tight mt-0.5">
-                                                Ir a contactos
+                                                Ir a la conversación
                                             </div>
                                         </div>
                                         <div className="p-4 space-y-3">
                                             <div className="text-zinc-700 text-[13px] font-bold leading-snug">
-                                                Se compartirá/copiará la imagen para que la pegues en WhatsApp o elijas contacto.
+                                                Se copiará la imagen para que la pegues en la conversación.
                                             </div>
                                             <div className="grid grid-cols-2 gap-2">
                                                 <button
