@@ -353,17 +353,18 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     // Cerrar punto seleccionado al tocar/clicar fuera de gráfica y de la tarjeta
     useEffect(() => {
         if (selectedChartHour === null) return;
-        const handlePointerDownOutside = (e: PointerEvent) => {
+        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
             const chartEl = chartContainerRef.current;
             const tooltipEl = tooltipRef.current;
             const target = e.target as Node;
             if (chartEl?.contains(target) || tooltipEl?.contains(target)) return;
             setSelectedChartHour(null);
         };
-        // Pointer Events unifican mouse/touch/pen (más fiable en iOS/Android/PWA)
-        document.addEventListener('pointerdown', handlePointerDownOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside, { passive: true });
         return () => {
-            document.removeEventListener('pointerdown', handlePointerDownOutside);
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
         };
     }, [selectedChartHour]);
 
@@ -807,9 +808,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <div
                                     ref={chartContainerRef}
                                     className="w-full relative"
-                                    onPointerUp={(e) => {
-                                        // Unifica ratón/touch/lápiz; evita que en algunos dispositivos no dispare onClick/onTouchEnd
-                                        handleChartTap(e.clientX);
+                                    onClick={(e) => handleChartTap(e.clientX)}
+                                    onTouchEnd={(e) => {
+                                        if (e.changedTouches.length) {
+                                            e.preventDefault();
+                                            handleChartTap(e.changedTouches[0].clientX);
+                                        }
                                     }}
                                 >
                                     <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
