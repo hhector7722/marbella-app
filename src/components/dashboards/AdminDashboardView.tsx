@@ -350,21 +350,20 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         fetchSalesForDate(salesViewDate);
     }, [salesViewDate]);
 
-    // Cerrar punto seleccionado al tocar fuera de gráfica y de la tarjeta
+    // Cerrar punto seleccionado al tocar/clicar fuera de gráfica y de la tarjeta
     useEffect(() => {
         if (selectedChartHour === null) return;
-        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+        const handlePointerDownOutside = (e: PointerEvent) => {
             const chartEl = chartContainerRef.current;
             const tooltipEl = tooltipRef.current;
             const target = e.target as Node;
             if (chartEl?.contains(target) || tooltipEl?.contains(target)) return;
             setSelectedChartHour(null);
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('touchstart', handleClickOutside, { passive: true });
+        // Pointer Events unifican mouse/touch/pen (más fiable en iOS/Android/PWA)
+        document.addEventListener('pointerdown', handlePointerDownOutside);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('touchstart', handleClickOutside);
+            document.removeEventListener('pointerdown', handlePointerDownOutside);
         };
     }, [selectedChartHour]);
 
@@ -808,12 +807,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <div
                                     ref={chartContainerRef}
                                     className="w-full relative"
-                                    onClick={(e) => handleChartTap(e.clientX)}
-                                    onTouchEnd={(e) => {
-                                        if (e.changedTouches.length) {
-                                            e.preventDefault();
-                                            handleChartTap(e.changedTouches[0].clientX);
-                                        }
+                                    onPointerUp={(e) => {
+                                        // Unifica ratón/touch/lápiz; evita que en algunos dispositivos no dispare onClick/onTouchEnd
+                                        handleChartTap(e.clientX);
                                     }}
                                 >
                                     <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
