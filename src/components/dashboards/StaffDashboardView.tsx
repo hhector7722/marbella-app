@@ -291,7 +291,7 @@ export default function StaffDashboardView() {
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const { data: realShifts } = await supabase
                 .from('shifts')
-                .select('start_time, end_time, activity')
+                .select('start_time, end_time, activity, activity_2')
                 .eq('user_id', user.id)
                 .eq('is_published', true)
                 .gte('start_time', startOfMonth.toISOString())
@@ -305,7 +305,7 @@ export default function StaffDashboardView() {
                         date: start,
                         startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                         endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                        activity: s.activity || undefined
+                        activity: s.activity || s.activity_2 || undefined
                     };
                 });
                 setMonthShifts(formattedShifts);

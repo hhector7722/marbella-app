@@ -66,9 +66,17 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
     const [dayActivity, setDayActivity] = useState('');
+    const [dayCategory, setDayCategory] = useState('');
     const [eventStart, setEventStart] = useState('');
     const [eventEnd, setEventEnd] = useState('');
     const [eventParticipants, setEventParticipants] = useState<number | string>('');
+
+    // Slot 2 (segunda actividad)
+    const [dayActivity2, setDayActivity2] = useState('');
+    const [dayCategory2, setDayCategory2] = useState('');
+    const [eventStart2, setEventStart2] = useState('');
+    const [eventEnd2, setEventEnd2] = useState('');
+    const [eventParticipants2, setEventParticipants2] = useState<number | string>('');
     const [loadingDay, setLoadingDay] = useState(false);
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
@@ -95,7 +103,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
 
             const { data: rawShifts, error } = await supabase
                 .from('shifts')
-                .select('start_time, end_time, activity, user_id, is_published, event_start_time, event_end_time, event_participants')
+                .select('start_time, end_time, activity, activity_2, categoria, categoria_2, user_id, is_published, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2')
                 .gte('start_time', localStart.toISOString())
                 .lte('start_time', localEnd.toISOString())
                 .order('start_time', { ascending: true });
@@ -105,9 +113,15 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             if (!rawShifts?.length) {
                 setDayShifts([]);
                 setDayActivity('');
+                setDayCategory('');
                 setEventStart('');
                 setEventEnd('');
                 setEventParticipants('');
+                setDayActivity2('');
+                setDayCategory2('');
+                setEventStart2('');
+                setEventEnd2('');
+                setEventParticipants2('');
                 setLoadingDay(false);
                 return;
             }
@@ -117,9 +131,15 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             if (!publishedShifts.length) {
                 setDayShifts([]);
                 setDayActivity('');
+                setDayCategory('');
                 setEventStart('');
                 setEventEnd('');
                 setEventParticipants('');
+                setDayActivity2('');
+                setDayCategory2('');
+                setEventStart2('');
+                setEventEnd2('');
+                setEventParticipants2('');
                 setLoadingDay(false);
                 return;
             }
@@ -133,9 +153,15 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                 if (!userHasShiftThisDay) {
                     setDayShifts([]);
                     setDayActivity('');
+                    setDayCategory('');
                     setEventStart('');
                     setEventEnd('');
                     setEventParticipants('');
+                    setDayActivity2('');
+                    setDayCategory2('');
+                    setEventStart2('');
+                    setEventEnd2('');
+                    setEventParticipants2('');
                     setLoadingDay(false);
                     return;
                 }
@@ -151,9 +177,15 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             });
 
             setDayActivity(publishedShifts[0]?.activity || '');
+            setDayCategory(publishedShifts[0]?.categoria || '');
+            setDayActivity2(publishedShifts[0]?.activity_2 || '');
+            setDayCategory2(publishedShifts[0]?.categoria_2 || '');
             setEventStart(publishedShifts[0]?.event_start_time || '');
             setEventEnd(publishedShifts[0]?.event_end_time || '');
             setEventParticipants(publishedShifts[0]?.event_participants || '');
+            setEventStart2(publishedShifts[0]?.event_start_time_2 || '');
+            setEventEnd2(publishedShifts[0]?.event_end_time_2 || '');
+            setEventParticipants2(publishedShifts[0]?.event_participants_2 || '');
             setDayShifts(publishedShifts.map((s: any) => ({
                 name: nameMap[s.user_id] || '?',
                 avatar_url: avatarMap[s.user_id] ?? null,
@@ -166,6 +198,15 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
             toast.error(err?.message || 'Error al cargar el día');
             setDayShifts([]);
             setDayActivity('');
+            setDayCategory('');
+            setDayActivity2('');
+            setDayCategory2('');
+            setEventStart('');
+            setEventEnd('');
+            setEventParticipants('');
+            setEventStart2('');
+            setEventEnd2('');
+            setEventParticipants2('');
         } finally {
             setLoadingDay(false);
         }
@@ -373,31 +414,80 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                             <>
                                 {/* Zona blanca — inputs en lectura (sin forma de edición) */}
                                 <div className="bg-white px-4 py-3 w-full shrink-0">
-                                    <div className="flex items-center gap-2 sm:gap-4 max-w-full justify-center">
-                                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad</span>
-                                            <div className="bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl flex items-center">
-                                                <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
-                                                    {dayActivity || '—'}
-                                                </span>
+                                    <div className="flex flex-col gap-2">
+                                        {/* Slot 1 */}
+                                        <div className="flex items-center gap-2 sm:gap-4 max-w-full justify-center">
+                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad</span>
+                                                <div className="bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl flex items-center">
+                                                    <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
+                                                        {dayActivity || '—'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-emerald-600 text-[11px] font-mono">{eventStart || '—'}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-rose-500 text-[11px] font-mono">{eventEnd || '—'}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-zinc-800 text-[11px]">{eventParticipants || ' '}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Categoría</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
+                                                        {dayCategory || '—'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
-                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
-                                            <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
-                                                <span className="font-black text-emerald-600 text-[11px] font-mono">{eventStart || '—'}</span>
+
+                                        {/* Slot 2 */}
+                                        <div className="flex items-center gap-2 sm:gap-4 max-w-full justify-center">
+                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad 2</span>
+                                                <div className="bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl flex items-center">
+                                                    <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
+                                                        {dayActivity2 || '—'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
-                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
-                                            <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
-                                                <span className="font-black text-rose-500 text-[11px] font-mono">{eventEnd || '—'}</span>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio 2</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-emerald-600 text-[11px] font-mono">{eventStart2 || '—'}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
-                                            <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
-                                                <span className="font-black text-zinc-800 text-[11px]">{eventParticipants || ' '}</span>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final 2</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-rose-500 text-[11px] font-mono">{eventEnd2 || '—'}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part 2</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-zinc-800 text-[11px]">{eventParticipants2 || ' '}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Categoría 2</span>
+                                                <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
+                                                    <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
+                                                        {dayCategory2 || '—'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
