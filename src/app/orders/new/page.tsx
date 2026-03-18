@@ -14,6 +14,7 @@ interface Ingredient {
     id: string;
     name: string;
     supplier: string | null;
+    supplier_2?: string | null;
     current_price: number;
     purchase_unit: string;
     image_url: string | null;
@@ -133,7 +134,13 @@ export default function NewOrderPage() {
             const { data: supData } = await supabase.from('suppliers').select('id, name, phone');
             setDbSuppliers(supData || []);
 
-            const uniqueSuppliers = Array.from(new Set((ingData || []).map(i => i.supplier).filter(Boolean))) as string[];
+            const uniqueSuppliers = Array.from(
+                new Set(
+                    (ingData || [])
+                        .flatMap((i) => [i.supplier, i.supplier_2])
+                        .filter(Boolean)
+                )
+            ) as string[];
             setSuppliers(uniqueSuppliers);
             // Drafts are loaded in useEffect when supplierId is set (shared per supplier)
         } catch (error) {
@@ -146,13 +153,13 @@ export default function NewOrderPage() {
 
     const filteredIngredients = ingredients.filter(ing => {
         const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier;
+        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier || ing.supplier_2 === selectedSupplier;
         return matchesSearch && matchesSupplier;
     });
 
     // CRITICAL: Filter selected items BY THE CURRENTLY SELECTED SUPPLIER
     const selectedItems = ingredients
-        .filter(ing => (drafts[ing.id]?.quantity || 0) > 0 && (!selectedSupplier || ing.supplier === selectedSupplier))
+        .filter(ing => (drafts[ing.id]?.quantity || 0) > 0 && (!selectedSupplier || ing.supplier === selectedSupplier || ing.supplier_2 === selectedSupplier))
         .map(ing => ({
             ...ing,
             quantity: drafts[ing.id].quantity,
@@ -170,7 +177,7 @@ export default function NewOrderPage() {
             if (error) throw error;
             setDrafts(prev => {
                 const next = { ...prev };
-                ingredients.filter(ing => ing.supplier === selectedSupplier).forEach(ing => {
+                ingredients.filter(ing => ing.supplier === selectedSupplier || ing.supplier_2 === selectedSupplier).forEach(ing => {
                     delete next[ing.id];
                 });
                 return next;

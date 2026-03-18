@@ -10,6 +10,7 @@ interface Ingredient {
     id: string;
     name: string;
     supplier: string | null;
+    supplier_2?: string | null;
     current_price: number;
     purchase_unit: string;
     image_url: string | null;

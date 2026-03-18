@@ -10,6 +10,7 @@ interface Ingredient {
     id: string;
     name: string;
     supplier: string | null;
+    supplier_2?: string | null;
     current_price: number;
     purchase_unit: string;
     unit_type: string; // Added field
@@ -39,6 +40,8 @@ export default function IngredientsPage() {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [isCustomSupplier, setIsCustomSupplier] = useState(false);
     const [customSupplierName, setCustomSupplierName] = useState('');
+    const [isCustomSupplier2, setIsCustomSupplier2] = useState(false);
+    const [customSupplier2Name, setCustomSupplier2Name] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos' });
     const [isCreating, setIsCreating] = useState(false);
@@ -84,7 +87,8 @@ export default function IngredientsPage() {
         try {
             const { error } = await supabase.from('ingredients').update({
                 name: editForm.name,
-                supplier: editForm.supplier,
+                supplier: editForm.supplier || null,
+                supplier_2: editForm.supplier_2 || null,
                 current_price: editForm.current_price,
                 purchase_unit: editForm.purchase_unit,
                 unit_type: editForm.purchase_unit, // Sync unit_type with purchase_unit
@@ -106,6 +110,8 @@ export default function IngredientsPage() {
         try {
             const { error } = await supabase.from('ingredients').insert({
                 ...newIngredient,
+                supplier: newIngredient.supplier || null,
+                supplier_2: newIngredient.supplier_2 || null,
                 current_price: newIngredient.current_price || 0,
                 purchase_unit: unit,
                 unit_type: unit, // Provide missing unit_type
@@ -119,11 +125,16 @@ export default function IngredientsPage() {
         } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
     }
 
-
-    const suppliersList = Array.from(new Set(ingredients.map(i => i.supplier).filter(Boolean))) as string[];
+    const suppliersList = Array.from(
+        new Set(
+            ingredients
+                .flatMap((i) => [i.supplier, i.supplier_2])
+                .filter(Boolean)
+        )
+    ) as string[];
     const filteredIngredients = ingredients.filter(ing => {
         const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier;
+        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier || ing.supplier_2 === selectedSupplier;
         return matchesSearch && matchesSupplier;
     });
 
@@ -222,7 +233,21 @@ export default function IngredientsPage() {
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6">
                             {filteredIngredients.map(ing => (
                                 <div key={ing.id} className="relative group">
-                                    <div onClick={() => (setEditingIngredient(ing), setEditForm({ ...ing }))} className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col">
+                                    <div
+                                        onClick={() => {
+                                            setEditingIngredient(ing);
+                                            setEditForm({ ...ing });
+
+                                            const isCustom1 = !!ing.supplier && !STANDARD_SUPPLIERS.includes(ing.supplier);
+                                            setIsCustomSupplier(isCustom1);
+                                            setCustomSupplierName(isCustom1 ? ing.supplier || '' : '');
+
+                                            const isCustom2 = !!ing.supplier_2 && !STANDARD_SUPPLIERS.includes(ing.supplier_2);
+                                            setIsCustomSupplier2(isCustom2);
+                                            setCustomSupplier2Name(isCustom2 ? ing.supplier_2 || '' : '');
+                                        }}
+                                        className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
+                                    >
                                 {/* IMAGEN PEQUEÑA SIN BORDE */}
                                 <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
                                     {ing.image_url ? <img src={ing.image_url} className="w-full h-full object-contain" /> : <Package className="text-gray-200 w-6 h-6" />}
@@ -308,7 +333,56 @@ export default function IngredientsPage() {
                             ) : (
                                 <div className="flex gap-2">
                                     <input value={customSupplierName} onChange={e => { setCustomSupplierName(e.target.value); setEditForm({ ...editForm, supplier: e.target.value }) }} className="flex-1 p-3 border rounded-2xl" placeholder="Proveedor" />
-                                    <button onClick={() => setIsCustomSupplier(false)} className="text-xs text-red-500 font-bold">X</button>
+                                    <button
+                                        onClick={() => {
+                                            setIsCustomSupplier(false);
+                                            setCustomSupplierName('');
+                                            setEditForm({ ...editForm, supplier: null });
+                                        }}
+                                        className="text-xs text-red-500 font-bold"
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                            )}
+
+                            {!isCustomSupplier2 ? (
+                                <select
+                                    value={editForm.supplier_2 || ''}
+                                    onChange={e => {
+                                        if (e.target.value === 'custom') {
+                                            setIsCustomSupplier2(true);
+                                        } else {
+                                            setEditForm({ ...editForm, supplier_2: e.target.value });
+                                        }
+                                    }}
+                                    className="w-full p-3 border rounded-2xl bg-white"
+                                >
+                                    <option value="">Proveedor 2 (opcional)...</option>
+                                    {STANDARD_SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
+                                    <option value="custom">+ Nuevo...</option>
+                                </select>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <input
+                                        value={customSupplier2Name}
+                                        onChange={e => {
+                                            setCustomSupplier2Name(e.target.value);
+                                            setEditForm({ ...editForm, supplier_2: e.target.value });
+                                        }}
+                                        className="flex-1 p-3 border rounded-2xl"
+                                        placeholder="Proveedor 2"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            setIsCustomSupplier2(false);
+                                            setCustomSupplier2Name('');
+                                            setEditForm({ ...editForm, supplier_2: null });
+                                        }}
+                                        className="text-xs text-red-500 font-bold"
+                                    >
+                                        X
+                                    </button>
                                 </div>
                             )}
                             <div className="flex gap-2">
