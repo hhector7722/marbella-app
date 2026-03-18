@@ -124,8 +124,6 @@ export default function TipsDashboardView() {
       try {
         if (missingWeekday) {
           await supabase.rpc('upsert_tip_pool', {
-            p_start_date: startDate,
-            p_end_date: endDate,
             p_pool_type: 'weekday',
             p_cash_total: preview.pools.weekday.cashTotal ?? 0,
             p_cash_breakdown: preview.pools.weekday.cashBreakdown ?? {},
@@ -134,8 +132,6 @@ export default function TipsDashboardView() {
         }
         if (missingWeekend) {
           await supabase.rpc('upsert_tip_pool', {
-            p_start_date: startDate,
-            p_end_date: endDate,
             p_pool_type: 'weekend',
             p_cash_total: preview.pools.weekend.cashTotal ?? 0,
             p_cash_breakdown: preview.pools.weekend.cashBreakdown ?? {},
@@ -159,10 +155,9 @@ export default function TipsDashboardView() {
   const handleSaveCash = async (poolType: PoolType, total: number, breakdown: any, notes: string) => {
     try {
       await supabase.rpc('upsert_tip_pool', {
-        p_start_date: startDate,
-        p_end_date: endDate,
         p_pool_type: poolType,
-        p_cash_total: total,
+        // Debe poder guardarse también 0 (no bloquear, no convertir a null)
+        p_cash_total: Number.isFinite(total) ? total : 0,
         p_cash_breakdown: breakdown ?? {},
         p_notes: (notes || '').trim() || null,
       });
@@ -285,10 +280,10 @@ export default function TipsDashboardView() {
                 </div>
                 <button
                   onClick={() => openCash('weekday')}
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#36606F]/90 hover:bg-[#36606F] text-white flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px]"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-full text-[#36606F] hover:text-[#2d4d57] flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[48px]"
                   title="Introducir cantidades"
                 >
-                  <Plus size={18} strokeWidth={3} className="md:w-5 md:h-5" />
+                  <Plus size={20} strokeWidth={3} className="md:w-[22px] md:h-[22px]" />
                 </button>
               </div>
               <div className="bg-white/80 rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
@@ -304,10 +299,10 @@ export default function TipsDashboardView() {
                 </div>
                 <button
                   onClick={() => openCash('weekend')}
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#36606F]/90 hover:bg-[#36606F] text-white flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px]"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-full text-[#36606F] hover:text-[#2d4d57] flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[48px]"
                   title="Introducir cantidades"
                 >
-                  <Plus size={18} strokeWidth={3} className="md:w-5 md:h-5" />
+                  <Plus size={20} strokeWidth={3} className="md:w-[22px] md:h-[22px]" />
                 </button>
               </div>
             </div>
@@ -357,7 +352,7 @@ export default function TipsDashboardView() {
                       </tr>
                     ) : (
                       preview.staff.map((s) => (
-                        <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors">
+                        <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
                             onClick={() => openOverride('weekday', s.id, s.name)}
@@ -370,9 +365,6 @@ export default function TipsDashboardView() {
                                     OVERRIDE
                                   </span>
                                 )}
-                              </div>
-                              <div className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                                {s.role}
                               </div>
                             </div>
                           </td>
@@ -389,7 +381,7 @@ export default function TipsDashboardView() {
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-[#36606F]"
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-zinc-200/80"
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekdayAmount, 2)}
@@ -407,7 +399,7 @@ export default function TipsDashboardView() {
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-[#36606F]"
+                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-zinc-200/80"
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekendAmount, 2)}
