@@ -206,24 +206,49 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
 
         setIsSending(true);
         try {
-            const { toBlob } = await import('html-to-image');
-            const pixelRatio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-            const blob = await toBlob(el, {
-                backgroundColor: '#ffffff',
-                pixelRatio,
-                cacheBust: true,
-            });
+            const { toPng } = await import('html-to-image');
 
-            if (!blob) throw new Error('No se pudo generar la imagen');
+            const rect = el.getBoundingClientRect();
+            const width = Math.max(1, Math.round(rect.width));
+            const height = Math.max(1, Math.round(rect.height));
+
+            const pixelRatio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+            // Generar PNG real (mejor compatibilidad con ClipboardItem)
+            const dataUrl = await toPng(el, {
+                backgroundColor: '#ffffff',
+                cacheBust: true,
+                pixelRatio,
+                width,
+                height,
+                style: {
+                    width: `${width}px`,
+                    height: `${height}px`,
+                },
+            });
+            if (!dataUrl) throw new Error('No se pudo generar la imagen');
+
+            const blob = await (await fetch(dataUrl)).blob();
+            const pngBlob = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
+
             if (!navigator.clipboard?.write) {
                 toast.error('Tu navegador no permite copiar imágenes al portapapeles');
+                // Aun así, abrimos WhatsApp para que el usuario pueda enviar manualmente.
+                const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
+                window.open(waUrl, '_blank', 'noopener,noreferrer');
+                onClose();
                 return;
             }
 
-            // Copia la "captura smartphone" del modal visible al portapapeles.
-            // Luego abrimos WhatsApp para que el usuario pegue manualmente.
-            // eslint-disable-next-line no-undef
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            if (typeof ClipboardItem === 'undefined') {
+                toast.error('ClipboardItem no disponible en este navegador');
+                const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
+                window.open(waUrl, '_blank', 'noopener,noreferrer');
+                onClose();
+                return;
+            }
+
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
 
             toast.success('Captura copiada. Abriendo WhatsApp...');
             const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
