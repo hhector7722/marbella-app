@@ -293,8 +293,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 const el = datePickerRef.current;
                                 if (!el) return;
                                 // Try native picker (Chrome), fallback to focus/click for others.
-                                // @ts-expect-error showPicker exists in Chromium
-                                if (typeof el.showPicker === 'function') el.showPicker();
+                                const picker = el as HTMLInputElement & { showPicker?: () => void };
+                                if (typeof picker.showPicker === 'function') picker.showPicker();
                                 else { el.focus(); el.click(); }
                             }}
                         >
