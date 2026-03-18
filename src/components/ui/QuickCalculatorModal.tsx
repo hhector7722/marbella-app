@@ -43,6 +43,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [generatedBreakdownBlob, setGeneratedBreakdownBlob] = useState<Blob | null>(null);
+    const [showBreakdownChoice, setShowBreakdownChoice] = useState(false);
+    const [showBreakdownConfirmSend, setShowBreakdownConfirmSend] = useState(false);
+    const [pendingBreakdownSend, setPendingBreakdownSend] = useState(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const exportRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,7 +123,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             showHeaderHint?: boolean;
         }) => (
             <div className={cn('bg-white text-zinc-900 overflow-hidden', className)}>
-                <div className="bg-purple-600 px-10 sm:px-12 py-8 sm:py-10">
+                <div className="bg-[#36606F] px-10 sm:px-12 py-8 sm:py-10">
                     <div className="flex items-end justify-between gap-6">
                         <div className="min-w-0">
                             <div className="text-white text-3xl sm:text-4xl font-black uppercase tracking-[0.18em] leading-none">
@@ -204,6 +208,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             return;
         }
         setIsSending(true);
+        setGeneratedBreakdownBlob(null);
+        setShowBreakdownChoice(false);
+        setShowBreakdownConfirmSend(false);
+        setPendingBreakdownSend(false);
         try {
             // Lazy import to keep main bundle small.
             const { toBlob } = await import('html-to-image');
@@ -222,37 +230,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                 },
             });
             if (!blob) throw new Error('No se pudo generar la imagen');
-
-            // Copiar al portapapeles como imagen (mismo patrón que /orders/new)
-            let copied = false;
-            if (navigator.clipboard?.write) {
-                try {
-                    // eslint-disable-next-line no-undef
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                    copied = true;
-                } catch {
-                    try {
-                        // eslint-disable-next-line no-undef
-                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(blob) })]);
-                        copied = true;
-                    } catch {
-                        copied = false;
-                    }
-                }
-            }
-            if (copied) {
-                toast.success('Imagen copiada al portapapeles');
-                return;
-            }
-
-            // Fallback: descargar (si el navegador no permite clipboard image)
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${breakdownTitle}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-            toast.info('Imagen descargada. Adjúntala en WhatsApp.');
+            setGeneratedBreakdownBlob(blob);
+            setShowBreakdownChoice(true);
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
             toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
@@ -260,6 +239,83 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             setIsSending(false);
         }
     }, [tab, breakdownTitle]);
+
+    const handleBreakdownDownload = useCallback(() => {
+        if (!generatedBreakdownBlob) {
+            toast.error('La imagen aún no está lista');
+            return;
+        }
+        const url = URL.createObjectURL(generatedBreakdownBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${breakdownTitle}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Imagen descargada');
+        setShowBreakdownChoice(false);
+        setGeneratedBreakdownBlob(null);
+    }, [generatedBreakdownBlob, breakdownTitle]);
+
+    const handleBreakdownChooseSend = useCallback(() => {
+        if (!generatedBreakdownBlob) {
+            toast.error('La imagen aún no está lista');
+            return;
+        }
+        setShowBreakdownChoice(false);
+        setPendingBreakdownSend(true);
+        setShowBreakdownConfirmSend(true);
+    }, [generatedBreakdownBlob]);
+
+    const handleBreakdownConfirmSend = useCallback(async () => {
+        if (!pendingBreakdownSend) return;
+        if (!generatedBreakdownBlob) {
+            toast.error('La imagen aún no está lista');
+            setShowBreakdownConfirmSend(false);
+            setPendingBreakdownSend(false);
+            return;
+        }
+        setIsSending(true);
+        try {
+            const file = new File([generatedBreakdownBlob], `${breakdownTitle}.png`, { type: 'image/png' });
+
+            // Paso honesto: primero copiamos la imagen al portapapeles (como /orders/new),
+            // y luego intentamos abrir el selector de apps/contactos vía `navigator.share`.
+            let copied = false;
+            if (navigator.clipboard?.write) {
+                try {
+                    // eslint-disable-next-line no-undef
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedBreakdownBlob })]);
+                    copied = true;
+                } catch {
+                    // eslint-disable-next-line no-undef
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(generatedBreakdownBlob) })]);
+                    copied = true;
+                }
+            }
+
+            if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Desglose',
+                    text: 'Captura del desglose',
+                });
+                toast.success(copied ? 'Envío iniciado (y imagen copiada)' : 'Envío iniciado');
+            } else if (copied) {
+                toast.success('Imagen copiada. Pégala en WhatsApp/contactos.');
+            } else {
+                toast.error('No se pudo compartir ni copiar la imagen.');
+            }
+        } catch (e: any) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.error(`Error al enviar: ${msg.slice(0, 80)}`);
+        } finally {
+            setIsSending(false);
+            setPendingBreakdownSend(false);
+            setShowBreakdownConfirmSend(false);
+            setShowBreakdownChoice(false);
+            setGeneratedBreakdownBlob(null);
+        }
+    }, [pendingBreakdownSend, generatedBreakdownBlob, breakdownTitle]);
 
     if (!isOpen) return null;
 
@@ -273,14 +329,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-purple-600 px-3 py-2 flex items-center justify-between text-white shrink-0">
+                <div className="bg-[#36606F] px-3 py-2 flex items-center justify-between text-white shrink-0">
                     <div className="flex rounded-xl bg-white/10 p-0.5 gap-0.5">
                         <button
                             type="button"
                             onClick={() => setTab('calculator')}
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px]',
-                                tab === 'calculator' ? 'bg-white text-purple-600' : 'text-white/80 hover:text-white'
+                                tab === 'calculator' ? 'bg-white text-[#36606F]' : 'text-white/80 hover:text-white'
                             )}
                         >
                             Calculadora
@@ -290,7 +346,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             onClick={() => setTab('breakdown')}
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px] flex items-center gap-1',
-                                tab === 'breakdown' ? 'bg-white text-purple-600' : 'text-white/80 hover:text-white'
+                                tab === 'breakdown' ? 'bg-white text-[#36606F]' : 'text-white/80 hover:text-white'
                             )}
                         >
                             <Banknote size={14} />
@@ -447,8 +503,110 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 )}
                             >
                                 <Send size={16} />
-                                {isSending ? 'Preparando…' : 'Copiar imagen'}
+                                {isSending ? 'Generando…' : 'Enviar'}
                             </button>
+
+                            {showBreakdownChoice && (
+                                <div
+                                    className="fixed inset-0 z-[420] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3"
+                                    onClick={() => {
+                                        setShowBreakdownChoice(false);
+                                        setGeneratedBreakdownBlob(null);
+                                    }}
+                                >
+                                    <div
+                                        className="bg-white rounded-2xl shadow-2xl w-full max-w-[320px] overflow-hidden"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0">
+                                            <div className="text-[10px] font-black uppercase tracking-widest">
+                                                Imagen lista
+                                            </div>
+                                            <div className="text-[12px] font-black uppercase tracking-wider leading-tight mt-0.5">
+                                                Descarga o envío
+                                            </div>
+                                        </div>
+                                        <div className="p-4 space-y-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleBreakdownDownload}
+                                                className="w-full min-h-[48px] rounded-xl bg-white border border-zinc-200 text-[#36606F] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-zinc-50 active:scale-[0.99]"
+                                            >
+                                                Descargar PNG
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleBreakdownChooseSend}
+                                                className="w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.99]"
+                                            >
+                                                Enviar a contactos
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowBreakdownChoice(false);
+                                                    setGeneratedBreakdownBlob(null);
+                                                }}
+                                                className="w-full min-h-[48px] rounded-xl bg-zinc-100 text-zinc-700 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-zinc-200 active:scale-[0.99]"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {showBreakdownConfirmSend && (
+                                <div
+                                    className="fixed inset-0 z-[430] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3"
+                                    onClick={() => {
+                                        setShowBreakdownConfirmSend(false);
+                                        setPendingBreakdownSend(false);
+                                    }}
+                                >
+                                    <div
+                                        className="bg-white rounded-2xl shadow-2xl w-full max-w-[320px] overflow-hidden"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0">
+                                            <div className="text-[10px] font-black uppercase tracking-widest">
+                                                Confirmación
+                                            </div>
+                                            <div className="text-[12px] font-black uppercase tracking-wider leading-tight mt-0.5">
+                                                Ir a contactos
+                                            </div>
+                                        </div>
+                                        <div className="p-4 space-y-3">
+                                            <div className="text-zinc-700 text-[13px] font-bold leading-snug">
+                                                Se compartirá/copiará la imagen para que la pegues en WhatsApp o elijas contacto.
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowBreakdownConfirmSend(false);
+                                                        setPendingBreakdownSend(false);
+                                                    }}
+                                                    className="min-h-[48px] rounded-xl bg-zinc-100 text-zinc-700 font-black uppercase tracking-widest text-xs hover:bg-zinc-200 active:scale-[0.99]"
+                                                >
+                                                    Atrás
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleBreakdownConfirmSend}
+                                                    disabled={isSending}
+                                                    className={cn(
+                                                        "min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs hover:bg-purple-500 active:scale-[0.99] transition-all",
+                                                        isSending && "opacity-60 cursor-not-allowed"
+                                                    )}
+                                                >
+                                                    Confirmar envío
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
