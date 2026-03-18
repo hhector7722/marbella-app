@@ -21,6 +21,26 @@ import { sendClosingNotification } from '@/app/actions/notifications';
 export const BILLS = [100, 50, 20, 10, 5];
 export const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 
+function parseDateTimeLocal(value: string): Date {
+    // TIMEZONE IMMUNITY: no Date('YYYY-MM-DD...') parsing.
+    // datetime-local comes as "YYYY-MM-DDTHH:mm"
+    const [datePart, timePart] = value.split('T');
+    const [yStr, mStr, dStr] = (datePart || '').split('-');
+    const [hhStr, mmStr] = (timePart || '').split(':');
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const d = Number(dStr);
+    const hh = Number(hhStr ?? 0);
+    const mm = Number(mmStr ?? 0);
+    if (!y || !m || !d) return new Date();
+    return new Date(y, m - 1, d, Number.isFinite(hh) ? hh : 0, Number.isFinite(mm) ? mm : 0);
+}
+
+function formatDateTimeLocalInput(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const CURRENCY_IMAGES: Record<number, string> = {
     100: '/currency/100e-Photoroom.png',
     50: '/currency/50e-Photoroom.png',
@@ -70,14 +90,14 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const [openingCash, setOpeningCash] = useState(0);
 
     // 4. STATE: DATE/TIME (HIDDEN EDIT)
-    const [selectedDateTime, setSelectedDateTime] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+    const [selectedDateTime, setSelectedDateTime] = useState(() => formatDateTimeLocalInput(new Date()));
     const datePickerRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isOpen) {
             // Priority: If opening for Today, use dashboard live data
             const now = new Date();
-            const selectedDateStr = format(new Date(selectedDateTime), 'yyyy-MM-dd');
+            const selectedDateStr = format(parseDateTimeLocal(selectedDateTime), 'yyyy-MM-dd');
             const todayStr = format(now, 'yyyy-MM-dd');
 
             if (selectedDateStr === todayStr && (initialTotalSales > 0 || initialTicketsCount > 0)) {
@@ -92,7 +112,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         } else {
             // Reset state on close
             setStep('tpv_data');
-            const now = format(new Date(), "yyyy-MM-dd'T'HH:mm");
+            const now = formatDateTimeLocalInput(new Date());
             setSelectedDateTime(now);
             setTpvData({
                 totalSales: 0, cardSales: 0, pendingSales: 0,
@@ -112,7 +132,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     async function fetchTodayVentas() {
         setLoading(true);
         try {
-            const dateObj = new Date(selectedDateTime);
+            const dateObj = parseDateTimeLocal(selectedDateTime);
             const dateStr = format(dateObj, 'yyyy-MM-dd');
 
             // Robust fetch: Aggregated sum directly from the table to avoid RPC dependency issues
@@ -179,7 +199,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            const chosenDate = new Date(selectedDateTime);
+            const chosenDate = parseDateTimeLocal(selectedDateTime);
 
             // Format movement name for treasury: "Cierre Sab 14 Feb"
             const movementName = `Cierre ${format(chosenDate, "EEE d MMM", { locale: es })}`;
@@ -268,19 +288,31 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     <div className="flex flex-col">
                         <button
                             type="button"
-                            className="flex items-center gap-2 cursor-pointer text-left outline-none border-0 bg-transparent p-0 hover:opacity-90 transition-opacity min-h-[48px] min-w-[48px]"
-                            onClick={() => datePickerRef.current?.showPicker()}
+                            className="relative flex items-center gap-2 cursor-pointer text-left outline-none border-0 bg-transparent p-0 hover:opacity-90 transition-opacity min-h-[48px] min-w-[48px]"
+                            onClick={() => {
+                                const el = datePickerRef.current;
+                                if (!el) return;
+                                // Try native picker (Chrome), fallback to focus/click for others.
+                                // @ts-expect-error showPicker exists in Chromium
+                                if (typeof el.showPicker === 'function') el.showPicker();
+                                else { el.focus(); el.click(); }
+                            }}
                         >
                             <Calendar size={16} className="text-white/80" aria-hidden />
                             <span className="text-[12px] sm:text-sm font-black uppercase tracking-wide text-white">
-                                {format(new Date(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
+                                {format(parseDateTimeLocal(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
                             </span>
                             <input
                                 ref={datePickerRef}
                                 type="datetime-local"
-                                className="sr-only"
                                 value={selectedDateTime}
                                 onChange={(e) => setSelectedDateTime(e.target.value)}
+                                className={cn(
+                                    // Overlay invisible but clickable/editable to ensure consistent behavior across browsers.
+                                    "absolute inset-0 opacity-0 cursor-pointer",
+                                    "min-h-[48px] min-w-[48px]"
+                                )}
+                                value={selectedDateTime}
                             />
                         </button>
                         <div className="flex items-center gap-3 mt-1">

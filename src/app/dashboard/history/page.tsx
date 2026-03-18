@@ -366,6 +366,30 @@ export default function HistoryPage() {
         setEditData(newData);
     };
 
+    const parseDateTimeLocal = (value: string): Date => {
+        // TIMEZONE IMMUNITY: no Date('YYYY-MM-DD...') parsing
+        const [datePart, timePart] = value.split('T');
+        const [yStr, mStr, dStr] = (datePart || '').split('-');
+        const [hhStr, mmStr] = (timePart || '').split(':');
+        const y = Number(yStr);
+        const m = Number(mStr);
+        const d = Number(dStr);
+        const hh = Number(hhStr ?? 0);
+        const mm = Number(mmStr ?? 0);
+        if (!y || !m || !d) return new Date();
+        return new Date(y, m - 1, d, Number.isFinite(hh) ? hh : 0, Number.isFinite(mm) ? mm : 0);
+    };
+
+    const formatDateTimeLocalInput = (d: Date): string => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const formatClosingDate = (d: Date): string => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+
     const handleBreakdownUpdate = (denomination: string, qty: number) => {
         if (!editData) return;
         const newBreakdown = { ...editData.breakdown, [denomination]: qty };
@@ -381,6 +405,8 @@ export default function HistoryPage() {
         setLoading(true);
         try {
             const { error } = await supabase.from('cash_closings').update({
+                closed_at: editData.closed_at,
+                closing_date: editData.closing_date,
                 tpv_sales: editData.tpv_sales,
                 net_sales: editData.tpv_sales / 1.10,
                 sales_card: editData.sales_card,
@@ -772,12 +798,44 @@ export default function HistoryPage() {
                                     >
                                         <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
                                     </button>
-                                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter break-words min-w-0 flex-1">
-                                        {(() => {
-                                            const d = new Date(selectedClosing.closed_at);
-                                            return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
-                                        })()}
-                                    </h2>
+                                    <div className="min-w-0 flex-1">
+                                        {isEditing ? (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <input
+                                                    type="datetime-local"
+                                                    value={(() => {
+                                                        const raw = editData?.closed_at ?? selectedClosing.closed_at;
+                                                        const d = new Date(raw);
+                                                        return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
+                                                    })()}
+                                                    onChange={(e) => {
+                                                        if (!editData) return;
+                                                        const d = parseDateTimeLocal(e.target.value);
+                                                        setEditData({
+                                                            ...editData,
+                                                            closed_at: d.toISOString(),
+                                                            closing_date: formatClosingDate(d),
+                                                        });
+                                                    }}
+                                                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white font-black text-[11px] sm:text-sm uppercase tracking-widest text-center outline-none focus:ring-2 focus:ring-white/30 min-h-[48px]"
+                                                />
+                                                <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">
+                                                    {(() => {
+                                                        const raw = editData?.closed_at ?? selectedClosing.closed_at;
+                                                        const d = new Date(raw);
+                                                        return isNaN(d.getTime()) ? "Fecha inválida" : format(d, "eeee d MMMM, HH:mm", { locale: es });
+                                                    })()}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter break-words min-w-0">
+                                                {(() => {
+                                                    const d = new Date(selectedClosing.closed_at);
+                                                    return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
+                                                })()}
+                                            </h2>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
                                         className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
