@@ -44,6 +44,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
+    const exportRef = useRef<HTMLDivElement | null>(null);
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {
@@ -114,7 +115,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             toast.error('Abre primero la pestaña Desglose');
             return;
         }
-        const el = modalRef.current;
+        const el = exportRef.current || modalRef.current;
         if (!el) {
             toast.error('No se pudo capturar el modal');
             return;
@@ -123,10 +124,19 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         try {
             // Lazy import to keep main bundle small.
             const { toBlob } = await import('html-to-image');
+            // Export size tuned for WhatsApp preview (vertical, full-bleed but readable)
+            const exportWidth = 1080;
+            const exportHeight = 1350;
             const blob = await toBlob(el, {
                 backgroundColor: '#ffffff',
-                pixelRatio: 2,
+                pixelRatio: 1,
                 cacheBust: true,
+                width: exportWidth,
+                height: exportHeight,
+                style: {
+                    width: `${exportWidth}px`,
+                    height: `${exportHeight}px`,
+                },
             });
             if (!blob) throw new Error('No se pudo generar la imagen');
 
@@ -259,6 +269,82 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                     )}
                     {tab === 'breakdown' && (
                         <>
+                            {/* Tarjeta offscreen para export WhatsApp (1080x1350) */}
+                            <div className="fixed left-[-99999px] top-0 pointer-events-none opacity-0">
+                                <div
+                                    ref={exportRef}
+                                    className={cn(
+                                        'bg-white text-zinc-900 overflow-hidden',
+                                        'w-[1080px] h-[1350px]'
+                                    )}
+                                >
+                                    <div className="bg-[#36606F] px-16 py-12">
+                                        <div className="flex items-center justify-between">
+                                            <div className="min-w-0">
+                                                <div className="text-white text-[44px] font-black uppercase tracking-[0.2em] leading-none">
+                                                    DESGLOSE
+                                                </div>
+                                                <div className="text-white/80 text-[22px] font-black uppercase tracking-[0.25em] mt-4">
+                                                    Bar La Marbella
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <div className="text-white/70 text-[18px] font-black uppercase tracking-[0.25em]">
+                                                    Total
+                                                </div>
+                                                <div className="text-white text-[56px] font-black tabular-nums">
+                                                    {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-16">
+                                        <div className="grid grid-cols-5 gap-x-10 gap-y-10">
+                                            {DENOMINATIONS.map((denom) => {
+                                                const qty = breakdownCounts[denom] || 0;
+                                                const label = denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`;
+                                                const subtotal = denom * qty;
+                                                return (
+                                                    <div
+                                                        key={denom}
+                                                        className="bg-white rounded-3xl border border-zinc-100 shadow-sm p-6"
+                                                    >
+                                                        <div className="flex items-center justify-center h-[140px]">
+                                                            <Image
+                                                                src={CURRENCY_IMAGES[denom]}
+                                                                alt={label}
+                                                                width={260}
+                                                                height={260}
+                                                                className="h-full w-auto object-contain drop-shadow-lg"
+                                                            />
+                                                        </div>
+                                                        <div className="mt-4 flex items-center justify-between gap-4">
+                                                            <div className="min-w-0">
+                                                                <div className="text-[18px] font-black text-zinc-500 uppercase tracking-widest">
+                                                                    {label}
+                                                                </div>
+                                                                <div className="text-[42px] font-black tabular-nums text-[#36606F] leading-none">
+                                                                    {qty > 0 ? qty : ' '}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right shrink-0">
+                                                                <div className="text-[16px] font-black text-zinc-400 uppercase tracking-widest">
+                                                                    Sub
+                                                                </div>
+                                                                <div className="text-[28px] font-black tabular-nums text-emerald-600">
+                                                                    {subtotal > 0.005 ? `${subtotal.toFixed(2)}€` : ' '}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {zoomDenom !== null && (
                                 <DenominationZoomModal
                                     isOpen={true}
