@@ -120,7 +120,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             showHeaderHint?: boolean;
         }) => (
             <div className={cn('bg-white text-zinc-900 overflow-hidden', className)}>
-                <div className="bg-[#36606F] px-10 sm:px-12 py-8 sm:py-10">
+                <div className="bg-purple-600 px-10 sm:px-12 py-8 sm:py-10">
                     <div className="flex items-end justify-between gap-6">
                         <div className="min-w-0">
                             <div className="text-white text-3xl sm:text-4xl font-black uppercase tracking-[0.18em] leading-none">
@@ -171,7 +171,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                             <div className="text-[9px] sm:text-xs font-black text-zinc-500 uppercase tracking-widest">
                                                 {label}
                                             </div>
-                                            <div className="text-lg sm:text-2xl font-black tabular-nums text-[#36606F] leading-none">
+                                            <div className="text-lg sm:text-2xl font-black tabular-nums text-purple-600 leading-none">
                                                 {qty > 0 ? qty : ' '}
                                             </div>
                                         </div>
@@ -278,14 +278,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-[#36606F] px-3 py-2 flex items-center justify-between text-white shrink-0">
+                <div className="bg-purple-600 px-3 py-2 flex items-center justify-between text-white shrink-0">
                     <div className="flex rounded-xl bg-white/10 p-0.5 gap-0.5">
                         <button
                             type="button"
                             onClick={() => setTab('calculator')}
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px]',
-                                tab === 'calculator' ? 'bg-white text-[#36606F]' : 'text-white/80 hover:text-white'
+                                tab === 'calculator' ? 'bg-white text-purple-600' : 'text-white/80 hover:text-white'
                             )}
                         >
                             Calculadora
@@ -295,7 +295,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             onClick={() => setTab('breakdown')}
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px] flex items-center gap-1',
-                                tab === 'breakdown' ? 'bg-white text-[#36606F]' : 'text-white/80 hover:text-white'
+                                tab === 'breakdown' ? 'bg-white text-purple-600' : 'text-white/80 hover:text-white'
                             )}
                         >
                             <Banknote size={14} />
@@ -331,7 +331,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                             key === 'back' && 'bg-rose-500 text-white hover:bg-rose-600',
                                             key === '±' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
                                             key === '%' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-                                            ['+', '-', '*', '/'].includes(key) && 'bg-[#36606F] text-white hover:bg-[#2d4d57]',
+                                            ['+', '-', '*', '/'].includes(key) && 'bg-purple-600 text-white hover:bg-purple-500',
                                             key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600',
                                             !['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%', '±'].includes(key) && 'bg-white border border-zinc-200 text-zinc-800 hover:bg-zinc-50',
                                             key === '' && 'invisible pointer-events-none'
@@ -489,7 +489,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             <button
                                 type="button"
                                 onClick={() => setCaptureMode(true)}
-                                className="w-full mt-2 min-h-[48px] rounded-xl bg-[#36606F] text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-[#2d4d57] active:scale-[0.98] shadow-md"
+                                className="w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md"
                             >
                                 <Banknote size={16} />
                                 Modo captura WhatsApp
@@ -499,7 +499,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 onClick={handleBreakdownSend}
                                 disabled={isSending}
                                 className={cn(
-                                    "w-full mt-2 min-h-[48px] rounded-xl bg-[#7C4DBC] text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-[#6A3DAA] active:scale-[0.98] shadow-md",
+                                    "w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
                                     isSending && "opacity-60 cursor-not-allowed"
                                 )}
                             >
@@ -563,9 +563,9 @@ export function FloatingCalculatorFab({
             onClick={onToggle}
             aria-label={ariaLabel}
             className={cn(
-                'absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-[220]',
+                'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[220]',
                 'w-14 h-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl shadow-black/20',
-                'bg-[#36606F] text-white border border-white/10',
+                'bg-purple-600 text-white border border-white/10',
                 'hover:brightness-110 active:scale-95 transition-all',
                 isOpen && 'opacity-0 pointer-events-none',
                 className
