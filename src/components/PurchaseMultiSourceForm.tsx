@@ -38,7 +38,7 @@ interface PurchaseMultiSourceFormProps {
     onCancel: () => void;
 }
 
-type PurchaseStep = 'details' | 'payment' | 'summary';
+type PurchaseStep = 'details' | 'payment' | 'change' | 'summary';
 
 function parseDateTimeLocal(value: string): Date {
     // TIMEZONE IMMUNITY: no Date('YYYY-MM-DD...') parsing.
@@ -126,7 +126,9 @@ export function PurchaseMultiSourceForm({
         (changeAmount < 0.01 || (changeOk && changeDestinationBoxId));
 
     const canGoPayment = priceNum > 0;
-    const canGoSummary = priceNum > 0 && totalFromSources >= priceNum - 0.01;
+    const needsChangeStep = changeAmount >= 0.01;
+    const canAdvanceFromPayment = priceNum > 0 && totalFromSources >= priceNum - 0.01;
+    const canAdvanceFromChange = changeOk && !!changeDestinationBoxId;
 
     const buildSourcesForPayload = (): SourceEntry[] => {
         return paymentSources.map(src => {
@@ -161,12 +163,22 @@ export function PurchaseMultiSourceForm({
                         onChange={e => setSelectedDate(e.target.value)}
                         className="bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark] min-h-[48px]"
                     />
-                    <div className="w-[56px] shrink-0" aria-hidden />
+                    <div className="flex items-center justify-end w-[120px] shrink-0">
+                        {step === 'payment' && (
+                            <div className="px-2 py-1 rounded-xl bg-white/10 border border-white/10 text-right min-h-[48px] flex flex-col items-end justify-center">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
+                                <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
+                                    {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'details' ? 'text-white' : 'text-white/40')}>1. Datos</div>
                     <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'payment' ? 'text-white' : 'text-white/40')}>2. Pago</div>
-                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'change' ? 'text-white' : 'text-white/40')}>3. Cambio</div>
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>4. Resumen</div>
                 </div>
             </div>
 
@@ -202,17 +214,11 @@ export function PurchaseMultiSourceForm({
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Paso 1</p>
-                            <p className="text-xs font-bold text-zinc-700 leading-snug">
-                                Rellena el precio y (opcional) el concepto. Luego pulsa <span className="font-black">Siguiente</span>.
-                            </p>
-                            {priceNum <= 0 && (
-                                <p className="mt-2 text-[10px] font-black text-rose-600 uppercase tracking-widest">
-                                    Falta precio
-                                </p>
-                            )}
-                        </div>
+                        {priceNum <= 0 && (
+                            <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-3">
+                                <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Falta precio</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -246,12 +252,6 @@ export function PurchaseMultiSourceForm({
                                     );
                                 })}
                             </div>
-                            <div className="absolute -top-1 right-0 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-sm border border-zinc-200 shadow-lg flex flex-col items-end justify-center pointer-events-none">
-                                <span className="text-[7px] font-black text-zinc-500 uppercase">Total</span>
-                                <span className="text-sm font-black tabular-nums text-zinc-800">
-                                    {totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €
-                                </span>
-                            </div>
                         </div>
 
                 {zoomDenom !== null && zoomContext !== null && (
@@ -279,9 +279,17 @@ export function PurchaseMultiSourceForm({
                 )}
                 {selectedSource && (
                     <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                            Desglose desde {selectedSource.shortLabel}
-                        </p>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                Desglose desde {selectedSource.shortLabel}
+                            </p>
+                            <div className="text-right shrink-0">
+                                <div className="text-[8px] font-black uppercase tracking-widest text-zinc-400 leading-none">Total</div>
+                                <div className="text-[12px] font-black tabular-nums text-zinc-800 leading-none mt-0.5">
+                                    {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
+                                </div>
+                            </div>
+                        </div>
                         {selectedSource.hasInventory ? (
                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
                                 {DENOMINATIONS.map(denom => {
@@ -371,130 +379,156 @@ export function PurchaseMultiSourceForm({
                     </div>
                 )}
 
-                {changeAmount >= 0.01 && (
-                    <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-3 space-y-2">
-                        <h4 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Cambio: {changeAmount.toFixed(2)} €</h4>
-                        <div>
-                            <label className="block text-[8px] font-black text-gray-500 uppercase mb-1">Destino del cambio</label>
-                            <select
-                                value={changeDestinationBoxId ?? ''}
-                                onChange={e => setChangeDestinationBoxId(e.target.value || null)}
-                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-emerald-200 min-h-[48px]"
-                            >
-                                <option value="">Elige caja</option>
-                                {cashSources.map(s => (
-                                    <option key={s.id} value={s.id}>{s.shortLabel}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <p className="text-[8px] font-black text-gray-500 uppercase mb-1.5">Desglose del cambio (opcional)</p>
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
-                                {DENOMINATIONS.map(denom => {
-                                    const qty = changeBreakdown[denom] ?? 0;
-                                    return (
-                                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                            <div
-                                                role="button"
-                                                tabIndex={0}
-                                                onClick={() => { setZoomDenom(denom); setZoomContext('change'); }}
-                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setZoomDenom(denom); setZoomContext('change'); } }}
-                                                className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
-                                                aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
-                                            >
-                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
-                                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                                </span>
-                                                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setChangeBreakdown(prev => {
-                                                            const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) - 1) };
-                                                            if (next[denom] === 0) delete next[denom];
-                                                            return next;
-                                                        })}
-                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                    >
-                                                        <Minus size={14} strokeWidth={3} />
-                                                    </button>
-                                                    <input
-                                                        type="number"
-                                                        value={qty || ''}
-                                                        onChange={e => {
-                                                            const v = parseInt(e.target.value, 10) || 0;
-                                                            setChangeBreakdown(prev => {
-                                                                const next = { ...prev, [denom]: v };
-                                                                if (v === 0) delete next[denom];
-                                                                return next;
-                                                            });
-                                                        }}
-                                                        placeholder=""
-                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setChangeBreakdown(prev => ({ ...prev, [denom]: (prev[denom] ?? 0) + 1 }))}
-                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                    >
-                                                        <Plus size={14} strokeWidth={3} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            {!changeOk && <p className="text-[9px] text-rose-500 mt-1">El desglose debe sumar {changeAmount.toFixed(2)}€</p>}
-                        </div>
-                    </div>
+                    </>
                 )}
+
+                {step === 'change' && (
+                    <>
+                        {changeAmount < 0.01 ? (
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Sin cambio</p>
+                            </div>
+                        ) : (
+                            <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4 space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <h4 className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Cambio</h4>
+                                    <div className="text-right">
+                                        <div className="text-[8px] font-black uppercase tracking-widest text-emerald-700/70 leading-none">A devolver</div>
+                                        <div className="text-2xl font-black tabular-nums text-emerald-800 leading-none mt-0.5">
+                                            {changeAmount.toFixed(2)}€
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[8px] font-black text-gray-500 uppercase mb-1">Destino del cambio</label>
+                                    <select
+                                        value={changeDestinationBoxId ?? ''}
+                                        onChange={e => setChangeDestinationBoxId(e.target.value || null)}
+                                        className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-emerald-200 min-h-[48px]"
+                                    >
+                                        <option value="">Elige caja</option>
+                                        {cashSources.map(s => (
+                                            <option key={s.id} value={s.id}>{s.shortLabel}</option>
+                                        ))}
+                                    </select>
+                                    {!changeDestinationBoxId && (
+                                        <p className="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">Falta destino</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <p className="text-[8px] font-black text-gray-500 uppercase mb-1.5">Desglose del cambio</p>
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
+                                        {DENOMINATIONS.map(denom => {
+                                            const qty = changeBreakdown[denom] ?? 0;
+                                            return (
+                                                <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                                    <div
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={() => { setZoomDenom(denom); setZoomContext('change'); }}
+                                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setZoomDenom(denom); setZoomContext('change'); } }}
+                                                        className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                                        aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                                    >
+                                                        <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
+                                                    </div>
+                                                    <div className="text-center w-full">
+                                                        <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                                            {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                                        </span>
+                                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setChangeBreakdown(prev => {
+                                                                    const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) - 1) };
+                                                                    if (next[denom] === 0) delete next[denom];
+                                                                    return next;
+                                                                })}
+                                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                            >
+                                                                <Minus size={14} strokeWidth={3} />
+                                                            </button>
+                                                            <input
+                                                                type="number"
+                                                                value={qty || ''}
+                                                                onChange={e => {
+                                                                    const v = parseInt(e.target.value, 10) || 0;
+                                                                    setChangeBreakdown(prev => {
+                                                                        const next = { ...prev, [denom]: v };
+                                                                        if (v === 0) delete next[denom];
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                                placeholder=""
+                                                                className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setChangeBreakdown(prev => ({ ...prev, [denom]: (prev[denom] ?? 0) + 1 }))}
+                                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                            >
+                                                                <Plus size={14} strokeWidth={3} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {!changeOk && (
+                                        <p className="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">
+                                            El desglose debe sumar {changeAmount.toFixed(2)}€
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
 
                 {step === 'summary' && (
                     <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Resumen</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-orange-50/60 border border-orange-100 rounded-xl p-3">
-                                    <div className="text-[8px] font-black uppercase tracking-widest text-orange-500">Precio</div>
-                                    <div className="text-2xl font-black tabular-nums text-orange-700">{priceNum > 0 ? `${priceNum.toFixed(2)}€` : ' '}</div>
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Concepto</p>
+                                    <p className="text-base font-black text-zinc-900 truncate">{(notes || 'Compra').trim() || 'Compra'}</p>
                                 </div>
-                                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
-                                    <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Entregado</div>
-                                    <div className="text-2xl font-black tabular-nums text-zinc-800">{hasAnySourceInput ? `${totalFromSources.toFixed(2)}€` : ' '}</div>
+                                <div className="text-right shrink-0">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha</p>
+                                    <p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">{selectedDate ? selectedDate.replace('T', ' ') : ' '}</p>
                                 </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-3">
-                                <div className={cn("border rounded-xl p-3", changeAmount >= 0.01 ? "bg-emerald-50 border-emerald-100" : "bg-white border-gray-100")}>
-                                    <div className="text-[8px] font-black uppercase tracking-widest text-emerald-600">Cambio</div>
-                                    <div className="text-xl font-black tabular-nums text-emerald-700">{changeAmount >= 0.01 ? `${changeAmount.toFixed(2)}€` : ' '}</div>
+                            <div className="mt-4 rounded-2xl border border-zinc-200 overflow-hidden">
+                                <div className="px-4 py-3 bg-white flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Precio</span>
+                                    <span className="text-xl font-black tabular-nums text-zinc-900">{priceNum > 0 ? `${priceNum.toFixed(2)}€` : ' '}</span>
                                 </div>
-                                <div className="bg-white border border-gray-100 rounded-xl p-3">
-                                    <div className="text-[8px] font-black uppercase tracking-widest text-gray-500">Concepto</div>
-                                    <div className="text-xs font-bold text-zinc-700 truncate">{(notes || 'Compra').trim() || 'Compra'}</div>
+                                <div className="px-4 py-3 bg-rose-50/60 border-t border-zinc-200 flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-500">Entregado</span>
+                                    <span className="text-xl font-black tabular-nums text-rose-700">{hasAnySourceInput ? `${totalFromSources.toFixed(2)}€` : ' '}</span>
+                                </div>
+                                <div className="px-4 py-3 bg-emerald-50/70 border-t border-zinc-200 flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Cambio</span>
+                                    <span className="text-xl font-black tabular-nums text-emerald-800">{changeAmount >= 0.01 ? `${changeAmount.toFixed(2)}€` : ' '}</span>
                                 </div>
                             </div>
 
                             {changeAmount >= 0.01 && (
-                                <div className="mt-3">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Destino del cambio</p>
-                                        {!changeDestinationBoxId && (
-                                            <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest">Falta destino</p>
-                                        )}
-                                    </div>
-                                    <div className="mt-1 text-xs font-bold text-zinc-700">
-                                        {changeDestinationBoxId
-                                            ? (paymentSources.find(s => s.id === changeDestinationBoxId)?.shortLabel ?? 'Caja')
-                                            : ' '}
+                                <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700">Destino del cambio</span>
+                                        <span className="text-[11px] font-black text-emerald-900">
+                                            {changeDestinationBoxId
+                                                ? (paymentSources.find(s => s.id === changeDestinationBoxId)?.shortLabel ?? 'Caja')
+                                                : ' '}
+                                        </span>
                                     </div>
                                     {!changeOk && (
-                                        <p className="mt-1 text-[9px] font-black text-rose-600 uppercase tracking-widest">
+                                        <p className="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">
                                             El desglose del cambio no cuadra
                                         </p>
                                     )}
@@ -509,27 +543,13 @@ export function PurchaseMultiSourceForm({
                 <button
                     type="button"
                     onClick={() => {
-                        if (step === 'details') setStep('payment');
-                        else if (step === 'payment') setStep('summary');
-                        else handleConfirm();
-                    }}
-                    disabled={(step === 'details' && !canGoPayment) || (step === 'payment' && !canGoSummary) || (step === 'summary' && !canSubmit)}
-                    className={cn(
-                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 min-h-[48px]",
-                        ((step === 'details' && canGoPayment) || (step === 'payment' && canGoSummary) || (step === 'summary' && canSubmit))
-                            ? (step === 'summary' ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-[#5B8FB9] shadow-blue-900/20 hover:brightness-110")
-                            : "bg-zinc-300 opacity-50 cursor-not-allowed"
-                    )}
-                >
-                    {step === 'summary' ? <Save size={16} strokeWidth={3} /> : <ArrowRight size={16} strokeWidth={3} />}
-                    {step === 'summary' ? 'Guardar compra' : 'Siguiente'}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
                         if (step === 'details') onCancel();
                         else if (step === 'payment') setStep('details');
-                        else setStep('payment');
+                        else if (step === 'change') setStep('payment');
+                        else {
+                            if (needsChangeStep) setStep('change');
+                            else setStep('payment');
+                        }
                     }}
                     className={cn(
                         "flex-1 py-3 font-black uppercase tracking-widest text-[9px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md min-h-[48px]",
@@ -540,6 +560,35 @@ export function PurchaseMultiSourceForm({
                 >
                     {step === 'details' ? <X size={14} strokeWidth={3} /> : <ArrowLeft size={14} strokeWidth={3} />}
                     {step === 'details' ? 'Salir' : 'Atrás'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (step === 'details') setStep('payment');
+                        else if (step === 'payment') {
+                            if (needsChangeStep) setStep('change');
+                            else setStep('summary');
+                        } else if (step === 'change') setStep('summary');
+                        else handleConfirm();
+                    }}
+                    disabled={
+                        (step === 'details' && !canGoPayment) ||
+                        (step === 'payment' && !canAdvanceFromPayment) ||
+                        (step === 'change' && needsChangeStep && !canAdvanceFromChange) ||
+                        (step === 'summary' && !canSubmit)
+                    }
+                    className={cn(
+                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 min-h-[48px]",
+                        ((step === 'details' && canGoPayment) ||
+                            (step === 'payment' && canAdvanceFromPayment) ||
+                            (step === 'change' && (!needsChangeStep || canAdvanceFromChange)) ||
+                            (step === 'summary' && canSubmit))
+                            ? (step === 'summary' ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-[#5B8FB9] shadow-blue-900/20 hover:brightness-110")
+                            : "bg-zinc-300 opacity-50 cursor-not-allowed"
+                    )}
+                >
+                    {step === 'summary' ? <Save size={16} strokeWidth={3} /> : <ArrowRight size={16} strokeWidth={3} />}
+                    {step === 'summary' ? 'Guardar compra' : 'Siguiente'}
                 </button>
             </div>
         </div>
