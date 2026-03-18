@@ -44,6 +44,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
+    const breakdownCaptureRef = useRef<HTMLDivElement | null>(null);
 
     const handlePress = useCallback((key: string) => {
         if (key === 'C') {
@@ -198,13 +199,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             return;
         }
 
-        const el = modalRef.current;
+        const el = breakdownCaptureRef.current;
         if (!el) {
             toast.error('No se pudo capturar el modal');
             return;
         }
 
         setIsSending(true);
+        const toastId = toast.loading('Generando captura…');
         try {
             const { toPng } = await import('html-to-image');
 
@@ -269,6 +271,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
         } finally {
             setIsSending(false);
+            toast.dismiss(toastId);
         }
     }, [tab, onClose]);
 
@@ -368,86 +371,88 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                     onValueChange={(v) => setBreakdownCounts((prev) => ({ ...prev, [zoomDenom]: v }))}
                                 />
                             )}
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5 mb-3">
-                                {DENOMINATIONS.map((denom) => {
-                                    const qty = breakdownCounts[denom] || 0;
-                                    return (
-                                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                            <div
-                                                role="button"
-                                                tabIndex={0}
-                                                onClick={() => setZoomDenom(denom)}
-                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
-                                                className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
-                                                aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
-                                            >
-                                                <Image
-                                                    src={CURRENCY_IMAGES[denom]}
-                                                    alt={`${denom}€`}
-                                                    width={140}
-                                                    height={140}
-                                                    className="h-full w-auto object-contain drop-shadow-lg pointer-events-none"
-                                                />
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
-                                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                                </span>
-                                                <div className="flex items-center justify-between w-full h-10 min-h-[48px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleBreakdownAdjust(denom, -1)}
-                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                    >
-                                                        <Minus size={14} strokeWidth={3} />
-                                                    </button>
-                                                    <input
-                                                        type="number"
-                                                        min={0}
-                                                        value={qty > 0 ? qty : ''}
-                                                        onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
-                                                        placeholder=""
-                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            <div ref={breakdownCaptureRef}>
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5 mb-3">
+                                    {DENOMINATIONS.map((denom) => {
+                                        const qty = breakdownCounts[denom] || 0;
+                                        return (
+                                            <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                                <div
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onClick={() => setZoomDenom(denom)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
+                                                    className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                                    aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
+                                                >
+                                                    <Image
+                                                        src={CURRENCY_IMAGES[denom]}
+                                                        alt={`${denom}€`}
+                                                        width={140}
+                                                        height={140}
+                                                        className="h-full w-auto object-contain drop-shadow-lg pointer-events-none"
                                                     />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleBreakdownAdjust(denom, 1)}
-                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                    >
-                                                        <Plus size={14} strokeWidth={3} />
-                                                    </button>
+                                                </div>
+                                                <div className="text-center w-full">
+                                                    <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
+                                                    </span>
+                                                    <div className="flex items-center justify-between w-full h-10 min-h-[48px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleBreakdownAdjust(denom, -1)}
+                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                        >
+                                                            <Minus size={14} strokeWidth={3} />
+                                                        </button>
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            value={qty > 0 ? qty : ''}
+                                                            onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
+                                                            placeholder=""
+                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleBreakdownAdjust(denom, 1)}
+                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                        >
+                                                            <Plus size={14} strokeWidth={3} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex items-center justify-between gap-2 p-3 bg-[#36606F] rounded-xl mb-3">
+                                    <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Total</span>
+                                    <span className="text-lg font-black text-white tabular-nums">
+                                        {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleBreakdownCopy}
+                                    className="w-full min-h-[48px] rounded-xl bg-emerald-500 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-[0.98] shadow-md"
+                                >
+                                    <Copy size={16} />
+                                    Copiar total
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleBreakdownSend}
+                                    disabled={isSending}
+                                    className={cn(
+                                        "w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
+                                        isSending && "opacity-60 cursor-not-allowed"
+                                    )}
+                                >
+                                    <Send size={16} />
+                                    {isSending ? 'Generando…' : 'Enviar'}
+                                </button>
                             </div>
-                            <div className="flex items-center justify-between gap-2 p-3 bg-[#36606F] rounded-xl mb-3">
-                                <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Total</span>
-                                <span className="text-lg font-black text-white tabular-nums">
-                                    {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
-                                </span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleBreakdownCopy}
-                                className="w-full min-h-[48px] rounded-xl bg-emerald-500 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-[0.98] shadow-md"
-                            >
-                                <Copy size={16} />
-                                Copiar total
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleBreakdownSend}
-                                disabled={isSending}
-                                className={cn(
-                                    "w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
-                                    isSending && "opacity-60 cursor-not-allowed"
-                                )}
-                            >
-                                <Send size={16} />
-                                {isSending ? 'Generando…' : 'Enviar'}
-                            </button>
                         </>
                     )}
                 </div>
