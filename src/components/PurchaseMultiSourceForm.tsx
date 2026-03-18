@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Save, Plus, Minus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { X, Save, Plus, Minus, ArrowLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -38,7 +38,29 @@ interface PurchaseMultiSourceFormProps {
     onCancel: () => void;
 }
 
-const nowStr = () => new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+type PurchaseStep = 'details' | 'payment' | 'summary';
+
+function parseDateTimeLocal(value: string): Date {
+    // TIMEZONE IMMUNITY: no Date('YYYY-MM-DD...') parsing.
+    // datetime-local comes as "YYYY-MM-DDTHH:mm"
+    const [datePart, timePart] = value.split('T');
+    const [yStr, mStr, dStr] = (datePart || '').split('-');
+    const [hhStr, mmStr] = (timePart || '').split(':');
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const d = Number(dStr);
+    const hh = Number(hhStr ?? 0);
+    const mm = Number(mmStr ?? 0);
+    if (!y || !m || !d) return new Date();
+    return new Date(y, m - 1, d, Number.isFinite(hh) ? hh : 0, Number.isFinite(mm) ? mm : 0);
+}
+
+function formatDateTimeLocalInput(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const nowStr = () => formatDateTimeLocalInput(new Date());
 
 const calculateTotal = (c: Record<number, number>) =>
     DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
@@ -49,6 +71,7 @@ export function PurchaseMultiSourceForm({
     onSubmit,
     onCancel
 }: PurchaseMultiSourceFormProps) {
+    const [step, setStep] = useState<PurchaseStep>('details');
     const [price, setPrice] = useState<number | ''>('');
     const [notes, setNotes] = useState('');
     const [selectedDate, setSelectedDate] = useState(nowStr());
@@ -78,6 +101,8 @@ export function PurchaseMultiSourceForm({
     const changeTotal = calculateTotal(changeBreakdown);
     const changeOk = changeAmount < 0.01 || Math.abs(changeTotal - changeAmount) < 0.01;
 
+    const hasAnySourceInput = useMemo(() => totalFromSources >= 0.005, [totalFromSources]);
+
     const setSourceBreakdown = (sourceId: string, breakdown: Record<number, number>) => {
         setSources(prev => {
             const idx = prev.findIndex(s => s.sourceId === sourceId);
@@ -100,6 +125,9 @@ export function PurchaseMultiSourceForm({
         totalFromSources >= priceNum - 0.01 &&
         (changeAmount < 0.01 || (changeOk && changeDestinationBoxId));
 
+    const canGoPayment = priceNum > 0;
+    const canGoSummary = priceNum > 0 && totalFromSources >= priceNum - 0.01;
+
     const buildSourcesForPayload = (): SourceEntry[] => {
         return paymentSources.map(src => {
             const entry = getSourceEntry(src.id);
@@ -114,7 +142,7 @@ export function PurchaseMultiSourceForm({
         onSubmit({
             price: priceNum,
             notes: notes || 'Compra',
-            customDate: selectedDate ? new Date(selectedDate).toISOString() : undefined,
+            customDate: selectedDate ? parseDateTimeLocal(selectedDate).toISOString() : undefined,
             sources: sourcesPayload,
             changeAmount,
             changeDestinationBoxId: changeAmount >= 0.01 ? changeDestinationBoxId : null,
@@ -124,82 +152,107 @@ export function PurchaseMultiSourceForm({
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl relative">
-            <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between text-white shrink-0 relative">
-                <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
-                <input
-                    type="datetime-local"
-                    value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
-                    className="absolute left-1/2 -translate-x-1/2 bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark]"
-                />
-                <div className="w-[80px] shrink-0" aria-hidden />
+            <div className="bg-[#36606F] px-4 py-2.5 flex flex-col gap-1 text-white shrink-0 relative">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
+                    <input
+                        type="datetime-local"
+                        value={selectedDate}
+                        onChange={e => setSelectedDate(e.target.value)}
+                        className="bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark] min-h-[48px]"
+                    />
+                    <div className="w-[56px] shrink-0" aria-hidden />
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'details' ? 'text-white' : 'text-white/40')}>1. Datos</div>
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'payment' ? 'text-white' : 'text-white/40')}>2. Pago</div>
+                    <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
+                </div>
             </div>
 
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-                <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm min-w-0">
-                        <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
-                        <input
-                            type="text"
-                            value={notes}
-                            onChange={e => setNotes(e.target.value)}
-                            placeholder="Motivo..."
-                            className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
-                        />
-                    </div>
-                    <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm w-[100px] shrink-0">
-                        <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio (€)</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={price}
-                            onChange={e => {
-                                const val = e.target.value;
-                                setPrice(val === '' ? '' : parseFloat(val));
-                            }}
-                            placeholder="0.00"
-                            className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none text-center"
-                        />
-                    </div>
-                </div>
+                {step === 'details' && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-[1fr_auto] gap-2">
+                            <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm min-w-0">
+                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
+                                <input
+                                    type="text"
+                                    value={notes}
+                                    onChange={e => setNotes(e.target.value)}
+                                    placeholder="Motivo..."
+                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs min-h-[48px]"
+                                />
+                            </div>
+                            <div className="flex flex-col p-2 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm w-[120px] shrink-0">
+                                <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 ml-1">Precio (€)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={price}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setPrice(val === '' ? '' : parseFloat(val));
+                                    }}
+                                    placeholder="0.00"
+                                    className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none text-center min-h-[48px]"
+                                />
+                            </div>
+                        </div>
 
-                <div className="relative">
-                    <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Origen de pago</h4>
-                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 items-stretch">
-                        {paymentSources.map(src => {
-                            const amount = getDisplayAmount(src);
-                            const isSelected = selectedSourceId === src.id;
-                            return (
-                                <button
-                                    key={src.id}
-                                    type="button"
-                                    onClick={() => setSelectedSourceId(src.id)}
-                                    className={cn(
-                                        "min-h-[40px] min-w-0 px-2 py-1.5 rounded-lg border-2 font-black text-[8px] uppercase tracking-tight transition-all flex flex-col items-center justify-center gap-0 shrink-0",
-                                        isSelected
-                                            ? "bg-orange-500 border-orange-500 text-white shadow-md"
-                                            : "bg-white border-zinc-200 text-zinc-700 hover:border-orange-300 hover:bg-orange-50"
-                                    )}
-                                >
-                                    <span className="whitespace-nowrap">{src.shortLabel}</span>
-                                    {amount > 0.005 && (
-                                        <span className={cn("text-[7px] tabular-nums leading-none", isSelected ? "text-white/90" : "text-zinc-500")}>
-                                            {amount.toFixed(2)}€
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Paso 1</p>
+                            <p className="text-xs font-bold text-zinc-700 leading-snug">
+                                Rellena el precio y (opcional) el concepto. Luego pulsa <span className="font-black">Siguiente</span>.
+                            </p>
+                            {priceNum <= 0 && (
+                                <p className="mt-2 text-[10px] font-black text-rose-600 uppercase tracking-widest">
+                                    Falta precio
+                                </p>
+                            )}
+                        </div>
                     </div>
-                    <div className="absolute -top-1 right-0 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-sm border border-zinc-200 shadow-lg flex flex-col items-end justify-center pointer-events-none">
-                        <span className="text-[7px] font-black text-zinc-500 uppercase">Total</span>
-                        <span className="text-sm font-black tabular-nums text-zinc-800">
-                            {totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €
-                        </span>
-                    </div>
-                </div>
+                )}
+
+                {step === 'payment' && (
+                    <>
+                        <div className="relative">
+                            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Origen de pago</h4>
+                            <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 items-stretch">
+                                {paymentSources.map(src => {
+                                    const amount = getDisplayAmount(src);
+                                    const isSelected = selectedSourceId === src.id;
+                                    return (
+                                        <button
+                                            key={src.id}
+                                            type="button"
+                                            onClick={() => setSelectedSourceId(src.id)}
+                                            className={cn(
+                                                "min-h-[48px] min-w-0 px-2 py-1.5 rounded-lg border-2 font-black text-[8px] uppercase tracking-tight transition-all flex flex-col items-center justify-center gap-0 shrink-0",
+                                                isSelected
+                                                    ? "bg-orange-500 border-orange-500 text-white shadow-md"
+                                                    : "bg-white border-zinc-200 text-zinc-700 hover:border-orange-300 hover:bg-orange-50"
+                                            )}
+                                        >
+                                            <span className="whitespace-nowrap">{src.shortLabel}</span>
+                                            {amount > 0.005 && (
+                                                <span className={cn("text-[7px] tabular-nums leading-none", isSelected ? "text-white/90" : "text-zinc-500")}>
+                                                    {amount.toFixed(2)}€
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="absolute -top-1 right-0 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-sm border border-zinc-200 shadow-lg flex flex-col items-end justify-center pointer-events-none">
+                                <span className="text-[7px] font-black text-zinc-500 uppercase">Total</span>
+                                <span className="text-sm font-black tabular-nums text-zinc-800">
+                                    {totalFromSources > 0.005 ? totalFromSources.toFixed(2) : ' '} €
+                                </span>
+                            </div>
+                        </div>
 
                 {zoomDenom !== null && zoomContext !== null && (
                     <DenominationZoomModal
@@ -311,7 +364,7 @@ export function PurchaseMultiSourceForm({
                                         setSourceTpvAmount(selectedSource.id, v === '' ? 0 : parseFloat(v));
                                     }}
                                     placeholder="0.00"
-                                    className="w-full max-w-[120px] h-11 rounded-xl border-2 border-zinc-200 px-3 text-sm font-black outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                                    className="w-full max-w-[140px] min-h-[48px] h-12 rounded-xl border-2 border-zinc-200 px-3 text-sm font-black outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
                                 />
                             </div>
                         )}
@@ -398,26 +451,95 @@ export function PurchaseMultiSourceForm({
                         </div>
                     </div>
                 )}
+                    </>
+                )}
+
+                {step === 'summary' && (
+                    <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Resumen</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-orange-50/60 border border-orange-100 rounded-xl p-3">
+                                    <div className="text-[8px] font-black uppercase tracking-widest text-orange-500">Precio</div>
+                                    <div className="text-2xl font-black tabular-nums text-orange-700">{priceNum > 0 ? `${priceNum.toFixed(2)}€` : ' '}</div>
+                                </div>
+                                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                                    <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Entregado</div>
+                                    <div className="text-2xl font-black tabular-nums text-zinc-800">{hasAnySourceInput ? `${totalFromSources.toFixed(2)}€` : ' '}</div>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                <div className={cn("border rounded-xl p-3", changeAmount >= 0.01 ? "bg-emerald-50 border-emerald-100" : "bg-white border-gray-100")}>
+                                    <div className="text-[8px] font-black uppercase tracking-widest text-emerald-600">Cambio</div>
+                                    <div className="text-xl font-black tabular-nums text-emerald-700">{changeAmount >= 0.01 ? `${changeAmount.toFixed(2)}€` : ' '}</div>
+                                </div>
+                                <div className="bg-white border border-gray-100 rounded-xl p-3">
+                                    <div className="text-[8px] font-black uppercase tracking-widest text-gray-500">Concepto</div>
+                                    <div className="text-xs font-bold text-zinc-700 truncate">{(notes || 'Compra').trim() || 'Compra'}</div>
+                                </div>
+                            </div>
+
+                            {changeAmount >= 0.01 && (
+                                <div className="mt-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Destino del cambio</p>
+                                        {!changeDestinationBoxId && (
+                                            <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest">Falta destino</p>
+                                        )}
+                                    </div>
+                                    <div className="mt-1 text-xs font-bold text-zinc-700">
+                                        {changeDestinationBoxId
+                                            ? (paymentSources.find(s => s.id === changeDestinationBoxId)?.shortLabel ?? 'Caja')
+                                            : ' '}
+                                    </div>
+                                    {!changeOk && (
+                                        <p className="mt-1 text-[9px] font-black text-rose-600 uppercase tracking-widest">
+                                            El desglose del cambio no cuadra
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex p-3 bg-white border-t gap-2 shrink-0">
                 <button
-                    onClick={handleConfirm}
-                    disabled={!canSubmit}
+                    type="button"
+                    onClick={() => {
+                        if (step === 'details') setStep('payment');
+                        else if (step === 'payment') setStep('summary');
+                        else handleConfirm();
+                    }}
+                    disabled={(step === 'details' && !canGoPayment) || (step === 'payment' && !canGoSummary) || (step === 'summary' && !canSubmit)}
                     className={cn(
                         "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 min-h-[48px]",
-                        canSubmit ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed"
+                        ((step === 'details' && canGoPayment) || (step === 'payment' && canGoSummary) || (step === 'summary' && canSubmit))
+                            ? (step === 'summary' ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-[#5B8FB9] shadow-blue-900/20 hover:brightness-110")
+                            : "bg-zinc-300 opacity-50 cursor-not-allowed"
                     )}
                 >
-                    <Save size={16} strokeWidth={3} />
-                    Guardar compra
+                    {step === 'summary' ? <Save size={16} strokeWidth={3} /> : <ArrowRight size={16} strokeWidth={3} />}
+                    {step === 'summary' ? 'Guardar compra' : 'Siguiente'}
                 </button>
                 <button
-                    onClick={onCancel}
-                    className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200 min-h-[48px]"
+                    type="button"
+                    onClick={() => {
+                        if (step === 'details') onCancel();
+                        else if (step === 'payment') setStep('details');
+                        else setStep('payment');
+                    }}
+                    className={cn(
+                        "flex-1 py-3 font-black uppercase tracking-widest text-[9px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md min-h-[48px]",
+                        step === 'details'
+                            ? "text-white bg-rose-500 hover:bg-rose-600 shadow-rose-200"
+                            : "text-gray-500 bg-zinc-100 hover:bg-zinc-200 shadow-zinc-200/40"
+                    )}
                 >
-                    <X size={14} strokeWidth={3} />
-                    Salir
+                    {step === 'details' ? <X size={14} strokeWidth={3} /> : <ArrowLeft size={14} strokeWidth={3} />}
+                    {step === 'details' ? 'Salir' : 'Atrás'}
                 </button>
             </div>
         </div>

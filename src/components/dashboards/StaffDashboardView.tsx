@@ -1111,18 +1111,7 @@ export default function StaffDashboardView() {
                 )
             }
 
-            {showPurchaseMultiSourceModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
-                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-                        <PurchaseMultiSourceForm
-                            paymentSources={buildPaymentSources()}
-                            inventoriesByBoxId={purchaseInventoriesByBoxId}
-                            onSubmit={handlePurchaseMultiSourceSubmit}
-                            onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
-                        />
-                    </div>
-                </div>
-            )}
+            {/* (deduplicado) */}
 
             <CashClosingModal
                 isOpen={isClosingModalOpen}
