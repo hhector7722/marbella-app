@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
 import { format, isSameDay, addDays, parseISO } from 'date-fns';
@@ -176,8 +177,9 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
     }
 
     if (!isOpen) return null;
+    if (typeof document === 'undefined') return null;
 
-    return (
+    return createPortal((
         <div className="fixed inset-0 bg-black/60 z-[220] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col w-fit max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
@@ -284,5 +286,5 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 </div>
             </div>
         </div>
-    );
+    ), document.body);
 }
