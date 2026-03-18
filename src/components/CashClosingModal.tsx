@@ -312,7 +312,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     "absolute inset-0 opacity-0 cursor-pointer",
                                     "min-h-[48px] min-w-[48px]"
                                 )}
-                                value={selectedDateTime}
                             />
                         </button>
                         <div className="flex items-center gap-3 mt-1">
