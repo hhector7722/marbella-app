@@ -43,6 +43,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [captureMode, setCaptureMode] = useState(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const exportRef = useRef<HTMLDivElement | null>(null);
 
@@ -109,6 +110,89 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         const pad = (n: number) => String(n).padStart(2, '0');
         return `Desglose_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
     }, []);
+
+    const BreakdownCaptureCard = useCallback(
+        ({
+            className,
+            showHeaderHint = false,
+        }: {
+            className?: string;
+            showHeaderHint?: boolean;
+        }) => (
+            <div className={cn('bg-white text-zinc-900 overflow-hidden', className)}>
+                <div className="bg-[#36606F] px-10 sm:px-12 py-8 sm:py-10">
+                    <div className="flex items-end justify-between gap-6">
+                        <div className="min-w-0">
+                            <div className="text-white text-3xl sm:text-4xl font-black uppercase tracking-[0.18em] leading-none">
+                                DESGLOSE
+                            </div>
+                            <div className="text-white/80 text-sm sm:text-base font-black uppercase tracking-[0.22em] mt-3">
+                                Bar La Marbella
+                            </div>
+                            {showHeaderHint && (
+                                <div className="text-white/70 text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] mt-2">
+                                    Haz captura de pantalla y envía por WhatsApp
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-right shrink-0">
+                            <div className="text-white/70 text-[10px] sm:text-xs font-black uppercase tracking-[0.22em]">
+                                Total
+                            </div>
+                            <div className="text-white text-3xl sm:text-5xl font-black tabular-nums leading-none mt-1">
+                                {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-8 sm:p-10">
+                    <div className="grid grid-cols-5 gap-x-6 sm:gap-x-8 gap-y-6 sm:gap-y-8">
+                        {DENOMINATIONS.map((denom) => {
+                            const qty = breakdownCounts[denom] || 0;
+                            const label = denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`;
+                            const subtotal = denom * qty;
+                            return (
+                                <div
+                                    key={denom}
+                                    className="bg-white rounded-2xl sm:rounded-3xl border border-zinc-100 shadow-sm p-3 sm:p-4"
+                                >
+                                    <div className="flex items-center justify-center h-16 sm:h-24">
+                                        <Image
+                                            src={CURRENCY_IMAGES[denom]}
+                                            alt={label}
+                                            width={260}
+                                            height={260}
+                                            className="h-full w-auto object-contain drop-shadow-lg"
+                                        />
+                                    </div>
+                                    <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <div className="text-[9px] sm:text-xs font-black text-zinc-500 uppercase tracking-widest">
+                                                {label}
+                                            </div>
+                                            <div className="text-lg sm:text-2xl font-black tabular-nums text-[#36606F] leading-none">
+                                                {qty > 0 ? qty : ' '}
+                                            </div>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <div className="text-[9px] sm:text-xs font-black text-zinc-400 uppercase tracking-widest">
+                                                Sub
+                                            </div>
+                                            <div className="text-[11px] sm:text-base font-black tabular-nums text-emerald-600">
+                                                {subtotal > 0.005 ? `${subtotal.toFixed(2)}€` : ' '}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        ),
+        [breakdownCounts, breakdownTotal]
+    );
 
     const handleBreakdownSend = useCallback(async () => {
         if (tab !== 'breakdown') {
@@ -274,76 +358,56 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 <div
                                     ref={exportRef}
                                     className={cn(
-                                        'bg-white text-zinc-900 overflow-hidden',
                                         'w-[1080px] h-[1350px]'
                                     )}
                                 >
-                                    <div className="bg-[#36606F] px-16 py-12">
-                                        <div className="flex items-center justify-between">
-                                            <div className="min-w-0">
-                                                <div className="text-white text-[44px] font-black uppercase tracking-[0.2em] leading-none">
-                                                    DESGLOSE
-                                                </div>
-                                                <div className="text-white/80 text-[22px] font-black uppercase tracking-[0.25em] mt-4">
-                                                    Bar La Marbella
-                                                </div>
+                                    <BreakdownCaptureCard className="w-[1080px] h-[1350px]" />
+                                </div>
+                            </div>
+
+                            {/* Modo captura a pantalla completa (captura de pantalla real del móvil) */}
+                            {captureMode && (
+                                <div
+                                    className="fixed inset-0 z-[400] bg-black/70 backdrop-blur-md p-3 sm:p-6 flex items-center justify-center"
+                                    onClick={() => setCaptureMode(false)}
+                                >
+                                    <div
+                                        className="w-full h-full flex flex-col items-center justify-center gap-3"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="flex items-center justify-between w-full max-w-3xl text-white shrink-0">
+                                            <div className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/80">
+                                                Modo captura • encuadrado para WhatsApp
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <div className="text-white/70 text-[18px] font-black uppercase tracking-[0.25em]">
-                                                    Total
-                                                </div>
-                                                <div className="text-white text-[56px] font-black tabular-nums">
-                                                    {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
-                                                </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCaptureMode(false)}
+                                                className="min-h-[48px] px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] transition-all active:scale-95"
+                                            >
+                                                Cerrar
+                                            </button>
+                                        </div>
+
+                                        <div className="flex-1 w-full flex items-center justify-center">
+                                            <div
+                                                className={cn(
+                                                    'bg-white rounded-3xl shadow-2xl overflow-hidden',
+                                                    // Mantener proporción exacta del arte (1080x1350)
+                                                    'aspect-[1080/1350]',
+                                                    // Encajar completo en pantalla (sin scroll)
+                                                    'max-h-[calc(100dvh-120px)] max-w-[min(100%,900px)] w-full'
+                                                )}
+                                            >
+                                                <BreakdownCaptureCard className="w-full h-full" showHeaderHint />
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="p-16">
-                                        <div className="grid grid-cols-5 gap-x-10 gap-y-10">
-                                            {DENOMINATIONS.map((denom) => {
-                                                const qty = breakdownCounts[denom] || 0;
-                                                const label = denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`;
-                                                const subtotal = denom * qty;
-                                                return (
-                                                    <div
-                                                        key={denom}
-                                                        className="bg-white rounded-3xl border border-zinc-100 shadow-sm p-6"
-                                                    >
-                                                        <div className="flex items-center justify-center h-[140px]">
-                                                            <Image
-                                                                src={CURRENCY_IMAGES[denom]}
-                                                                alt={label}
-                                                                width={260}
-                                                                height={260}
-                                                                className="h-full w-auto object-contain drop-shadow-lg"
-                                                            />
-                                                        </div>
-                                                        <div className="mt-4 flex items-center justify-between gap-4">
-                                                            <div className="min-w-0">
-                                                                <div className="text-[18px] font-black text-zinc-500 uppercase tracking-widest">
-                                                                    {label}
-                                                                </div>
-                                                                <div className="text-[42px] font-black tabular-nums text-[#36606F] leading-none">
-                                                                    {qty > 0 ? qty : ' '}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-right shrink-0">
-                                                                <div className="text-[16px] font-black text-zinc-400 uppercase tracking-widest">
-                                                                    Sub
-                                                                </div>
-                                                                <div className="text-[28px] font-black tabular-nums text-emerald-600">
-                                                                    {subtotal > 0.005 ? `${subtotal.toFixed(2)}€` : ' '}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                                        <div className="text-center text-white/75 text-[10px] sm:text-xs font-black uppercase tracking-widest shrink-0">
+                                            Haz la captura ahora. Luego adjunta la imagen en WhatsApp.
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {zoomDenom !== null && (
                                 <DenominationZoomModal
@@ -421,6 +485,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                             >
                                 <Copy size={16} />
                                 Copiar total
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCaptureMode(true)}
+                                className="w-full mt-2 min-h-[48px] rounded-xl bg-[#36606F] text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-[#2d4d57] active:scale-[0.98] shadow-md"
+                            >
+                                <Banknote size={16} />
+                                Modo captura WhatsApp
                             </button>
                             <button
                                 type="button"
