@@ -353,15 +353,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     // Cerrar punto seleccionado al tocar fuera de gráfica y de la tarjeta
     useEffect(() => {
         if (selectedChartHour === null) return;
-        const handleTouchStart = (e: TouchEvent) => {
+        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
             const chartEl = chartContainerRef.current;
             const tooltipEl = tooltipRef.current;
             const target = e.target as Node;
             if (chartEl?.contains(target) || tooltipEl?.contains(target)) return;
             setSelectedChartHour(null);
         };
-        document.addEventListener('touchstart', handleTouchStart, { passive: true });
-        return () => document.removeEventListener('touchstart', handleTouchStart);
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside, { passive: true });
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
     }, [selectedChartHour]);
 
     // Lista de tickets: solo el modal de rango aplica filtro; pulsar gráfica no filtra tabla ni KPIs
@@ -1451,8 +1455,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
                 const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
                 return (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
-                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div
+                    className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+                    onClick={() => setWeekDetailModal(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
                         <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0 relative">
                             <div className="flex flex-col items-start gap-1 shrink-0">
                                 <span className="text-base font-black text-white leading-none">
