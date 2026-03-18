@@ -1364,7 +1364,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             />
 
             {isNewWorkerModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                             <div>
@@ -1451,7 +1451,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
                 const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
                 return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0 relative">
                             <div className="flex flex-col items-start gap-1 shrink-0">
