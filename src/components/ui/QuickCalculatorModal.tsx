@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback } from 'react';
-import Image from 'next/image';
 import { X, Copy, Calculator, Delete, Minus, Plus, Banknote, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -172,12 +171,13 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                     className="bg-white rounded-2xl sm:rounded-3xl border border-zinc-100 shadow-sm p-3 sm:p-4"
                                 >
                                     <div className="flex items-center justify-center h-16 sm:h-24">
-                                        <Image
+                                        <img
                                             src={CURRENCY_IMAGES[denom]}
                                             alt={label}
                                             width={260}
                                             height={260}
                                             className="h-full w-auto object-contain drop-shadow-lg"
+                                            draggable={false}
                                         />
                                     </div>
                                     <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2">
@@ -234,7 +234,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         setIsSending(true);
         const toastId = toast.loading('Generando captura…');
         try {
-            const { toPng } = await import('html-to-image');
+    const { toPng } = await import('html-to-image');
 
             // Esperar a que carguen imágenes (Next/Image) para mejorar la fiabilidad del screenshot.
             const imgs = Array.from(el.querySelectorAll('img'));
@@ -259,6 +259,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             const dataUrl = await toPng(el, {
                 backgroundColor: '#ffffff',
                 cacheBust: true,
+                useCORS: true,
                 pixelRatio,
                 width,
                 height,
@@ -425,13 +426,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                     className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
                                                     aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
                                                 >
-                                                    <Image
-                                                        src={CURRENCY_IMAGES[denom]}
-                                                        alt={`${denom}€`}
-                                                        width={140}
-                                                        height={140}
-                                                        className="h-full w-auto object-contain drop-shadow-lg pointer-events-none"
-                                                    />
+                                        <img
+                                            src={CURRENCY_IMAGES[denom]}
+                                            alt={`${denom}€`}
+                                            width={140}
+                                            height={140}
+                                            className="h-full w-auto object-contain drop-shadow-lg pointer-events-none"
+                                            draggable={false}
+                                        />
                                                 </div>
                                                 <div className="text-center w-full">
                                                     <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
