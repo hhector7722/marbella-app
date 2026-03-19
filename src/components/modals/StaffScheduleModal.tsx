@@ -416,35 +416,35 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                 <div className="bg-white px-4 py-3 w-full shrink-0">
                                     <div className="flex flex-col gap-2">
                                         {/* Slot 1 */}
-                                        <div className="flex items-center gap-2 sm:gap-4 max-w-full justify-center">
-                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad</span>
+                                        <div className="grid grid-cols-5 gap-2 sm:gap-4 max-w-full w-full">
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act</span>
                                                 <div className="bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl flex items-center">
                                                     <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
                                                         {dayActivity || '—'}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                            <div className="flex flex-col gap-1.5 min-w-0">
                                                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-emerald-600 text-[11px] font-mono">{eventStart || '—'}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                            <div className="flex flex-col gap-1.5 min-w-0">
                                                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-rose-500 text-[11px] font-mono">{eventEnd || '—'}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                            <div className="flex flex-col gap-1.5 min-w-0">
                                                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-zinc-800 text-[11px]">{eventParticipants || ' '}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Categoría</span>
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
                                                         {dayCategory || '—'}
@@ -454,35 +454,35 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                         </div>
 
                                         {/* Slot 2 */}
-                                        <div className="flex items-center gap-2 sm:gap-4 max-w-full justify-center">
-                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad 2</span>
+                                        <div className="grid grid-cols-5 gap-2 sm:gap-4 max-w-full w-full">
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act 2</span>
                                                 <div className="bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl flex items-center">
                                                     <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
                                                         {dayActivity2 || '—'}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio 2</span>
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-emerald-600 text-[11px] font-mono">{eventStart2 || '—'}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final 2</span>
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-rose-500 text-[11px] font-mono">{eventEnd2 || '—'}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part 2</span>
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-zinc-800 text-[11px]">{eventParticipants2 || ' '}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Categoría 2</span>
+                                            <div className="flex flex-col gap-1.5 min-w-0">
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
                                                 <div className="bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl flex items-center justify-center text-center">
                                                     <span className="font-black text-zinc-800 text-[11px] uppercase truncate">
                                                         {dayCategory2 || '—'}

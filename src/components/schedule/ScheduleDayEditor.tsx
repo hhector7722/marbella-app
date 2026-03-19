@@ -713,9 +713,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                         <div className="p-4 md:p-6 w-full shrink-0">
                             <div className="flex flex-col gap-2 w-full overflow-hidden justify-center max-w-2xl mx-auto">
                                 {/* SLOT 1 */}
-                                <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center">
-                                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad</span>
+                                <div className="grid grid-cols-5 gap-2 sm:gap-4 w-full overflow-hidden">
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act</span>
                                         <div className="flex items-center bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="text"
@@ -735,7 +735,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                    <div className="flex flex-col gap-1.5 min-w-0">
                                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
                                         <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
@@ -755,7 +755,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
+                                    <div className="flex flex-col gap-1.5 min-w-0">
                                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
                                         <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
@@ -775,7 +775,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
+                                    <div className="flex flex-col gap-1.5 min-w-0">
                                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
                                         <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
@@ -795,8 +795,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Categoría</span>
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
                                         <div className="flex items-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="text"
@@ -818,9 +818,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                 </div>
 
                                 {/* SLOT 2 */}
-                                <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden justify-center">
-                                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-2 h-3 flex items-center">Actividad 2</span>
+                                <div className="grid grid-cols-5 gap-2 sm:gap-4 w-full overflow-hidden">
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act 2</span>
                                         <div className="flex items-center bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="text"
@@ -840,8 +840,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio 2</span>
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
                                         <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="time"
@@ -860,8 +860,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[70px] sm:w-[85px]">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final 2</span>
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
                                         <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="time"
@@ -880,8 +880,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part 2</span>
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
                                         <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="text"
@@ -900,8 +900,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 shrink-0 w-[90px] sm:w-[110px]">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Categoría 2</span>
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
                                         <div className="flex items-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
                                             <input
                                                 type="text"
