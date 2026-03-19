@@ -8,7 +8,7 @@ import {
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
     Check, Info, Package,
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
-    ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
+    Clock, ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
     Plus, Minus, BookOpen, CalendarCheck, ExternalLink
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
@@ -1053,7 +1053,7 @@ export default function StaffDashboardView() {
                                             className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"
                                             aria-label="Acceso directo a Propinas"
                                         >
-                                            <ChefHat size={20} strokeWidth={3} />
+                                            <Clock size={20} strokeWidth={3} />
                                         </Link>
                                     )}
                                     <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"><X size={20} strokeWidth={3} /></button>
