@@ -259,7 +259,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             const dataUrl = await toPng(el, {
                 backgroundColor: '#ffffff',
                 cacheBust: true,
-                useCORS: true,
                 pixelRatio,
                 width,
                 height,
