@@ -209,6 +209,13 @@ export default function TipsDashboardView({
 
   const weekdayPool = preview?.pools.weekday;
   const weekendPool = preview?.pools.weekend;
+  const staffWithWorkedHours = useMemo(
+    () =>
+      (preview?.staff ?? []).filter(
+        (s) => Math.abs((s.weekdayHoursRaw ?? 0) + (s.weekendHoursRaw ?? 0)) > 0.005
+      ),
+    [preview?.staff]
+  );
 
   const openOverride = (poolType: PoolType, staffId: string, staffName: string) => {
     if (!canEditOverrides) {
@@ -351,14 +358,14 @@ export default function TipsDashboardView({
                     </tr>
                   </thead>
                   <tbody>
-                    {!preview || preview.staff.length === 0 ? (
+                    {!preview || staffWithWorkedHours.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
                     ) : (
-                      preview.staff.map((s) => (
+                      staffWithWorkedHours.map((s) => (
                         <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
