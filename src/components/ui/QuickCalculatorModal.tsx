@@ -43,6 +43,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const breakdownCaptureRef = useRef<HTMLDivElement | null>(null);
 
@@ -109,6 +110,20 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         const pad = (n: number) => String(n).padStart(2, '0');
         return `Desglose_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
     }, []);
+
+    const whatsappMensaje = 'Aquí tienes el desglose. Pega la imagen desde el portapapeles.';
+
+    const downloadPngBlob = useCallback(
+        (blob: Blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${breakdownTitle}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        },
+        [breakdownTitle]
+    );
 
     const BreakdownCaptureCard = useCallback(
         ({
@@ -193,6 +208,17 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         [breakdownCounts, breakdownTotal]
     );
 
+    /** Paso 2: abrir WhatsApp SOLO tras confirmación (sin adjuntar automático). */
+    const handleConfirmEnviar = useCallback(() => {
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMensaje)}`;
+        const opened = window.open(waUrl, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+            toast.info('WhatsApp bloqueado por el navegador. Ábrelo manualmente y pega la imagen.');
+        }
+        setShowConfirmEnviar(false);
+    }, [whatsappMensaje]);
+
+    /** Paso 1: generar PNG, copiar al portapapeles (si se puede) o descargar; luego abrir confirmación. */
     const handleBreakdownSend = useCallback(async () => {
         if (tab !== 'breakdown') {
             toast.error('Abre primero la pestaña Desglose');
@@ -209,6 +235,19 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         const toastId = toast.loading('Generando captura…');
         try {
             const { toPng } = await import('html-to-image');
+
+            // Esperar a que carguen imágenes (Next/Image) para mejorar la fiabilidad del screenshot.
+            const imgs = Array.from(el.querySelectorAll('img'));
+            await Promise.all(
+                imgs.map((img) => {
+                    const elImg = img as HTMLImageElement;
+                    if (elImg.complete) return Promise.resolve();
+                    return new Promise<void>((resolve) => {
+                        elImg.onload = () => resolve();
+                        elImg.onerror = () => resolve();
+                    });
+                })
+            );
 
             const rect = el.getBoundingClientRect();
             const width = Math.max(1, Math.round(rect.width));
@@ -241,33 +280,28 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             const ab = new ArrayBuffer(byteString.length);
             const ia = new Uint8Array(ab);
             for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-            const pngBlob = mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
+            const pngBlob =
+                mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
 
-            if (!navigator.clipboard?.write) {
-                toast.error('Tu navegador no permite copiar imágenes al portapapeles');
-                // Aun así, abrimos WhatsApp para que el usuario pueda enviar manualmente.
-                const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
-                window.open(waUrl, '_blank', 'noopener,noreferrer');
-                onClose();
-                return;
+            let copied = false;
+            if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+                    copied = true;
+                } catch {
+                    copied = false;
+                }
             }
 
-            if (typeof ClipboardItem === 'undefined') {
-                toast.error('ClipboardItem no disponible en este navegador');
-                const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
-                window.open(waUrl, '_blank', 'noopener,noreferrer');
-                onClose();
-                return;
+            if (copied) {
+                toast.success('Captura copiada al portapapeles.');
+            } else {
+                toast.error('No se pudo copiar al portapapeles. Descargando la imagen…');
+                downloadPngBlob(pngBlob);
+                toast.info('Imagen descargada. Adjúntala en WhatsApp pegándola desde el portapapeles.');
             }
 
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-
-            toast.success('Captura copiada al portapapeles.');
-            const waUrl = `https://wa.me/?text=${encodeURIComponent('Aquí tienes el desglose. Pega la imagen desde el portapapeles.')}`;
-            const opened = window.open(waUrl, '_blank', 'noopener,noreferrer');
-            if (!opened) {
-                toast.info('WhatsApp bloqueado por el navegador. Ábrelo manualmente y pega la imagen.');
-            }
+            setShowConfirmEnviar(true);
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
             toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
@@ -279,7 +313,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                 // No hacer nada: el estado ya se ha restaurado.
             }
         }
-    }, [tab, onClose]);
+    }, [tab, downloadPngBlob]);
 
     if (!isOpen) return null;
 
@@ -288,7 +322,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             <div
                 ref={modalRef}
                 className={cn(
-                    'bg-white rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
+                    'bg-white relative rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
                     tab === 'breakdown' ? 'max-w-[320px]' : 'max-w-[280px]'
                 )}
                 onClick={(e) => e.stopPropagation()}
@@ -449,7 +483,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 <button
                                     type="button"
                                     onClick={handleBreakdownSend}
-                                    disabled={isSending}
+                                    disabled={isSending || showConfirmEnviar}
                                     className={cn(
                                         "w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
                                         isSending && "opacity-60 cursor-not-allowed"
@@ -462,6 +496,33 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                         </>
                     )}
                 </div>
+
+                {/* Modal de confirmación: abre WhatsApp para que el usuario pegue manualmente desde el portapapeles */}
+                {showConfirmEnviar && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-[90] rounded-[2.5rem] animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl p-6 mx-4 max-w-[280px] shadow-xl">
+                            <p className="text-center text-sm font-medium text-zinc-700 mb-4">
+                                ¿Abrimos WhatsApp para que pegues la imagen del desglose?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmEnviar(false)}
+                                    className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-all min-h-[48px]"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmEnviar}
+                                    className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white transition-all min-h-[48px]"
+                                >
+                                    Sí, enviar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
