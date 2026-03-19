@@ -316,7 +316,7 @@ export default function TipsDashboardView({
               </div>
             </div>
 
-            {/* Tabla sin bordes interiores, cabecera petroleo, subcabecera H/€/T */}
+            {/* Tabla sin bordes interiores, cabecera petroleo, subcabecera H/€ */}
             <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
               {loading && (
                 <div className="px-4 py-2 flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
@@ -331,10 +331,10 @@ export default function TipsDashboardView({
                       <th className="text-left px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[20%] min-w-0">
                         Staff
                       </th>
-                      <th colSpan={3} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
+                      <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
                         Lun – Vie
                       </th>
-                      <th colSpan={3} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
+                      <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
                         Sáb – Dom
                       </th>
                       <th className="text-right px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[12%]">
@@ -345,17 +345,15 @@ export default function TipsDashboardView({
                       <th className="text-left px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
                       <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
                       <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
-                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">T</th>
                       <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
                       <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
-                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">T</th>
                       <th className="text-right px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
                     </tr>
                   </thead>
                   <tbody>
                     {!preview || preview.staff.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
+                        <td colSpan={6} className="px-4 py-10 text-center text-zinc-400 font-bold text-sm">
                           {loading ? ' ' : 'Sin datos'}
                         </td>
                       </tr>
@@ -390,12 +388,6 @@ export default function TipsDashboardView({
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-zinc-200/80"
-                            onClick={() => openOverride('weekday', s.id, s.name)}
-                          >
-                            {fmtZeroBlank(s.weekdayAmount, 2)}
-                          </td>
-                          <td
                             className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer"
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
@@ -403,12 +395,6 @@ export default function TipsDashboardView({
                           </td>
                           <td
                             className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-orange-600 cursor-pointer"
-                            onClick={() => openOverride('weekend', s.id, s.name)}
-                          >
-                            {fmtZeroBlank(s.weekendAmount, 2)}
-                          </td>
-                          <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-700 cursor-pointer border-r-2 border-zinc-200/80"
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekendAmount, 2)}
