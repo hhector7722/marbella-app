@@ -355,14 +355,16 @@ export const CashDenominationForm = ({
                     )}>
                         <button
                             onClick={handleConfirm}
-                            disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven === 0)}
+                            disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
                             className={cn(
                                 "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
                                 isPurchaseMode
                                     ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                                    : ((totalGiven === 0)
-                                        ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
-                                        : "bg-emerald-500 shadow-emerald-200")
+                                    : (isTipPool
+                                        ? "bg-emerald-500 shadow-emerald-200"
+                                        : ((totalGiven === 0)
+                                            ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
+                                            : "bg-emerald-500 shadow-emerald-200"))
                             )}
                         >
                             <div className="flex items-center gap-1.5">
@@ -389,14 +391,16 @@ export const CashDenominationForm = ({
             <div className="hidden sm:flex p-3 bg-white border-t gap-2 shrink-0">
                 <button
                     onClick={handleConfirm}
-                    disabled={isPurchaseMode ? !canSubmitPurchase : (totalGiven === 0)}
+                    disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
                     className={cn(
                         "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
                         isPurchaseMode
                             ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                            : ((totalGiven === 0)
-                                ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
-                                : "bg-emerald-500 hover:brightness-110 shadow-emerald-200")
+                            : (isTipPool
+                                ? "bg-emerald-500 hover:brightness-110 shadow-emerald-200"
+                                : ((totalGiven === 0)
+                                    ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
+                                    : "bg-emerald-500 hover:brightness-110 shadow-emerald-200"))
                     )}
                 >
                     <div className="flex items-center gap-2">
