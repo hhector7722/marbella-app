@@ -15,9 +15,10 @@ import { CashDenominationForm } from './CashDenominationForm';
 interface MovementDetailModalProps {
     movement: any;
     onClose: () => void;
+    onAfterMutation?: () => Promise<void> | void;
 }
 
-export function MovementDetailModal({ movement, onClose }: MovementDetailModalProps) {
+export function MovementDetailModal({ movement, onClose, onAfterMutation }: MovementDetailModalProps) {
     const supabase = createClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -38,11 +39,11 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
             const { error } = await supabase.from('treasury_log').delete().eq('id', movement.id);
             if (error) throw error;
             toast.success('Movimiento eliminado correctamente');
-            // Recargar página para actualizar datos (simple y efectivo dado el trigger)
-            window.location.reload();
+            onClose();
+            await onAfterMutation?.();
         } catch (error) {
             console.error(error);
-            toast.error('Error al eliminar mvoimiento');
+            toast.error('Error al eliminar movimiento');
         }
     };
 
@@ -59,7 +60,8 @@ export function MovementDetailModal({ movement, onClose }: MovementDetailModalPr
             const { error } = await supabase.from('treasury_log').update(updatePayload).eq('id', movement.id);
             if (error) throw error;
             toast.success('Movimiento actualizado');
-            window.location.reload();
+            onClose();
+            await onAfterMutation?.();
         } catch (error) {
             console.error(error);
             toast.error('Error al actualizar movimiento');

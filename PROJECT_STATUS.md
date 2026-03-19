@@ -173,6 +173,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 - [x] **Métrica de Diferencia**: Nueva columna en el resumen de movimientos para visualizar descuadres de arqueo de forma inmediata.
 - [x] **Refinamiento Estético Caja Inicial**: Unificación de Caja Inicial (ahora en verde `emerald-600`) y botones de acción (Entrada, Salida, Arqueo) con nuevo diseño: texto negro en negrita e iconos blancos dentro de círculos de color, replicado en todo el dashboard y página de movimientos.
 - [x] **Detalle de Movimientos**: Implementación de modal dinámico que muestra el desglose de billetes/monedas y notas al pulsar sobre cualquier fila de movimientos.
+- [x] **/dashboard/movements: Editar/Borrar con refresco local** (2026-03-19): tras editar o eliminar un movimiento se refresca saldo/diferencia y la tabla del rango actual (sin `window.location.reload()`), garantizando el recalculo visible inmediatamente.
 - [x] **Corrección de Lógica de Arqueo y Métricas (REFINADO)**: Implementación de lógica de deltas (descuadres) en la base de datos para que los arqueos no rompan el historial. Actualización de `/dashboard/movements` para mostrar Saldo Teórico (sin arqueos) vs. Diferencia según solicitud.
 - [x] **Triggers de Tesorería Proactivos**: Nuevo trigger `BEFORE INSERT` que calcula automáticamente el descuadre al realizar un arqueo, manteniendo la integridad del balance global.
 - [x] **Ocultación de Arqueos en Extracto**: Los arqueos ahora están ocultos de la tabla de movimientos para evitar confusión, pero sus descuadres se acumulan en la métrica "DIFERENCIA".

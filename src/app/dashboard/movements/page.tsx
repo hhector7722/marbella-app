@@ -232,6 +232,12 @@ export default function MovementsPage() {
         } catch (error) { console.error(error); } finally { setLoading(false); }
     }
 
+    const refreshMovementsAfterMutation = async () => {
+        // Recalcular y refrescar: saldo actual + resumen del periodo + listado (con mismos filtros)
+        await fetchCurrentBoxStatus();
+        await fetchFilteredMovements();
+    };
+
     async function fetchPage(pageIndex: number, startISO: string, endISO: string, isInitial: boolean = false) {
         if (!isInitial) setIsLoadingMore(true);
         try {
@@ -811,7 +817,11 @@ export default function MovementsPage() {
             )}
 
             {selectedMovement && (
-                <MovementDetailModal movement={selectedMovement} onClose={() => setSelectedMovement(null)} />
+                <MovementDetailModal
+                    movement={selectedMovement}
+                    onClose={() => setSelectedMovement(null)}
+                    onAfterMutation={refreshMovementsAfterMutation}
+                />
             )}
 
             {isClosingModalOpen && (
