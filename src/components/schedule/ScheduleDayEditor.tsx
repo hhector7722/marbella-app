@@ -649,6 +649,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         shifts.filter(s => s.active && hour >= parseInt(s.start.split(':')[0]) && hour < parseInt(s.end.split(':')[0])).length
     );
 
+    const slot1ActivityValue = (editingIndex !== null ? (shifts[editingIndex]?.activity ?? '') : activity).trim();
+    const slot2ActivityValue = (editingIndex !== null ? (shifts[editingIndex]?.activity2 ?? '') : activity2).trim();
+    const hasSlot1Activity = slot1ActivityValue.length > 0;
+    const hasSlot2Activity = slot2ActivityValue.length > 0;
+
     if (loading) {
         if (embedded) {
             return (
@@ -711,214 +716,231 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     <div className="flex flex-col shrink w-full bg-white relative">
                         {/* ZONA DE INPUTS SUPERIOR - Sin border-b ni shadow */}
                         <div className="p-4 md:p-6 w-full shrink-0">
-                            <div className="flex flex-col gap-2 w-full overflow-hidden justify-center max-w-2xl mx-auto">
-                                {/* SLOT 1 */}
-                                <div className="grid grid-cols-5 gap-2 sm:gap-4 w-full overflow-hidden">
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act</span>
-                                        <div className="flex items-center bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="text"
-                                                value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity: val });
-                                                    } else {
-                                                        setActivity(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent text-left font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
-                                                placeholder="ARTÍSTICA"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
-                                        <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="time"
-                                                value={editingIndex !== null ? (shifts[editingIndex].start ?? '') : defaultStart}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], start: val });
-                                                    } else {
-                                                        setDefaultStart(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
-                                        <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="time"
-                                                value={editingIndex !== null ? (shifts[editingIndex].end ?? '') : defaultEnd}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], end: val });
-                                                    } else {
-                                                        setDefaultEnd(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
-                                        <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="text"
-                                                value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount: val });
-                                                    } else {
-                                                        setParticipantsCount(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
-                                        <div className="flex items-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="text"
-                                                value={editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], categoria: val });
-                                                    } else {
-                                                        setCategoria(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
-                                                placeholder="INFANTILES"
-                                            />
-                                        </div>
-                                    </div>
+                            <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-3 sm:p-4 w-full overflow-hidden justify-center max-w-2xl mx-auto">
+                                <div className="flex items-center justify-between mb-3 gap-3">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Datos de la actividad</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                        {hasSlot1Activity || hasSlot2Activity ? 'Listo' : 'Sin actividad'}
+                                    </span>
                                 </div>
 
-                                {/* SLOT 2 */}
-                                <div className="grid grid-cols-5 gap-2 sm:gap-4 w-full overflow-hidden">
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act 2</span>
-                                        <div className="flex items-center bg-white px-3 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="text"
-                                                value={editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity2: val });
-                                                    } else {
-                                                        setActivity2(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent text-left font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
-                                                placeholder="ARTÍSTICA"
-                                            />
+                                <div className="flex flex-col gap-3">
+                                    {/* SLOT 1 */}
+                                    <div className={cn("grid gap-2 sm:gap-4 w-full overflow-hidden", hasSlot1Activity ? "grid-cols-5" : "grid-cols-1")}>
+                                        <div className="flex flex-col gap-1.5 min-w-0">
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act</span>
+                                            <div className="flex items-center bg-white px-3 h-12 rounded-2xl border border-zinc-100">
+                                                <input
+                                                    type="text"
+                                                    value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (editingIndex !== null) {
+                                                            handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity: val });
+                                                        } else {
+                                                            setActivity(val);
+                                                            setHasUnsavedChanges(true);
+                                                        }
+                                                    }}
+                                                    className="w-full bg-transparent text-left font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
+                                                    placeholder="ARTÍSTICA"
+                                                />
+                                            </div>
                                         </div>
+
+                                        {hasSlot1Activity && (
+                                            <>
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
+                                                    <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="time"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].start ?? '') : defaultStart}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], start: val });
+                                                                } else {
+                                                                    setDefaultStart(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
+                                                    <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="time"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].end ?? '') : defaultEnd}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], end: val });
+                                                                } else {
+                                                                    setDefaultEnd(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
+                                                    <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="text"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount: val });
+                                                                } else {
+                                                                    setParticipantsCount(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
+                                                    <div className="flex items-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="text"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], categoria: val });
+                                                                } else {
+                                                                    setCategoria(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="w-full bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
+                                                            placeholder="INFANTILES"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
 
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
-                                        <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="time"
-                                                value={editingIndex !== null ? (shifts[editingIndex].start2 ?? '') : defaultStart2}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], start2: val });
-                                                    } else {
-                                                        setDefaultStart2(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
-                                            />
+                                    {/* SLOT 2 */}
+                                    <div className={cn("grid gap-2 sm:gap-4 w-full overflow-hidden", hasSlot2Activity ? "grid-cols-5" : "grid-cols-1")}>
+                                        <div className="flex flex-col gap-1.5 min-w-0">
+                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Act 2</span>
+                                            <div className="flex items-center bg-white px-3 h-12 rounded-2xl border border-zinc-100">
+                                                <input
+                                                    type="text"
+                                                    value={editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (editingIndex !== null) {
+                                                            handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity2: val });
+                                                        } else {
+                                                            setActivity2(val);
+                                                            setHasUnsavedChanges(true);
+                                                        }
+                                                    }}
+                                                    className="w-full bg-transparent text-left font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
+                                                    placeholder="ARTÍSTICA"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
-                                        <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="time"
-                                                value={editingIndex !== null ? (shifts[editingIndex].end2 ?? '') : defaultEnd2}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], end2: val });
-                                                    } else {
-                                                        setDefaultEnd2(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
-                                            />
-                                        </div>
-                                    </div>
+                                        {hasSlot2Activity && (
+                                            <>
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
+                                                    <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="time"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].start2 ?? '') : defaultStart2}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], start2: val });
+                                                                } else {
+                                                                    setDefaultStart2(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="bg-transparent text-center font-black text-emerald-600 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
-                                        <div className="flex items-center justify-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="text"
-                                                value={editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount2: val });
-                                                    } else {
-                                                        setParticipantsCount2(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full"
-                                            />
-                                        </div>
-                                    </div>
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Final</span>
+                                                    <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="time"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].end2 ?? '') : defaultEnd2}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], end2: val });
+                                                                } else {
+                                                                    setDefaultEnd2(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="bg-transparent text-center font-black text-rose-500 text-[11px] sm:text-xs focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
-                                        <div className="flex items-center bg-white px-2 h-[38px] sm:h-[42px] rounded-2xl">
-                                            <input
-                                                type="text"
-                                                value={editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (editingIndex !== null) {
-                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], categoria2: val });
-                                                    } else {
-                                                        setCategoria2(val);
-                                                        setHasUnsavedChanges(true);
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
-                                                placeholder="CADETES"
-                                            />
-                                        </div>
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">Part</span>
+                                                    <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="text"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount2: val });
+                                                                } else {
+                                                                    setParticipantsCount2(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none w-full"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5 min-w-0">
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest text-center h-3 flex items-center justify-center">cart</span>
+                                                    <div className="flex items-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
+                                                        <input
+                                                            type="text"
+                                                            value={editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (editingIndex !== null) {
+                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], categoria2: val });
+                                                                } else {
+                                                                    setCategoria2(val);
+                                                                    setHasUnsavedChanges(true);
+                                                                }
+                                                            }}
+                                                            className="w-full bg-transparent text-center font-black text-zinc-800 text-[11px] sm:text-xs focus:outline-none uppercase placeholder:text-zinc-300"
+                                                            placeholder="CADETES"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
