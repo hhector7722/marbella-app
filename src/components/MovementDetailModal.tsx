@@ -26,9 +26,14 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
 
     if (!movement) return null;
 
-    const isIncome = movement.type === 'income' || movement.type === 'IN' || movement.type === 'CLOSE_ENTRY';
-    const isAdjustment = movement.type === 'ADJUSTMENT';
-    const isSwap = movement.type === 'SWAP';
+    const originalType = movement.original_type ?? movement.type;
+
+    // /dashboard/movements normaliza type a: 'income' | 'expense' | 'adjustment'.
+    // Para decidir lógica real (triggers + estructura breakdown), usamos originalType.
+    const isIncome = originalType === 'IN' || originalType === 'CLOSE_ENTRY' || movement.type === 'income';
+    const isAdjustment = originalType === 'ADJUSTMENT' || movement.type === 'adjustment';
+    const isSwap = originalType === 'SWAP' || movement.type === 'SWAP';
+    const canEdit = !isSwap; // Swap requiere editor doble in/out; por ahora solo borrado.
 
     // Normalize breakdown
     const breakdown = movement.breakdown || {};
@@ -43,7 +48,8 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             await onAfterMutation?.();
         } catch (error) {
             console.error(error);
-            toast.error('Error al eliminar movimiento');
+            const msg = (error as any)?.message || 'Error desconocido';
+            toast.error(`Error al eliminar movimiento: ${msg}`);
         }
     };
 
@@ -64,11 +70,38 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             await onAfterMutation?.();
         } catch (error) {
             console.error(error);
-            toast.error('Error al actualizar movimiento');
+            const msg = (error as any)?.message || 'Error desconocido';
+            toast.error(`Error al actualizar movimiento: ${msg}`);
         }
     };
 
     if (isEditing) {
+        if (!canEdit) {
+            return (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div
+                        className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[60vh] flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className={cn("p-6 text-white relative shrink-0 bg-zinc-900")}>
+                            <h3 className="text-sm font-black uppercase tracking-widest">Edición no disponible</h3>
+                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">
+                                Los intercambios (SWAP) requieren editor in/out específico.
+                            </p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
+                            <button
+                                onClick={() => setIsEditing(false)}
+                                className="h-12 bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-blue-700 transition-all active:scale-95 w-full sm:w-auto px-6"
+                            >
+                                Volver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                 <div
@@ -155,7 +188,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                             </div>
                             <div>
                                 <h3 className="text-sm font-black uppercase tracking-widest leading-none">
-                                    {isAdjustment ? 'Arqueo de Caja' : isIncome ? 'Entrada de Efectivo' : 'Salida de Efectivo'}
+                                    {isSwap ? 'Intercambio de Caja' : isAdjustment ? 'Arqueo de Caja' : isIncome ? 'Entrada de Efectivo' : 'Salida de Efectivo'}
                                 </h3>
                                 <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Detalle de movimiento</p>
                             </div>
@@ -170,7 +203,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                     {/* MAIN AMOUNT */}
                     <div className="flex flex-col items-center justify-center py-2">
                         <span className="text-4xl font-black italic tracking-tight">
-                            {isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(movement.amount) > 0.005 ? `${Math.abs(movement.amount).toFixed(2)}€` : " "}
+                            {isSwap ? '' : isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(movement.amount) > 0.005 ? `${Math.abs(movement.amount).toFixed(2)}€` : " "}
                         </span>
                         {isAdjustment && (
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] mt-1 opacity-80">
@@ -271,13 +304,15 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                                 Eliminar
                             </button>
 
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="h-12 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
-                            >
-                                <Edit2 size={16} strokeWidth={2.5} />
-                                Editar
-                            </button>
+                            {canEdit && (
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="h-12 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <Edit2 size={16} strokeWidth={2.5} />
+                                    Editar
+                                </button>
+                            )}
                         </>
                     )}
                 </div>
