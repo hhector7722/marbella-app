@@ -15,11 +15,26 @@ export default async function PropinasPage() {
     redirect('/login');
   }
 
-  // Manager-only: esta pantalla escribe (botes/overrides)
-  if (!profile || profile.role !== 'manager') {
-    redirect('/staff/dashboard');
+  const role = profile?.role ?? null;
+  const isManagerOrAdmin = role === 'manager' || role === 'admin';
+
+  // tip_pool_editors: permiso específico para editar botes (cantidades/desgloses)
+  const { data: poolEditorRow, error: poolEditorError } = await supabase
+    .from('tip_pool_editors')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (poolEditorError) {
+    redirect('/login');
   }
 
-  return <TipsDashboardView />;
+  const canEditPools = isManagerOrAdmin || !!poolEditorRow;
+  if (!canEditPools) redirect('/staff/dashboard');
+
+  // Restricción pedida: no editar overrides/empleados/horas salvo manager/admin
+  const canEditOverrides = isManagerOrAdmin;
+
+  return <TipsDashboardView canEditPools={canEditPools} canEditOverrides={canEditOverrides} />;
 }
 

@@ -57,7 +57,13 @@ function breakdownToInitialCounts(b: Record<string, number> | null | undefined):
   );
 }
 
-export default function TipsDashboardView() {
+export default function TipsDashboardView({
+  canEditPools = true,
+  canEditOverrides = false,
+}: {
+  canEditPools?: boolean;
+  canEditOverrides?: boolean;
+}) {
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
@@ -149,6 +155,10 @@ export default function TipsDashboardView() {
   }, [preview?.pools.weekday.id, preview?.pools.weekend.id]);
 
   const openCash = (poolType: PoolType) => {
+    if (!canEditPools) {
+      toast.error('Acceso denegado: no puedes editar botes de propinas.');
+      return;
+    }
     setCashModal({ open: true, poolType });
   };
 
@@ -201,12 +211,11 @@ export default function TipsDashboardView() {
   const weekendPool = preview?.pools.weekend;
 
   const openOverride = (poolType: PoolType, staffId: string, staffName: string) => {
-    setOverrideModal({
-      open: true,
-      poolType,
-      staffId,
-      staffName,
-    });
+    if (!canEditOverrides) {
+      toast.error('Acceso denegado: no puedes editar overrides de empleados y horas.');
+      return;
+    }
+    setOverrideModal({ open: true, poolType, staffId, staffName });
   };
 
   return (

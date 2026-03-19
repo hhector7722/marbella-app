@@ -63,8 +63,9 @@ export default async function middleware(request: NextRequest) {
 
         const role = profile?.role;
 
-        // Bloquear STAFF y SUPERVISOR entrando a MANAGER (/dashboard)
-        if ((role === 'staff' || role === 'supervisor') && path.startsWith('/dashboard')) {
+        // Bloquear STAFF y SUPERVISOR entrando a MANAGER (/dashboard),
+        // PERO permitir acceso específico a `/dashboard/propinas`.
+        if ((role === 'staff' || role === 'supervisor') && path.startsWith('/dashboard') && !path.startsWith('/dashboard/propinas')) {
             return NextResponse.redirect(new URL("/staff/dashboard", request.url));
         }
 

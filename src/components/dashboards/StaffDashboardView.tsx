@@ -83,6 +83,7 @@ export default function StaffDashboardView() {
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
+    const [canEditTipsPools, setCanEditTipsPools] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
@@ -175,6 +176,21 @@ export default function StaffDashboardView() {
                 if (profile.is_fixed_salary) isFixedSalary = profile.is_fixed_salary;
                 setPreferStock(userPreferStock);
             }
+
+            // Permiso específico para editar botes de propinas (sin overrides por empleado)
+            // - manager/admin: acceso completo
+            // - resto: solo si está en `tip_pool_editors`
+            const role = profile?.role ?? null;
+            let localCanEditTipsPools = role === 'manager' || role === 'admin';
+            if (!localCanEditTipsPools) {
+                const { data: poolEditorRow } = await supabase
+                    .from('tip_pool_editors')
+                    .select('user_id')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                localCanEditTipsPools = !!poolEditorRow;
+            }
+            setCanEditTipsPools(localCanEditTipsPools);
 
             const today = new Date();
             const todayISO = today.toISOString().split('T')[0];
@@ -1030,6 +1046,16 @@ export default function StaffDashboardView() {
                             <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
                                 <div className="flex items-center gap-1 shrink-0">
+                                    {canEditTipsPools && (
+                                        <Link
+                                            href="/dashboard/propinas"
+                                            onClick={() => setIsCashOptionsModalOpen(false)}
+                                            className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"
+                                            aria-label="Acceso directo a Propinas"
+                                        >
+                                            <ChefHat size={20} strokeWidth={3} />
+                                        </Link>
+                                    )}
                                     <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"><X size={20} strokeWidth={3} /></button>
                                 </div>
                             </div>
