@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
 
-    const maybePortal = (node: JSX.Element) => {
+    const maybePortal = (node: ReactNode) => {
         if (typeof document === 'undefined') return node;
         return createPortal(node, document.body);
     };
