@@ -49,6 +49,8 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     if (!movement) return null;
 
     const originalType = movement.original_type ?? movement.type;
+    const movementDate = new Date(movement.created_at);
+    const hasValidMovementDate = !Number.isNaN(movementDate.getTime());
 
     // /dashboard/movements normaliza type a: 'income' | 'expense' | 'adjustment'.
     // Para decidir lógica real (triggers + estructura breakdown), usamos originalType.
@@ -100,7 +102,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     if (isEditing) {
         if (!canEdit) {
             return maybePortal(
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div
                         className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[60vh] flex flex-col"
                         onClick={e => e.stopPropagation()}
@@ -125,7 +127,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         }
 
         return maybePortal(
-            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                 <div
                     className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
                     onClick={e => e.stopPropagation()}
@@ -192,7 +194,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     };
 
     return maybePortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={onClose}>
+        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={onClose}>
             <div
                 className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
@@ -242,13 +244,13 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         <div className="flex items-center gap-3 bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm transition-all">
                             <Calendar size={16} className="text-white/60" />
                             <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">
-                                {format(new Date(movement.created_at), 'd MMM yyyy', { locale: es })}
+                                {hasValidMovementDate ? format(movementDate, 'd MMM yyyy', { locale: es }) : '--'}
                             </span>
                         </div>
                         <div className="flex items-center gap-3 bg-zinc-50 p-3 rounded-2xl border border-zinc-100 shadow-sm transition-all">
                             <Clock size={16} className="text-zinc-400" />
                             <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
-                                {format(new Date(movement.created_at), 'HH:mm')}
+                                {hasValidMovementDate ? format(movementDate, 'HH:mm') : '--:--'}
                             </span>
                         </div>
                     </div>

@@ -664,7 +664,11 @@ export default function MovementsPage() {
                                                         <tr
                                                             key={mov.id}
                                                             className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100"
-                                                            onClick={() => setSelectedMovement(mov)}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                setSelectedMovement(mov);
+                                                            }}
                                                         >
                                                             <td className="px-1 md:px-6 py-2 md:py-3">
                                                                 <div className="flex flex-col">
