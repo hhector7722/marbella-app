@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,11 +24,24 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    // En SSR no hay DOM: dejamos el modal fuera para evitar que se “incruste” en la página.
+    const [mounted] = useState(() => typeof window !== 'undefined');
 
+    // Evita fallback SSR que puede hacer que el modal “aparezca” dentro del layout inferior.
     const maybePortal = (node: ReactNode) => {
-        if (typeof document === 'undefined') return node;
+        if (!mounted) return null;
         return createPortal(node, document.body);
     };
+
+    useEffect(() => {
+        if (!mounted) return;
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = prevOverflow;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted, movement?.id]);
 
     if (!movement) return null;
 
