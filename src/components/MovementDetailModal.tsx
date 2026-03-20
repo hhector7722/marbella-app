@@ -24,24 +24,27 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
-    // En SSR no hay DOM: dejamos el modal fuera para evitar que se “incruste” en la página.
-    const [mounted] = useState(() => typeof window !== 'undefined');
 
-    // Evita fallback SSR que puede hacer que el modal “aparezca” dentro del layout inferior.
+    // En SSR no hay DOM: en ese caso no renderizamos nada.
+    // En cliente: siempre portaleamos a document.body para evitar que se vea “dentro” de la página.
     const maybePortal = (node: ReactNode) => {
-        if (!mounted) return null;
-        return createPortal(node, document.body);
+        if (typeof document === 'undefined') return null;
+        try {
+            return createPortal(node, document.body);
+        } catch {
+            // Fallback seguro: si el portal falla, al menos mostramos el overlay.
+            return node;
+        }
     };
 
     useEffect(() => {
-        if (!mounted) return;
+        if (typeof document === 'undefined') return;
         const prevOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         return () => {
             document.body.style.overflow = prevOverflow;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mounted, movement?.id]);
+    }, [movement?.id]);
 
     if (!movement) return null;
 
