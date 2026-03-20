@@ -164,13 +164,37 @@ export default function TipsDashboardView({
 
   const handleSaveCash = async (poolType: PoolType, total: number, breakdown: any, notes: string) => {
     try {
+      const normalizedTotal = Number.isFinite(total) ? Number(total.toFixed(2)) : 0;
+      const normalizedBreakdown = breakdown ?? {};
+      const normalizedNotes = (notes || '').trim() || null;
+
       await supabase.rpc('upsert_tip_pool', {
         p_pool_type: poolType,
         // Debe poder guardarse también 0 (no bloquear, no convertir a null)
-        p_cash_total: Number.isFinite(total) ? total : 0,
-        p_cash_breakdown: breakdown ?? {},
-        p_notes: (notes || '').trim() || null,
+        p_cash_total: normalizedTotal,
+        p_cash_breakdown: normalizedBreakdown,
+        p_notes: normalizedNotes,
       });
+
+      // Optimistic UI: actualizar el importe del bote ya mismo
+      setPreview((prev) => {
+        if (!prev) return prev;
+        const poolKey = poolType;
+        const existingPool = prev.pools[poolKey];
+        return {
+          ...prev,
+          pools: {
+            ...prev.pools,
+            [poolKey]: {
+              ...existingPool,
+              cashTotal: normalizedTotal,
+              cashBreakdown: normalizedBreakdown,
+              notes: normalizedNotes,
+            },
+          },
+        };
+      });
+
       toast.success('Bote guardado correctamente');
       setCashModal(null);
       await fetchPreview();
