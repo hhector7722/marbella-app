@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -23,6 +24,11 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+
+    const maybePortal = (node: JSX.Element) => {
+        if (typeof document === 'undefined') return node;
+        return createPortal(node, document.body);
+    };
 
     if (!movement) return null;
 
@@ -77,7 +83,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
 
     if (isEditing) {
         if (!canEdit) {
-            return (
+            return maybePortal(
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div
                         className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[60vh] flex flex-col"
@@ -102,7 +108,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             );
         }
 
-        return (
+        return maybePortal(
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                 <div
                     className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
@@ -169,7 +175,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         );
     };
 
-    return (
+    return maybePortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={onClose}>
             <div
                 className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
