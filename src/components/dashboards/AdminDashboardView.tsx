@@ -156,6 +156,16 @@ type CashModalMode = 'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'invent
 const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const supabase = createClient();
     const router = useRouter();
+
+    const formatCentsToEur = (cents: number, opts?: { showPlus?: boolean }) => {
+        const showPlus = opts?.showPlus ?? false;
+        const neg = cents < 0;
+        const abs = Math.abs(cents);
+        const euros = Math.trunc(abs / 100);
+        const c = abs % 100;
+        const prefix = neg ? '-' : (showPlus && cents > 0 ? '+' : '');
+        return `${prefix}${euros}.${String(c).padStart(2, '0')}€`;
+    };
     const [loading, setLoading] = useState(!initialData);
     const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
     const [liveTickets, setLiveTickets] = useState(initialData?.liveTickets || { total: 0, count: 0 });
@@ -171,14 +181,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [boxMovements, setBoxMovements] = useState<any[]>(initialData?.boxMovements || []);
     const [theoreticalBalance, setTheoreticalBalance] = useState<number>(initialData?.theoreticalBalance || 0);
     const [actualBalance, setActualBalance] = useState<number>(initialData?.actualBalance || 0);
-    const [difference, setDifference] = useState<number>(initialData?.difference || 0);
-    // Tick SOLO si la diferencia es exactamente 0 (0,00).
-    // Presentación a 2 decimales sin redondeo: truncamos a céntimos.
-    const isDifferenceZero = difference === 0;
-    const diffDisplay = Number.isFinite(difference)
-        ? (Math.trunc(difference * 100) / 100)
-        : 0;
-    const diffDisplayNormalized = isDifferenceZero ? 0 : diffDisplay;
+    const [differenceCents, setDifferenceCents] = useState<number>(initialData?.differenceCents ?? Math.round((initialData?.difference ?? 0) * 100));
+    const isDifferenceZero = differenceCents === 0;
     const [overtimeData, setOvertimeData] = useState<any[]>(initialData?.overtimeData || []);
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -466,7 +470,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 setBoxMovements(data.boxMovements);
                 setTheoreticalBalance(data.theoreticalBalance || 0);
                 setActualBalance(data.actualBalance || 0);
-                setDifference(data.difference || 0);
+                setDifferenceCents(data.differenceCents ?? Math.round((data.difference ?? 0) * 100));
                 setOvertimeData(data.overtimeData);
                 setPaidStatus(data.paidStatus);
                 setAllEmployees(data.allEmployees);
@@ -979,9 +983,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <Check className="w-3.5 h-3.5 md:w-4 md:h-4" strokeWidth={3} />
                                         </span>
                                     ) : (
-                                        <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-wider flex items-center gap-1", diffDisplayNormalized < 0 ? "text-rose-500" : "text-emerald-500")}>
+                                        <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-wider flex items-center gap-1", differenceCents < 0 ? "text-rose-500" : "text-emerald-500")}>
                                             <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" strokeWidth={3} />
-                                            {diffDisplayNormalized > 0 ? '+' : ''}{diffDisplayNormalized.toFixed(2)}€
+                                            {formatCentsToEur(differenceCents, { showPlus: true })}
                                         </span>
                                     )}
                                 </div>

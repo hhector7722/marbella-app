@@ -8,6 +8,38 @@ export async function getDashboardData() {
     const supabase = await createClient();
     const todayStr = format(new Date(), 'yyyy-MM-dd');
 
+    // Convierte NUMERIC Postgres (suele venir como string) a céntimos enteros.
+    // Redondea al céntimo (para corregir imprecisión binaria tipo 392.7599999).
+    const parseNumericToCents = (value: any): number => {
+        if (value === null || value === undefined) return 0;
+        const s = String(value).trim();
+        if (!s) return 0;
+
+        const neg = s.startsWith('-');
+        const clean = neg || s.startsWith('+') ? s.slice(1) : s;
+        const [intPartRaw, fracPartRaw = ''] = clean.split('.');
+        const intPart = parseInt(intPartRaw || '0', 10);
+
+        const frac3 = (fracPartRaw || '').padEnd(3, '0').slice(0, 3);
+        const frac2 = frac3.slice(0, 2);
+        const thirdDigit = frac3[2] ?? '0';
+
+        const third = parseInt(thirdDigit, 10) || 0;
+        let roundedFrac = parseInt(frac2 || '0', 10) || 0;
+        let roundedInt = intPart;
+
+        if (third >= 5) {
+            roundedFrac += 1;
+            if (roundedFrac >= 100) {
+                roundedFrac = 0;
+                roundedInt += 1;
+            }
+        }
+
+        const cents = roundedInt * 100 + roundedFrac;
+        return neg ? -cents : cents;
+    };
+
     // 1. Parallel Fetching of Core Data (ventas por hora del día actual)
     const chartPromise = (async () => {
         try {
@@ -88,13 +120,37 @@ export async function getDashboardData() {
     let theoreticalBalance = 0;
     let actualBalance = 0;
     let difference = 0;
+    let differenceCents = 0;
 
     // Una sola fuente: RPC get_operational_box_status (igual que /dashboard/movements)
     const opStatus = Array.isArray(opBoxStatusRows) ? opBoxStatusRows[0] : opBoxStatusRows;
     if (opStatus?.box_id != null) {
         theoreticalBalance = Number(opStatus.theoretical_balance ?? 0);
-        actualBalance = Number(opStatus.physical_balance ?? 0);
-        difference = Number(opStatus.difference ?? 0);
+        const physicalCents = parseNumericToCents(opStatus.physical_balance ?? 0);
+        actualBalance = physicalCents / 100;
+
+        // SALDO del libro: running_balance más reciente (atemporal), excluyendo ADJUSTMENT/SWAP
+        let latestLedgerSaldoCents = 0;
+        try {
+            const { data: ledgerRows, error: ledgerError } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('running_balance')
+                .neq('type', 'ADJUSTMENT')
+                .neq('type', 'SWAP')
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false })
+                .limit(1);
+
+            if (ledgerError) throw ledgerError;
+            const raw = ledgerRows?.[0]?.running_balance;
+            latestLedgerSaldoCents = parseNumericToCents(raw ?? 0);
+        } catch (e) {
+            // No silenciar: al fallar, dejamos difference = 0 para evitar UX incorrecta.
+            console.error('Error calculando latestLedgerSaldo en getDashboardData:', e);
+        }
+
+        differenceCents = physicalCents - latestLedgerSaldoCents;
+        difference = differenceCents / 100;
     }
 
     if (allBoxes) {
@@ -173,6 +229,7 @@ export async function getDashboardData() {
         theoreticalBalance,
         actualBalance,
         difference,
+        differenceCents,
         overtimeData,
         paidStatus: initialPaidStatus,
         allEmployees: (allProfiles || []).filter((p: any) => {

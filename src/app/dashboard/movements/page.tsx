@@ -56,6 +56,47 @@ export default function MovementsPage() {
     const supabase = createClient();
     const router = useRouter();
 
+    // NUMERIC Postgres (normalmente string) -> céntimos enteros.
+    // Redondea al céntimo (para corregir imprecisión binaria tipo 392.7599999).
+    const parseNumericToCents = (value: any): number => {
+        if (value === null || value === undefined) return 0;
+        const s = String(value).trim();
+        if (!s) return 0;
+
+        const neg = s.startsWith('-');
+        const clean = neg || s.startsWith('+') ? s.slice(1) : s;
+        const [intPartRaw, fracPartRaw = ''] = clean.split('.');
+        const intPart = parseInt(intPartRaw || '0', 10);
+        const frac3 = (fracPartRaw || '').padEnd(3, '0').slice(0, 3);
+        const frac2 = frac3.slice(0, 2);
+        const thirdDigit = frac3[2] ?? '0';
+
+        const third = parseInt(thirdDigit, 10) || 0;
+        let roundedFrac = parseInt(frac2 || '0', 10) || 0;
+        let roundedInt = intPart;
+
+        if (third >= 5) {
+            roundedFrac += 1;
+            if (roundedFrac >= 100) {
+                roundedFrac = 0;
+                roundedInt += 1;
+            }
+        }
+
+        const cents = roundedInt * 100 + roundedFrac;
+        return neg ? -cents : cents;
+    };
+
+    const formatCentsToEur = (cents: number, opts?: { showPlus?: boolean }) => {
+        const showPlus = opts?.showPlus ?? false;
+        const neg = cents < 0;
+        const abs = Math.abs(cents);
+        const euros = Math.trunc(abs / 100);
+        const c = abs % 100;
+        const prefix = neg ? '-' : (showPlus && cents > 0 ? '+' : '');
+        return `${prefix}${euros}.${String(c).padStart(2, '0')}€`;
+    };
+
     // 1. Estados de Filtro y UI
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
     const [selectedDate, setSelectedDate] = useState<string>(() => {
@@ -128,17 +169,13 @@ export default function MovementsPage() {
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
-    // [✓] FÓRMULA ESTRICTA: Diferencia extraída directamente de la base de datos
-    const calculatedDifference = currentBoxStatus.difference;
-    // Mostrar la diferencia sin redondeo para "decisión/visual":
-    // - Tick SOLO si la diferencia es exactamente 0 (0,00)
-    // - Para presentar el valor en euros con 2 decimales, truncamos a céntimos
-    //   (si DB ya trae 2 decimales, esto no altera el valor).
-    const isDifferenceZero = calculatedDifference === 0;
-    const diffDisplay = Number.isFinite(calculatedDifference)
-        ? (Math.trunc(calculatedDifference * 100) / 100)
-        : 0;
-    const diffDisplayNormalized = isDifferenceZero ? 0 : diffDisplay;
+    // DIFERENCIA (UI) = SALDO ACTUAL (físico) - SALDO (running_balance más reciente del libro)
+    // Nota: “saldo” aquí ignora ADJUSTMENT/SWAP (como hace la lista).
+    const [physicalBalanceCents, setPhysicalBalanceCents] = useState<number>(0);
+    const [latestLedgerSaldoCents, setLatestLedgerSaldoCents] = useState<number>(0);
+    const [latestLedgerLoading, setLatestLedgerLoading] = useState<boolean>(true);
+    const diffFromSaldoCents = physicalBalanceCents - latestLedgerSaldoCents;
+    const isDiffZero = !latestLedgerLoading && diffFromSaldoCents === 0;
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -149,6 +186,7 @@ export default function MovementsPage() {
     // 1. CARGA ATEMPORAL (Global)
     useEffect(() => {
         fetchCurrentBoxStatus();
+        fetchLatestLedgerSaldo();
     }, []);
 
     async function fetchCurrentBoxStatus() {
@@ -160,8 +198,10 @@ export default function MovementsPage() {
 
             const status = Array.isArray(statusRows) ? statusRows[0] : statusRows;
             if (status?.box_id != null) {
-                const physical = Number(status.physical_balance ?? 0);
+                const physicalCents = parseNumericToCents(status.physical_balance ?? 0);
+                const physical = physicalCents / 100;
                 setBoxData({ id: status.box_id, current_balance: physical, name: status.box_name ?? '' });
+                setPhysicalBalanceCents(physicalCents);
 
                 setCurrentBoxStatus({
                     theoreticalBalance: Number(status.theoretical_balance ?? 0),
@@ -177,6 +217,30 @@ export default function MovementsPage() {
             console.error("Error crítico leyendo caja:", error);
             toast.error("Error de base de datos. Revisa la consola.");
             setCurrentBoxStatus(prev => ({ ...prev, loading: false }));
+        }
+    }
+
+    async function fetchLatestLedgerSaldo() {
+        setLatestLedgerLoading(true);
+        try {
+            const { data: ledgerRows, error: ledgerError } = await supabase
+                .from('v_treasury_movements_balance')
+                .select('running_balance')
+                .neq('type', 'ADJUSTMENT')
+                .neq('type', 'SWAP')
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false })
+                .limit(1);
+
+            if (ledgerError) throw ledgerError;
+            const raw = ledgerRows?.[0]?.running_balance ?? 0;
+            setLatestLedgerSaldoCents(parseNumericToCents(raw));
+        } catch (e) {
+            console.error('Error calculando latestLedgerSaldo en movements:', e);
+            toast.error('Error de base de datos al calcular el saldo del libro.');
+            setLatestLedgerSaldoCents(0);
+        } finally {
+            setLatestLedgerLoading(false);
         }
     }
 
@@ -244,6 +308,7 @@ export default function MovementsPage() {
     const refreshMovementsAfterMutation = async () => {
         // Recalcular y refrescar: saldo actual + resumen del periodo + listado (con mismos filtros)
         await fetchCurrentBoxStatus();
+        await fetchLatestLedgerSaldo();
         await fetchFilteredMovements();
     };
 
@@ -277,7 +342,7 @@ export default function MovementsPage() {
                     type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
                         (m.type === 'OUT' ? 'expense' : 'adjustment'),
                     original_type: m.type,
-                    running_balance: Number(m.running_balance || 0)
+                    running_balance: parseNumericToCents(m.running_balance || 0) / 100
                 }));
 
                 if (isInitial) {
@@ -352,7 +417,8 @@ export default function MovementsPage() {
 
             setCashModalMode('none');
             await fetchCurrentBoxStatus();
-            fetchFilteredMovements();
+            await fetchLatestLedgerSaldo();
+            await fetchFilteredMovements();
             toast.success('Operación realizada correctamente');
         } catch (error) {
             console.error(error);
@@ -538,7 +604,7 @@ export default function MovementsPage() {
 
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {Math.abs(currentBoxStatus.physicalBalance) > 0.005 ? `${currentBoxStatus.physicalBalance.toFixed(2)}€` : " "}
+                                    {physicalBalanceCents !== 0 ? formatCentsToEur(physicalBalanceCents) : " "}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
@@ -546,12 +612,14 @@ export default function MovementsPage() {
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className={cn(
                                     "text-[13px] md:text-2xl font-black line-clamp-1 flex items-center justify-center h-full",
-                                    diffDisplayNormalized > 0 ? "text-blue-500" : diffDisplayNormalized < 0 ? "text-orange-500" : "text-emerald-500"
+                                    diffFromSaldoCents > 0 ? "text-blue-500" : diffFromSaldoCents < 0 ? "text-orange-500" : "text-emerald-500"
                                 )}>
-                                    {isDifferenceZero ? (
+                                    {latestLedgerLoading ? (
+                                        " "
+                                    ) : isDiffZero ? (
                                         <Check className="w-4 h-4 md:w-6 md:h-6" strokeWidth={4} />
                                     ) : (
-                                        `${diffDisplayNormalized > 0 ? '+' : ''}${diffDisplayNormalized.toFixed(2)}€`
+                                        formatCentsToEur(diffFromSaldoCents, { showPlus: true })
                                     )}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFER. ACTUAL</span>
@@ -840,7 +908,8 @@ export default function MovementsPage() {
                     onSuccess={async () => {
                         setIsClosingModalOpen(false);
                         await fetchCurrentBoxStatus();
-                        fetchFilteredMovements();
+                        await fetchLatestLedgerSaldo();
+                        await fetchFilteredMovements();
                         toast.success("Cierre realizado correctamente");
                     }}
                 />
