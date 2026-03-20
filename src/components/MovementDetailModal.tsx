@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const openedAtRef = useRef<number>(Date.now());
 
     // En SSR no hay DOM: en ese caso no renderizamos nada.
     // En cliente: siempre portaleamos a document.body para evitar que se vea “dentro” de la página.
@@ -46,11 +47,22 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         };
     }, [movement?.id]);
 
+    useEffect(() => {
+        openedAtRef.current = Date.now();
+    }, [movement?.id]);
+
     if (!movement) return null;
 
     const originalType = movement.original_type ?? movement.type;
     const movementDate = new Date(movement.created_at);
     const hasValidMovementDate = !Number.isNaN(movementDate.getTime());
+
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target !== e.currentTarget) return;
+        // Evita auto-cierre por el mismo gesto de apertura (click/tap bubbling race).
+        if (Date.now() - openedAtRef.current < 250) return;
+        onClose();
+    };
 
     // /dashboard/movements normaliza type a: 'income' | 'expense' | 'adjustment'.
     // Para decidir lógica real (triggers + estructura breakdown), usamos originalType.
@@ -102,7 +114,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     if (isEditing) {
         if (!canEdit) {
             return maybePortal(
-                <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={handleBackdropClick}>
                     <div
                         className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[60vh] flex flex-col"
                         onClick={e => e.stopPropagation()}
@@ -127,7 +139,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         }
 
         return maybePortal(
-            <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={handleBackdropClick}>
                 <div
                     className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
                     onClick={e => e.stopPropagation()}
@@ -194,7 +206,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     };
 
     return maybePortal(
-        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={onClose}>
+        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={handleBackdropClick}>
             <div
                 className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
