@@ -172,6 +172,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [theoreticalBalance, setTheoreticalBalance] = useState<number>(initialData?.theoreticalBalance || 0);
     const [actualBalance, setActualBalance] = useState<number>(initialData?.actualBalance || 0);
     const [difference, setDifference] = useState<number>(initialData?.difference || 0);
+    // Tick SOLO si la diferencia es exactamente 0 (0,00).
+    // Presentación a 2 decimales sin redondeo: truncamos a céntimos.
+    const isDifferenceZero = difference === 0;
+    const diffDisplay = Number.isFinite(difference)
+        ? (Math.trunc(difference * 100) / 100)
+        : 0;
+    const diffDisplayNormalized = isDifferenceZero ? 0 : diffDisplay;
     const [overtimeData, setOvertimeData] = useState<any[]>(initialData?.overtimeData || []);
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -967,14 +974,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
                                 </button>
                                 <div className="flex items-center justify-center min-w-0 flex-1">
-                                    {Math.abs(difference || 0) < 0.01 ? (
+                                    {isDifferenceZero ? (
                                         <span className="text-emerald-500 flex items-center">
                                             <Check className="w-3.5 h-3.5 md:w-4 md:h-4" strokeWidth={3} />
                                         </span>
                                     ) : (
-                                        <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-wider flex items-center gap-1", (difference || 0) < 0 ? "text-rose-500" : "text-emerald-500")}>
+                                        <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-wider flex items-center gap-1", diffDisplayNormalized < 0 ? "text-rose-500" : "text-emerald-500")}>
                                             <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" strokeWidth={3} />
-                                            {Math.abs(difference || 0) > 0.005 ? `${(difference || 0) > 0 ? '+' : ''}${(difference || 0).toFixed(2)}€` : " "}
+                                            {diffDisplayNormalized > 0 ? '+' : ''}{diffDisplayNormalized.toFixed(2)}€
                                         </span>
                                     )}
                                 </div>

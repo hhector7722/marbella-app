@@ -130,6 +130,15 @@ export default function MovementsPage() {
 
     // [✓] FÓRMULA ESTRICTA: Diferencia extraída directamente de la base de datos
     const calculatedDifference = currentBoxStatus.difference;
+    // Mostrar la diferencia sin redondeo para "decisión/visual":
+    // - Tick SOLO si la diferencia es exactamente 0 (0,00)
+    // - Para presentar el valor en euros con 2 decimales, truncamos a céntimos
+    //   (si DB ya trae 2 decimales, esto no altera el valor).
+    const isDifferenceZero = calculatedDifference === 0;
+    const diffDisplay = Number.isFinite(calculatedDifference)
+        ? (Math.trunc(calculatedDifference * 100) / 100)
+        : 0;
+    const diffDisplayNormalized = isDifferenceZero ? 0 : diffDisplay;
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -537,12 +546,12 @@ export default function MovementsPage() {
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
                                 <span className={cn(
                                     "text-[13px] md:text-2xl font-black line-clamp-1 flex items-center justify-center h-full",
-                                    calculatedDifference > 0 ? "text-blue-500" : calculatedDifference < 0 ? "text-orange-500" : "text-emerald-500"
+                                    diffDisplayNormalized > 0 ? "text-blue-500" : diffDisplayNormalized < 0 ? "text-orange-500" : "text-emerald-500"
                                 )}>
-                                    {Math.abs(calculatedDifference) < 0.01 ? (
+                                    {isDifferenceZero ? (
                                         <Check className="w-4 h-4 md:w-6 md:h-6" strokeWidth={4} />
                                     ) : (
-                                        `${calculatedDifference > 0 ? '+' : ''}${calculatedDifference.toFixed(2)}€`
+                                        `${diffDisplayNormalized > 0 ? '+' : ''}${diffDisplayNormalized.toFixed(2)}€`
                                     )}
                                 </span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFER. ACTUAL</span>
