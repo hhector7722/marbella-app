@@ -104,25 +104,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         }).catch(() => toast.error('No se pudo copiar'));
     }, [breakdownTotal]);
 
-    const breakdownTitle = useMemo(() => {
-        const now = new Date();
-        const pad = (n: number) => String(n).padStart(2, '0');
-        return `Desglose_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-    }, []);
-
     const whatsappMensaje = 'Aquí tienes el desglose. Pega la imagen desde el portapapeles.';
-
-    const downloadPngBlob = useCallback(
-        (blob: Blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${breakdownTitle}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-        },
-        [breakdownTitle]
-    );
 
     const BreakdownCaptureCard = useCallback(
         ({
@@ -283,10 +265,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             const pngBlob =
                 mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
 
+            // iOS/WebKit puede dejar `clipboard.write` colgado: ponemos timeout para no bloquear flujo.
             let copied = false;
             if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
                 try {
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+                    await Promise.race([
+                        navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard-timeout')), 1500)),
+                    ]);
                     copied = true;
                 } catch {
                     copied = false;
@@ -296,11 +282,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             if (copied) {
                 toast.success('Captura copiada al portapapeles.');
             } else {
-                toast.error('No se pudo copiar al portapapeles. Descargando la imagen…');
-                downloadPngBlob(pngBlob);
-                toast.info('Imagen descargada. Adjúntala en WhatsApp pegándola desde el portapapeles.');
+                toast.warning('No se pudo copiar al portapapeles en este dispositivo.');
             }
 
+            // Mostramos siempre confirmación para continuar flujo y abrir WhatsApp.
             setShowConfirmEnviar(true);
         } catch (e: any) {
             const msg = e instanceof Error ? e.message : String(e);
@@ -313,7 +298,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                 // No hacer nada: el estado ya se ha restaurado.
             }
         }
-    }, [tab, downloadPngBlob]);
+    }, [tab]);
 
     if (!isOpen) return null;
 
