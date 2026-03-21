@@ -31,11 +31,26 @@ interface ProductRanking {
     total_ingresos: number;
 }
 
+/** Tramo horario para la pestaña Horas (tickets con h<7 excluidos). */
+function hourToSlotLabel(h: number): string | null {
+    if (h >= 7 && h <= 22) return `${h}-${h + 1}`;
+    if (h === 23) return '23-24';
+    return null;
+}
+
+interface HourSlotRow {
+    rank: number;
+    label: string;
+    cant: number;
+    media: number;
+    total: number;
+}
+
 export default function VentasPage() {
     const supabase = createClient();
     const router = useRouter();
 
-    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS'>('TICKETS');
+    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS' | 'HORAS'>('TICKETS');
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
@@ -325,6 +340,34 @@ export default function VentasPage() {
         toggleTicket(ticketId);
     };
 
+    const hourSlotsRows = useMemo((): HourSlotRow[] => {
+        const map = new Map<string, { count: number; sum: number }>();
+        for (const t of tickets) {
+            const h = getHourFromTicketTime(t.hora_cierre, t.fecha);
+            const label = hourToSlotLabel(h);
+            if (!label) continue;
+            const amt = Number(t.total_documento) || 0;
+            const prev = map.get(label) ?? { count: 0, sum: 0 };
+            prev.count += 1;
+            prev.sum += amt;
+            map.set(label, prev);
+        }
+        const rows: HourSlotRow[] = [];
+        for (const [label, { count, sum }] of map) {
+            if (count === 0) continue;
+            rows.push({
+                rank: 0,
+                label,
+                cant: count,
+                media: sum / count,
+                total: sum
+            });
+        }
+        rows.sort((a, b) => b.total - a.total);
+        rows.forEach((r, i) => { r.rank = i + 1; });
+        return rows;
+    }, [tickets]);
+
     return (
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900 print:bg-white">
             <div className="max-w-4xl mx-auto space-y-6">
@@ -536,6 +579,17 @@ export default function VentasPage() {
                             >
                                 Productos
                             </button>
+                            <button
+                                onClick={() => setActiveTab('HORAS')}
+                                className={cn(
+                                    "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
+                                    activeTab === 'HORAS'
+                                        ? "bg-[#36606F] text-white"
+                                        : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                )}
+                            >
+                                Horas
+                            </button>
                         </div>
                         <button
                             type="button"
@@ -550,7 +604,7 @@ export default function VentasPage() {
                     {/* TABLAS */}
                     <div className="p-4 md:p-6 bg-zinc-50/50 print:bg-white print:p-4">
                         <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">
-                            Ventas — {activeTab === 'TICKETS' ? 'Tickets' : 'Productos'}
+                            Ventas — {activeTab === 'TICKETS' ? 'Tickets' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
                         </div>
                         <div className="bg-transparent w-full">
                             {loading ? (
@@ -667,7 +721,7 @@ export default function VentasPage() {
                                         </table>
                                     </div>
                                 )
-                            ) : (
+                            ) : activeTab === 'PRODUCTOS' ? (
                                 products.length === 0 ? (
                                     <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
@@ -712,6 +766,49 @@ export default function VentasPage() {
                                         </table>
                                     </div>
                                 )
+                            ) : hourSlotsRows.length === 0 ? (
+                                <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin datos por hora en este periodo</span>
+                                </div>
+                            ) : (
+                                <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
+                                            <tr>
+                                                <th className="py-4 px-3 md:px-6 whitespace-nowrap">Horas</th>
+                                                <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Cant</th>
+                                                <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Media</th>
+                                                <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                            {hourSlotsRows.map((row) => (
+                                                <tr
+                                                    key={row.label}
+                                                    className="group hover:bg-zinc-50/80 transition-colors"
+                                                >
+                                                    <td className="py-3 px-2 md:px-4 whitespace-nowrap flex items-center gap-1.5 md:gap-3">
+                                                        <span className="text-[9px] md:text-[10px] font-black text-zinc-300 tabular-nums w-3 md:w-4 text-right">
+                                                            {row.rank}
+                                                        </span>
+                                                        <span className="text-zinc-900 font-bold font-mono text-[10px] md:text-xs">
+                                                            {row.label}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-500 tabular-nums">
+                                                        {row.cant !== 0 ? row.cant : ' '}
+                                                    </td>
+                                                    <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-400 tabular-nums">
+                                                        {row.media !== 0 ? `${row.media.toFixed(2)}€` : ' '}
+                                                    </td>
+                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-emerald-500 text-[11px] md:text-sm">
+                                                        {row.total !== 0 ? `${row.total.toFixed(2)}€` : ' '}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             )}
                         </div>
                     </div>
