@@ -206,7 +206,8 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     };
 
     return maybePortal(
-        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 relative" onClick={handleBackdropClick}>
+        {/* NUNCA añadir `relative` después de `fixed`: en Tailwind la última posición gana y rompe el overlay. */}
+        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={handleBackdropClick}>
             <div
                 className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
