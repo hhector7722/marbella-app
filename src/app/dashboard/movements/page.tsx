@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
@@ -897,13 +898,17 @@ export default function MovementsPage() {
                 </div>
             )}
 
-            {selectedMovement && (
-                <MovementDetailModal
-                    movement={selectedMovement}
-                    onClose={() => setSelectedMovement(null)}
-                    onAfterMutation={refreshMovementsAfterMutation}
-                />
-            )}
+            {/* Portal a document.body: evita stacking context / overflow del layout; z-index en el propio modal (> AIGlobalWrapper) */}
+            {selectedMovement &&
+                typeof document !== 'undefined' &&
+                createPortal(
+                    <MovementDetailModal
+                        movement={selectedMovement}
+                        onClose={() => setSelectedMovement(null)}
+                        onAfterMutation={refreshMovementsAfterMutation}
+                    />,
+                    document.body
+                )}
 
             {isClosingModalOpen && (
                 <CashClosingModal

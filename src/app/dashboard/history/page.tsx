@@ -113,7 +113,7 @@ const CashBreakdownModal = ({ isOpen, onClose, breakdown, date, total, isEditing
     } : breakdown;
 
     return (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 relative" onClick={onClose}>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] p-8 text-white text-center relative">
                     <div className="absolute top-6 right-6 flex items-center gap-1">

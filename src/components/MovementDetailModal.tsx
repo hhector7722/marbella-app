@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
-import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle, Save } from 'lucide-react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { format } from 'date-fns';
@@ -12,6 +11,9 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { CashDenominationForm } from './CashDenominationForm';
+
+/** z-index por encima de AIGlobalWrapper (z-[9999]) — overlay siempre visible */
+const OVERLAY_Z = 'z-[10050]';
 
 interface MovementDetailModalProps {
     movement: any;
@@ -26,18 +28,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const openedAtRef = useRef<number>(Date.now());
 
-    // En SSR no hay DOM: en ese caso no renderizamos nada.
-    // En cliente: siempre portaleamos a document.body para evitar que se vea “dentro” de la página.
-    const maybePortal = (node: ReactNode) => {
-        if (typeof document === 'undefined') return null;
-        try {
-            return createPortal(node, document.body);
-        } catch {
-            // Fallback seguro: si el portal falla, al menos mostramos el overlay.
-            return node;
-        }
-    };
-
     useEffect(() => {
         if (typeof document === 'undefined') return;
         const prevOverflow = document.body.style.overflow;
@@ -49,6 +39,9 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
 
     useEffect(() => {
         openedAtRef.current = Date.now();
+        setIsEditing(false);
+        setIsDeleting(false);
+        setCalculatorOpen(false);
     }, [movement?.id]);
 
     if (!movement) return null;
@@ -56,22 +49,19 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const originalType = movement.original_type ?? movement.type;
     const movementDate = new Date(movement.created_at);
     const hasValidMovementDate = !Number.isNaN(movementDate.getTime());
+    const amountNum = Number(movement.amount ?? 0);
 
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
         if (e.target !== e.currentTarget) return;
-        // Evita auto-cierre por el mismo gesto de apertura (click/tap bubbling race).
         if (Date.now() - openedAtRef.current < 250) return;
         onClose();
     };
 
-    // /dashboard/movements normaliza type a: 'income' | 'expense' | 'adjustment'.
-    // Para decidir lógica real (triggers + estructura breakdown), usamos originalType.
     const isIncome = originalType === 'IN' || originalType === 'CLOSE_ENTRY' || movement.type === 'income';
     const isAdjustment = originalType === 'ADJUSTMENT' || movement.type === 'adjustment';
     const isSwap = originalType === 'SWAP' || movement.type === 'SWAP';
-    const canEdit = !isSwap; // Swap requiere editor doble in/out; por ahora solo borrado.
+    const canEdit = !isSwap;
 
-    // Normalize breakdown
     const breakdown = movement.breakdown || {};
     const hasBreakdown = Object.keys(breakdown).length > 0;
 
@@ -89,7 +79,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         }
     };
 
-    // Persistencia solo al pulsar "Guardar Cambios" en el formulario (nunca en onChange/blur/cerrar).
     const handleUpdate = async (total: number, newBreakdown: any, newNotes: string, newDate?: string) => {
         try {
             const updatePayload: any = {
@@ -111,13 +100,24 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         }
     };
 
+    const backdropClass = cn(
+        'fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200',
+        OVERLAY_Z
+    );
+
     if (isEditing) {
         if (!canEdit) {
-            return maybePortal(
-                <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={handleBackdropClick}>
+            return (
+                <div
+                    className={backdropClass}
+                    onClick={handleBackdropClick}
+                    role="presentation"
+                >
                     <div
                         className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[60vh] flex flex-col"
                         onClick={e => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
                     >
                         <div className={cn("p-6 text-white relative shrink-0 bg-zinc-900")}>
                             <h3 className="text-sm font-black uppercase tracking-widest">Edición no disponible</h3>
@@ -138,11 +138,13 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             );
         }
 
-        return maybePortal(
-            <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={handleBackdropClick}>
+        return (
+            <div className={backdropClass} onClick={handleBackdropClick} role="presentation">
                 <div
                     className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
                     onClick={e => e.stopPropagation()}
+                    role="dialog"
+                    aria-modal="true"
                 >
                     <CashDenominationForm
                         type={isAdjustment ? 'audit' : (isIncome ? 'in' : 'out')}
@@ -154,7 +156,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         onSubmit={handleUpdate}
                         onCancel={() => setIsEditing(false)}
                         isEditing={true}
-                        // En edición no validamos stock estricto porque estamos modificando historia
                         availableStock={{}}
                     />
                 </div>
@@ -163,7 +164,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     }
 
     const renderDenomGrid = (counts: Record<string, number>, title?: string, colorClass?: string) => {
-        // Only show denoms with count > 0
         const activeDenoms = DENOMINATIONS.filter(d => (counts[d.toString()] || counts[d]) > 0);
 
         if (activeDenoms.length === 0) return null;
@@ -205,54 +205,60 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         );
     };
 
-    return maybePortal(
-        {/* NUNCA añadir `relative` después de `fixed`: en Tailwind la última posición gana y rompe el overlay. */}
-        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={handleBackdropClick}>
+    return (
+        <div
+            className={backdropClass}
+            onClick={handleBackdropClick}
+            role="presentation"
+        >
             <div
                 className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="movement-detail-title"
             >
-                {/* HEADER */}
                 <div className={cn(
                     "p-6 text-white relative shrink-0",
                     isIncome ? "bg-emerald-600" : isAdjustment ? "bg-orange-500" : "bg-rose-600"
                 )}>
-                    {/* TYPE ICON & TITLE */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 {isIncome ? <ArrowDown size={20} /> : isAdjustment ? <RefreshCw size={20} /> : <ArrowUp size={20} />}
                             </div>
                             <div>
-                                <h3 className="text-sm font-black uppercase tracking-widest leading-none">
+                                <h3 id="movement-detail-title" className="text-sm font-black uppercase tracking-widest leading-none">
                                     {isSwap ? 'Intercambio de Caja' : isAdjustment ? 'Arqueo de Caja' : isIncome ? 'Entrada de Efectivo' : 'Salida de Efectivo'}
                                 </h3>
                                 <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Detalle de movimiento</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-95 min-h-[48px] min-w-[48px]">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-95 min-h-[48px] min-w-[48px]"
+                                aria-label="Cerrar"
+                            >
                                 <X size={20} strokeWidth={3} />
                             </button>
                         </div>
                     </div>
 
-                    {/* MAIN AMOUNT */}
                     <div className="flex flex-col items-center justify-center py-2">
                         <span className="text-4xl font-black italic tracking-tight">
-                            {isSwap ? '' : isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(movement.amount) > 0.005 ? `${Math.abs(movement.amount).toFixed(2)}€` : " "}
+                            {isSwap ? '' : isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(amountNum) > 0.005 ? `${Math.abs(amountNum).toFixed(2)}€` : " "}
                         </span>
                         {isAdjustment && (
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] mt-1 opacity-80">
-                                {movement.amount >= 0 ? 'Sobrante' : 'Faltante'}
+                                {amountNum >= 0 ? 'Sobrante' : 'Faltante'}
                             </span>
                         )}
                     </div>
                 </div>
 
-                {/* CONTENT */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                    {/* TIME & ID */}
                     <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-3 bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm transition-all">
                             <Calendar size={16} className="text-white/60" />
@@ -268,7 +274,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         </div>
                     </div>
 
-                    {/* NOTES */}
                     {movement.notes && (
                         <div className="flex gap-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
                             <FileText size={18} className="text-zinc-400 shrink-0 mt-0.5" />
@@ -279,7 +284,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         </div>
                     )}
 
-                    {/* BREAKDOWN */}
                     {hasBreakdown ? (
                         <div className="space-y-6 pt-2">
                             <div className="flex items-center gap-2 mb-2">
@@ -305,7 +309,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                     )}
                 </div>
 
-                {/* FOOTER ACTIONS */}
                 <div className="p-6 pt-0 shrink-0 grid grid-cols-2 gap-3">
                     {isDeleting ? (
                         <div className="col-span-2 bg-rose-50 p-4 rounded-2xl border border-rose-100 flex items-center justify-between animate-in fade-in zoom-in-95 duration-200">
@@ -318,12 +321,14 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                             </div>
                             <div className="flex gap-2">
                                 <button
+                                    type="button"
                                     onClick={() => setIsDeleting(false)}
                                     className="px-3 py-2 bg-white text-zinc-500 text-[9px] font-black uppercase rounded-lg hover:bg-zinc-50 transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handleDelete}
                                     className="px-3 py-2 bg-rose-500 text-white text-[9px] font-black uppercase rounded-lg hover:bg-rose-600 transition-colors shadow-lg shadow-rose-200"
                                 >
@@ -334,6 +339,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                     ) : (
                         <>
                             <button
+                                type="button"
                                 onClick={() => setIsDeleting(true)}
                                 className="h-12 border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
@@ -343,6 +349,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
 
                             {canEdit && (
                                 <button
+                                    type="button"
                                     onClick={() => setIsEditing(true)}
                                     className="h-12 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
