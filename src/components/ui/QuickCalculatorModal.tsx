@@ -227,8 +227,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             return;
         }
 
-        // Captura más compacta: solo el modal para reducir el fondo en la imagen final.
-        const el = modalRef.current;
+        // Captura del overlay completo para incluir el fondo difuminado detrás del modal.
+        const el = overlayRef.current || modalRef.current;
         if (!el) {
             toast.error('No se pudo capturar el modal');
             return;
