@@ -282,7 +282,12 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             if (copied) {
                 toast.success('Captura copiada al portapapeles.');
             } else {
-                toast.warning('No se pudo copiar al portapapeles en este dispositivo.');
+                // En iOS Safari es habitual que el portapapeles de imagen esté restringido.
+                // No mostramos error para no ensuciar el flujo; WhatsApp se abrirá igualmente.
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (!isIOS) {
+                    toast.info('No se pudo copiar la imagen al portapapeles.');
+                }
             }
 
             // Mostramos siempre confirmación para continuar flujo y abrir WhatsApp.
