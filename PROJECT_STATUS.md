@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-21 (Horarios: celdas una línea + fit por ancho)
+**Última actualización:** 2026-03-21 (Ventas: pestaña Horas por tramo)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
@@ -10,6 +10,8 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## ✅ COMPLETADO
+- [x] **Ventas: pestaña Horas (2026-03-21)**: En `/dashboard/ventas`, tercer toggle **Horas**: tabla al estilo de Productos con tramos `7-8` … `22-23` y `23-24` si hay cierres en hora 23; agregación desde los mismos tickets ya filtrados (fecha + filtro horario); orden por importe total descendente; columnas Cant (nº tickets), Media y Total; cabecera de impresión y clase `print-table-ventas`.
+- [x] **Libro Mayor: duplicados eliminados (2026-03-21)**: En `/dashboard/ledger` los movimientos aparecían duplicados por filas repetidas en `manager_ledger` (mismo `movement_type`, `amount`, `concept` y `date`). Se ejecutó limpieza en BD conservando un `id` por grupo y migración `20260321120000_manager_ledger_dedupe_exact_rows.sql` para entornos futuros.
 - [x] **Staff Historial: salida no registrada (2026-03-21)**: En `/staff/history` (`WeekCard`), cuando `clock_out_show_no_registrada` la fila de salida replica el layout del fichaje regular (mismo `gap`, hora en mono); el punto rojo se sustituye por una cruz compacta (`size={8}`, `text-red-500` / gris en mes ajeno), con `title` de accesibilidad conservado.
 - [x] **Filtro temporal unificado (2026-03-16)**: En todas las vistas con filtros temporales se ha sustituido la botonera dispersa por un único botón táctil **"Filtrar"** (icono calendario + texto, sin marco ni relleno). Al pulsar abre un modal unificado con opciones: **Horas**, **Fecha**, **Periodo**, **Semana**, **Mes** y **Año**. El modo **Horas** solo en Ventas/Tickets; Cierres, Tesorería, Coste Laboral, Libro Mayor y Propinas usan Fecha/Periodo/Semana/Mes/Año; Horas Extras solo Mes/Año. Vistas actualizadas: `/dashboard/ventas`, `/dashboard/history`, `/dashboard/movements`, `/dashboard/labor`, `/dashboard/overtime`, `/dashboard/propinas` (TipsDashboardView), `/dashboard/ledger` (ManagerLedgerView). Componentes compartidos: `src/components/time/TimeFilterButton.tsx` + `src/components/time/TimeFilterModal.tsx`.
 - [x] **Propinas: horas base 40h para usuario maestro (2026-03-18)**: Ajustada la RPC `get_tip_pool_preview` para que el empleado con email `hhector7722@gmail.com` compute **8h por cada día laborable (L–V) dentro del rango**, garantizando 40h en semana estándar y alineando Propinas con la lógica de Asistencia.
