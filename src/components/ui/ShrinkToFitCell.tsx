@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const STEP = 0.25;
 const DEFAULT_MIN = 5;
 const DEFAULT_MAX = 11;
-/** Margen extra en la medición (px) para que ACT/CAT no rocen el borde derecho por subpíxeles / mayúsculas. */
+/** Margen extra en la medición (px) para que el texto no rocen los bordes. */
 const FIT_PAD_X = 14;
 const FIT_PAD_Y = 6;
 /** Tolerancia al comparar scrollWidth/Height con el área útil. */
@@ -23,7 +23,8 @@ function fitFontSizePx(
     maxW: number,
     maxH: number,
     minPx: number,
-    maxPx: number
+    maxPx: number,
+    widthOnly: boolean
 ): number {
     if (maxW <= 0 || maxH <= 0) return minPx;
     let fs = maxPx;
@@ -32,7 +33,9 @@ function fitFontSizePx(
         void el.offsetHeight;
         const sw = el.scrollWidth;
         const sh = el.scrollHeight;
-        if (sw <= maxW + FIT_TOLERANCE_PX && sh <= maxH + FIT_TOLERANCE_PX) return fs;
+        const fitsW = sw <= maxW + FIT_TOLERANCE_PX;
+        const fitsH = widthOnly ? true : sh <= maxH + FIT_TOLERANCE_PX;
+        if (fitsW && fitsH) return fs;
         fs -= STEP;
     }
     return minPx;
@@ -41,18 +44,23 @@ function fitFontSizePx(
 type ShrinkToFitTextProps = {
     children: ReactNode;
     className?: string;
+    wrapClassName?: string;
     innerClassName?: string;
     minPx?: number;
     maxPx?: number;
+    /** Una sola línea; la fuente se ajusta al ancho (horarios ACT/CAT/etc.). */
+    singleLine?: boolean;
 };
 
-/** Texto de solo lectura: muestra todo el contenido reduciendo fuente si hace falta; padding interior respecto al borde. */
+/** Texto de solo lectura: muestra el contenido reduciendo fuente si hace falta; padding interior respecto al borde. */
 export function ShrinkToFitText({
     children,
     className,
+    wrapClassName,
     innerClassName,
     minPx = DEFAULT_MIN,
     maxPx = DEFAULT_MAX,
+    singleLine = true,
 }: ShrinkToFitTextProps) {
     const wrapRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLSpanElement>(null);
@@ -66,7 +74,7 @@ export function ShrinkToFitText({
         const run = () => {
             const maxW = Math.max(0, wrap.clientWidth - FIT_PAD_X);
             const maxH = Math.max(0, wrap.clientHeight - FIT_PAD_Y);
-            fitFontSizePx(text, maxW, maxH, minPx, maxPx);
+            fitFontSizePx(text, maxW, maxH, minPx, maxPx, singleLine);
         };
 
         run();
@@ -76,20 +84,24 @@ export function ShrinkToFitText({
         });
         ro.observe(wrap);
         return () => ro.disconnect();
-    }, [children, minPx, maxPx]);
+    }, [children, minPx, maxPx, singleLine]);
 
     return (
         <div
             ref={wrapRef}
             className={cn(
                 'flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-2 py-0.5 box-border',
-                className
+                className,
+                wrapClassName
             )}
         >
             <span
                 ref={textRef}
                 className={cn(
-                    'block w-full max-w-full break-words text-center font-black leading-tight [overflow-wrap:anywhere]',
+                    'max-w-full text-center font-black leading-none',
+                    singleLine
+                        ? 'block w-full whitespace-nowrap overflow-hidden'
+                        : 'block w-full max-w-full break-words leading-tight [overflow-wrap:anywhere]',
                     innerClassName
                 )}
             >
@@ -103,7 +115,7 @@ type ShrinkToFitInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
     minPx?: number;
     maxPx?: number;
     wrapClassName?: string;
-    /** Una sola línea (p. ej. horas) — evita saltos y ajusta solo el tamaño de fuente. */
+    /** Una sola línea — evita saltos; ajuste de fuente por ancho (horarios). */
     singleLine?: boolean;
 };
 
@@ -120,6 +132,7 @@ export function ShrinkToFitInput({
     const wrapRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [, setTick] = useState(0);
+    const widthOnly = singleLine || rest.type === 'time' || rest.type === 'datetime-local';
 
     useLayoutEffect(() => {
         const wrap = wrapRef.current;
@@ -129,7 +142,7 @@ export function ShrinkToFitInput({
         const run = () => {
             const maxW = Math.max(0, wrap.clientWidth - FIT_PAD_X);
             const maxH = Math.max(0, wrap.clientHeight - FIT_PAD_Y);
-            fitFontSizePx(input, maxW, maxH, minPx, maxPx);
+            fitFontSizePx(input, maxW, maxH, minPx, maxPx, widthOnly);
         };
 
         run();
@@ -139,7 +152,7 @@ export function ShrinkToFitInput({
         });
         ro.observe(wrap);
         return () => ro.disconnect();
-    }, [value, minPx, maxPx, rest.type, singleLine]);
+    }, [value, minPx, maxPx, rest.type, singleLine, widthOnly]);
 
     return (
         <div

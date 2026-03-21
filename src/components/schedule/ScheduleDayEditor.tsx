@@ -776,7 +776,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                     <div className="flex w-full min-w-0 flex-col">
                                         <div
                                             className={cn(
-                                                'grid w-full min-w-0 gap-x-1.5 gap-y-1 pb-0.5',
+                                                'grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5',
                                                 hasSlot1Activity
                                                     ? '[grid-template-columns:repeat(5,minmax(0,1fr))]'
                                                     : 'justify-items-center [grid-template-columns:minmax(0,min(100%,14rem))]'
@@ -784,8 +784,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         >
                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                     <ShrinkToFitInput
+                                                        wrapClassName="min-h-0 flex-1"
+                                                        singleLine
                                                         type="text"
                                                         value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
                                                         onChange={(e) => {
@@ -809,8 +811,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 <>
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
-                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
+                                                                wrapClassName="min-h-0 flex-1"
                                                                 type="time"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].start ?? '') : defaultStart}
                                                                 onChange={(e) => {
@@ -832,8 +835,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
-                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
+                                                                wrapClassName="min-h-0 flex-1"
                                                                 type="time"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].end ?? '') : defaultEnd}
                                                                 onChange={(e) => {
@@ -855,8 +859,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
-                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
+                                                                wrapClassName="min-h-0 flex-1"
                                                                 type="text"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
                                                                 onChange={(e) => {
@@ -878,8 +883,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
-                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
+                                                                wrapClassName="min-h-0 flex-1"
+                                                                singleLine
                                                                 type="text"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria}
                                                                 onChange={(e) => {
@@ -935,7 +942,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         <div className="flex w-full min-w-0 flex-col">
                                             <div
                                                 className={cn(
-                                                    'grid w-full min-w-0 gap-x-1.5 gap-y-1 pb-0.5',
+                                                    'grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5',
                                                     hasSlot2Activity
                                                         ? '[grid-template-columns:repeat(5,minmax(0,1fr))]'
                                                         : 'justify-items-center [grid-template-columns:minmax(0,min(100%,14rem))]'
@@ -943,8 +950,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             >
                                                 <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                     <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                    <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                    <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                         <ShrinkToFitInput
+                                                            wrapClassName="min-h-0 flex-1"
+                                                            singleLine
                                                             type="text"
                                                             value={editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2}
                                                             onChange={(e) => {
@@ -968,8 +977,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                     <>
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
-                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
+                                                                    wrapClassName="min-h-0 flex-1"
                                                                     type="time"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].start2 ?? '') : defaultStart2}
                                                                     onChange={(e) => {
@@ -991,7 +1001,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
-                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
                                                                     type="time"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].end2 ?? '') : defaultEnd2}
@@ -1014,8 +1024,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
-                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
+                                                                    wrapClassName="min-h-0 flex-1"
                                                                     type="text"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2}
                                                                     onChange={(e) => {
@@ -1037,8 +1048,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
-                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
+                                                                    wrapClassName="min-h-0 flex-1"
+                                                                    singleLine
                                                                     type="text"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2}
                                                                     onChange={(e) => {
