@@ -43,6 +43,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
+    const overlayRef = useRef<HTMLDivElement | null>(null);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const breakdownCaptureRef = useRef<HTMLDivElement | null>(null);
 
@@ -207,7 +208,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             return;
         }
 
-        const el = breakdownCaptureRef.current;
+        // Captura de toda la pantalla web visible (overlay completo), sin barra de estado del dispositivo.
+        const el = overlayRef.current || modalRef.current;
         if (!el) {
             toast.error('No se pudo capturar el modal');
             return;
@@ -308,7 +310,11 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+        <div
+            ref={overlayRef}
+            className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={onClose}
+        >
             <div
                 ref={modalRef}
                 className={cn(
