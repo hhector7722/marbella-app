@@ -160,8 +160,16 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                         <div className="h-5 flex items-center justify-center gap-1 shrink-0">
                                             {day.hasLog && day.clockOut ? (
                                                 day.clock_out_show_no_registrada ? (
-                                                    <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
-                                                        <X size={14} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-600")} />
+                                                    <span
+                                                        title="Salida no registrada (olvidó fichar)"
+                                                        className="inline-flex items-center justify-center gap-1 shrink-0"
+                                                    >
+                                                        <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
+                                                            <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
+                                                        </span>
+                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>
+                                                            {day.clockOut}
+                                                        </span>
                                                     </span>
                                                 ) : (
                                                     <>

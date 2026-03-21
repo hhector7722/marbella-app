@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-16 (Filtro temporal unificado: botón "Filtrar" + modal global)
+**Última actualización:** 2026-03-21 (Staff Historial: salida no registrada alineada a fichaje regular)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
@@ -10,6 +10,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## ✅ COMPLETADO
+- [x] **Staff Historial: salida no registrada (2026-03-21)**: En `/staff/history` (`WeekCard`), cuando `clock_out_show_no_registrada` la fila de salida replica el layout del fichaje regular (mismo `gap`, hora en mono); el punto rojo se sustituye por una cruz compacta (`size={8}`, `text-red-500` / gris en mes ajeno), con `title` de accesibilidad conservado.
 - [x] **Filtro temporal unificado (2026-03-16)**: En todas las vistas con filtros temporales se ha sustituido la botonera dispersa por un único botón táctil **"Filtrar"** (icono calendario + texto, sin marco ni relleno). Al pulsar abre un modal unificado con opciones: **Horas**, **Fecha**, **Periodo**, **Semana**, **Mes** y **Año**. El modo **Horas** solo en Ventas/Tickets; Cierres, Tesorería, Coste Laboral, Libro Mayor y Propinas usan Fecha/Periodo/Semana/Mes/Año; Horas Extras solo Mes/Año. Vistas actualizadas: `/dashboard/ventas`, `/dashboard/history`, `/dashboard/movements`, `/dashboard/labor`, `/dashboard/overtime`, `/dashboard/propinas` (TipsDashboardView), `/dashboard/ledger` (ManagerLedgerView). Componentes compartidos: `src/components/time/TimeFilterButton.tsx` + `src/components/time/TimeFilterModal.tsx`.
 - [x] **Propinas: horas base 40h para usuario maestro (2026-03-18)**: Ajustada la RPC `get_tip_pool_preview` para que el empleado con email `hhector7722@gmail.com` compute **8h por cada día laborable (L–V) dentro del rango**, garantizando 40h en semana estándar y alineando Propinas con la lógica de Asistencia.
 - [x] **Propinas: guardado botes atemporales + UI tabla (2026-03-18)**: Corregidas llamadas frontend a `upsert_tip_pool` para coincidir con la RPC atemporal (sin fechas) y permitir guardar botes incluso a **0€**. Ajustes UI: botones “+” flotantes (sin fondo/contorno), eliminación del rol en filas y bordes/separadores en gris claro.
