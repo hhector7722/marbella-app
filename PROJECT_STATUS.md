@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-21 (Horarios: una card si una sola actividad)
+**Última actualización:** 2026-03-21 (ShrinkToFitCell: margen anti-corte)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
@@ -300,6 +300,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 - [x] **Horarios: guardado cabecera sin fila seleccionada (`editingIndex === null`)**: En `handleSave` se prioriza el estado de día (`activity`, `defaultStart`, `defaultEnd`, `participantsCount`, categorías, slot 2) frente a `shift.*` cargado, para que al editar la cabecera sin empleado seleccionado se persistan `draft_*` y `draft_notes` correctamente. (2026-03-21)
 - [x] **Horarios: paridad visual modal lectura / editor**: `StaffScheduleModal` usa el mismo ancho (`max-w-2xl`), padding (`p-3 md:p-4`) y celdas ACT que el editor (`h-8`, borde zinc, fondo blanco); `ShrinkToFitText` alinea el contenido como `ShrinkToFitInput` (`flex` + `items-center justify-center`). (2026-03-21)
 - [x] **Horarios: una sola card con una actividad**: La segunda card petróleo solo se muestra si hay texto en actividad 2 o el usuario pulsa **+ Segunda actividad (TARDE)** (`secondSlotExpanded`); ya no se muestra vacía solo por tener actividad 1. (2026-03-21)
+- [x] **ShrinkToFitCell: margen anti-corte (ACT/CAT)**: Mayor padding visual (`px-2`), `FIT_PAD_X` 14px y tolerancia 1.5px en la medición para evitar que el texto roce el borde derecho en edición y lectura. (2026-03-21)
 - [x] **Fix Tesorería (/movements) — Cálculo Real de Descuadre Físico**: Reemplazada la función `fetchCurrentBoxStatus`. Ahora el sistema cruza la suma matemática estricta de las denominaciones en `cash_box_inventory` contra el saldo teórico (`current_balance`) para obtener la diferencia real, en lugar de confiar en una columna clónica, eliminando los falsos positivos en la UI.
 - [x] **Fix Tesorería (/movements) — Robustez sin box_id**: Eliminada la dependencia de `boxData` y `box_id` en `fetchFilteredMovements`. La RPC `get_treasury_period_summary` y la vista `v_treasury_movements_balance` ahora consultan todos los movimientos sin filtrar por caja específica. Añadido fallback robusto en la inicialización de `currentBoxStatus` para recuperar cualquier caja disponible si la 'operational' no existe. Eliminada la guarda temprana que bloqueaba la carga con `boxData === null`. Inicialización de fechas con template literals nativos para inmunidad total ante timezone shifts.
 - [x] **Corrección de Carga Infinita en Tesorería (/movements)**: Resuelto el fallo crítico que bloqueaba la interfaz con un spinner infinito cuando la base de datos no devolvía una "Caja Operativa". Se ha refactorizado la inicialización para garantizar que el estado de carga siempre se resuelva (`loading: false`) y se ha corregido la sintaxis de los filtros de exclusión en la consulta de movimientos de Supabase.

@@ -12,6 +12,11 @@ import { cn } from '@/lib/utils';
 const STEP = 0.25;
 const DEFAULT_MIN = 5;
 const DEFAULT_MAX = 11;
+/** Margen extra en la medición (px) para que ACT/CAT no rocen el borde derecho por subpíxeles / mayúsculas. */
+const FIT_PAD_X = 14;
+const FIT_PAD_Y = 6;
+/** Tolerancia al comparar scrollWidth/Height con el área útil. */
+const FIT_TOLERANCE_PX = 1.5;
 
 function fitFontSizePx(
     el: HTMLElement,
@@ -27,7 +32,7 @@ function fitFontSizePx(
         void el.offsetHeight;
         const sw = el.scrollWidth;
         const sh = el.scrollHeight;
-        if (sw <= maxW + 0.5 && sh <= maxH + 0.5) return fs;
+        if (sw <= maxW + FIT_TOLERANCE_PX && sh <= maxH + FIT_TOLERANCE_PX) return fs;
         fs -= STEP;
     }
     return minPx;
@@ -59,10 +64,8 @@ export function ShrinkToFitText({
         if (!wrap || !text) return;
 
         const run = () => {
-            const padX = 8;
-            const padY = 4;
-            const maxW = Math.max(0, wrap.clientWidth - padX);
-            const maxH = Math.max(0, wrap.clientHeight - padY);
+            const maxW = Math.max(0, wrap.clientWidth - FIT_PAD_X);
+            const maxH = Math.max(0, wrap.clientHeight - FIT_PAD_Y);
             fitFontSizePx(text, maxW, maxH, minPx, maxPx);
         };
 
@@ -79,7 +82,7 @@ export function ShrinkToFitText({
         <div
             ref={wrapRef}
             className={cn(
-                'flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-1.5 py-0.5 box-border',
+                'flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-2 py-0.5 box-border',
                 className
             )}
         >
@@ -124,10 +127,8 @@ export function ShrinkToFitInput({
         if (!wrap || !input) return;
 
         const run = () => {
-            const padX = 8;
-            const padY = 4;
-            const maxW = Math.max(0, wrap.clientWidth - padX);
-            const maxH = Math.max(0, wrap.clientHeight - padY);
+            const maxW = Math.max(0, wrap.clientWidth - FIT_PAD_X);
+            const maxH = Math.max(0, wrap.clientHeight - FIT_PAD_Y);
             fitFontSizePx(input, maxW, maxH, minPx, maxPx);
         };
 
@@ -144,7 +145,7 @@ export function ShrinkToFitInput({
         <div
             ref={wrapRef}
             className={cn(
-                'flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-1.5 py-0.5 box-border',
+                'flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-2 py-0.5 box-border',
                 wrapClassName
             )}
         >
