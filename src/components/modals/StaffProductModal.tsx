@@ -25,7 +25,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
                 <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
                     <div>

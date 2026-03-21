@@ -177,7 +177,7 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
     const hasPending = pendingLines.length > 0;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div
                 className={cn(
                     'bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-4 duration-300',
