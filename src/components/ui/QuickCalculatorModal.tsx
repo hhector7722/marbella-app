@@ -43,6 +43,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
+    const [lastCaptureBlob, setLastCaptureBlob] = useState<Blob | null>(null);
+    const [lastCaptureCopied, setLastCaptureCopied] = useState(false);
     const overlayRef = useRef<HTMLDivElement | null>(null);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const breakdownCaptureRef = useRef<HTMLDivElement | null>(null);
@@ -191,15 +193,32 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         [breakdownCounts, breakdownTotal]
     );
 
-    /** Paso 2: abrir WhatsApp SOLO tras confirmación (sin adjuntar automático). */
-    const handleConfirmEnviar = useCallback(() => {
+    /** Paso 2: tras confirmar, priorizamos WhatsApp; si no hubo copia, usamos share nativo con imagen. */
+    const handleConfirmEnviar = useCallback(async () => {
+        if (!lastCaptureCopied && lastCaptureBlob) {
+            try {
+                const file = new File([lastCaptureBlob], 'desglose.png', { type: 'image/png' });
+                if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Desglose',
+                        text: whatsappMensaje,
+                    });
+                    setShowConfirmEnviar(false);
+                    return;
+                }
+            } catch {
+                // Si share nativo falla, seguimos con apertura WhatsApp web.
+            }
+        }
+
         const waUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMensaje)}`;
         const opened = window.open(waUrl, '_blank', 'noopener,noreferrer');
         if (!opened) {
             toast.info('WhatsApp bloqueado por el navegador. Ábrelo manualmente y pega la imagen.');
         }
         setShowConfirmEnviar(false);
-    }, [whatsappMensaje]);
+    }, [lastCaptureBlob, lastCaptureCopied, whatsappMensaje]);
 
     /** Paso 1: generar PNG, copiar al portapapeles (si se puede) o descargar; luego abrir confirmación. */
     const handleBreakdownSend = useCallback(async () => {
@@ -266,6 +285,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
             const pngBlob =
                 mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
+            setLastCaptureBlob(pngBlob);
+            setLastCaptureCopied(false);
 
             // iOS/WebKit puede dejar `clipboard.write` colgado o fallar según versión/contexto.
             // Probamos dos variantes (igual patrón robusto de /orders/new) con timeout.
@@ -291,6 +312,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             }
 
             if (copied) {
+                setLastCaptureCopied(true);
                 toast.success('Captura copiada al portapapeles.');
             } else {
                 // En iOS Safari es habitual que el portapapeles de imagen esté restringido.
