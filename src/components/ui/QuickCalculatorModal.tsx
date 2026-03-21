@@ -267,7 +267,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             const pngBlob =
                 mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
 
-            // iOS/WebKit puede dejar `clipboard.write` colgado: ponemos timeout para no bloquear flujo.
+            // iOS/WebKit puede dejar `clipboard.write` colgado o fallar según versión/contexto.
+            // Probamos dos variantes (igual patrón robusto de /orders/new) con timeout.
             let copied = false;
             if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
                 try {
@@ -277,7 +278,15 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                     ]);
                     copied = true;
                 } catch {
-                    copied = false;
+                    try {
+                        await Promise.race([
+                            navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })]),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard-timeout-2')), 1500)),
+                        ]);
+                        copied = true;
+                    } catch {
+                        copied = false;
+                    }
                 }
             }
 
@@ -286,7 +295,11 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             } else {
                 // En iOS Safari es habitual que el portapapeles de imagen esté restringido.
                 // No mostramos error para no ensuciar el flujo; WhatsApp se abrirá igualmente.
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                // iPadOS Safari moderno puede reportar "MacIntel" pero sigue siendo touch/WebKit móvil.
+                const isIPadOSDesktopUA =
+                    navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1;
+                const isIOS = isIOSDevice || isIPadOSDesktopUA;
                 if (!isIOS) {
                     toast.info('No se pudo copiar la imagen al portapapeles.');
                 }
