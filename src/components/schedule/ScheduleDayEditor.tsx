@@ -468,8 +468,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             // Paso 2: Preparar los nuevos registros
             const shiftsToInsert = activeShifts.map(shift => {
                 const existing = dbShiftMap.get(shift.employeeId);
-                const startDateTime = new Date(`${date}T${shift.start}:00`);
-                const endDateTime = new Date(`${date}T${shift.end}:00`);
+                // Fallback robusto: evita Invalid Date cuando start/end queden vacíos por UI condicional
+                const resolvedStart = (shift.start || defaultStart || '09:00').trim();
+                const resolvedEnd = (shift.end || defaultEnd || '17:00').trim();
+                const startDateTime = new Date(`${date}T${resolvedStart}:00`);
+                const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
                 const isoStart = startDateTime.toISOString();
                 const isoEnd = endDateTime.toISOString();
                 const shiftActivity = shift.activity || activity || null;
@@ -481,8 +484,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const slot2End = shift.end2 || defaultEnd2;
                 const slot2Participants = shift.participantsCount2 || participantsCount2;
                 const shiftNotes = JSON.stringify({
-                    defaultStart: shift.start || defaultStart,
-                    defaultEnd: shift.end || defaultEnd,
+                    defaultStart: resolvedStart,
+                    defaultEnd: resolvedEnd,
                     participantsCount: shift.participantsCount || participantsCount,
                     defaultStart2: shift.start2 || defaultStart2,
                     defaultEnd2: shift.end2 || defaultEnd2,
@@ -649,8 +652,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         shifts.filter(s => s.active && hour >= parseInt(s.start.split(':')[0]) && hour < parseInt(s.end.split(':')[0])).length
     );
 
-    const slot1ActivityValue = (editingIndex !== null ? (shifts[editingIndex]?.activity ?? '') : activity).trim();
-    const slot2ActivityValue = (editingIndex !== null ? (shifts[editingIndex]?.activity2 ?? '') : activity2).trim();
+    // La cabecera superior es de nivel día, no por empleado seleccionado
+    const slot1ActivityValue = (activity ?? '').trim();
+    const slot2ActivityValue = (activity2 ?? '').trim();
     const hasSlot1Activity = slot1ActivityValue.length > 0;
     const hasSlot2Activity = slot2ActivityValue.length > 0;
 
