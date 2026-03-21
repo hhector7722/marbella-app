@@ -657,6 +657,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const slot2ActivityValue = (activity2 ?? '').trim();
     const hasSlot1Activity = slot1ActivityValue.length > 0;
     const hasSlot2Activity = slot2ActivityValue.length > 0;
+    const hasTwoActivities = hasSlot1Activity && hasSlot2Activity;
 
     if (loading) {
         if (embedded) {
@@ -722,16 +723,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                         <div className="p-3 md:p-4 w-full shrink-0">
                             <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
                                 {/* Card actividad 1 */}
-                                <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full overflow-hidden">
-                                    <div className="mb-1.5">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/80">Datos de la actividad</span>
-                                    </div>
+                                <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0 overflow-x-auto">
+                                    {hasTwoActivities && (
+                                        <div className="mb-1.5">
+                                            <span className="text-[9px] font-black tracking-wide text-white/90">mañana</span>
+                                        </div>
+                                    )}
 
                                     {/* SLOT 1 */}
-                                    <div className="flex flex-col gap-1.5 w-full overflow-hidden">
+                                    <div className="flex min-w-0 flex-col gap-1.5 w-full">
                                         <div className="flex items-center gap-2 w-full min-w-0 shrink-0">
-                                            <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest shrink-0 whitespace-nowrap leading-none">act</span>
-                                            <div className="flex flex-1 min-w-0 items-center bg-white px-2 h-8 rounded-lg border border-zinc-100">
+                                            <span className="text-[7px] sm:text-[8px] font-black text-white/80 shrink-0 whitespace-nowrap leading-none">actividad</span>
+                                            <div className="inline-flex min-w-0 max-w-full items-center bg-white px-2 h-8 rounded-lg border border-zinc-100 w-max">
                                                 <input
                                                     type="text"
                                                     value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
@@ -744,17 +747,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             setHasUnsavedChanges(true);
                                                         }
                                                     }}
-                                                    className="w-full bg-transparent text-left font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                    size={Math.max(6, Math.min(28, (editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity).length || 1))}
+                                                    className="min-w-0 max-w-full bg-transparent text-left font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
                                                     placeholder="ARTÍSTICA"
                                                 />
                                             </div>
                                         </div>
 
                                         {hasSlot1Activity && (
-                                            <div className="grid grid-cols-4 gap-1.5 w-full">
-                                                <div className="flex flex-col gap-0.5 min-w-0">
+                                            <div className="grid w-full max-w-full justify-start gap-x-1.5 gap-y-1 overflow-x-auto [grid-template-columns:repeat(4,max-content)] pb-0.5">
+                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                     <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Inicio</span>
-                                                    <div className="flex items-center justify-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                    <div className="inline-flex h-8 w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                         <input
                                                             type="time"
                                                             value={editingIndex !== null ? (shifts[editingIndex].start ?? '') : defaultStart}
@@ -767,14 +771,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     setHasUnsavedChanges(true);
                                                                 }
                                                             }}
-                                                            className="bg-transparent text-center font-black text-emerald-600 text-[10px] sm:text-[11px] leading-none focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                            className="w-auto min-w-[4.25rem] shrink-0 bg-transparent text-center font-mono text-[10px] font-black leading-none text-emerald-600 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col gap-0.5 min-w-0">
+                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                     <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Final</span>
-                                                    <div className="flex items-center justify-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                    <div className="inline-flex h-8 w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                         <input
                                                             type="time"
                                                             value={editingIndex !== null ? (shifts[editingIndex].end ?? '') : defaultEnd}
@@ -787,14 +791,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     setHasUnsavedChanges(true);
                                                                 }
                                                             }}
-                                                            className="bg-transparent text-center font-black text-rose-500 text-[10px] sm:text-[11px] leading-none focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                            className="w-auto min-w-[4.25rem] shrink-0 bg-transparent text-center font-mono text-[10px] font-black leading-none text-rose-500 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col gap-0.5 min-w-0">
+                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                     <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">part</span>
-                                                    <div className="flex items-center justify-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                    <div className="inline-flex h-8 w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                         <input
                                                             type="text"
                                                             value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
@@ -807,14 +811,15 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     setHasUnsavedChanges(true);
                                                                 }
                                                             }}
-                                                            className="bg-transparent text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none w-full"
+                                                            size={Math.max(1, Math.min(8, String(editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount).length || 1))}
+                                                            className="min-w-0 bg-transparent text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none"
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col gap-0.5 min-w-0">
+                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                     <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">cat</span>
-                                                    <div className="flex items-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                    <div className="inline-flex h-8 w-max min-w-0 max-w-full items-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                         <input
                                                             type="text"
                                                             value={editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria}
@@ -827,7 +832,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     setHasUnsavedChanges(true);
                                                                 }
                                                             }}
-                                                            className="w-full bg-transparent text-center font-black text-zinc-800 text-[9px] sm:text-[10px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                            size={Math.max(4, Math.min(22, String(editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria).length || 1))}
+                                                            className="min-w-0 max-w-[min(100%,12rem)] bg-transparent text-center font-black text-zinc-800 text-[9px] sm:text-[10px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
                                                             placeholder="INFANTILES"
                                                         />
                                                     </div>
@@ -839,15 +845,17 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                 {/* Card actividad 2 — misma disposición; solo si ya hay actividad 1 o datos en actividad 2 */}
                                 {(hasSlot1Activity || hasSlot2Activity) && (
-                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full overflow-hidden">
-                                        <div className="mb-1.5">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-white/80">Datos de la actividad</span>
-                                        </div>
+                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0 overflow-x-auto">
+                                        {hasTwoActivities && (
+                                            <div className="mb-1.5">
+                                                <span className="text-[9px] font-black tracking-wide text-white/90">tarde</span>
+                                            </div>
+                                        )}
 
-                                        <div className="flex flex-col gap-1.5 w-full overflow-hidden">
+                                        <div className="flex min-w-0 flex-col gap-1.5 w-full">
                                             <div className="flex items-center gap-2 w-full min-w-0 shrink-0">
-                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest shrink-0 whitespace-nowrap leading-none">act 2</span>
-                                                <div className="flex flex-1 min-w-0 items-center bg-white px-2 h-8 rounded-lg border border-zinc-100">
+                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 shrink-0 whitespace-nowrap leading-none">actividad</span>
+                                                <div className="inline-flex min-w-0 max-w-full items-center bg-white px-2 h-8 rounded-lg border border-zinc-100 w-max">
                                                     <input
                                                         type="text"
                                                         value={editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2}
@@ -860,17 +868,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 setHasUnsavedChanges(true);
                                                             }
                                                         }}
-                                                        className="w-full bg-transparent text-left font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                        size={Math.max(6, Math.min(28, (editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2).length || 1))}
+                                                        className="min-w-0 max-w-full bg-transparent text-left font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
                                                         placeholder="ARTÍSTICA"
                                                     />
                                                 </div>
                                             </div>
 
                                             {hasSlot2Activity && (
-                                                <div className="grid grid-cols-4 gap-1.5 w-full">
-                                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                                <div className="grid w-full max-w-full justify-start gap-x-1.5 gap-y-1 overflow-x-auto [grid-template-columns:repeat(4,max-content)] pb-0.5">
+                                                    <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Inicio</span>
-                                                        <div className="flex items-center justify-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                        <div className="inline-flex h-8 w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                             <input
                                                                 type="time"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].start2 ?? '') : defaultStart2}
@@ -883,14 +892,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                className="bg-transparent text-center font-black text-emerald-600 text-[10px] sm:text-[11px] leading-none focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                                className="w-auto min-w-[4.25rem] shrink-0 bg-transparent text-center font-mono text-[10px] font-black leading-none text-emerald-600 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                                    <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Final</span>
-                                                        <div className="flex items-center justify-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                        <div className="inline-flex h-8 w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                             <input
                                                                 type="time"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].end2 ?? '') : defaultEnd2}
@@ -903,14 +912,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                className="bg-transparent text-center font-black text-rose-500 text-[10px] sm:text-[11px] leading-none focus:outline-none font-mono w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                                                                className="w-auto min-w-[4.25rem] shrink-0 bg-transparent text-center font-mono text-[10px] font-black leading-none text-rose-500 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                                    <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">part</span>
-                                                        <div className="flex items-center justify-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                        <div className="inline-flex h-8 w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                             <input
                                                                 type="text"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2}
@@ -923,14 +932,15 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                className="bg-transparent text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none w-full"
+                                                                size={Math.max(1, Math.min(8, String(editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2).length || 1))}
+                                                                className="min-w-0 bg-transparent text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none"
                                                             />
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                                    <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">cat</span>
-                                                        <div className="flex items-center bg-white px-1.5 h-8 rounded-lg border border-zinc-100">
+                                                        <div className="inline-flex h-8 w-max min-w-0 max-w-full items-center rounded-lg border border-zinc-100 bg-white px-1.5">
                                                             <input
                                                                 type="text"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2}
@@ -943,7 +953,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                className="w-full bg-transparent text-center font-black text-zinc-800 text-[9px] sm:text-[10px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                                size={Math.max(4, Math.min(22, String(editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2).length || 1))}
+                                                                className="min-w-0 max-w-[min(100%,12rem)] bg-transparent text-center font-black text-zinc-800 text-[9px] sm:text-[10px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
                                                                 placeholder="CADETES"
                                                             />
                                                         </div>
