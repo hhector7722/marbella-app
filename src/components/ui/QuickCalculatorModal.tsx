@@ -305,7 +305,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-[#36606F]/50 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
