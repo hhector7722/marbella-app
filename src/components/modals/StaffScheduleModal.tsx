@@ -434,40 +434,38 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                     <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 min-w-0 overflow-x-auto">
                                                         {hasTwoActivities && (
                                                             <div className="mb-1.5">
-                                                                <span className="text-[9px] font-black tracking-wide text-white/90">mañana</span>
+                                                                <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">MAÑANA</span>
                                                             </div>
                                                         )}
-                                                        <div className="flex min-w-0 flex-col gap-1.5 w-full">
-                                                            <div className="flex items-start gap-2 w-full min-w-0 shrink-0">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 shrink-0 whitespace-nowrap leading-none pt-0.5">actividad</span>
-                                                                <div className="inline-flex max-w-full min-w-0 items-start rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 w-max">
+                                                        <div className="grid w-full max-w-full justify-start gap-x-1.5 gap-y-1 overflow-x-auto pb-0.5 [grid-template-columns:repeat(5,max-content)]">
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">act</span>
+                                                                <div className="inline-flex min-h-[28px] w-max min-w-0 max-w-full items-start rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1">
                                                                     <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] uppercase break-words leading-snug">{displayOrBlank(dayActivity)}</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="grid w-full max-w-full justify-start gap-x-1.5 gap-y-1 overflow-x-auto [grid-template-columns:repeat(4,max-content)] pb-0.5">
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Inicio</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black font-mono text-[10px] leading-none text-emerald-600 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventStart)}</span>
-                                                                    </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">inicio</span>
+                                                                <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black font-mono text-[10px] leading-none text-emerald-600 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventStart)}</span>
                                                                 </div>
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Final</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black font-mono text-[10px] leading-none text-rose-500 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventEnd)}</span>
-                                                                    </div>
+                                                            </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">final</span>
+                                                                <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black font-mono text-[10px] leading-none text-rose-500 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventEnd)}</span>
                                                                 </div>
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">part</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none whitespace-nowrap">{displayOrBlank(eventParticipants)}</span>
-                                                                    </div>
+                                                            </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">part</span>
+                                                                <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none whitespace-nowrap">{displayOrBlank(eventParticipants)}</span>
                                                                 </div>
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">cat</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max min-w-0 max-w-[12rem] items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black text-zinc-800 text-[9px] sm:text-[10px] uppercase break-words leading-snug">{displayOrBlank(dayCategory)}</span>
-                                                                    </div>
+                                                            </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">cat</span>
+                                                                <div className="inline-flex min-h-[28px] w-max min-w-0 max-w-[12rem] items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black text-zinc-800 text-[9px] sm:text-[10px] uppercase break-words leading-snug">{displayOrBlank(dayCategory)}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -478,40 +476,38 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                     <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 min-w-0 overflow-x-auto">
                                                         {hasTwoActivities && (
                                                             <div className="mb-1.5">
-                                                                <span className="text-[9px] font-black tracking-wide text-white/90">tarde</span>
+                                                                <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">TARDE</span>
                                                             </div>
                                                         )}
-                                                        <div className="flex min-w-0 flex-col gap-1.5 w-full">
-                                                            <div className="flex items-start gap-2 w-full min-w-0 shrink-0">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 shrink-0 whitespace-nowrap leading-none pt-0.5">actividad</span>
-                                                                <div className="inline-flex max-w-full min-w-0 items-start rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 w-max">
+                                                        <div className="grid w-full max-w-full justify-start gap-x-1.5 gap-y-1 overflow-x-auto pb-0.5 [grid-template-columns:repeat(5,max-content)]">
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">act</span>
+                                                                <div className="inline-flex min-h-[28px] w-max min-w-0 max-w-full items-start rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1">
                                                                     <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] uppercase break-words leading-snug">{displayOrBlank(dayActivity2)}</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="grid w-full max-w-full justify-start gap-x-1.5 gap-y-1 overflow-x-auto [grid-template-columns:repeat(4,max-content)] pb-0.5">
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Inicio</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black font-mono text-[10px] leading-none text-emerald-600 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventStart2)}</span>
-                                                                    </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">inicio</span>
+                                                                <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black font-mono text-[10px] leading-none text-emerald-600 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventStart2)}</span>
                                                                 </div>
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">Final</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black font-mono text-[10px] leading-none text-rose-500 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventEnd2)}</span>
-                                                                    </div>
+                                                            </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">final</span>
+                                                                <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black font-mono text-[10px] leading-none text-rose-500 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventEnd2)}</span>
                                                                 </div>
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">part</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none whitespace-nowrap">{displayOrBlank(eventParticipants2)}</span>
-                                                                    </div>
+                                                            </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">part</span>
+                                                                <div className="inline-flex min-h-[28px] w-max max-w-full items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none whitespace-nowrap">{displayOrBlank(eventParticipants2)}</span>
                                                                 </div>
-                                                                <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
-                                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">cat</span>
-                                                                    <div className="inline-flex min-h-[28px] w-max min-w-0 max-w-[12rem] items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
-                                                                        <span className="font-black text-zinc-800 text-[9px] sm:text-[10px] uppercase break-words leading-snug">{displayOrBlank(dayCategory2)}</span>
-                                                                    </div>
+                                                            </div>
+                                                            <div className="flex w-max min-w-0 max-w-full flex-col gap-0.5">
+                                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest text-center leading-none">cat</span>
+                                                                <div className="inline-flex min-h-[28px] w-max min-w-0 max-w-[12rem] items-center justify-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5 text-center">
+                                                                    <span className="font-black text-zinc-800 text-[9px] sm:text-[10px] uppercase break-words leading-snug">{displayOrBlank(dayCategory2)}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
