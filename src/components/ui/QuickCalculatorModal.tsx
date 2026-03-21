@@ -101,12 +101,6 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         const num = value === '' ? 0 : Math.max(0, parseInt(value, 10) || 0);
         setBreakdownCounts((prev) => ({ ...prev, [denom]: num }));
     }, []);
-    const handleBreakdownCopy = useCallback(() => {
-        navigator.clipboard.writeText(breakdownTotal.toFixed(2)).then(() => {
-            toast.success('Total copiado al portapapeles');
-        }).catch(() => toast.error('No se pudo copiar'));
-    }, [breakdownTotal]);
-
     const whatsappMensaje = 'Aquí tienes el desglose.';
 
     const BreakdownCaptureCard = useCallback(
@@ -470,18 +464,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={handleBreakdownCopy}
-                                    className="w-full min-h-[48px] rounded-xl bg-emerald-500 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-[0.98] shadow-md"
-                                >
-                                    <Copy size={16} />
-                                    Copiar total
-                                </button>
-                                <button
-                                    type="button"
                                     onClick={handleBreakdownSend}
                                     disabled={isSending || showConfirmEnviar}
                                     className={cn(
-                                        "w-full mt-2 min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
+                                        "w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
                                         isSending && "opacity-60 cursor-not-allowed"
                                     )}
                                 >
