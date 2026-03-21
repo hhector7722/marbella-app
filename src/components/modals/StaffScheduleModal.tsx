@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 
@@ -440,32 +441,42 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                         <div className="grid w-full min-w-0 gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(5,minmax(0,1fr))]">
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                                <div className="grid min-h-[2rem] w-full min-w-0 max-w-full place-items-center rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-center">
-                                                                    <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] uppercase break-words leading-snug">{displayOrBlank(dayActivity)}</span>
+                                                                <div className="h-10 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 text-center">
+                                                                    <ShrinkToFitText innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(dayActivity)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black font-mono text-[10px] leading-none text-emerald-600 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventStart)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="font-mono font-black text-emerald-600 whitespace-nowrap" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(eventStart)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black font-mono text-[10px] leading-none text-rose-500 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventEnd)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="font-mono font-black text-rose-500 whitespace-nowrap" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(eventEnd)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none whitespace-nowrap">{displayOrBlank(eventParticipants)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="whitespace-nowrap" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(eventParticipants)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black text-zinc-800 text-[9px] sm:text-[10px] uppercase break-words leading-snug">{displayOrBlank(dayCategory)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(dayCategory)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -482,32 +493,42 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                         <div className="grid w-full min-w-0 gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(5,minmax(0,1fr))]">
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                                <div className="grid min-h-[2rem] w-full min-w-0 max-w-full place-items-center rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-center">
-                                                                    <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] uppercase break-words leading-snug">{displayOrBlank(dayActivity2)}</span>
+                                                                <div className="h-10 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 text-center">
+                                                                    <ShrinkToFitText innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(dayActivity2)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black font-mono text-[10px] leading-none text-emerald-600 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventStart2)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="font-mono font-black text-emerald-600 whitespace-nowrap" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(eventStart2)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black font-mono text-[10px] leading-none text-rose-500 whitespace-nowrap sm:text-[11px]">{displayOrBlank(eventEnd2)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="font-mono font-black text-rose-500 whitespace-nowrap" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(eventEnd2)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none whitespace-nowrap">{displayOrBlank(eventParticipants2)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="whitespace-nowrap" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(eventParticipants2)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
-                                                                <div className="grid min-h-8 h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5 py-0.5">
-                                                                    <span className="font-black text-zinc-800 text-[9px] sm:text-[10px] uppercase break-words leading-snug">{displayOrBlank(dayCategory2)}</span>
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                    <ShrinkToFitText innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
+                                                                        {displayOrBlank(dayCategory2)}
+                                                                    </ShrinkToFitText>
                                                                 </div>
                                                             </div>
                                                         </div>

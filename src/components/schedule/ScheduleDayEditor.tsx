@@ -21,6 +21,7 @@ import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 
 export interface ScheduleDayEditorProps {
@@ -742,8 +743,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         >
                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                    <input
+                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                    <ShrinkToFitInput
                                                         type="text"
                                                         value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
                                                         onChange={(e) => {
@@ -755,9 +756,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 setHasUnsavedChanges(true);
                                                             }
                                                         }}
-                                                        size={Math.max(6, Math.min(28, (editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity).length || 1))}
-                                                        className="min-w-0 w-full max-w-full bg-transparent py-0 align-middle text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                        maxPx={11}
+                                                        minPx={5}
                                                         placeholder="ARTÍSTICA"
+                                                        className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                     />
                                                 </div>
                                             </div>
@@ -766,8 +768,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 <>
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
-                                                        <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                            <input
+                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <ShrinkToFitInput
                                                                 type="time"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].start ?? '') : defaultStart}
                                                                 onChange={(e) => {
@@ -779,15 +781,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                className="w-auto min-w-[4.25rem] shrink-0 bg-transparent py-0 align-middle text-center font-mono text-[10px] font-black leading-none text-emerald-600 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                maxPx={11}
+                                                                minPx={5}
+                                                                singleLine
+                                                                className="font-mono text-emerald-600 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
-                                                        <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                            <input
+                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <ShrinkToFitInput
                                                                 type="time"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].end ?? '') : defaultEnd}
                                                                 onChange={(e) => {
@@ -799,15 +804,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                className="w-auto min-w-[4.25rem] shrink-0 bg-transparent text-center font-mono text-[10px] font-black leading-none text-rose-500 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                maxPx={11}
+                                                                minPx={5}
+                                                                singleLine
+                                                                className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
-                                                        <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                            <input
+                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <ShrinkToFitInput
                                                                 type="text"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
                                                                 onChange={(e) => {
@@ -819,16 +827,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                size={Math.max(1, Math.min(8, String(editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount).length || 1))}
-                                                                className="min-w-0 w-full max-w-full bg-transparent py-0 align-middle text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none"
+                                                                maxPx={11}
+                                                                minPx={5}
+                                                                singleLine
+                                                                className="text-zinc-800 focus:outline-none"
                                                             />
                                                         </div>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                         <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
-                                                        <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                            <input
+                                                        <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <ShrinkToFitInput
                                                                 type="text"
                                                                 value={editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria}
                                                                 onChange={(e) => {
@@ -840,9 +850,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                         setHasUnsavedChanges(true);
                                                                     }
                                                                 }}
-                                                                size={Math.max(4, Math.min(22, String(editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria).length || 1))}
-                                                                className="min-w-0 w-full max-w-full bg-transparent py-0 align-middle text-center font-black text-zinc-800 text-[9px] sm:text-[10px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                                maxPx={11}
+                                                                minPx={5}
                                                                 placeholder="INFANTILES"
+                                                                className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                             />
                                                         </div>
                                                     </div>
@@ -872,8 +883,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             >
                                                 <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                     <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                    <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                        <input
+                                                    <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <ShrinkToFitInput
                                                             type="text"
                                                             value={editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2}
                                                             onChange={(e) => {
@@ -885,9 +896,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     setHasUnsavedChanges(true);
                                                                 }
                                                             }}
-                                                            size={Math.max(6, Math.min(28, (editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2).length || 1))}
-                                                            className="min-w-0 w-full max-w-full bg-transparent py-0 align-middle text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                            maxPx={11}
+                                                            minPx={5}
                                                             placeholder="ARTÍSTICA"
+                                                            className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                         />
                                                     </div>
                                                 </div>
@@ -896,8 +908,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                     <>
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
-                                                            <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                                <input
+                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                <ShrinkToFitInput
                                                                     type="time"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].start2 ?? '') : defaultStart2}
                                                                     onChange={(e) => {
@@ -909,15 +921,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                             setHasUnsavedChanges(true);
                                                                         }
                                                                     }}
-                                                                    className="w-auto min-w-[4.25rem] shrink-0 bg-transparent py-0 align-middle text-center font-mono text-[10px] font-black leading-none text-emerald-600 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                    maxPx={11}
+                                                                    minPx={5}
+                                                                    singleLine
+                                                                    className="font-mono text-emerald-600 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                                 />
                                                             </div>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
-                                                            <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                                <input
+                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                <ShrinkToFitInput
                                                                     type="time"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].end2 ?? '') : defaultEnd2}
                                                                     onChange={(e) => {
@@ -929,15 +944,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                             setHasUnsavedChanges(true);
                                                                         }
                                                                     }}
-                                                                    className="w-auto min-w-[4.25rem] shrink-0 bg-transparent text-center font-mono text-[10px] font-black leading-none text-rose-500 focus:outline-none sm:text-[11px] [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                    maxPx={11}
+                                                                    minPx={5}
+                                                                    singleLine
+                                                                    className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                                 />
                                                             </div>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
-                                                            <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                                <input
+                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                <ShrinkToFitInput
                                                                     type="text"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2}
                                                                     onChange={(e) => {
@@ -949,16 +967,18 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                             setHasUnsavedChanges(true);
                                                                         }
                                                                     }}
-                                                                    size={Math.max(1, Math.min(8, String(editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2).length || 1))}
-                                                                    className="min-w-0 w-full max-w-full bg-transparent py-0 align-middle text-center font-black text-zinc-800 text-[10px] sm:text-[11px] leading-none focus:outline-none"
+                                                                    maxPx={11}
+                                                                    minPx={5}
+                                                                    singleLine
+                                                                    className="text-zinc-800 focus:outline-none"
                                                                 />
                                                             </div>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                             <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
-                                                            <div className="grid h-8 min-h-8 w-full min-w-0 max-w-full place-items-center rounded-lg border border-zinc-100 bg-white px-1.5">
-                                                                <input
+                                                            <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                                <ShrinkToFitInput
                                                                     type="text"
                                                                     value={editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2}
                                                                     onChange={(e) => {
@@ -970,9 +990,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                             setHasUnsavedChanges(true);
                                                                         }
                                                                     }}
-                                                                    size={Math.max(4, Math.min(22, String(editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2).length || 1))}
-                                                                    className="min-w-0 w-full max-w-full bg-transparent py-0 align-middle text-center font-black text-zinc-800 text-[9px] sm:text-[10px] leading-none focus:outline-none uppercase placeholder:text-zinc-300"
+                                                                    maxPx={11}
+                                                                    minPx={5}
                                                                     placeholder="CADETES"
+                                                                    className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                                 />
                                                             </div>
                                                         </div>
