@@ -227,8 +227,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             return;
         }
 
-        // Captura de toda la pantalla web visible (overlay completo), sin barra de estado del dispositivo.
-        const el = overlayRef.current || modalRef.current;
+        // Captura más compacta: solo el modal para reducir el fondo en la imagen final.
+        const el = modalRef.current;
         if (!el) {
             toast.error('No se pudo capturar el modal');
             return;
