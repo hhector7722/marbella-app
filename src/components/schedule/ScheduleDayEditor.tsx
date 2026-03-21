@@ -730,7 +730,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                 <div className="flex flex-col gap-3">
                                     {/* SLOT 1 */}
-                                    <div className={cn("grid gap-2 sm:gap-4 w-full overflow-hidden", hasSlot1Activity ? "grid-cols-5" : "grid-cols-1")}>
+                                    <div className="flex flex-col gap-2 sm:gap-3 w-full overflow-hidden">
                                         <div className="flex flex-col gap-1.5 min-w-0">
                                             <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">act</span>
                                             <div className="flex items-center bg-white px-3 h-12 rounded-2xl border border-zinc-100">
@@ -753,7 +753,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
 
                                         {hasSlot1Activity && (
-                                            <>
+                                            <div className="grid grid-cols-4 gap-2 sm:gap-4 w-full">
                                                 <div className="flex flex-col gap-1.5 min-w-0">
                                                     <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
                                                     <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
@@ -834,12 +834,12 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         />
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
 
                                     {/* SLOT 2 */}
-                                    <div className={cn("grid gap-2 sm:gap-4 w-full overflow-hidden", hasSlot2Activity ? "grid-cols-5" : "grid-cols-1")}>
+                                    <div className="flex flex-col gap-2 sm:gap-3 w-full overflow-hidden">
                                         <div className="flex flex-col gap-1.5 min-w-0">
                                             <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">act 2</span>
                                             <div className="flex items-center bg-white px-3 h-12 rounded-2xl border border-zinc-100">
@@ -862,7 +862,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         </div>
 
                                         {hasSlot2Activity && (
-                                            <>
+                                            <div className="grid grid-cols-4 gap-2 sm:gap-4 w-full">
                                                 <div className="flex flex-col gap-1.5 min-w-0">
                                                     <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">Inicio</span>
                                                     <div className="flex items-center justify-center bg-white px-2 h-12 rounded-2xl border border-zinc-100">
@@ -943,7 +943,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         />
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
