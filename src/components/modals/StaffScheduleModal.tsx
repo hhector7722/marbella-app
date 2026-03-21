@@ -430,7 +430,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                 {hasAct1 && (
                                                     <div className="grid grid-cols-5 gap-2 sm:gap-4 w-full">
                                                         <div className="flex flex-col gap-1.5 min-w-0">
-                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">Actividad</span>
+                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">act</span>
                                                             <div className="bg-emerald-50 border border-emerald-100 px-3 h-12 rounded-2xl flex items-center">
                                                                 <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] uppercase break-words leading-tight">{displayOrBlank(dayActivity)}</span>
                                                             </div>
@@ -448,7 +448,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-1.5 min-w-0">
-                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">Participantes</span>
+                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">part</span>
                                                             <div className="bg-white px-2 h-12 rounded-2xl flex items-center justify-center text-center border border-zinc-100">
                                                                 <span className="font-black text-zinc-800 text-[11px]">{displayOrBlank(eventParticipants)}</span>
                                                             </div>
@@ -465,7 +465,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                 {hasAct2 && (
                                                     <div className="grid grid-cols-5 gap-2 sm:gap-4 w-full">
                                                         <div className="flex flex-col gap-1.5 min-w-0">
-                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">Actividad 2</span>
+                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">act 2</span>
                                                             <div className="bg-emerald-50 border border-emerald-100 px-3 h-12 rounded-2xl flex items-center">
                                                                 <span className="font-black text-zinc-800 text-[10px] sm:text-[11px] uppercase break-words leading-tight">{displayOrBlank(dayActivity2)}</span>
                                                             </div>
@@ -483,7 +483,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-1.5 min-w-0">
-                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">Participantes</span>
+                                                            <span className="text-[8px] sm:text-[9px] font-black text-white/80 uppercase tracking-widest text-center h-3 flex items-center justify-center">part</span>
                                                             <div className="bg-white px-2 h-12 rounded-2xl flex items-center justify-center text-center border border-zinc-100">
                                                                 <span className="font-black text-zinc-800 text-[11px]">{displayOrBlank(eventParticipants2)}</span>
                                                             </div>
