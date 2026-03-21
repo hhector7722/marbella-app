@@ -79,7 +79,7 @@ export function ShrinkToFitText({
         <div
             ref={wrapRef}
             className={cn(
-                'h-full w-full min-h-0 min-w-0 overflow-hidden px-1.5 py-0.5 box-border',
+                'flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-1.5 py-0.5 box-border',
                 className
             )}
         >

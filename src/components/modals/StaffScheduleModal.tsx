@@ -423,8 +423,8 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                         ) : (
                             <>
                                 {/* Zona blanca — inputs en lectura (sin forma de edición) */}
-                                <div className="px-3 py-2 w-full shrink-0">
-                                    <div className="flex flex-col gap-2">
+                                <div className="p-3 md:p-4 w-full shrink-0">
+                                    <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
                                         {!hasAct1 && !hasAct2 ? (
                                             <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3">
                                                 <div className="text-center text-white/80 text-[10px] font-black uppercase tracking-widest py-3">Sin actividad</div>
@@ -441,7 +441,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                         <div className="grid w-full min-w-0 gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(5,minmax(0,1fr))]">
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                                <div className="h-10 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 text-center">
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white text-center">
                                                                     <ShrinkToFitText innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
                                                                         {displayOrBlank(dayActivity)}
                                                                     </ShrinkToFitText>
@@ -493,7 +493,7 @@ export const StaffScheduleModal = ({ isOpen, onClose, shifts, userRole, userId: 
                                                         <div className="grid w-full min-w-0 gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(5,minmax(0,1fr))]">
                                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
                                                                 <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
-                                                                <div className="h-10 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 text-center">
+                                                                <div className="h-8 min-h-8 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-zinc-100 bg-white text-center">
                                                                     <ShrinkToFitText innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
                                                                         {displayOrBlank(dayActivity2)}
                                                                     </ShrinkToFitText>
