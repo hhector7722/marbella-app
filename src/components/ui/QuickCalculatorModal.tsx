@@ -107,7 +107,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         }).catch(() => toast.error('No se pudo copiar'));
     }, [breakdownTotal]);
 
-    const whatsappMensaje = 'Aquí tienes el desglose. Pega la imagen desde el portapapeles.';
+    const whatsappMensaje = 'Aquí tienes el desglose.';
 
     const BreakdownCaptureCard = useCallback(
         ({
@@ -193,9 +193,9 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
         [breakdownCounts, breakdownTotal]
     );
 
-    /** Paso 2: tras confirmar, priorizamos WhatsApp; si no hubo copia, usamos share nativo con imagen. */
+    /** Paso 2: tras confirmar, usar compartir nativo por defecto. */
     const handleConfirmEnviar = useCallback(async () => {
-        if (!lastCaptureCopied && lastCaptureBlob) {
+        if (lastCaptureBlob) {
             try {
                 const file = new File([lastCaptureBlob], 'desglose.png', { type: 'image/png' });
                 if (navigator.canShare?.({ files: [file] }) && navigator.share) {
@@ -218,7 +218,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             toast.info('WhatsApp bloqueado por el navegador. Ábrelo manualmente y pega la imagen.');
         }
         setShowConfirmEnviar(false);
-    }, [lastCaptureBlob, lastCaptureCopied, whatsappMensaje]);
+    }, [lastCaptureBlob, whatsappMensaje]);
 
     /** Paso 1: generar PNG, copiar al portapapeles (si se puede) o descargar; luego abrir confirmación. */
     const handleBreakdownSend = useCallback(async () => {
@@ -288,44 +288,8 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
             setLastCaptureBlob(pngBlob);
             setLastCaptureCopied(false);
 
-            // iOS/WebKit puede dejar `clipboard.write` colgado o fallar según versión/contexto.
-            // Probamos dos variantes (igual patrón robusto de /orders/new) con timeout.
-            let copied = false;
-            if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
-                try {
-                    await Promise.race([
-                        navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard-timeout')), 1500)),
-                    ]);
-                    copied = true;
-                } catch {
-                    try {
-                        await Promise.race([
-                            navigator.clipboard.write([new ClipboardItem({ 'image/png': Promise.resolve(pngBlob) })]),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard-timeout-2')), 1500)),
-                        ]);
-                        copied = true;
-                    } catch {
-                        copied = false;
-                    }
-                }
-            }
-
-            if (copied) {
-                setLastCaptureCopied(true);
-                toast.success('Captura copiada al portapapeles.');
-            } else {
-                // En iOS Safari es habitual que el portapapeles de imagen esté restringido.
-                // No mostramos error para no ensuciar el flujo; WhatsApp se abrirá igualmente.
-                const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                // iPadOS Safari moderno puede reportar "MacIntel" pero sigue siendo touch/WebKit móvil.
-                const isIPadOSDesktopUA =
-                    navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1;
-                const isIOS = isIOSDevice || isIPadOSDesktopUA;
-                if (!isIOS) {
-                    toast.info('No se pudo copiar la imagen al portapapeles.');
-                }
-            }
+            // Ya no usamos copiar por defecto: en confirmación se prioriza compartir nativo.
+            toast.success('Captura lista para compartir.');
 
             // Mostramos siempre confirmación para continuar flujo y abrir WhatsApp.
             setShowConfirmEnviar(true);
