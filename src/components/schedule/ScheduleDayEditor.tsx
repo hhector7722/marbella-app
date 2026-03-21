@@ -467,30 +467,64 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             const dbShiftMap = new Map(dbShifts?.map(s => [s.user_id, s]) || []);
 
             // Paso 2: Preparar los nuevos registros
+            // Cabecera del día (editingIndex === null) vs fila seleccionada: la UI escribe en estado de día
+            // o en shifts[i]; si priorizamos shift.* cuando la cabecera es la fuente, se guardan valores viejos.
+            const useDayHeader = editingIndex === null;
+
             const shiftsToInsert = activeShifts.map(shift => {
                 const existing = dbShiftMap.get(shift.employeeId);
                 // Fallback robusto: evita Invalid Date cuando start/end queden vacíos por UI condicional
-                const resolvedStart = (shift.start || defaultStart || '09:00').trim();
-                const resolvedEnd = (shift.end || defaultEnd || '17:00').trim();
+                const resolvedStart = (
+                    useDayHeader
+                        ? (defaultStart || shift.start || '09:00')
+                        : (shift.start || defaultStart || '09:00')
+                ).trim();
+                const resolvedEnd = (
+                    useDayHeader
+                        ? (defaultEnd || shift.end || '17:00')
+                        : (shift.end || defaultEnd || '17:00')
+                ).trim();
                 const startDateTime = new Date(`${date}T${resolvedStart}:00`);
                 const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
                 const isoStart = startDateTime.toISOString();
                 const isoEnd = endDateTime.toISOString();
-                const shiftActivity = shift.activity || activity || null;
-                const shiftCategory = shift.categoria || categoria || null;
-                const shiftActivity2 = shift.activity2 || activity2 || null;
-                const shiftCategory2 = shift.categoria2 || categoria2 || null;
+                const shiftActivity = useDayHeader
+                    ? (activity || null)
+                    : (shift.activity || activity || null);
+                const shiftCategory = useDayHeader
+                    ? (categoria || null)
+                    : (shift.categoria || categoria || null);
+                const shiftActivity2 = useDayHeader
+                    ? (activity2 || null)
+                    : (shift.activity2 || activity2 || null);
+                const shiftCategory2 = useDayHeader
+                    ? (categoria2 || null)
+                    : (shift.categoria2 || categoria2 || null);
 
-                const slot2Start = shift.start2 || defaultStart2;
-                const slot2End = shift.end2 || defaultEnd2;
-                const slot2Participants = shift.participantsCount2 || participantsCount2;
+                const slot2Start = useDayHeader
+                    ? (defaultStart2 || shift.start2 || '')
+                    : (shift.start2 || defaultStart2 || '');
+                const slot2End = useDayHeader
+                    ? (defaultEnd2 || shift.end2 || '')
+                    : (shift.end2 || defaultEnd2 || '');
+                const slot2Participants = useDayHeader
+                    ? (participantsCount2 || shift.participantsCount2 || '')
+                    : (shift.participantsCount2 || participantsCount2 || '');
                 const shiftNotes = JSON.stringify({
                     defaultStart: resolvedStart,
                     defaultEnd: resolvedEnd,
-                    participantsCount: shift.participantsCount || participantsCount,
-                    defaultStart2: shift.start2 || defaultStart2,
-                    defaultEnd2: shift.end2 || defaultEnd2,
-                    participantsCount2: shift.participantsCount2 || participantsCount2
+                    participantsCount: useDayHeader
+                        ? (participantsCount || '')
+                        : (shift.participantsCount || participantsCount || ''),
+                    defaultStart2: useDayHeader
+                        ? (defaultStart2 || shift.start2 || '')
+                        : (shift.start2 || defaultStart2 || ''),
+                    defaultEnd2: useDayHeader
+                        ? (defaultEnd2 || shift.end2 || '')
+                        : (shift.end2 || defaultEnd2 || ''),
+                    participantsCount2: useDayHeader
+                        ? (participantsCount2 || '')
+                        : (shift.participantsCount2 || participantsCount2 || ''),
                 });
 
                 const data: any = {
@@ -504,10 +538,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     draft_categoria_2: shiftCategory2,
                     event_start_time: defaultStart || null,
                     event_end_time: defaultEnd || null,
-                    event_participants: participantsCount ? parseInt(participantsCount) : null,
+                    event_participants: participantsCount ? parseInt(participantsCount, 10) : null,
                     event_start_time_2: slot2Start || null,
                     event_end_time_2: slot2End || null,
-                    event_participants_2: slot2Participants ? parseInt(slot2Participants) : null,
+                    event_participants_2: slot2Participants ? parseInt(slot2Participants, 10) : null,
                     is_published: publish ? true : (existing?.is_published || false),
                     // Mantenemos start_time como ancla para el rango del día
                     start_time: isoStart,
