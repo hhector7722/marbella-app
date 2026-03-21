@@ -189,6 +189,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const [defaultEnd2, setDefaultEnd2] = useState<string>('');
     const [participantsCount2, setParticipantsCount2] = useState<string>('');
     const [categoria2, setCategoria2] = useState<string>('');
+    /** Segunda card solo si hay texto en act. 2 o el usuario elige "añadir segunda actividad". */
+    const [secondSlotExpanded, setSecondSlotExpanded] = useState(false);
 
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -230,6 +232,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         setCalendarDate(new Date(targetDate));
         fetchData(targetDate);
     }, [initialDate]);
+
+    useEffect(() => {
+        setSecondSlotExpanded(false);
+    }, [date]);
 
     const fetchData = async (targetDate: string) => {
         setLoading(true);
@@ -693,6 +699,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const hasSlot1Activity = slot1ActivityValue.length > 0;
     const hasSlot2Activity = slot2ActivityValue.length > 0;
     const hasTwoActivities = hasSlot1Activity && hasSlot2Activity;
+    const showSecondActivityCard = hasSlot2Activity || secondSlotExpanded;
 
     if (loading) {
         if (embedded) {
@@ -897,14 +904,33 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                     </div>
                                 </div>
 
-                                {/* Card actividad 2 — misma disposición; solo si ya hay actividad 1 o datos en actividad 2 */}
-                                {(hasSlot1Activity || hasSlot2Activity) && (
-                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0">
-                                        {hasTwoActivities && (
-                                            <div className="mb-1.5 w-full text-center">
-                                                <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">TARDE</span>
-                                            </div>
+                                {hasSlot1Activity && !hasSlot2Activity && !secondSlotExpanded && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSecondSlotExpanded(true)}
+                                        className={cn(
+                                            'w-full min-h-12 shrink-0 rounded-xl border border-[#6B98A5] bg-[#4A7A89]/90 text-white text-[10px] font-black uppercase tracking-widest py-3 transition-colors hover:bg-[#4A7A89] active:scale-[0.99]'
                                         )}
+                                    >
+                                        + Segunda actividad (TARDE)
+                                    </button>
+                                )}
+
+                                {/* Card actividad 2 — solo si hay texto en act. 2 o el usuario abrió el slot */}
+                                {showSecondActivityCard && (
+                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0">
+                                        <div className="mb-1.5 flex w-full items-center justify-center gap-2 text-center">
+                                            <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">TARDE</span>
+                                            {secondSlotExpanded && !hasSlot2Activity && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSecondSlotExpanded(false)}
+                                                    className="min-h-8 shrink-0 rounded-lg px-2 text-[9px] font-black uppercase text-white/70 underline-offset-2 hover:text-white hover:underline"
+                                                >
+                                                    Cerrar
+                                                </button>
+                                            )}
+                                        </div>
 
                                         <div className="flex w-full min-w-0 flex-col">
                                             <div
