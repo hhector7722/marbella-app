@@ -561,7 +561,7 @@ export function FloatingCalculatorFab({
             className={cn(
                 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[220]',
                 'w-14 h-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl shadow-black/20',
-                'bg-purple-600 text-white border border-white/10',
+                'bg-[#36606F] text-white border border-white/10',
                 'hover:brightness-110 active:scale-95 transition-all',
                 isOpen && 'opacity-0 pointer-events-none',
                 className
