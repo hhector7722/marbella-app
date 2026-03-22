@@ -359,17 +359,17 @@ export default function LaborHistoryPage() {
         setDetailLoading(true);
         setDayDetail(null);
         try {
-            const [laborRes, salesRes, hoursRes] = await Promise.all([
+            const [laborRes, salesRes, weightsRes] = await Promise.all([
                 supabase.rpc('get_labor_cost_day_detail', { p_date: key }),
                 supabase.rpc('get_cash_closings_summary', {
                     p_start_date: key,
                     p_end_date: key,
                 }),
-                supabase.rpc('get_daily_rounded_hours_by_user', { p_date: key }),
+                supabase.rpc('get_daily_sales_proration_weights_by_user', { p_date: key }),
             ]);
             if (laborRes.error) throw laborRes.error;
             if (salesRes.error) console.warn(salesRes.error);
-            if (hoursRes.error) console.warn(hoursRes.error);
+            if (weightsRes.error) console.warn(weightsRes.error);
             const raw = laborRes.data as Record<string, unknown> | null;
             if (!raw) {
                 setDayDetail(null);
@@ -379,36 +379,37 @@ export default function LaborHistoryPage() {
                 ? 0
                 : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
 
-            const hoursRows = (hoursRes.data as { user_id: string; hours: number }[] | null) ?? [];
-            const hoursRpcOk = !hoursRes.error;
-            const hoursByUser = new Map<string, number>();
-            let totalWorkedHours = 0;
-            for (const row of hoursRows) {
+            const weightRows =
+                (weightsRes.data as { user_id: string; weight: number }[] | null) ?? [];
+            const weightsRpcOk = !weightsRes.error;
+            const weightByUser = new Map<string, number>();
+            let totalProrationWeight = 0;
+            for (const row of weightRows) {
                 const uid = String(row.user_id);
-                const h = Number(row.hours) || 0;
-                if (h <= 0) continue;
-                hoursByUser.set(uid, h);
-                totalWorkedHours += h;
+                const wt = Number(row.weight) || 0;
+                if (wt <= 0) continue;
+                weightByUser.set(uid, wt);
+                totalProrationWeight += wt;
             }
 
             const wrows = Array.isArray(raw.workers) ? raw.workers : [];
             const workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => {
                 const total = Number(w.total) || 0;
                 const id = String(w.id ?? w.userId ?? '');
-                const hoursUser = hoursByUser.get(id) ?? 0;
+                const weightUser = weightByUser.get(id) ?? 0;
                 let laborPctOfSales: number | null = null;
                 if (dayNetSales > 0) {
                     if (
-                        hoursRpcOk &&
-                        totalWorkedHours > 0 &&
-                        hoursUser > 0
+                        weightsRpcOk &&
+                        totalProrationWeight > 0 &&
+                        weightUser > 0
                     ) {
                         const ventaProrrateada =
-                            dayNetSales * (hoursUser / totalWorkedHours);
+                            dayNetSales * (weightUser / totalProrationWeight);
                         if (ventaProrrateada > 0) {
                             laborPctOfSales = (total / ventaProrrateada) * 100;
                         }
-                    } else if (!hoursRpcOk) {
+                    } else if (!weightsRpcOk) {
                         laborPctOfSales = (total / dayNetSales) * 100;
                     }
                 }
