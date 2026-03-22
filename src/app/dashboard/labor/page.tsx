@@ -387,19 +387,37 @@ export default function LaborHistoryPage() {
                                             {dayDetail.workers.map((w) => (
                                                 <div
                                                     key={w.id}
-                                                    className="flex flex-col gap-1 p-3 bg-zinc-50 rounded-2xl border border-zinc-100"
+                                                    className="flex flex-col gap-2 p-3 bg-zinc-50 rounded-2xl border border-zinc-100"
                                                 >
-                                                    <div className="flex justify-between items-baseline gap-2">
-                                                        <span className="text-xs font-black text-zinc-800 truncate">
-                                                            {w.name || '—'}
-                                                        </span>
-                                                        <span className="text-sm font-black text-[#36606F] tabular-nums shrink-0">
-                                                            {formatEuroRead(w.total)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between text-[10px] font-bold text-zinc-500">
-                                                        <span>Fijo {formatEuroRead(w.fixed)}</span>
-                                                        <span>Extras {formatEuroRead(w.overtime)}</span>
+                                                    <span className="text-xs font-black text-zinc-800 truncate">
+                                                        {w.name || '—'}
+                                                    </span>
+                                                    {/* Tres columnas: evita confundir el total (fijo+extras) con "Extras" */}
+                                                    <div className="grid grid-cols-3 gap-1 text-center">
+                                                        <div className="flex flex-col gap-0.5 min-w-0">
+                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                                Fijo
+                                                            </span>
+                                                            <span className="text-[11px] font-black text-zinc-700 tabular-nums">
+                                                                {formatEuroRead(w.fixed)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-col gap-0.5 min-w-0 border-x border-zinc-200/80">
+                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                                Extras
+                                                            </span>
+                                                            <span className="text-[11px] font-black text-amber-700/90 tabular-nums">
+                                                                {formatEuroRead(w.overtime)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-col gap-0.5 min-w-0">
+                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                                Total
+                                                            </span>
+                                                            <span className="text-[11px] font-black text-[#36606F] tabular-nums">
+                                                                {formatEuroRead(w.total)}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
