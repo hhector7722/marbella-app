@@ -1197,7 +1197,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
                                         </div>
                                         <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5">
-                                            <div className="grid grid-cols-[auto_minmax(48px,1fr)_minmax(48px,1fr)] items-center w-full gap-x-3 md:gap-x-4 px-1.5 md:px-2.5 min-h-0">
+                                            <div className="flex flex-row items-center w-full gap-x-3 md:gap-x-4 px-1.5 md:px-2.5 min-h-0">
                                                 <div className="min-w-0 flex flex-col items-start justify-center pr-2 md:pr-3 shrink-0">
                                                     <span className="text-sm md:text-base font-black text-zinc-800 whitespace-nowrap tabular-nums">
                                                         {formatEur(box.current_balance)}
@@ -1208,21 +1208,19 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex shrink-0 justify-end pl-5 md:pl-8 pr-0.5">
+                                                <div className="flex flex-1 shrink-0 items-center justify-end gap-1.5 md:gap-2 min-w-0">
                                                     <button
                                                         onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
                                                     >
                                                         <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
                                                             <ArrowRightLeft size={9} strokeWidth={2.5} />
                                                         </div>
                                                         <span className="text-[5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
                                                     </button>
-                                                </div>
-                                                <div className="flex shrink-0 justify-end pr-0.5 md:pr-1">
                                                     <button
                                                         onClick={() => openTreasuryModal(box, 'audit')}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
                                                     >
                                                         <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
                                                             <RefreshCw size={9} strokeWidth={2.5} />
