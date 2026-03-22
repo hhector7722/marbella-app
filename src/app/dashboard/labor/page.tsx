@@ -43,7 +43,7 @@ type WorkerRow = {
     fixed: number;
     overtime: number;
     total: number;
-    /** Coste del trabajador / venta neta del día × 100 */
+    /** (Coste total del trabajador / venta neta del día) × 100 */
     laborPctOfSales: number | null;
 };
 
@@ -359,17 +359,15 @@ export default function LaborHistoryPage() {
         setDetailLoading(true);
         setDayDetail(null);
         try {
-            const [laborRes, salesRes, weightsRes] = await Promise.all([
+            const [laborRes, salesRes] = await Promise.all([
                 supabase.rpc('get_labor_cost_day_detail', { p_date: key }),
                 supabase.rpc('get_cash_closings_summary', {
                     p_start_date: key,
                     p_end_date: key,
                 }),
-                supabase.rpc('get_daily_sales_proration_weights_by_user', { p_date: key }),
             ]);
             if (laborRes.error) throw laborRes.error;
             if (salesRes.error) console.warn(salesRes.error);
-            if (weightsRes.error) console.warn(weightsRes.error);
             const raw = laborRes.data as Record<string, unknown> | null;
             if (!raw) {
                 setDayDetail(null);
@@ -379,39 +377,13 @@ export default function LaborHistoryPage() {
                 ? 0
                 : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
 
-            const weightRows =
-                (weightsRes.data as { user_id: string; weight: number }[] | null) ?? [];
-            const weightsRpcOk = !weightsRes.error;
-            const weightByUser = new Map<string, number>();
-            let totalProrationWeight = 0;
-            for (const row of weightRows) {
-                const uid = String(row.user_id);
-                const wt = Number(row.weight) || 0;
-                if (wt <= 0) continue;
-                weightByUser.set(uid, wt);
-                totalProrationWeight += wt;
-            }
-
             const wrows = Array.isArray(raw.workers) ? raw.workers : [];
             const workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => {
-                const total = Number(w.total) || 0;
                 const id = String(w.id ?? w.userId ?? '');
-                const weightUser = weightByUser.get(id) ?? 0;
+                const total = Number(w.total) || 0;
                 let laborPctOfSales: number | null = null;
                 if (dayNetSales > 0) {
-                    if (
-                        weightsRpcOk &&
-                        totalProrationWeight > 0 &&
-                        weightUser > 0
-                    ) {
-                        const ventaProrrateada =
-                            dayNetSales * (weightUser / totalProrationWeight);
-                        if (ventaProrrateada > 0) {
-                            laborPctOfSales = (total / ventaProrrateada) * 100;
-                        }
-                    } else if (!weightsRpcOk) {
-                        laborPctOfSales = (total / dayNetSales) * 100;
-                    }
+                    laborPctOfSales = (total / dayNetSales) * 100;
                 }
                 return {
                     id,
