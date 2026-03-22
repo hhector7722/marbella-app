@@ -1197,18 +1197,18 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
                                         </div>
                                         <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5">
-                                            <div className="grid grid-cols-3 items-center w-full gap-x-1.5 md:gap-x-2 px-1.5 md:px-2.5 min-h-0">
-                                                <div className="min-w-0 flex flex-col items-start justify-center">
-                                                    <span className="text-sm md:text-base font-black text-zinc-800">
+                                            <div className="grid grid-cols-[auto_minmax(48px,1fr)_minmax(48px,1fr)] items-center w-full gap-x-3 md:gap-x-4 px-1.5 md:px-2.5 min-h-0">
+                                                <div className="min-w-0 flex flex-col items-start justify-center pr-2 md:pr-3 shrink-0">
+                                                    <span className="text-sm md:text-base font-black text-zinc-800 whitespace-nowrap tabular-nums">
                                                         {formatEur(box.current_balance)}
                                                     </span>
                                                     {!isOk && Math.abs(diff) > 0.005 && (
-                                                        <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
+                                                        <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5 whitespace-nowrap tabular-nums", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
                                                             {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex shrink-0 justify-end pl-1 md:pl-2 pr-0.5">
+                                                <div className="flex shrink-0 justify-end pl-2 md:pl-3 pr-0.5">
                                                     <button
                                                         onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
                                                         className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"
