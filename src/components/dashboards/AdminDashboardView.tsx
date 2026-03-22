@@ -1197,8 +1197,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
                                         </div>
                                         <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5">
-                                            <div className="flex flex-row gap-2 md:gap-2 items-center justify-between md:justify-center md:px-3 w-full">
-                                                <div className="px-0.5 md:px-1 flex flex-col items-start min-w-0 mr-4 md:mr-0">
+                                            <div className="grid grid-cols-3 items-center w-full gap-x-1.5 md:gap-x-2 px-1.5 md:px-2.5 min-h-0">
+                                                <div className="min-w-0 flex flex-col items-start justify-center">
                                                     <span className="text-sm md:text-base font-black text-zinc-800">
                                                         {formatEur(box.current_balance)}
                                                     </span>
@@ -1208,16 +1208,18 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex gap-1 md:gap-1 shrink-0 -translate-x-2 md:translate-x-0 md:ml-5">
+                                                <div className="flex shrink-0 justify-end pl-1 md:pl-2 pr-0.5">
                                                     <button
                                                         onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group translate-x-1 md:translate-x-0 min-h-[48px] min-w-[48px]"
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"
                                                     >
                                                         <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
                                                             <ArrowRightLeft size={9} strokeWidth={2.5} />
                                                         </div>
                                                         <span className="text-[5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
                                                     </button>
+                                                </div>
+                                                <div className="flex shrink-0 justify-end pr-0.5 md:pr-1">
                                                     <button
                                                         onClick={() => openTreasuryModal(box, 'audit')}
                                                         className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"

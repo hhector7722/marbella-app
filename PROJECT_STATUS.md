@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-21 (Ventas: pestaña Horas por tramo)
+**Última actualización:** 2026-03-21 (Dashboard: layout Cajas cambio 1/2)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
@@ -10,6 +10,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## ✅ COMPLETADO
+- [x] **Dashboard Admin: Cajas cambio 1/2 (2026-03-21)**: En `/dashboard`, las tarjetas Caja cambio 1 y 2 usan rejilla de **3 columnas** homogéneas: importe (y diferencia) | **Cambiar** | **Arqueo**; botones alineados a la derecha de su columna con padding respecto al borde (`AdminDashboardView`).
 - [x] **Ventas: pestaña Horas (2026-03-21)**: En `/dashboard/ventas`, tercer toggle **Horas**: tabla al estilo de Productos con tramos `7-8` … `22-23` y `23-24` si hay cierres en hora 23; agregación desde los mismos tickets ya filtrados (fecha + filtro horario); orden por importe total descendente; columnas Cant (nº tickets), Media y Total; cabecera de impresión y clase `print-table-ventas`.
 - [x] **Libro Mayor: duplicados eliminados (2026-03-21)**: En `/dashboard/ledger` los movimientos aparecían duplicados por filas repetidas en `manager_ledger` (mismo `movement_type`, `amount`, `concept` y `date`). Se ejecutó limpieza en BD conservando un `id` por grupo y migración `20260321120000_manager_ledger_dedupe_exact_rows.sql` para entornos futuros.
 - [x] **Staff Historial: salida no registrada (2026-03-21)**: En `/staff/history` (`WeekCard`), cuando `clock_out_show_no_registrada` la fila de salida replica el layout del fichaje regular (mismo `gap`, hora en mono); el punto rojo se sustituye por una cruz compacta (`size={8}`, `text-red-500` / gris en mes ajeno), con `title` de accesibilidad conservado.
