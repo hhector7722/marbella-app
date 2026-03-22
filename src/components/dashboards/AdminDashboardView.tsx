@@ -1208,7 +1208,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex shrink-0 justify-end pl-2 md:pl-3 pr-0.5">
+                                                <div className="flex shrink-0 justify-end pl-5 md:pl-8 pr-0.5">
                                                     <button
                                                         onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
                                                         className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px]"
