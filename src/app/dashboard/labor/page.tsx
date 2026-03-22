@@ -23,6 +23,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import { timeFilterLabel } from '@/components/time/time-filter-types';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -42,6 +43,8 @@ type WorkerRow = {
     fixed: number;
     overtime: number;
     total: number;
+    /** Coste del trabajador / venta neta del día × 100 */
+    laborPctOfSales: number | null;
 };
 
 function parseLocalSafe(dateStr: string | null): Date {
@@ -60,16 +63,131 @@ function formatEuroRead(n: number): string {
     }).format(n);
 }
 
+function dayInPeriod(isoDay: string, periodStart: string, periodEnd: string): boolean {
+    const d = isoDay.split('T')[0];
+    const a = periodStart.split('T')[0];
+    const b = periodEnd.split('T')[0];
+    return d >= a && d <= b;
+}
+
+function defaultFullMonthPeriod(): { start: string; end: string } {
+    const t = new Date();
+    return {
+        start: format(startOfMonth(t), 'yyyy-MM-dd'),
+        end: format(endOfMonth(t), 'yyyy-MM-dd'),
+    };
+}
+
+/** Color del indicador: verde ≤25%, amarillo 26–35%, naranja 36–50%, rojo >50% */
+function laborPctIndicatorClass(pct: number): string {
+    if (pct > 50) return 'text-red-500 stroke-red-500';
+    if (pct > 35) return 'text-orange-500 stroke-orange-500';
+    if (pct > 25) return 'text-amber-400 stroke-amber-400';
+    return 'text-emerald-600 stroke-emerald-600';
+}
+
+function LaborPctRing({
+    percent,
+    size = 44,
+    strokeWidth = 5,
+}: {
+    /** 0–100 para el arco; si >100 se muestra anillo lleno (100%) */
+    percent: number;
+    size?: number;
+    strokeWidth?: number;
+}) {
+    const arcPct = Math.max(0, Math.min(100, percent));
+    const r = (size - strokeWidth) / 2;
+    const c = 2 * Math.PI * r;
+    const offset = c * (1 - arcPct / 100);
+    const colorClass = laborPctIndicatorClass(percent);
+
+    return (
+        <svg
+            width={size}
+            height={size}
+            className="shrink-0 -rotate-90"
+            viewBox={`0 0 ${size} ${size}`}
+            aria-hidden
+        >
+            <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                className="stroke-zinc-200"
+                strokeWidth={strokeWidth}
+            />
+            <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                className={cn('transition-[stroke-dashoffset] duration-300', colorClass)}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeDasharray={c}
+                strokeDashoffset={offset}
+            />
+        </svg>
+    );
+}
+
+/** Anillo con el % en el hueco central (texto legible, sin rotar) */
+function LaborPctRingCentered({
+    percentRaw,
+    size = 48,
+}: {
+    /** null = sin ventas; número = % real (puede ser >100) */
+    percentRaw: number | null;
+    size?: number;
+}) {
+    const stroke = Math.max(4, Math.round(size / 9));
+    const arcFill = percentRaw === null ? 0 : Math.min(100, Math.max(0, percentRaw));
+    const label =
+        percentRaw === null
+            ? '—'
+            : `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(percentRaw)}%`;
+    const textCls =
+        percentRaw === null ? 'text-zinc-400' : laborPctIndicatorClass(percentRaw).split(' ')[0];
+
+    return (
+        <div
+            className="relative flex items-center justify-center shrink-0"
+            style={{ width: size, height: size }}
+        >
+            <LaborPctRing percent={arcFill} size={size} strokeWidth={stroke} />
+            <span
+                className={cn(
+                    'absolute left-1/2 top-1/2 w-[min(72%,2.5rem)] -translate-x-1/2 -translate-y-1/2 text-center text-[8px] font-black tabular-nums leading-tight pointer-events-none sm:text-[9px]',
+                    textCls,
+                )}
+            >
+                {label}
+            </span>
+        </div>
+    );
+}
+
 export default function LaborHistoryPage() {
     const supabase = createClient();
     const router = useRouter();
 
-    const [rangeStart, setRangeStart] = useState<string>(() =>
-        format(startOfMonth(new Date()), 'yyyy-MM-dd')
-    );
+    const def = defaultFullMonthPeriod();
+    const [periodStart, setPeriodStart] = useState<string>(def.start);
+    const [periodEnd, setPeriodEnd] = useState<string>(def.end);
+    /** Mes del calendario (solo vista; las flechas lo mueven sin cambiar el periodo filtrado) */
+    const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState<MonthSummaryPayload | null>(null);
+    /** Venta neta (cierres) del mismo periodo que el coste laboral */
+    const [periodNetSales, setPeriodNetSales] = useState<number | null>(null);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+    /** Último filtro aplicado (para etiqueta y modal inicial) */
+    const [appliedFilter, setAppliedFilter] = useState<TimeFilterValue>(() => {
+        const n = new Date();
+        return { kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 };
+    });
 
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -79,75 +197,135 @@ export default function LaborHistoryPage() {
         totalFixed: number;
         totalOvertime: number;
         totalCost: number;
+        dayNetSales: number;
         workers: WorkerRow[];
     } | null>(null);
 
-    const monthDate = useMemo(() => parseLocalSafe(rangeStart), [rangeStart]);
-
     const calendarDays = useMemo(() => {
-        const base = parseLocalSafe(rangeStart);
-        const startVisible = startOfWeek(startOfMonth(base), { weekStartsOn: 1 });
-        const endVisible = endOfWeek(endOfMonth(base), { weekStartsOn: 1 });
+        const startVisible = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
+        const endVisible = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 });
         return eachDayOfInterval({ start: startVisible, end: endVisible });
-    }, [rangeStart]);
+    }, [viewMonth]);
 
-    const fetchMonth = useCallback(async () => {
+    const periodSubtitle = useMemo(() => {
+        const a = parseLocalSafe(periodStart);
+        const b = parseLocalSafe(periodEnd);
+        if (format(a, 'yyyy-MM-dd') === format(b, 'yyyy-MM-dd')) {
+            return format(a, "d MMM yyyy", { locale: es });
+        }
+        return `${format(a, "d MMM", { locale: es })} – ${format(b, "d MMM yyyy", { locale: es })}`;
+    }, [periodStart, periodEnd]);
+
+    const filterActive = useMemo(() => {
+        const cur = defaultFullMonthPeriod();
+        return periodStart !== cur.start || periodEnd !== cur.end;
+    }, [periodStart, periodEnd]);
+
+    const laborPctOfPeriod = useMemo(() => {
+        if (!summary || periodNetSales === null) return null;
+        if (periodNetSales <= 0) return null;
+        return (summary.totalCost / periodNetSales) * 100;
+    }, [summary, periodNetSales]);
+
+    const fetchPeriodSummary = useCallback(async () => {
         setLoading(true);
+        setPeriodNetSales(null);
         try {
-            const d = parseLocalSafe(rangeStart);
-            const { data, error } = await supabase.rpc('get_labor_cost_month_summary', {
-                p_year: d.getFullYear(),
-                p_month: d.getMonth() + 1,
-            });
-            if (error) throw error;
-            const raw = data as Record<string, unknown> | null;
-            if (!raw) {
+            const start = parseLocalSafe(periodStart);
+            const end = parseLocalSafe(periodEnd);
+            if (end < start) {
                 setSummary(null);
+                setPeriodNetSales(null);
                 return;
             }
-            const rawByDate = (raw.byDate as Record<string, unknown> | undefined) || {};
+
             const byDate: Record<string, DayCell> = {};
-            for (const [key, val] of Object.entries(rawByDate)) {
-                const cell = val as Record<string, unknown> | null;
-                if (!cell || typeof cell !== 'object') continue;
-                byDate[key] = {
-                    total: Number(cell.total) || 0,
-                    fixed: Number(cell.fixed) || 0,
-                    overtime: Number(cell.overtime) || 0,
-                };
+            let cursor = startOfMonth(start);
+            const endMonth = startOfMonth(end);
+
+            while (cursor.getTime() <= endMonth.getTime()) {
+                const y = cursor.getFullYear();
+                const m = cursor.getMonth() + 1;
+                const { data, error } = await supabase.rpc('get_labor_cost_month_summary', {
+                    p_year: y,
+                    p_month: m,
+                });
+                if (error) throw error;
+                const raw = data as Record<string, unknown> | null;
+                const rawByDate = (raw?.byDate as Record<string, unknown> | undefined) || {};
+                for (const [key, val] of Object.entries(rawByDate)) {
+                    const iso = key.split('T')[0];
+                    if (!dayInPeriod(iso, periodStart, periodEnd)) continue;
+                    const cell = val as Record<string, unknown> | null;
+                    if (!cell || typeof cell !== 'object') continue;
+                    byDate[iso] = {
+                        total: Number(cell.total) || 0,
+                        fixed: Number(cell.fixed) || 0,
+                        overtime: Number(cell.overtime) || 0,
+                    };
+                }
+                cursor = addMonths(cursor, 1);
             }
+
+            let totalFixed = 0;
+            let totalOvertime = 0;
+            let totalCost = 0;
+            for (const c of Object.values(byDate)) {
+                totalFixed += c.fixed;
+                totalOvertime += c.overtime;
+                totalCost += c.total;
+            }
+
             setSummary({
-                year: Number(raw.year),
-                month: Number(raw.month),
-                daysInMonth: Number(raw.daysInMonth),
-                totalFixed: Number(raw.totalFixed) || 0,
-                totalOvertime: Number(raw.totalOvertime) || 0,
-                totalCost: Number(raw.totalCost) || 0,
+                year: start.getFullYear(),
+                month: start.getMonth() + 1,
+                daysInMonth: Object.keys(byDate).length,
+                totalFixed,
+                totalOvertime,
+                totalCost,
                 byDate,
             });
+
+            const { data: salesData, error: salesErr } = await supabase.rpc('get_cash_closings_summary', {
+                p_start_date: periodStart.split('T')[0],
+                p_end_date: periodEnd.split('T')[0],
+            });
+            if (salesErr) {
+                console.warn(salesErr);
+                setPeriodNetSales(0);
+            } else {
+                const raw = salesData as { totalNet?: number } | null;
+                setPeriodNetSales(Number(raw?.totalNet) || 0);
+            }
         } catch (e) {
             console.error(e);
             toast.error('No se pudo cargar el coste laboral. ¿Permisos de gestor?');
             setSummary(null);
+            setPeriodNetSales(null);
         } finally {
             setLoading(false);
         }
-    }, [supabase, rangeStart]);
+    }, [supabase, periodStart, periodEnd]);
 
     useEffect(() => {
-        fetchMonth();
-    }, [fetchMonth]);
+        fetchPeriodSummary();
+    }, [fetchPeriodSummary]);
 
     const handlePrevMonth = () => {
-        const current = parseLocalSafe(rangeStart);
-        const prev = subMonths(current, 1);
-        setRangeStart(format(startOfMonth(prev), 'yyyy-MM-dd'));
+        setViewMonth((vm) => subMonths(vm, 1));
     };
 
     const handleNextMonth = () => {
-        const current = parseLocalSafe(rangeStart);
-        const next = addMonths(current, 1);
-        setRangeStart(format(startOfMonth(next), 'yyyy-MM-dd'));
+        setViewMonth((vm) => addMonths(vm, 1));
+    };
+
+    const clearTimeFilter = () => {
+        const cur = defaultFullMonthPeriod();
+        setPeriodStart(cur.start);
+        setPeriodEnd(cur.end);
+        setViewMonth(startOfMonth(new Date()));
+        const n = new Date();
+        setAppliedFilter({ kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 });
     };
 
     const openDayDetail = async (day: Date) => {
@@ -157,23 +335,37 @@ export default function LaborHistoryPage() {
         setDetailLoading(true);
         setDayDetail(null);
         try {
-            const { data, error } = await supabase.rpc('get_labor_cost_day_detail', {
-                p_date: key,
-            });
-            if (error) throw error;
-            const raw = data as Record<string, unknown> | null;
+            const [laborRes, salesRes] = await Promise.all([
+                supabase.rpc('get_labor_cost_day_detail', { p_date: key }),
+                supabase.rpc('get_cash_closings_summary', {
+                    p_start_date: key,
+                    p_end_date: key,
+                }),
+            ]);
+            if (laborRes.error) throw laborRes.error;
+            if (salesRes.error) console.warn(salesRes.error);
+            const raw = laborRes.data as Record<string, unknown> | null;
             if (!raw) {
                 setDayDetail(null);
                 return;
             }
+            const dayNetSales = salesRes.error
+                ? 0
+                : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
             const wrows = Array.isArray(raw.workers) ? raw.workers : [];
-            const workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => ({
-                id: String(w.id ?? w.userId ?? ''),
-                name: w.name != null ? String(w.name) : null,
-                fixed: Number(w.fixed ?? w.fixedCost) || 0,
-                overtime: Number(w.overtime ?? w.overtimeCost) || 0,
-                total: Number(w.total) || 0,
-            }));
+            const workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => {
+                const total = Number(w.total) || 0;
+                const laborPctOfSales =
+                    dayNetSales > 0 ? (total / dayNetSales) * 100 : null;
+                return {
+                    id: String(w.id ?? w.userId ?? ''),
+                    name: w.name != null ? String(w.name) : null,
+                    fixed: Number(w.fixed ?? w.fixedCost) || 0,
+                    overtime: Number(w.overtime ?? w.overtimeCost) || 0,
+                    total,
+                    laborPctOfSales,
+                };
+            });
             const totalFixed = workers.reduce((s, w) => s + w.fixed, 0);
             const totalOvertime = workers.reduce((s, w) => s + w.overtime, 0);
             const totalCost =
@@ -184,6 +376,7 @@ export default function LaborHistoryPage() {
                 totalFixed,
                 totalOvertime,
                 totalCost,
+                dayNetSales,
                 workers,
             });
         } catch (e) {
@@ -206,31 +399,15 @@ export default function LaborHistoryPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
                     <div className="bg-[#36606F] px-4 md:px-8 py-5 flex items-center justify-between gap-2 shrink-0">
-                        <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink-0">
+                        <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink-0 min-w-0">
                             Coste laboral
                         </h1>
                         <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
                             <TimeFilterButton
                                 onClick={() => setIsTimeFilterOpen(true)}
-                                hasActiveFilter={false}
-                                onClear={() => {}}
+                                hasActiveFilter={filterActive}
+                                onClear={clearTimeFilter}
                             />
-                            <button
-                                type="button"
-                                onClick={handlePrevMonth}
-                                className="p-2 rounded-xl hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                aria-label="Mes anterior"
-                            >
-                                <ChevronLeft size={22} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleNextMonth}
-                                className="p-2 rounded-xl hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                                aria-label="Mes siguiente"
-                            >
-                                <ChevronRight size={22} />
-                            </button>
                             <button
                                 type="button"
                                 onClick={() => router.back()}
@@ -242,18 +419,45 @@ export default function LaborHistoryPage() {
                         </div>
                     </div>
 
-                    <div className="px-4 md:px-8 pt-4 pb-2 text-center border-b border-zinc-100 shrink-0">
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400">
-                            Mes en curso
+                    <div className="px-4 md:px-8 pt-3 pb-3 border-b border-zinc-100 shrink-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 text-center mb-2">
+                            {filterActive ? 'Periodo filtrado' : 'Periodo (mes actual)'}
                         </p>
-                        <p className="text-base md:text-lg font-black text-[#36606F] capitalize">
-                            {format(monthDate, 'MMMM yyyy', { locale: es })}
+                        <p
+                            className="text-[10px] font-bold text-zinc-500 text-center mb-3 leading-snug px-1"
+                            title={timeFilterLabel(appliedFilter)}
+                        >
+                            {periodSubtitle}
                         </p>
+                        {/* Flechas pegadas al nombre del mes: ancho natural del texto */}
+                        <div className="flex justify-center w-full">
+                            <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                                <button
+                                    type="button"
+                                    onClick={handlePrevMonth}
+                                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                                    aria-label="Mes anterior"
+                                >
+                                    <ChevronLeft size={22} />
+                                </button>
+                                <span className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
+                                    {format(viewMonth, 'MMMM yyyy', { locale: es })}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={handleNextMonth}
+                                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                                    aria-label="Mes siguiente"
+                                >
+                                    <ChevronRight size={22} />
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="p-4 md:p-8 flex-1 flex flex-col min-h-0">
-                        <div className="grid grid-cols-3 gap-2 mb-6 py-4 border-y border-gray-50 shrink-0">
-                            <div className="flex flex-col items-center justify-center text-center">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-2 mb-6 py-4 border-y border-gray-50 shrink-0">
+                            <div className="flex flex-col items-center justify-center text-center min-h-[4.5rem]">
                                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
                                     Coste total
                                 </span>
@@ -261,21 +465,27 @@ export default function LaborHistoryPage() {
                                     {summary ? formatEuroRead(summary.totalCost) : ' '}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-x border-gray-50">
+                            <div className="flex flex-col items-center justify-center text-center border-gray-50 sm:border-x min-h-[4.5rem]">
                                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                                    Fijo (mes)
+                                    Fijo
                                 </span>
                                 <span className="text-lg md:text-xl font-black text-zinc-700 tabular-nums">
                                     {summary ? formatEuroRead(summary.totalFixed) : ' '}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center">
+                            <div className="flex flex-col items-center justify-center text-center border-t border-gray-50 pt-3 sm:border-t-0 sm:pt-0 sm:border-x min-h-[4.5rem]">
                                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                                    Extras (mes)
+                                    Extras
                                 </span>
                                 <span className="text-lg md:text-xl font-black text-amber-600 tabular-nums">
                                     {summary ? formatEuroRead(summary.totalOvertime) : ' '}
                                 </span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center border-t border-gray-50 pt-3 sm:border-t-0 sm:pt-0 min-h-[4.5rem]">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1 leading-tight">
+                                    M.O. / ventas
+                                </span>
+                                <LaborPctRingCentered percentRaw={laborPctOfPeriod} size={52} />
                             </div>
                         </div>
 
@@ -299,32 +509,50 @@ export default function LaborHistoryPage() {
                                             ))}
                                         </div>
                                         <div className="grid grid-cols-7 gap-1 md:gap-2">
-                                            {calendarDays.map((day, idx) => {
+                                            {calendarDays.map((day) => {
                                                 const key = format(day, 'yyyy-MM-dd');
                                                 const cell = summary?.byDate[key];
                                                 const total = cell?.total ?? 0;
-                                                const isCurrentMonth = isSameMonth(day, monthDate);
+                                                const isViewMonthDay = isSameMonth(day, viewMonth);
+                                                const inPeriod = dayInPeriod(key, periodStart, periodEnd);
+                                                const showData = isViewMonthDay && inPeriod;
+                                                const clickable = showData;
 
                                                 return (
                                                     <button
                                                         key={key}
                                                         type="button"
-                                                        onClick={() => isCurrentMonth && openDayDetail(day)}
+                                                        onClick={() => clickable && openDayDetail(day)}
                                                         className={cn(
                                                             'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all',
-                                                            isCurrentMonth
-                                                                ? 'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99]'
-                                                                : 'bg-transparent border-transparent opacity-25 pointer-events-none'
+                                                            !isViewMonthDay &&
+                                                                'bg-transparent border-transparent opacity-25 pointer-events-none',
+                                                            isViewMonthDay &&
+                                                                !inPeriod &&
+                                                                'bg-zinc-100/80 border-zinc-200/80 opacity-60 cursor-not-allowed',
+                                                            isViewMonthDay &&
+                                                                inPeriod &&
+                                                                'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99]',
                                                         )}
                                                     >
-                                                        <div className="bg-[#D64D5D] px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0">
+                                                        <div
+                                                            className={cn(
+                                                                'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
+                                                                showData ? 'bg-[#D64D5D]' : 'bg-zinc-400',
+                                                            )}
+                                                        >
                                                             <span className="text-[8px] md:text-[10px] font-black text-white">
                                                                 {format(day, 'd')}
                                                             </span>
                                                         </div>
                                                         <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
-                                                            <span className="text-[9px] min-[370px]:text-[11px] md:text-lg font-black text-zinc-900 tabular-nums leading-none">
-                                                                {isCurrentMonth ? formatEuroRead(total) : ' '}
+                                                            <span
+                                                                className={cn(
+                                                                    'text-[9px] min-[370px]:text-[11px] md:text-lg font-black tabular-nums leading-none',
+                                                                    showData ? 'text-zinc-900' : 'text-zinc-400',
+                                                                )}
+                                                            >
+                                                                {showData ? formatEuroRead(total) : ' '}
                                                             </span>
                                                             <span className="text-[5px] md:text-[7px] font-black text-zinc-400 uppercase mt-0.5 hidden md:block">
                                                                 Total
@@ -392,8 +620,7 @@ export default function LaborHistoryPage() {
                                                     <span className="text-xs font-black text-zinc-800 truncate">
                                                         {w.name || '—'}
                                                     </span>
-                                                    {/* Tres columnas: evita confundir el total (fijo+extras) con "Extras" */}
-                                                    <div className="grid grid-cols-3 gap-1 text-center">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-1 text-center items-start">
                                                         <div className="flex flex-col gap-0.5 min-w-0">
                                                             <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
                                                                 Fijo
@@ -402,7 +629,7 @@ export default function LaborHistoryPage() {
                                                                 {formatEuroRead(w.fixed)}
                                                             </span>
                                                         </div>
-                                                        <div className="flex flex-col gap-0.5 min-w-0 border-x border-zinc-200/80">
+                                                        <div className="flex flex-col gap-0.5 min-w-0 sm:border-x sm:border-zinc-200/80 sm:px-1">
                                                             <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
                                                                 Extras
                                                             </span>
@@ -418,17 +645,41 @@ export default function LaborHistoryPage() {
                                                                 {formatEuroRead(w.total)}
                                                             </span>
                                                         </div>
+                                                        <div className="flex flex-col items-center gap-1 min-w-0 sm:justify-start">
+                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                                M.O./Vtas
+                                                            </span>
+                                                            <LaborPctRingCentered
+                                                                percentRaw={w.laborPctOfSales}
+                                                                size={44}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="mt-auto pt-4 border-t border-zinc-100 flex justify-between items-center shrink-0">
-                                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                                                Total día
-                                            </span>
-                                            <span className="text-xl font-black text-rose-500 tabular-nums">
-                                                {formatEuroRead(dayDetail.totalCost)}
-                                            </span>
+                                        <div className="mt-auto pt-4 border-t border-zinc-100 flex flex-col gap-3 shrink-0">
+                                            <div className="flex justify-between items-center gap-2">
+                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                                                    Total día
+                                                </span>
+                                                <span className="text-xl font-black text-rose-500 tabular-nums">
+                                                    {formatEuroRead(dayDetail.totalCost)}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-3">
+                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest shrink-0">
+                                                    M.O. / ventas (día)
+                                                </span>
+                                                <LaborPctRingCentered
+                                                    percentRaw={
+                                                        dayDetail.dayNetSales > 0
+                                                            ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
+                                                            : null
+                                                    }
+                                                    size={56}
+                                                />
+                                            </div>
                                         </div>
                                     </>
                                 ) : (
@@ -446,30 +697,36 @@ export default function LaborHistoryPage() {
                 isOpen={isTimeFilterOpen}
                 onClose={() => setIsTimeFilterOpen(false)}
                 allowedKinds={['date', 'range', 'week', 'month', 'year']}
-                initialValue={{
-                    kind: 'month',
-                    year: monthDate.getFullYear(),
-                    month: monthDate.getMonth() + 1,
-                }}
+                initialValue={appliedFilter}
                 onApply={(v: TimeFilterValue) => {
+                    setAppliedFilter(v);
                     if (v.kind === 'month') {
                         const s = new Date(v.year, v.month - 1, 1);
-                        setRangeStart(format(startOfMonth(s), 'yyyy-MM-dd'));
+                        const e = endOfMonth(s);
+                        setPeriodStart(format(s, 'yyyy-MM-dd'));
+                        setPeriodEnd(format(e, 'yyyy-MM-dd'));
+                        setViewMonth(startOfMonth(s));
                         return;
                     }
                     if (v.kind === 'year') {
-                        const s = new Date(v.year, 0, 1);
-                        setRangeStart(format(startOfMonth(s), 'yyyy-MM-dd'));
+                        setPeriodStart(`${v.year}-01-01`);
+                        setPeriodEnd(`${v.year}-12-31`);
+                        setViewMonth(new Date(v.year, 0, 1));
                         return;
                     }
                     if (v.kind === 'range' || v.kind === 'week') {
-                        const d = parseLocalSafe(v.startDate);
-                        setRangeStart(format(startOfMonth(d), 'yyyy-MM-dd'));
+                        const a = v.startDate.split('T')[0];
+                        const b = v.endDate.split('T')[0];
+                        setPeriodStart(a);
+                        setPeriodEnd(b);
+                        setViewMonth(startOfMonth(parseLocalSafe(a)));
                         return;
                     }
                     if (v.kind === 'date') {
-                        const d = parseLocalSafe(v.date);
-                        setRangeStart(format(startOfMonth(d), 'yyyy-MM-dd'));
+                        const d = v.date.split('T')[0];
+                        setPeriodStart(d);
+                        setPeriodEnd(d);
+                        setViewMonth(startOfMonth(parseLocalSafe(d)));
                     }
                 }}
             />
