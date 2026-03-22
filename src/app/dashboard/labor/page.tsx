@@ -78,6 +78,22 @@ function defaultFullMonthPeriod(): { start: string; end: string } {
     };
 }
 
+/** Solo primer nombre (sin apellidos) para desglose */
+function firstNameOnly(full: string | null): string {
+    if (!full || !full.trim()) return '—';
+    return full.trim().split(/\s+/)[0] ?? '—';
+}
+
+function laborPctTextClass(pct: number | null): string {
+    if (pct === null || Number.isNaN(pct)) return 'text-zinc-400';
+    return laborPctIndicatorClass(pct).split(' ')[0];
+}
+
+function formatWorkerPctLine(pct: number | null): string {
+    if (pct === null || Number.isNaN(pct)) return '—';
+    return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(pct)}%`;
+}
+
 /** Color del indicador: verde ≤25%, amarillo 26–35%, naranja 36–50%, rojo >50% */
 function laborPctIndicatorClass(pct: number): string {
     if (pct > 50) return 'text-red-500 stroke-red-500';
@@ -159,7 +175,8 @@ function LaborPctRingCentered({
             <LaborPctRing percent={arcFill} size={size} strokeWidth={stroke} />
             <span
                 className={cn(
-                    'absolute left-1/2 top-1/2 w-[min(72%,2.5rem)] -translate-x-1/2 -translate-y-1/2 text-center text-[8px] font-black tabular-nums leading-tight pointer-events-none sm:text-[9px]',
+                    'absolute left-1/2 top-1/2 w-[min(72%,2.5rem)] -translate-x-1/2 -translate-y-1/2 text-center font-black tabular-nums leading-tight pointer-events-none',
+                    size <= 38 ? 'text-[6px]' : 'text-[8px] sm:text-[9px]',
                     textCls,
                 )}
             >
@@ -227,6 +244,8 @@ export default function LaborHistoryPage() {
         return (summary.totalCost / periodNetSales) * 100;
     }, [summary, periodNetSales]);
 
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
     const fetchPeriodSummary = useCallback(async () => {
         setLoading(true);
         setPeriodNetSales(null);
@@ -243,6 +262,8 @@ export default function LaborHistoryPage() {
             let cursor = startOfMonth(start);
             const endMonth = startOfMonth(end);
 
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+
             while (cursor.getTime() <= endMonth.getTime()) {
                 const y = cursor.getFullYear();
                 const m = cursor.getMonth() + 1;
@@ -255,6 +276,7 @@ export default function LaborHistoryPage() {
                 const rawByDate = (raw?.byDate as Record<string, unknown> | undefined) || {};
                 for (const [key, val] of Object.entries(rawByDate)) {
                     const iso = key.split('T')[0];
+                    if (iso > todayStr) continue;
                     if (!dayInPeriod(iso, periodStart, periodEnd)) continue;
                     const cell = val as Record<string, unknown> | null;
                     if (!cell || typeof cell !== 'object') continue;
@@ -286,9 +308,11 @@ export default function LaborHistoryPage() {
                 byDate,
             });
 
+            const effectiveSalesEnd =
+                periodEnd > todayStr ? todayStr : periodEnd.split('T')[0];
             const { data: salesData, error: salesErr } = await supabase.rpc('get_cash_closings_summary', {
                 p_start_date: periodStart.split('T')[0],
-                p_end_date: periodEnd.split('T')[0],
+                p_end_date: effectiveSalesEnd,
             });
             if (salesErr) {
                 console.warn(salesErr);
@@ -456,36 +480,36 @@ export default function LaborHistoryPage() {
                     </div>
 
                     <div className="p-4 md:p-8 flex-1 flex flex-col min-h-0">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-2 mb-6 py-4 border-y border-gray-50 shrink-0">
-                            <div className="flex flex-col items-center justify-center text-center min-h-[4.5rem]">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                                    Coste total
+                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-4 py-2 border-y border-gray-50 shrink-0 min-w-0">
+                            <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
+                                    Coste
                                 </span>
-                                <span className="text-lg md:text-xl font-black text-rose-500 tabular-nums">
+                                <span className="text-[11px] font-black leading-tight text-rose-500 tabular-nums sm:text-xs md:text-sm">
                                     {summary ? formatEuroRead(summary.totalCost) : ' '}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-gray-50 sm:border-x min-h-[4.5rem]">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                            <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Fijo
                                 </span>
-                                <span className="text-lg md:text-xl font-black text-zinc-700 tabular-nums">
+                                <span className="text-[11px] font-black leading-tight text-zinc-700 tabular-nums sm:text-xs md:text-sm">
                                     {summary ? formatEuroRead(summary.totalFixed) : ' '}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-t border-gray-50 pt-3 sm:border-t-0 sm:pt-0 sm:border-x min-h-[4.5rem]">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                            <div className="flex min-w-0 flex-col items-center justify-center border-r border-gray-100 px-0.5 text-center">
+                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Extras
                                 </span>
-                                <span className="text-lg md:text-xl font-black text-amber-600 tabular-nums">
+                                <span className="text-[11px] font-black leading-tight text-amber-600 tabular-nums sm:text-xs md:text-sm">
                                     {summary ? formatEuroRead(summary.totalOvertime) : ' '}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center border-t border-gray-50 pt-3 sm:border-t-0 sm:pt-0 min-h-[4.5rem]">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1 leading-tight">
-                                    M.O. / ventas
+                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
+                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
+                                    M.O./Vtas
                                 </span>
-                                <LaborPctRingCentered percentRaw={laborPctOfPeriod} size={52} />
+                                <LaborPctRingCentered percentRaw={laborPctOfPeriod} size={36} />
                             </div>
                         </div>
 
@@ -511,11 +535,13 @@ export default function LaborHistoryPage() {
                                         <div className="grid grid-cols-7 gap-1 md:gap-2">
                                             {calendarDays.map((day) => {
                                                 const key = format(day, 'yyyy-MM-dd');
+                                                const isFutureDay = key > todayStr;
                                                 const cell = summary?.byDate[key];
                                                 const total = cell?.total ?? 0;
                                                 const isViewMonthDay = isSameMonth(day, viewMonth);
                                                 const inPeriod = dayInPeriod(key, periodStart, periodEnd);
-                                                const showData = isViewMonthDay && inPeriod;
+                                                const showData =
+                                                    isViewMonthDay && inPeriod && !isFutureDay;
                                                 const clickable = showData;
 
                                                 return (
@@ -528,17 +554,26 @@ export default function LaborHistoryPage() {
                                                             !isViewMonthDay &&
                                                                 'bg-transparent border-transparent opacity-25 pointer-events-none',
                                                             isViewMonthDay &&
+                                                                isFutureDay &&
+                                                                'cursor-default border-zinc-200/60 bg-zinc-50/90',
+                                                            isViewMonthDay &&
                                                                 !inPeriod &&
+                                                                !isFutureDay &&
                                                                 'bg-zinc-100/80 border-zinc-200/80 opacity-60 cursor-not-allowed',
                                                             isViewMonthDay &&
                                                                 inPeriod &&
+                                                                !isFutureDay &&
                                                                 'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99]',
                                                         )}
                                                     >
                                                         <div
                                                             className={cn(
                                                                 'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
-                                                                showData ? 'bg-[#D64D5D]' : 'bg-zinc-400',
+                                                                showData
+                                                                    ? 'bg-[#D64D5D]'
+                                                                    : isFutureDay && isViewMonthDay
+                                                                      ? 'bg-zinc-300'
+                                                                      : 'bg-zinc-400',
                                                             )}
                                                         >
                                                             <span className="text-[8px] md:text-[10px] font-black text-white">
@@ -611,75 +646,108 @@ export default function LaborHistoryPage() {
                                     </div>
                                 ) : dayDetail && dayDetail.workers.length > 0 ? (
                                     <>
-                                        <div className="space-y-2 mb-4">
+                                        <div className="mb-4 rounded-2xl border border-[#36606F]/25 bg-[#36606F]/[0.06] p-3">
+                                            <p className="mb-2 text-center text-[9px] font-black uppercase tracking-widest text-[#36606F]">
+                                                Resumen del día
+                                            </p>
+                                            <div className="grid grid-cols-4 gap-1 text-center">
+                                                <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
+                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                        Coste total
+                                                    </span>
+                                                    <span className="text-[10px] font-black tabular-nums text-rose-600 sm:text-[11px]">
+                                                        {formatEuroRead(dayDetail.totalCost)}
+                                                    </span>
+                                                </div>
+                                                <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
+                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                        Fijo
+                                                    </span>
+                                                    <span className="text-[10px] font-black tabular-nums text-zinc-800 sm:text-[11px]">
+                                                        {formatEuroRead(dayDetail.totalFixed)}
+                                                    </span>
+                                                </div>
+                                                <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
+                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                        Extras
+                                                    </span>
+                                                    <span className="text-[10px] font-black tabular-nums text-amber-700 sm:text-[11px]">
+                                                        {formatEuroRead(dayDetail.totalOvertime)}
+                                                    </span>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                        %
+                                                    </span>
+                                                    <span
+                                                        className={cn(
+                                                            'text-[10px] font-black tabular-nums sm:text-[11px]',
+                                                            laborPctTextClass(
+                                                                dayDetail.dayNetSales > 0
+                                                                    ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
+                                                                    : null,
+                                                            ),
+                                                        )}
+                                                    >
+                                                        {formatWorkerPctLine(
+                                                            dayDetail.dayNetSales > 0
+                                                                ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
+                                                                : null,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mb-4 space-y-2">
                                             {dayDetail.workers.map((w) => (
                                                 <div
                                                     key={w.id}
-                                                    className="flex flex-col gap-2 p-3 bg-zinc-50 rounded-2xl border border-zinc-100"
+                                                    className="rounded-2xl border border-zinc-100 bg-zinc-50 p-2.5"
                                                 >
-                                                    <span className="text-xs font-black text-zinc-800 truncate">
-                                                        {w.name || '—'}
-                                                    </span>
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-1 text-center items-start">
-                                                        <div className="flex flex-col gap-0.5 min-w-0">
-                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                    <div className="mb-1.5 truncate text-sm font-black text-zinc-800">
+                                                        {firstNameOnly(w.name)}
+                                                    </div>
+                                                    <div className="grid grid-cols-4 gap-1 text-center">
+                                                        <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
+                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
                                                                 Fijo
                                                             </span>
-                                                            <span className="text-[11px] font-black text-zinc-700 tabular-nums">
+                                                            <span className="text-[10px] font-black tabular-nums text-zinc-700 sm:text-[11px]">
                                                                 {formatEuroRead(w.fixed)}
                                                             </span>
                                                         </div>
-                                                        <div className="flex flex-col gap-0.5 min-w-0 sm:border-x sm:border-zinc-200/80 sm:px-1">
-                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                        <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
+                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
                                                                 Extras
                                                             </span>
-                                                            <span className="text-[11px] font-black text-amber-700/90 tabular-nums">
+                                                            <span className="text-[10px] font-black tabular-nums text-amber-700/90 sm:text-[11px]">
                                                                 {formatEuroRead(w.overtime)}
                                                             </span>
                                                         </div>
-                                                        <div className="flex flex-col gap-0.5 min-w-0">
-                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
+                                                        <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
+                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
                                                                 Total
                                                             </span>
-                                                            <span className="text-[11px] font-black text-[#36606F] tabular-nums">
+                                                            <span className="text-[10px] font-black tabular-nums text-[#36606F] sm:text-[11px]">
                                                                 {formatEuroRead(w.total)}
                                                             </span>
                                                         </div>
-                                                        <div className="flex flex-col items-center gap-1 min-w-0 sm:justify-start">
-                                                            <span className="text-[9px] font-black uppercase tracking-tight text-zinc-400">
-                                                                M.O./Vtas
+                                                        <div className="min-w-0">
+                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
+                                                                %
                                                             </span>
-                                                            <LaborPctRingCentered
-                                                                percentRaw={w.laborPctOfSales}
-                                                                size={44}
-                                                            />
+                                                            <span
+                                                                className={cn(
+                                                                    'text-[10px] font-black tabular-nums sm:text-[11px]',
+                                                                    laborPctTextClass(w.laborPctOfSales),
+                                                                )}
+                                                            >
+                                                                {formatWorkerPctLine(w.laborPctOfSales)}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             ))}
-                                        </div>
-                                        <div className="mt-auto pt-4 border-t border-zinc-100 flex flex-col gap-3 shrink-0">
-                                            <div className="flex justify-between items-center gap-2">
-                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                                                    Total día
-                                                </span>
-                                                <span className="text-xl font-black text-rose-500 tabular-nums">
-                                                    {formatEuroRead(dayDetail.totalCost)}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-3">
-                                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest shrink-0">
-                                                    M.O. / ventas (día)
-                                                </span>
-                                                <LaborPctRingCentered
-                                                    percentRaw={
-                                                        dayDetail.dayNetSales > 0
-                                                            ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
-                                                            : null
-                                                    }
-                                                    size={56}
-                                                />
-                                            </div>
                                         </div>
                                     </>
                                 ) : (
