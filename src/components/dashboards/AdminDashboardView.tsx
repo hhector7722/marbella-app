@@ -1175,7 +1175,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     const cajasCambioColumn = (
         <div className="flex flex-col gap-3 md:gap-3 min-h-0 h-full">
-            <div className="flex flex-col gap-3 md:gap-3 flex-1 min-h-0 max-w-[85%] md:max-w-none w-full h-full self-center md:self-stretch">
+            <div className="flex flex-col gap-3 md:gap-3 flex-1 min-h-0 w-full max-w-full md:max-w-none h-full self-stretch">
                 {(() => {
                     // Orden explícito por nombre: Cambio 1 → idx 0, Cambio 2 → idx 1
                     const changeBoxes = boxes
@@ -1196,36 +1196,38 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-start text-white shrink-0">
                                             <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
                                         </div>
-                                        <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5">
-                                            <div className="flex flex-row items-center w-full gap-x-3 md:gap-x-4 px-1.5 md:px-2.5 min-h-0">
-                                                <div className="min-w-0 flex flex-col items-start justify-center pr-2 md:pr-3 shrink-0">
-                                                    <span className="text-sm md:text-base font-black text-zinc-800 whitespace-nowrap tabular-nums">
+                                        <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5 min-w-0">
+                                            <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1.5 sm:gap-x-2 md:gap-x-3 px-1 sm:px-1.5 md:px-2">
+                                                <div className="min-w-0 flex flex-col items-start justify-center text-left">
+                                                    <span className="max-w-full text-xs sm:text-sm md:text-base font-black tabular-nums leading-tight text-zinc-800 break-words">
                                                         {formatEur(box.current_balance)}
                                                     </span>
                                                     {!isOk && Math.abs(diff) > 0.005 && (
-                                                        <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5 whitespace-nowrap tabular-nums", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
+                                                        <span className={cn("text-[7px] md:text-[8px] font-black mt-0.5 tabular-nums leading-tight", diff < 0 ? "text-rose-500" : "text-emerald-600")}>
                                                             {diff > 0 ? `+${formatEur(diff)}` : `-${formatEur(Math.abs(diff))}`}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex flex-1 shrink-0 items-center justify-end gap-1.5 md:gap-2 min-w-0">
+                                                <div className="flex min-h-[48px] min-w-0 items-center justify-center">
                                                     <button
                                                         onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
                                                     >
-                                                        <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-blue-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
                                                             <ArrowRightLeft size={9} strokeWidth={2.5} />
                                                         </div>
-                                                        <span className="text-[5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest leading-none">Cambiar</span>
+                                                        <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Cambiar</span>
                                                     </button>
+                                                </div>
+                                                <div className="flex min-h-[48px] min-w-0 items-center justify-center">
                                                     <button
                                                         onClick={() => openTreasuryModal(box, 'audit')}
-                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex flex-col items-center justify-center gap-1.5 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
+                                                        className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
                                                     >
-                                                        <div className="w-5 h-5 md:w-5 md:h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm group-hover:scale-110 transition-transform text-white">
+                                                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
                                                             <RefreshCw size={9} strokeWidth={2.5} />
                                                         </div>
-                                                        <span className="text-[5px] md:text-[6px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
+                                                        <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Arqueo</span>
                                                     </button>
                                                 </div>
                                             </div>
