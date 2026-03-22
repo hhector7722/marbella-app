@@ -1,6 +1,6 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-21 (Dashboard: layout Cajas cambio 1/2)
+**Última actualización:** 2026-03-22 (Coste laboral: calendario + términos versionados)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
@@ -10,6 +10,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## ✅ COMPLETADO
+- [x] **Coste laboral `/dashboard/labor` (2026-03-22)**: Calendario mensual al estilo `/dashboard/history` con totales por día, resumen del mes (fijo + extras), modal con desglose por trabajador (fijo prorrateado + extras). Tabla `profile_labor_cost_terms` (versionado de `monthly_cost` / `overtime_cost_per_hour`, `valid_from`/`valid_to` inclusivos) + backfill + trigger al actualizar perfiles. RPCs `get_labor_cost_month_summary`, `get_labor_cost_day_detail` y helpers (`fn_labor_term_values`, `fn_labor_fixed_day_for_user`, `fn_labor_overtime_allocated_day`). Migración `20260322100000_profile_labor_cost_terms_and_rpc.sql`.
 - [x] **Dashboard Admin: Cajas cambio 1/2 (2026-03-21)**: En `/dashboard`, las tarjetas Caja cambio 1 y 2 usan **rejilla 3 columnas** (`grid-cols-3`, `min-w-0`) para evitar solapamiento importe/botones en móvil; importe a la izquierda; **Cambiar** y **Arqueo** centrados cada uno en su tercio; contenedor sin `max-w-[85%]` en smartphone para usar todo el ancho (`AdminDashboardView`).
 - [x] **Ventas: pestaña Horas (2026-03-21)**: En `/dashboard/ventas`, tercer toggle **Horas**: tabla al estilo de Productos con tramos `7-8` … `22-23` y `23-24` si hay cierres en hora 23; agregación desde los mismos tickets ya filtrados (fecha + filtro horario); orden por importe total descendente; columnas Cant (nº tickets), Media y Total; cabecera de impresión y clase `print-table-ventas`.
 - [x] **Libro Mayor: duplicados eliminados (2026-03-21)**: En `/dashboard/ledger` los movimientos aparecían duplicados por filas repetidas en `manager_ledger` (mismo `movement_type`, `amount`, `concept` y `date`). Se ejecutó limpieza en BD conservando un `id` por grupo y migración `20260321120000_manager_ledger_dedupe_exact_rows.sql` para entornos futuros.
