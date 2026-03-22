@@ -33,13 +33,16 @@ interface ProductRanking {
 
 /** Tramo horario para la pestaña Horas (tickets con h<7 excluidos). */
 function hourToSlotLabel(h: number): string | null {
-    if (h >= 7 && h <= 22) return `${h}-${h + 1}`;
-    if (h === 23) return '23-24';
+    if (h >= 7 && h <= 22) {
+        const start = `${String(h).padStart(2, '0')}:00`;
+        const end = `${String(h + 1).padStart(2, '0')}:00`;
+        return `${start} - ${end}`;
+    }
+    if (h === 23) return '23:00 - 24:00';
     return null;
 }
 
 interface HourSlotRow {
-    rank: number;
     label: string;
     cant: number;
     media: number;
@@ -356,7 +359,6 @@ export default function VentasPage() {
         for (const [label, { count, sum }] of map) {
             if (count === 0) continue;
             rows.push({
-                rank: 0,
                 label,
                 cant: count,
                 media: sum / count,
@@ -364,7 +366,6 @@ export default function VentasPage() {
             });
         }
         rows.sort((a, b) => b.total - a.total);
-        rows.forEach((r, i) => { r.rank = i + 1; });
         return rows;
     }, [tickets]);
 
@@ -787,13 +788,8 @@ export default function VentasPage() {
                                                     key={row.label}
                                                     className="group hover:bg-zinc-50/80 transition-colors"
                                                 >
-                                                    <td className="py-3 px-2 md:px-4 whitespace-nowrap flex items-center gap-1.5 md:gap-3">
-                                                        <span className="text-[9px] md:text-[10px] font-black text-zinc-300 tabular-nums w-3 md:w-4 text-right">
-                                                            {row.rank}
-                                                        </span>
-                                                        <span className="text-zinc-900 font-bold font-mono text-[10px] md:text-xs">
-                                                            {row.label}
-                                                        </span>
+                                                    <td className="py-3 px-2 md:px-4 whitespace-nowrap font-mono text-[10px] md:text-xs font-bold text-zinc-900 tabular-nums">
+                                                        {row.label}
                                                     </td>
                                                     <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-500 tabular-nums">
                                                         {row.cant !== 0 ? row.cant : ' '}
