@@ -13,47 +13,51 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   const [abierto, setAbierto] = useState(false);
 
   return (
-    <div className={`p-3 md:p-4 rounded-xl border flex flex-col ${estado.color} shadow-md transition-all duration-200`}>
+    <div className={`p-2.5 md:p-4 rounded-xl border flex flex-col ${estado.color} shadow-md transition-all duration-200`}>
+      {/* Tiempo en esquina superior derecha */}
+      <div className="flex justify-end mb-1">
+        <span className={`text-[9px] md:text-[11px] font-bold flex items-center ${estado.texto}`}>
+          <Clock size={10} className="mr-1" /> {estado.min} min
+        </span>
+      </div>
+
       {/* Cabecera (Botón de despliegue) */}
       <div
         className="flex justify-between items-center cursor-pointer select-none"
         onClick={() => setAbierto(!abierto)}
       >
-        <div className="flex flex-col">
-          <span className="text-lg md:text-2xl font-black text-slate-100 whitespace-nowrap">M. {m.mesa}</span>
-          <span className={`text-[10px] md:text-xs font-bold flex items-center mt-1 ${estado.texto}`}>
-            <Clock size={12} className="mr-1" /> {estado.min} min
-          </span>
-        </div>
+        <span className="text-sm md:text-lg font-black text-slate-100 whitespace-nowrap tracking-tight">
+          M {m.mesa}
+        </span>
 
-        <div className="flex items-center gap-1 md:gap-3">
-          <span className="text-lg md:text-2xl font-bold text-white flex items-center">
-            {parseFloat(m.total_provisional).toFixed(2)} <Euro size={14} className="ml-0.5 md:ml-1 text-slate-400" />
+        <div className="flex items-center gap-1.5 md:gap-3 ml-2">
+          <span className="text-sm md:text-lg font-bold text-white flex items-center tabular-nums tracking-tight">
+            {parseFloat(m.total_provisional).toFixed(2)} <Euro size={12} className="ml-0.5 md:ml-1 text-slate-400" />
           </span>
           <div className="text-slate-400 hover:text-white transition-colors">
-            {abierto ? <ChevronUp size={20} className="md:w-6 md:h-6" /> : <ChevronDown size={20} className="md:w-6 md:h-6" />}
+            {abierto ? <ChevronUp size={18} className="md:w-5 md:h-5" /> : <ChevronDown size={18} className="md:w-5 md:h-5" />}
           </div>
         </div>
       </div>
 
       {/* Cuerpo Desplegable (Ticket en vivo) */}
       {abierto && (
-        <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-slate-700/50">
-          <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm font-medium text-slate-300">
+        <div className="mt-2.5 md:mt-4 pt-2.5 md:pt-4 border-t border-slate-700/50">
+          <ul className="space-y-1.5 md:space-y-2 text-[10px] md:text-xs font-medium text-slate-300">
             {m.productos && m.productos.length > 0 ? (
               m.productos.map((p: any, i: number) => (
                 <li key={i} className="flex justify-between items-start leading-tight">
-                  <span className="flex-1 pr-2 truncate">
+                  <span className="flex-1 pr-2 break-words">
                     <span className="font-bold text-white mr-1.5">{p.unidades}x</span>
                     {p.nombre}
                   </span>
-                  <span className="tabular-nums font-semibold">
+                  <span className="tabular-nums font-semibold shrink-0 pt-0.5">
                     {(p.unidades * p.precio).toFixed(2)} €
                   </span>
                 </li>
               ))
             ) : (
-              <li className="text-slate-500 italic text-[10px] md:text-sm">Sin artículos...</li>
+              <li className="text-slate-500 italic">Sin artículos...</li>
             )}
           </ul>
         </div>
