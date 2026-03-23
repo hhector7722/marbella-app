@@ -8,52 +8,52 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Subcomponente aislado: Evita repintar toda la sala al desplegar una mesa
+// Subcomponente aislado optimizado para alta densidad en móvil (2 columnas)
 function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   const [abierto, setAbierto] = useState(false);
 
   return (
-    <div className={`p-4 rounded-xl border flex flex-col ${estado.color} shadow-md transition-all duration-200`}>
+    <div className={`p-3 md:p-4 rounded-xl border flex flex-col ${estado.color} shadow-md transition-all duration-200`}>
       {/* Cabecera (Botón de despliegue) */}
       <div
         className="flex justify-between items-center cursor-pointer select-none"
         onClick={() => setAbierto(!abierto)}
       >
         <div className="flex flex-col">
-          <span className="text-2xl font-black text-slate-100">M. {m.mesa}</span>
-          <span className={`text-xs font-bold flex items-center mt-1 ${estado.texto}`}>
+          <span className="text-lg md:text-2xl font-black text-slate-100 whitespace-nowrap">M. {m.mesa}</span>
+          <span className={`text-[10px] md:text-xs font-bold flex items-center mt-1 ${estado.texto}`}>
             <Clock size={12} className="mr-1" /> {estado.min} min
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold text-white flex items-center">
-            {parseFloat(m.total_provisional).toFixed(2)} <Euro size={16} className="ml-1 text-slate-400" />
+        <div className="flex items-center gap-1 md:gap-3">
+          <span className="text-lg md:text-2xl font-bold text-white flex items-center">
+            {parseFloat(m.total_provisional).toFixed(2)} <Euro size={14} className="ml-0.5 md:ml-1 text-slate-400" />
           </span>
           <div className="text-slate-400 hover:text-white transition-colors">
-            {abierto ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+            {abierto ? <ChevronUp size={20} className="md:w-6 md:h-6" /> : <ChevronDown size={20} className="md:w-6 md:h-6" />}
           </div>
         </div>
       </div>
 
       {/* Cuerpo Desplegable (Ticket en vivo) */}
       {abierto && (
-        <div className="mt-4 pt-4 border-t border-slate-700/50">
-          <ul className="space-y-2 text-sm font-medium text-slate-300">
+        <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-slate-700/50">
+          <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm font-medium text-slate-300">
             {m.productos && m.productos.length > 0 ? (
               m.productos.map((p: any, i: number) => (
-                <li key={i} className="flex justify-between items-start">
-                  <span className="flex-1">
-                    <span className="font-bold text-white mr-2">{p.unidades}x</span>
+                <li key={i} className="flex justify-between items-start leading-tight">
+                  <span className="flex-1 pr-2 truncate">
+                    <span className="font-bold text-white mr-1.5">{p.unidades}x</span>
                     {p.nombre}
                   </span>
-                  <span className="ml-4 tabular-nums">
+                  <span className="tabular-nums font-semibold">
                     {(p.unidades * p.precio).toFixed(2)} €
                   </span>
                 </li>
               ))
             ) : (
-              <li className="text-slate-500 italic">Sin artículos registrados...</li>
+              <li className="text-slate-500 italic text-[10px] md:text-sm">Sin artículos...</li>
             )}
           </ul>
         </div>
@@ -96,18 +96,18 @@ export default function RadarSala() {
   const mesasOrdenadas = [...mesas].sort((a, b) => new Date(a.fecha_apertura).getTime() - new Date(b.fecha_apertura).getTime());
 
   return (
-    <div className="p-6 font-sans bg-slate-900 rounded-xl border border-slate-800">
-      <header className="mb-6 border-b border-slate-800 pb-4">
+    <div className="p-4 md:p-6 font-sans bg-slate-900 rounded-xl border border-slate-800">
+      <header className="mb-4 md:mb-6 border-b border-slate-800 pb-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-100">Visor Táctico de Sala</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-100">Mesas Abiertas</h2>
+          <p className="text-[10px] md:text-xs text-slate-400 mt-1">
             {mesas.length} mesas activas • Motor de sincronización: {ultimaAct ? ultimaAct.toLocaleTimeString() : '...'}
           </p>
         </div>
       </header>
 
-      {/* Grid adaptativo: 1 columna en móvil, 2 en tablet, 3 estricto en PC */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 xl:gap-6">
+      {/* Grid: 2 columnas en móvil (grid-cols-2), 3 en tablet y PC (md:grid-cols-3) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 xl:gap-6">
         {mesasOrdenadas.map((m) => (
           <TarjetaMesa key={m.id_ticket} m={m} estado={calcularEstado(m.fecha_apertura)} />
         ))}

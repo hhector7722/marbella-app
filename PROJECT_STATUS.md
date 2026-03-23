@@ -10,6 +10,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## ✅ COMPLETADO
+- [x] **Sala: Refinamiento Mobile Alta Densidad (2026-03-23)**: Optimización del componente `TarjetaMesa` y layout de `RadarSala` para smartphones. Reducción de tipografías, paddings y gaps con flexbox responsivo (`md:`). Layout estricto de 2 columnas en móvil (`grid-cols-2`) para máxima densidad. Renombrado a "Mesas Abiertas".
 - [x] **Sala: Visor Táctico y Tickets en Vivo (2026-03-23)**: Rediseñado `RadarSala` a "Visor Táctico de Sala". Implementadas tarjetas de mesa expandibles (`TarjetaMesa`) para ver el desglose en vivo del ticket. Ajustado grid reactivo (1 col móvil, 3 col PC) y colores de alertas más intensos.
 - [x] **Sala: Limpieza UI (/dashboard/sala) (2026-03-23)**: Eliminado el título superior redundante "Centro de Mando La Marbella". En el componente `RadarSala`, se ha renombrado el título de "Radar de Sala" a "Mesas" y se ha suprimido la leyenda de indicadores de tiempos de la esquina superior derecha para un diseño más limpio.
 - [x] **Ventas: botón Live (/dashboard/ventas) (2026-03-23)**: Añadido un botón flotante en la esquina superior derecha de la cabecera (junto al filtro temporal) con un punto rojo parpadeante (estado "live"). Al pulsarlo navega a `/dashboard/sala` para visualizar el estado del local en tiempo real. Diseño sin bordes ni fondos según indicaciones.
