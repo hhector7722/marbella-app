@@ -305,71 +305,43 @@ export default function NewOrderPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="sticky top-0 z-50 bg-[#36606F] rounded-2xl px-4 md:px-6 pt-4 pb-4">
                     <div className="flex flex-col gap-4">
-                        <div className="relative w-full">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
-                            <input
-                                type="text"
-                                placeholder="Buscar ingrediente..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-2xl shadow-sm outline-none text-sm font-medium text-gray-700 focus:ring-2 focus:ring-white/30 transition-all"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                            <div className="relative shrink-0">
-                                <button
-                                    onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                                    className={cn(
-                                        "px-4 py-2.5 bg-white/90 hover:bg-white rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border border-white/50",
-                                        selectedSupplier && "bg-white border-[#5E35B1]/20 ring-1 ring-[#5E35B1]/10 text-[#5E35B1]"
-                                    )}
-                                >
-                                    {selectedSupplier || "Proveedor"} <ChevronDown size={14} className="text-zinc-400" />
-                                </button>
-
-                                {showSupplierPopup && (
-                                    <>
-                                        <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)}></div>
-                                        <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar Proveedor</span>
-                                            </div>
-                                            <button
-                                                onClick={() => { setSelectedSupplier(null); setShowSupplierPopup(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
-                                            >
-                                                Todos {!selectedSupplier && <Check size={14} className="text-[#5E35B1]" />}
-                                            </button>
-                                            {suppliers.map(sup => (
-                                                <button
-                                                    key={sup}
-                                                    onClick={() => { setSelectedSupplier(sup); setShowSupplierPopup(false); }}
-                                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider flex justify-between items-center"
-                                                >
-                                                    {sup} {selectedSupplier === sup && <Check size={14} className="text-[#5E35B1]" />}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
+                        {/* Fila 1: Proveedor y Buscador */}
+                        <div className="flex items-center gap-2">
+                            <div className={cn(
+                                "shrink-0 px-4 min-h-[48px] bg-white/90 rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-white/50",
+                                selectedSupplier && "text-[#5E35B1] ring-1 ring-[#5E35B1]/10 border-[#5E35B1]/20 bg-white"
+                            )}>
+                                {selectedSupplier || "PROVEEDOR"}
                             </div>
-                            {selectedItems.length > 0 && selectedSupplier && (
+                            <div className="relative w-full">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar ingrediente..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-xl shadow-sm outline-none text-[13px] font-medium text-gray-700 min-h-[48px] focus:ring-2 focus:ring-white/30 transition-all border border-transparent focus:border-[#5E35B1]/20"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Fila 2: Borrar pedido y Tramitar */}
+                        {selectedItems.length > 0 && selectedSupplier && (
+                            <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleNewOrder}
-                                    className="shrink-0 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
+                                    className="flex-1 px-4 min-h-[48px] bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
                                 >
-                                    Nuevo
+                                    Borrar Pedido
                                 </button>
-                            )}
-                            {selectedItems.length > 0 && selectedSupplier && (
                                 <button
                                     onClick={() => setIsSummaryOpen(true)}
-                                    className="shrink-0 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 animate-in zoom-in duration-200"
+                                    className="flex-1 px-4 min-h-[48px] bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
                                 >
                                     Tramitar ({selectedItems.length})
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

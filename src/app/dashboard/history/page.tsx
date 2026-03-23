@@ -758,101 +758,107 @@ export default function HistoryPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !isEditing && setSelectedClosing(null)}>
                     <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
                     <div className="relative bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-6 md:p-8 text-white relative shrink-0 text-center">
-                            <div className="flex items-center justify-between mb-3 relative z-10">
-                                <div className="flex-1 flex items-center justify-center gap-2">
-                                    {!isEditing && isManager && (
-                                        <>
-                                            <button
-                                                onClick={handleDeleteClosing}
-                                                className="p-1.5 md:p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 rounded-xl transition-all border border-rose-500/20 shadow-lg active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                                title="Eliminar cierre"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
-                                                className="p-1.5 md:p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 shadow-lg active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                                title="Editar cierre"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-                                        </>
+                        <div className="bg-[#36606F] p-4 md:p-5 text-white relative shrink-0 text-center">
+                            <div className="relative flex items-center justify-between mb-2 z-10 w-full">
+                                <div className="flex-1 flex items-center justify-start min-w-[32px]">
+                                    {isEditing && isManager && (
+                                        <button
+                                            onClick={handleDeleteClosing}
+                                            className="p-1 text-rose-300 hover:text-rose-200 hover:bg-rose-500/20 rounded-xl transition-all active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                                            title="Eliminar cierre"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                className="p-2 bg-white text-[#36606F] hover:bg-zinc-100 rounded-xl transition-all shadow-xl active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                >
-                                    <X size={16} strokeWidth={3} />
-                                </button>
-                            </div>
 
-                            <div className="mt-2">
-                                <div className="flex items-center justify-center gap-1 md:gap-2 min-w-0">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
-                                        className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
-                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
-                                        title="Día Anterior"
-                                    >
-                                        <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
-                                    </button>
-                                    <div className="min-w-0 flex-1">
-                                        {isEditing ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <input
-                                                    type="datetime-local"
-                                                    value={(() => {
-                                                        const raw = editData?.closed_at ?? selectedClosing.closed_at;
-                                                        const d = new Date(raw);
-                                                        return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
-                                                    })()}
-                                                    onChange={(e) => {
-                                                        if (!editData) return;
-                                                        const d = parseDateTimeLocal(e.target.value);
-                                                        setEditData({
-                                                            ...editData,
-                                                            closed_at: d.toISOString(),
-                                                            closing_date: formatClosingDate(d),
-                                                        });
-                                                    }}
-                                                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white font-black text-[11px] sm:text-sm uppercase tracking-widest text-center outline-none focus:ring-2 focus:ring-white/30 min-h-[48px]"
-                                                />
-                                                <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">
-                                                    {(() => {
-                                                        const raw = editData?.closed_at ?? selectedClosing.closed_at;
-                                                        const d = new Date(raw);
-                                                        return isNaN(d.getTime()) ? "Fecha inválida" : format(d, "eeee d MMMM, HH:mm", { locale: es });
-                                                    })()}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter break-words min-w-0">
-                                                {(() => {
-                                                    const d = new Date(selectedClosing.closed_at);
-                                                    return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
-                                                })()}
-                                            </h2>
-                                        )}
+                                <div className="flex items-center justify-center gap-4">
+                                    <div className="flex items-center gap-1.5 opacity-90">
+                                        <CloudSun size={14} className="text-amber-400" />
+                                        <span className="text-[10px] font-black uppercase text-white">{selectedClosing.weather || 'Clima N/A'}</span>
                                     </div>
+                                    <div className="flex items-center gap-1.5 opacity-90">
+                                        <Receipt size={14} className="text-blue-400" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">{selectedClosing.tickets_count || 0} Tickets</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 flex items-center justify-end gap-1 min-w-[32px]">
+                                    {!isEditing && isManager && (
+                                        <button
+                                            onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
+                                            className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                                            title="Editar cierre"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                    )}
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
-                                        className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 active:scale-90 border border-white/10 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
-                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
-                                        title="Día Siguiente"
+                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                        className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
                                     >
-                                        <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                                        <X size={20} strokeWidth={2.5} />
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-center gap-4 mt-6">
-                                    <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                        <CloudSun size={14} className="text-amber-400" />
-                                        <span className="text-[10px] font-black uppercase">{selectedClosing.weather || 'Clima N/A'}</span>
-                                    </div>
-                                    <div className="bg-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                        <Receipt size={14} className="text-blue-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{selectedClosing.tickets_count || 0} Tickets</span>
+                            </div>
+
+                            <div className="mt-1">
+                                <div className="flex items-center justify-center w-full">
+                                    <div className="inline-flex items-center justify-center gap-1 md:gap-2 max-w-full">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
+                                            className="p-1 transition-all disabled:opacity-30 active:scale-90 text-white/60 hover:text-white shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
+                                            disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                            title="Día Anterior"
+                                        >
+                                            <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
+                                        </button>
+                                        <div className="flex-shrink-0 min-w-0 px-1 lg:px-2">
+                                            {isEditing ? (
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={(() => {
+                                                            const raw = editData?.closed_at ?? selectedClosing.closed_at;
+                                                            const d = new Date(raw);
+                                                            return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
+                                                        })()}
+                                                        onChange={(e) => {
+                                                            if (!editData) return;
+                                                            const d = parseDateTimeLocal(e.target.value);
+                                                            setEditData({
+                                                                ...editData,
+                                                                closed_at: d.toISOString(),
+                                                                closing_date: formatClosingDate(d),
+                                                            });
+                                                        }}
+                                                        className="bg-white/10 border border-white/20 rounded-xl px-2 py-1.5 text-white font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-2 focus:ring-white/30 min-h-[40px]"
+                                                    />
+                                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">
+                                                        {(() => {
+                                                            const raw = editData?.closed_at ?? selectedClosing.closed_at;
+                                                            const d = new Date(raw);
+                                                            return isNaN(d.getTime()) ? "Fecha inválida" : format(d, "eeee d MMMM, HH:mm", { locale: es });
+                                                        })()}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-tighter break-words min-w-0">
+                                                    {(() => {
+                                                        const d = new Date(selectedClosing.closed_at);
+                                                        return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
+                                                    })()}
+                                                </h2>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
+                                            className="p-1 transition-all disabled:opacity-30 active:scale-90 text-white/60 hover:text-white shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center group"
+                                            disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                            title="Día Siguiente"
+                                        >
+                                            <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -880,12 +886,12 @@ export default function HistoryPage() {
                                         {isEditing && editable && fieldKey ? (
                                             <input
                                                 type="number"
-                                                className="bg-transparent text-xl md:text-2xl font-black text-gray-900 text-center outline-none border-b border-black/10 pb-0.5"
+                                                className="bg-transparent text-sm md:text-base font-black text-gray-900 text-center outline-none border-b border-black/10 pb-0.5"
                                                 value={value || ''}
                                                 onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
                                             />
                                         ) : (
-                                            <span className="text-xl md:text-2xl font-black text-gray-900 leading-none">
+                                            <span className="text-sm md:text-base font-black text-gray-900 leading-none">
                                                 {formatMoneyModal(value)}
                                             </span>
                                         )}
@@ -931,7 +937,7 @@ export default function HistoryPage() {
                                                 className="flex flex-col items-center justify-center text-center min-w-[70px] cursor-pointer"
                                                 onClick={() => !isEditing && setShowCashDetails(true)}
                                             >
-                                                <span className="text-xl md:text-2xl font-black text-gray-900 leading-none">
+                                                <span className="text-sm md:text-base font-black text-gray-900 leading-none">
                                                     {formatMoneyModal(getValue('cash_counted'))}
                                                 </span>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-tight text-center">
@@ -956,7 +962,7 @@ export default function HistoryPage() {
                                             />
                                             <div className="flex flex-col items-center justify-center text-center min-w-[70px]">
                                                 <span className={cn(
-                                                    "text-xl md:text-2xl font-black leading-none",
+                                                    "text-sm md:text-base font-black leading-none",
                                                     getValue('difference') > 0
                                                         ? "text-emerald-600"
                                                         : getValue('difference') < 0

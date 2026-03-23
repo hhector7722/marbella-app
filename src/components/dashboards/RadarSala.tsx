@@ -47,9 +47,9 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
             {m.productos && m.productos.length > 0 ? (
               m.productos.map((p: any, i: number) => (
                 <li key={i} className="flex justify-between items-start leading-tight">
-                  <span className="flex-1 pr-2 break-words">
-                    <span className="font-bold text-white mr-1.5">{p.unidades}x</span>
-                    {p.nombre}
+                  <span className="flex-1 pr-2 flex items-start">
+                    <span className="font-bold text-white mr-1.5 shrink-0">{p.unidades}x</span>
+                    <span className="break-words flex-1">{p.nombre}</span>
                   </span>
                   <span className="tabular-nums font-semibold shrink-0 pt-0.5">
                     {(p.unidades * p.precio).toFixed(2)} €
