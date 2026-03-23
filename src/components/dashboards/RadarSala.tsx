@@ -43,16 +43,12 @@ export default function RadarSala() {
 
   return (
     <div className="p-6 font-sans bg-slate-900 rounded-xl border border-slate-800">
-      <header className="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
+      <header className="mb-6 border-b border-slate-800 pb-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-100">Radar de Sala</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-100">Mesas</h2>
           <p className="text-xs text-slate-400 mt-1">
             {mesas.length} mesas activas • Latido: {ultimaAct ? ultimaAct.toLocaleTimeString() : '...'}
           </p>
-        </div>
-        <div className="flex gap-2">
-            <span className="px-2 py-1 rounded-md bg-red-900/30 text-red-400 text-[10px] uppercase font-bold border border-red-800/50">&gt;45m Crítico</span>
-            <span className="px-2 py-1 rounded-md bg-yellow-900/30 text-yellow-400 text-[10px] uppercase font-bold border border-yellow-800/50">&gt;30m Atención</span>
         </div>
       </header>
 
