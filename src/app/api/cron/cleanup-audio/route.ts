@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
             // 5. FILTRAR POR FECHA Y PURGAR
             const filesToDelete = files
                 ?.filter(file => {
+                    if (!file.created_at) return false;
                     const fileCreated = new Date(file.created_at);
                     return fileCreated < cutoffDate;
                 })
