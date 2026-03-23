@@ -384,21 +384,32 @@ export default function VentasPage() {
                                 <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
                             </div>
 
-                            <TimeFilterButton
-                                onClick={() => setIsTimeFilterOpen(true)}
-                                hasActiveFilter={(() => {
-                                    const today = new Date().toISOString().split('T')[0];
-                                    const isDefault = filterMode === 'single' && selectedDate === today && !hourFilter;
-                                    return !isDefault;
-                                })()}
-                                onClear={() => {
-                                    const today = new Date().toISOString().split('T')[0];
-                                    setHourFilter(null);
-                                    setFilterMode('single');
-                                    setSelectedDate(today);
-                                }}
-                                className="text-white"
-                            />
+                            <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                                <button
+                                    onClick={() => router.push('/dashboard/sala')}
+                                    className="flex items-center gap-1.5 outline-none min-h-[48px] px-1 active:scale-95 transition-transform"
+                                    type="button"
+                                >
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 animate-pulse" />
+                                    <span className="text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] leading-none pt-0.5">Live</span>
+                                </button>
+
+                                <TimeFilterButton
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                    hasActiveFilter={(() => {
+                                        const today = new Date().toISOString().split('T')[0];
+                                        const isDefault = filterMode === 'single' && selectedDate === today && !hourFilter;
+                                        return !isDefault;
+                                    })()}
+                                    onClear={() => {
+                                        const today = new Date().toISOString().split('T')[0];
+                                        setHourFilter(null);
+                                        setFilterMode('single');
+                                        setSelectedDate(today);
+                                    }}
+                                    className="text-white"
+                                />
+                            </div>
                         </div>
 
                         {/* FILTRO ACTIVO CENTRADO */}
