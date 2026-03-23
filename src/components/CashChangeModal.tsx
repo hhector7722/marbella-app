@@ -647,31 +647,21 @@ export const CashChangeModal = ({
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-[#f8fafb] w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
-                    <div className="px-4 py-2.5 pb-3">
-                        <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                            <div className="flex items-center gap-1 shrink-0">
-                                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
-                                    <X size={20} strokeWidth={3} />
-                                </button>
-                            </div>
-                        </div>
-                        {/* Cabecera Principal del Paso */}
-                        <div className="flex flex-col items-center justify-center mb-2 bg-black/20 rounded-xl py-2 px-3 border border-white/10 shadow-inner">
-                            <span className="text-[14px] md:text-base font-black text-white text-center leading-tight tracking-tight">
-                                {titleText}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2 px-1 bg-black/10 rounded-2xl py-2">
-                            <span className="text-[10px] md:text-xs font-black text-white/50 uppercase tracking-widest">Total</span>
-                            <span className="text-xl md:text-2xl font-black text-emerald-400 tabular-nums drop-shadow-md">{total.toFixed(2)}€</span>
-                        </div>
-                    </div>
+                <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative py-1 px-4 flex items-center justify-between">
+                    <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
+                        <X size={20} strokeWidth={3} />
+                    </button>
                 </div>
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2">
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2 flex flex-col">
+                    <div className="flex flex-col items-center justify-center mb-3 mt-1">
+                        <span className="text-base font-black text-[#36606F] text-center leading-tight tracking-tight">
+                            {titleText}
+                        </span>
+                    </div>
+
                     {zoomDenom !== null && (
                         <DenominationZoomModal
                             isOpen={true}
@@ -739,6 +729,12 @@ export const CashChangeModal = ({
                             );
                         })}
                         {/* Botones en la misma fila que 1c (última fila del grid) */}
+                        <div className="self-stretch flex flex-col justify-end">
+                            <div className="w-full h-10 min-h-[48px] bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+                                <span className="text-[8px] font-black text-emerald-600/70 uppercase tracking-widest leading-none mb-0.5">Total</span>
+                                <span className="text-[12px] font-black text-emerald-700 tabular-nums leading-none tracking-tighter">{total.toFixed(2)}€</span>
+                            </div>
+                        </div>
                         <div className="self-stretch flex flex-col justify-end">
                             {isStep1 ? (
                                 <button
