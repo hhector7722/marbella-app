@@ -247,11 +247,7 @@ export const CashChangeModal = ({
 
     const handleGuardarStep2 = async () => {
         if (!boxA || !boxB || totalStep2 < 0.005 || hasStockIssueStep2) return;
-        const sameTotal = Math.abs(totalStep1 - totalStep2) < 0.005;
-        if (!sameTotal) {
-            toast.error('El total del paso 2 debe coincidir con el total del paso 1 para poder guardar.');
-            return;
-        }
+        
         try {
             const { data: { user } } = await supabase.auth.getUser();
             const exchangeGroupId = crypto.randomUUID();
@@ -267,14 +263,19 @@ export const CashChangeModal = ({
                     type: 'EXCHANGE',
                     amount,
                     breakdown,
-                    notes: `Intercambio: ${directionLabel}`,
+                    notes: directionLabel,
                     user_id: user?.id ?? null,
                     exchange_group_id: exchangeGroupId
                 });
                 if (error) throw new Error(error.message);
             };
-            await insertExchange(boxA, boxB, step1Counts, `De ${boxA.name} a ${boxB.name}`);
-            await insertExchange(boxB, boxA, step2Counts, `De ${boxB.name} a ${boxA.name}`);
+
+            // Paso 1: "Dinero que entra en Origen". Significa movimiento De Destino a Origen
+            await insertExchange(boxB, boxA, step1Counts, `Intercambio: Entra en ${boxA.name}`);
+            
+            // Paso 2: "Dinero que sale de Origen". Significa movimiento De Origen a Destino
+            await insertExchange(boxA, boxB, step2Counts, `Intercambio: Sale de ${boxA.name}`);
+
             toast.success('Cambio entre cajas guardado');
             if (onSuccess) onSuccess();
             onClose();
@@ -432,6 +433,19 @@ export const CashChangeModal = ({
     // ——— Flujo dos cajas: selector ———
     if (step === 'select') {
         const canContinue = boxA && boxB && boxA.id !== boxB.id;
+        
+        // Ensure specific order: TPV 1, TPV 2, Inicial, Cambio 1, Cambio 2
+        const orderWeight = (name: string) => {
+            const lower = name.toLowerCase();
+            if (lower.includes('tpv 1')) return 1;
+            if (lower.includes('tpv 2')) return 2;
+            if (lower.includes('inicial')) return 3;
+            if (lower.includes('cambio 1')) return 4;
+            if (lower.includes('cambio 2')) return 5;
+            return 99;
+        };
+        const sortedOptions = [...boxOptions].sort((a, b) => orderWeight(a.name) - orderWeight(b.name));
+
         return (
             <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
@@ -459,31 +473,50 @@ export const CashChangeModal = ({
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                     <div className="flex-1 overflow-y-auto p-4">
-                        <p className="text-zinc-600 text-[11px] font-bold text-center mb-4">Escoge dos cajas para el intercambio</p>
-                        <div className="flex flex-col gap-2">
-                            {boxOptions.map((opt) => {
-                                const isA = boxA?.id === opt.id;
-                                const isB = boxB?.id === opt.id;
-                                const selected = isA || isB;
-                                return (
-                                    <button
-                                        key={opt.id}
-                                        type="button"
-                                        onClick={() => toggleBoxSelection(opt)}
-                                        className={cn(
-                                            "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide transition-all flex items-center justify-center text-center px-3",
-                                            selected
-                                                ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]"
-                                                : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
-                                        )}
-                                    >
-                                        {opt.name}
-                                    </button>
-                                );
-                            })}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <h3 className="text-[12px] font-black uppercase text-center text-[#36606F]">Origen</h3>
+                                {sortedOptions.map((opt) => {
+                                    const isA = boxA?.id === opt.id;
+                                    return (
+                                        <button
+                                            key={`origen-${opt.id}`}
+                                            type="button"
+                                            onClick={() => setBoxA(isA ? null : opt)}
+                                            className={cn(
+                                                "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide transition-all flex items-center justify-center text-center px-1 leading-tight",
+                                                isA ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
+                                                boxB?.id === opt.id && !isA ? "opacity-40" : ""
+                                            )}
+                                        >
+                                            {opt.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <h3 className="text-[12px] font-black uppercase text-center text-[#36606F]">Destino</h3>
+                                {sortedOptions.map((opt) => {
+                                    const isB = boxB?.id === opt.id;
+                                    return (
+                                        <button
+                                            key={`destino-${opt.id}`}
+                                            type="button"
+                                            onClick={() => setBoxB(isB ? null : opt)}
+                                            className={cn(
+                                                "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide transition-all flex items-center justify-center text-center px-1 leading-tight",
+                                                isB ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
+                                                boxA?.id === opt.id && !isB ? "opacity-40" : ""
+                                            )}
+                                        >
+                                            {opt.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                         {boxA && boxB && boxA.id === boxB.id && (
-                            <p className="text-rose-600 text-[10px] font-bold mt-3 text-center">Elige dos cajas distintas</p>
+                            <p className="text-rose-600 text-[10px] font-bold mt-4 text-center">Elige dos cajas distintas</p>
                         )}
                     </div>
                     <div className="p-3 bg-white border-t border-zinc-100 shrink-0">
@@ -609,8 +642,7 @@ export const CashChangeModal = ({
     const stock = isStep1 ? stockA : stockB;
     const hasStockIssue = isStep1 ? hasStockIssueStep1 : hasStockIssueStep2;
 
-    const leftHeaderName = isStep1 ? (boxA?.name ?? '') : (boxB?.name ?? '');
-    const rightHeaderName = isStep1 ? (boxB?.name ?? '') : (boxA?.name ?? '');
+    const titleText = isStep1 ? `Dinero que entra en ${boxA?.name}` : `Dinero que sale de ${boxA?.name}`;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
@@ -625,22 +657,15 @@ export const CashChangeModal = ({
                                 </button>
                             </div>
                         </div>
-                        {/* Cabeceras: nombre izquierda | Dirección (flecha) | nombre derecha */}
-                        <div className="grid grid-cols-[1fr_80px_1fr] gap-1 items-center mb-2">
-                            <div className="text-center">
-                                <span className="text-[10px] font-bold text-white truncate block" title={leftHeaderName}>{leftHeaderName}</span>
-                            </div>
-                            <div className="text-center flex flex-col items-center justify-center">
-                                <span className="text-[8px] font-black text-white/70 uppercase tracking-widest block">Dirección</span>
-                                {isStep1 ? <ArrowRight size={20} className="text-white" strokeWidth={3} /> : <ArrowLeft size={20} className="text-white" strokeWidth={3} />}
-                            </div>
-                            <div className="text-center">
-                                <span className="text-[10px] font-bold text-white truncate block" title={rightHeaderName}>{rightHeaderName}</span>
-                            </div>
+                        {/* Cabecera Principal del Paso */}
+                        <div className="flex flex-col items-center justify-center mb-2 bg-black/20 rounded-xl py-2 px-3 border border-white/10 shadow-inner">
+                            <span className="text-[14px] md:text-base font-black text-white text-center leading-tight tracking-tight">
+                                {titleText}
+                            </span>
                         </div>
-                        <div className="flex items-center justify-center gap-1.5 px-0.5 bg-black/10 rounded-2xl py-2">
-                            <span className="text-[8px] font-black text-white/50 uppercase">Total</span>
-                            <span className="text-base font-black text-white tabular-nums">{total.toFixed(2)}€</span>
+                        <div className="flex items-center justify-center gap-2 px-1 bg-black/10 rounded-2xl py-2">
+                            <span className="text-[10px] md:text-xs font-black text-white/50 uppercase tracking-widest">Total</span>
+                            <span className="text-xl md:text-2xl font-black text-emerald-400 tabular-nums drop-shadow-md">{total.toFixed(2)}€</span>
                         </div>
                     </div>
                 </div>
