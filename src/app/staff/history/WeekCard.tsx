@@ -221,13 +221,13 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                     </span>
                 </div>
                 <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-14 md:pr-16">
-                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
+                    <div className="flex flex-col items-center justify-between h-full py-1.5">
                         <span className="text-[9px] font-black leading-none text-black block">
                             {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : " "}
                         </span>
                         <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
+                    <div className="flex flex-col items-center justify-between h-full py-1.5">
                         {(() => {
                             const startBalance = week.summary.startBalance ?? 0;
                             const hasPending = Math.abs(startBalance) > 0.05;
@@ -246,13 +246,13 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         })()}
                         <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
+                    <div className="flex flex-col items-center justify-between h-full py-1.5">
                         <span className="text-[9px] font-black leading-none text-black block">
                             {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : " "}
                         </span>
                         <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
+                    <div className="flex flex-col items-center justify-between h-full py-1.5">
                         <span className="text-[9px] font-black leading-none text-emerald-600 block">
                             {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
                                 ? fmtMoney(week.summary.estimatedValue)

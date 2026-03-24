@@ -294,57 +294,57 @@ export default function TipsDashboardView({
 
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
             {/* Fila 1: etiquetas de contenido */}
+            {/* Fila Única: Contenedores bote combinados (Verde Marbella) */}
             <div className="grid grid-cols-2 gap-2 md:gap-4">
-              <div className="text-center py-1 md:py-2">
-                <p className="text-[10px] md:text-[13px] font-black text-zinc-600 uppercase tracking-widest">
-                  Lun – Vie
-                </p>
-              </div>
-              <div className="text-center py-1 md:py-2">
-                <p className="text-[10px] md:text-[13px] font-black text-zinc-600 uppercase tracking-widest">
-                  Sáb – Dom
-                </p>
-              </div>
-            </div>
-
-            {/* Fila 2: contenedores bote (valor verde sin fondo; botón + pequeño circular) */}
-            <div className="grid grid-cols-2 gap-2 md:gap-4">
-              <div className="bg-white/80 rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
-                <div className="min-w-0">
-                  {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
-                    <span className="text-base md:text-2xl font-black tabular-nums text-emerald-600">
-                      {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
-                      <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1">€</span>
-                    </span>
-                  ) : (
-                    <span className="text-base md:text-2xl font-black tabular-nums text-zinc-400"> </span>
-                  )}
+              {/* LUN - VIE */}
+              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-3 md:p-5 flex items-center justify-between gap-3 text-white border-b-4 border-emerald-800">
+                <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-3 min-w-0">
+                  <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
+                    Lun – Vie
+                  </span>
+                  <div className="min-w-0 leading-none">
+                    {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
+                      <span className="text-lg md:text-3xl font-black tabular-nums truncate">
+                        {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
+                        <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1 opacity-80">€</span>
+                      </span>
+                    ) : (
+                      <span className="text-lg md:text-3xl font-black tabular-nums text-white/30 truncate"> </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => openCash('weekday')}
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-full text-[#36606F] hover:text-[#2d4d57] flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[48px]"
+                  className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm group"
                   title="Introducir cantidades"
                 >
-                  <Plus size={20} strokeWidth={3} className="md:w-[22px] md:h-[22px]" />
+                  <Plus size={22} strokeWidth={4} className="md:w-7 md:h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
                 </button>
               </div>
-              <div className="bg-white/80 rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2.5 md:p-4 flex items-center justify-between gap-2 min-h-[48px]">
-                <div className="min-w-0">
-                  {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
-                    <span className="text-base md:text-2xl font-black tabular-nums text-emerald-600">
-                      {fmtZeroBlank(weekendPool!.cashTotal, 2)}
-                      <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1">€</span>
-                    </span>
-                  ) : (
-                    <span className="text-base md:text-2xl font-black tabular-nums text-zinc-400"> </span>
-                  )}
+
+              {/* SÁB - DOM */}
+              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-3 md:p-5 flex items-center justify-between gap-3 text-white border-b-4 border-emerald-800">
+                <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-3 min-w-0">
+                  <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
+                    Sáb – Dom
+                  </span>
+                  <div className="min-w-0 leading-none">
+                    {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
+                      <span className="text-lg md:text-3xl font-black tabular-nums truncate">
+                        {fmtZeroBlank(weekendPool!.cashTotal, 2)}
+                        <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1 opacity-80">€</span>
+                      </span>
+                    ) : (
+                      <span className="text-lg md:text-3xl font-black tabular-nums text-white/30 truncate"> </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => openCash('weekend')}
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-full text-[#36606F] hover:text-[#2d4d57] flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[48px]"
+                  className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm group"
                   title="Introducir cantidades"
                 >
-                  <Plus size={20} strokeWidth={3} className="md:w-[22px] md:h-[22px]" />
+                  <Plus size={22} strokeWidth={4} className="md:w-7 md:h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
                 </button>
               </div>
             </div>
@@ -393,9 +393,14 @@ export default function TipsDashboardView({
                     ) : (
                       staffWithWorkedHours.map((s) => {
                         const isSanc = s.isSanctioned;
-                        const strikeClass = isSanc ? 'line-through decoration-rose-500/50 decoration-2 opacity-50' : '';
+                        const strikeClass = isSanc ? 'opacity-40' : '';
                         return (
-                        <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
+                        <tr key={s.id} className="group relative hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
+                          {isSanc && (
+                            <td className="absolute inset-0 pointer-events-none z-10 flex items-center px-2 md:px-4">
+                              <div className="w-full h-[1px] bg-black/60" />
+                            </td>
+                          )}
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
                             onClick={() => openOverride('weekday', s.id, s.name)}
@@ -408,39 +413,34 @@ export default function TipsDashboardView({
                                     OVERRIDE
                                   </span>
                                 )}
-                                {isSanc && (
-                                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white bg-rose-500 px-1.5 py-0.5 rounded shadow-sm shrink-0">
-                                    SANCION
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </td>
                           <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer", strikeClass)}
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-600 cursor-pointer", strikeClass)}
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             {fmtHours(s.weekdayHours)}
                           </td>
                           <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-emerald-600 cursor-pointer", strikeClass)}
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer", strikeClass)}
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
                           <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80", strikeClass)}
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-zinc-600 cursor-pointer bg-zinc-50/80", strikeClass)}
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtHours(s.weekendHours)}
                           </td>
                           <td
-                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-orange-600 cursor-pointer bg-zinc-50/80", strikeClass)}
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80", strikeClass)}
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
-                          <td className={cn("px-2 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-[13px] font-black tabular-nums text-zinc-900", strikeClass)}>
+                          <td className={cn("px-2 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-[13px] font-black tabular-nums text-emerald-600", strikeClass)}>
                             {fmtMoney(s.totalAmount)}
                           </td>
                         </tr>
