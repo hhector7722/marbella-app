@@ -298,18 +298,18 @@ export default function TipsDashboardView({
             <div className="grid grid-cols-2 gap-2 md:gap-4">
               {/* LUN - VIE */}
               <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-3 md:p-5 flex items-center justify-between gap-3 text-white border-b-4 border-emerald-800">
-                <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-3 min-w-0">
-                  <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
+                <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 min-w-0">
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
                     Lun – Vie
                   </span>
                   <div className="min-w-0 leading-none">
                     {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
-                      <span className="text-lg md:text-3xl font-black tabular-nums truncate">
+                      <span className="text-sm md:text-2xl font-black tabular-nums truncate">
                         {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
-                        <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1 opacity-80">€</span>
+                        <span className="text-[8px] md:text-xs font-black ml-0.5 md:ml-1 opacity-80">€</span>
                       </span>
                     ) : (
-                      <span className="text-lg md:text-3xl font-black tabular-nums text-white/30 truncate"> </span>
+                      <span className="text-sm md:text-2xl font-black tabular-nums text-white/30 truncate"> </span>
                     )}
                   </div>
                 </div>
@@ -324,18 +324,18 @@ export default function TipsDashboardView({
 
               {/* SÁB - DOM */}
               <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-3 md:p-5 flex items-center justify-between gap-3 text-white border-b-4 border-emerald-800">
-                <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-3 min-w-0">
-                  <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
+                <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 min-w-0">
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
                     Sáb – Dom
                   </span>
                   <div className="min-w-0 leading-none">
                     {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
-                      <span className="text-lg md:text-3xl font-black tabular-nums truncate">
+                      <span className="text-sm md:text-2xl font-black tabular-nums truncate">
                         {fmtZeroBlank(weekendPool!.cashTotal, 2)}
-                        <span className="text-[10px] md:text-sm font-black ml-0.5 md:ml-1 opacity-80">€</span>
+                        <span className="text-[8px] md:text-xs font-black ml-0.5 md:ml-1 opacity-80">€</span>
                       </span>
                     ) : (
-                      <span className="text-lg md:text-3xl font-black tabular-nums text-white/30 truncate"> </span>
+                      <span className="text-sm md:text-2xl font-black tabular-nums text-white/30 truncate"> </span>
                     )}
                   </div>
                 </div>
@@ -397,9 +397,7 @@ export default function TipsDashboardView({
                         return (
                         <tr key={s.id} className="group relative hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
                           {isSanc && (
-                            <td className="absolute inset-0 pointer-events-none z-10 flex items-center px-2 md:px-4">
-                              <div className="w-full h-[1px] bg-black/60" />
-                            </td>
+                            <div className="absolute top-1/2 left-[20%] right-0 h-[1.5px] bg-black/70 pointer-events-none z-10" />
                           )}
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
