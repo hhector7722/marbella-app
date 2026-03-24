@@ -37,6 +37,7 @@ interface WeeklyData {
         finalBalance: number;
         isPaid: boolean;
         contractedHours: number;
+        preferStock?: boolean;
     };
 }
 
@@ -48,15 +49,18 @@ interface WorkerWeeklyHistoryModalProps {
 }
 
 // --- VISUAL HELPERS (idénticos a StaffDashboardView.tsx) ---
-const formatNumber = (val: number) => {
-    if (Math.abs(val) < 0.1) return " ";
-    return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
+const fmtDecimal = (val: number): string => {
+    const s = val.toFixed(1);
+    return s.endsWith('.0') ? s.slice(0, -2) : s;
 };
-const formatWorked = (val: number) => formatNumber(Math.abs(val));
-const formatMoney = (val: number) => {
-    if (Math.abs(val) < 0.1) return " ";
-    return `${val.toFixed(0)}€`;
+
+const fmtMoney = (val: number): string => {
+    if (!val || Math.abs(val) < 0.05) return ' ';
+    const str = Math.abs(val).toFixed(0);
+    return val < 0 ? `-${str}€` : `${str}€`;
 };
+
+const formatWorked = (val: number) => fmtDecimal(Math.abs(val));
 
 export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, weekStart }: WorkerWeeklyHistoryModalProps) {
     const supabase = createClient();
@@ -134,41 +138,26 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 };
             });
 
-            // 5. Set Final State (totales de get_weekly_worker_stats, días de get_monthly_timesheet)
-            if (rpcStaff) {
-                setWeekData({
-                    weekNumber: parseInt(format(mondayDate, 'w')),
-                    startDate: mondayDate,
-                    endDate: sundayDate,
-                    days: weekDays,
-                    summary: {
-                        totalHours: rpcStaff.totalHours ?? 0,
-                        weeklyBalance: rpcStaff.overtimeHours ?? 0,
-                        estimatedValue: rpcStaff.totalCost ?? 0,
-                        finalBalance: rpcStaff.overtimeHours ?? 0,
-                        isPaid: rpcStaff.isPaid ?? false,
-                        contractedHours: 0,
-                        startBalance: rpcStaff.pendingBalance ?? 0
-                    }
-                });
-            } else if (targetWeek && weekDays.length > 0) {
-                const s = targetWeek.summary;
-                setWeekData({
-                    weekNumber: parseInt(format(mondayDate, 'w')),
-                    startDate: mondayDate,
-                    endDate: sundayDate,
-                    days: weekDays,
-                    summary: {
-                        totalHours: s?.totalHours ?? 0,
-                        weeklyBalance: s?.weeklyBalance ?? 0,
-                        estimatedValue: s?.estimatedValue ?? 0,
-                        finalBalance: s?.finalBalance ?? 0,
-                        isPaid: s?.isPaid ?? false,
-                        contractedHours: 0,
-                        startBalance: s?.startBalance ?? 0
-                    }
-                });
-            }
+            // 5. Set Final State (Perfect Photocopy Mapping)
+            // Usamos startBalance de get_monthly_timesheet y preferStock de get_weekly_worker_stats
+            const summaryFromTS = targetWeek?.summary;
+            
+            setWeekData({
+                weekNumber: parseInt(format(mondayDate, 'w')),
+                startDate: mondayDate,
+                endDate: sundayDate,
+                days: weekDays,
+                summary: {
+                    totalHours: rpcStaff?.totalHours ?? summaryFromTS?.totalHours ?? 0,
+                    weeklyBalance: rpcStaff?.overtimeHours ?? summaryFromTS?.weeklyBalance ?? 0,
+                    estimatedValue: rpcStaff?.totalCost ?? summaryFromTS?.estimatedValue ?? 0,
+                    finalBalance: rpcStaff?.overtimeHours ?? summaryFromTS?.finalBalance ?? 0,
+                    isPaid: rpcStaff?.isPaid ?? summaryFromTS?.isPaid ?? false,
+                    contractedHours: 0,
+                    startBalance: summaryFromTS?.startBalance ?? 0,
+                    preferStock: rpcStaff?.preferStock ?? false
+                }
+            });
         } catch (error) {
             console.error("Error in Modal:", error);
             toast.error("Error al cargar detalles semanales");
@@ -212,17 +201,17 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                             <div className="grid grid-cols-7">
                                 {weekData.days.map((day, i) => (
                                     <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
+                                        <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10 shadow-sm border-r border-white/30 last:border-r-0">
                                             <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
                                         </div>
                                         <div className="flex-1 p-1 flex flex-col items-stretch relative z-0 bg-white">
-                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
+                                            <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-zinc-400'}`}>{day.dayNumber}</span>
                                             <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px]">
                                                 <div className="h-5 flex items-center justify-center gap-1 shrink-0">
                                                     {day.hasLog ? (
                                                         <>
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                            <span className="text-[9px] font-mono text-zinc-700 leading-none">{day.clockIn}</span>
                                                         </>
                                                     ) : <span className="text-[9px] text-transparent select-none">0</span>}
                                                 </div>
@@ -230,22 +219,22 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                                     {day.hasLog && day.clockOut ? (
                                                         <>
                                                             <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
+                                                            <span className="text-[9px] font-mono text-zinc-700 leading-none">{day.clockOut}</span>
                                                         </>
-                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" /> : <span className="text-[9px] text-transparent select-none">0</span>)}
+                                                    ) : (day.hasLog && !day.clockOut && day.isToday ? <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" /> : <span className="text-[9px] text-transparent select-none">0</span>)}
                                                 </div>
                                             </div>
                                             <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                {day.hasLog && day.totalHours > 0 ? (
-                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                        <span className="ml-0.5">H</span>
-                                                        <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
+                                                {day.hasLog && day.totalHours > 0.05 ? (
+                                                    <div className="flex justify-between items-center text-[8px] text-zinc-400 h-3">
+                                                        <span className="ml-0.5 font-black uppercase tracking-tighter">H</span>
+                                                        <span className="font-bold text-zinc-800 pr-1">{fmtDecimal(day.totalHours)}</span>
                                                     </div>
                                                 ) : <div className="h-3" />}
-                                                {day.extraHours > 0 ? (
-                                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                        <span className="ml-0.5">Ex</span>
-                                                        <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
+                                                {day.extraHours > 0.05 ? (
+                                                    <div className="flex justify-between items-center text-[8px] text-zinc-400 h-3">
+                                                        <span className="ml-0.5 font-black uppercase tracking-tighter">EX</span>
+                                                        <span className="font-bold text-zinc-800 pr-1">{fmtDecimal(day.extraHours)}</span>
                                                     </div>
                                                 ) : <div className="h-3" />}
                                             </div>
@@ -254,15 +243,27 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                 ))}
                             </div>
 
-                            <div className="p-2 md:p-3 flex items-center justify-between gap-1 md:gap-2 overflow-x-auto no-scrollbar">
-                                <div className="flex flex-col items-center flex-1">
-                                    <div className="h-4 md:h-5 flex items-center">
-                                        <span className="font-black text-black text-[11px] md:text-sm leading-none">{formatWorked(weekData.summary.totalHours)}</span>
-                                    </div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
+                            <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
+                                {weekData.summary.isPaid && (
+                                    <img
+                                        src="/sello/pagado.png"
+                                        alt="PAGADO"
+                                        className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[64px] h-auto z-30 pointer-events-none md:w-[72px]"
+                                    />
+                                )}
+                                <div className="w-24 pl-3 shrink-0 flex items-center h-full">
+                                    <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
+                                        SEMANA {weekData.weekNumber}
+                                    </span>
                                 </div>
-                                <div className="flex flex-col items-center flex-1">
-                                    <div className="h-4 md:h-5 flex items-center">
+                                <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
+                                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                        <span className="text-[9px] font-black leading-none text-black block">
+                                            {weekData.summary.totalHours > 0.05 ? fmtDecimal(weekData.summary.totalHours) : " "}
+                                        </span>
+                                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
                                         {(() => {
                                             const startBalance = weekData.summary.startBalance ?? 0;
                                             const hasPending = Math.abs(startBalance) > 0.05;
@@ -270,27 +271,29 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                             const isFutureWeek = weekData.startDate > currentWeekStart;
                                             const showPending = hasPending && !isFutureWeek;
                                             const colorClass = !showPending ? "text-transparent" : startBalance >= 0 ? "text-emerald-600" : "text-red-600";
-                                            const text = showPending ? formatWorked(Math.abs(startBalance)) : " ";
+                                            const text = showPending ? fmtDecimal(Math.abs(startBalance)) : " ";
                                             return (
-                                                <span className={cn("font-black text-[11px] md:text-sm leading-none block", colorClass)}>
+                                                <span className={cn("text-[9px] font-black leading-none block", colorClass)}>
                                                     {text}
                                                 </span>
                                             );
                                         })()}
+                                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                                     </div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                </div>
-                                <div className="flex flex-col items-center flex-1">
-                                    <div className="h-4 md:h-5 flex items-center">
-                                        <span className="font-black text-[11px] md:text-sm leading-none text-black">{weekData.summary.finalBalance > 0 ? formatWorked(weekData.summary.finalBalance) : " "}</span>
+                                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                        <span className="text-[9px] font-black leading-none text-black block">
+                                            {(weekData.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(weekData.summary.weeklyBalance)) : " "}
+                                        </span>
+                                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                                     </div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
-                                </div>
-                                <div className="flex flex-col items-center flex-1">
-                                    <div className="h-4 md:h-5 flex items-center">
-                                        <span className="font-black text-[11px] md:text-sm leading-none text-emerald-600">{formatMoney(weekData.summary.estimatedValue)}</span>
+                                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                                        <span className="text-[9px] font-black leading-none text-emerald-600 block">
+                                            {(weekData.summary.estimatedValue ?? 0) > 0.05 && weekData.summary.preferStock !== true
+                                                ? fmtMoney(weekData.summary.estimatedValue)
+                                                : " "}
+                                        </span>
+                                        <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">IMPORTE</span>
                                     </div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
                                 </div>
                             </div>
                         </div>
