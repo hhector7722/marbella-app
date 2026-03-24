@@ -572,51 +572,69 @@ export default function HistoryPage() {
                                             <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                         </div>
                                     ) : (
-                                        <div className="min-w-max w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-cierres">
-                                            <table className="w-full min-w-[800px] text-left border-collapse">
-                                                <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
+                                        <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-cierres">
+                                            <table className="w-full text-left border-collapse table-fixed md:table-auto">
+                                                <thead className="bg-[#36606F] text-white text-[8px] md:text-[9.5px] font-black uppercase tracking-wider md:tracking-tight border-b border-[#36606F]">
                                                     <tr>
-                                                        <th className="py-4 px-3 md:px-6 whitespace-nowrap print:border-r-0">Fecha</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Ventas</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Venta Neta</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Tickets</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Ticket Medio</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Efectivo</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Tarjeta</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Pendiente</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Deuda Rec.</th>
-                                                        <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap print:border-r-0">Diferencia</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 whitespace-nowrap">Fecha</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ventas €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Neta €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ticks</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">TM €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Cash €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Card €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Pend. €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Recup. €</th>
+                                                        <th className="py-2.5 px-0.5 md:px-1 text-right whitespace-nowrap">Dif. €</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                                <tbody className="text-[9.5px] font-bold text-zinc-600 bg-white">
                                                     {[...closings]
                                                         .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
                                                         .map((c) => {
                                                             const d = new Date(c.closed_at);
                                                             const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
                                                             const diff = c.difference ?? 0;
+                                                            const formatCompact = (val: number) => Math.round(val || 0);
+
                                                             return (
                                                                 <tr
                                                                     key={c.id}
                                                                     onClick={() => setSelectedClosing(c)}
-                                                                    className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100"
+                                                                    className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50/40 last:border-0"
                                                                 >
-                                                                    <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
-                                                                        {format(d, 'dd/MM/yyyy', { locale: es })}
+                                                                    <td className="py-2 px-0.5 md:px-1 whitespace-nowrap text-zinc-500 font-mono text-[8px] md:text-[9.5px]">
+                                                                        {format(d, 'd/M/yy', { locale: es })}
                                                                     </td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.tpv_sales ?? 0, 'tpv_sales')}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm text-emerald-600">{formatValue(c.net_sales ?? 0, 'net_sales')}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.tickets_count ?? 0, 'tickets_count')}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm text-[#36606F]">{avgTicket === 0 ? ' ' : avgTicket.toFixed(1) + '€'}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.cash_counted ?? 0, 'tpv_sales')}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.sales_card ?? 0, 'tpv_sales')}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.sales_pending ?? 0, 'tpv_sales')}</td>
-                                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm">{formatValue(c.debt_recovered ?? 0, 'tpv_sales')}</td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                        {formatCompact(c.tpv_sales)}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-emerald-600">
+                                                                        {formatCompact(c.net_sales)}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                        {c.tickets_count || 0}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-[#36606F]/80">
+                                                                        {avgTicket === 0 ? ' ' : Math.round(avgTicket)}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                        {formatCompact(c.cash_counted)}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]">
+                                                                        {formatCompact(c.sales_card)}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-orange-600/70">
+                                                                        {formatCompact(c.sales_pending)}
+                                                                    </td>
+                                                                    <td className="py-2 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px] text-blue-600/70">
+                                                                        {formatCompact(c.debt_recovered)}
+                                                                    </td>
                                                                     <td className={cn(
-                                                                        "py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm",
+                                                                        "py-2 px-1 md:px-2 text-right font-black tabular-nums whitespace-nowrap text-[9px] md:text-[10px]",
                                                                         diff > 0 ? "text-emerald-600" : diff < 0 ? "text-rose-600" : "text-zinc-400"
                                                                     )}>
-                                                                        {diff === 0 ? ' ' : diff.toFixed(2) + '€'}
+                                                                        {diff === 0 ? ' ' : Math.round(diff)}
                                                                     </td>
                                                                 </tr>
                                                             );
@@ -784,6 +802,12 @@ export default function HistoryPage() {
                                 </div>
 
                                 <div className="flex-1 flex items-center justify-end gap-1 min-w-[32px]">
+                                    <button
+                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
+                                        className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                                    >
+                                        <X size={20} strokeWidth={2.5} />
+                                    </button>
                                     {!isEditing && isManager && (
                                         <button
                                             onClick={() => { setEditData({ ...selectedClosing }); setIsEditing(true); }}
@@ -793,12 +817,6 @@ export default function HistoryPage() {
                                             <Pencil size={16} />
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => { setIsEditing(false); setSelectedClosing(null); }}
-                                        className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                    >
-                                        <X size={20} strokeWidth={2.5} />
-                                    </button>
                                 </div>
                             </div>
 
@@ -815,7 +833,7 @@ export default function HistoryPage() {
                                         </button>
                                         <div className="flex-shrink-0 min-w-0 px-1 lg:px-2">
                                             {isEditing ? (
-                                                <div className="flex flex-col items-center gap-1">
+                                                <div className="flex flex-col items-center">
                                                     <input
                                                         type="datetime-local"
                                                         value={(() => {
@@ -832,15 +850,8 @@ export default function HistoryPage() {
                                                                 closing_date: formatClosingDate(d),
                                                             });
                                                         }}
-                                                        className="bg-white/10 border border-white/20 rounded-xl px-2 py-1.5 text-white font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-2 focus:ring-white/30 min-h-[40px]"
+                                                        className="bg-transparent border-none text-white font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-0 w-auto cursor-pointer"
                                                     />
-                                                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">
-                                                        {(() => {
-                                                            const raw = editData?.closed_at ?? selectedClosing.closed_at;
-                                                            const d = new Date(raw);
-                                                            return isNaN(d.getTime()) ? "Fecha inválida" : format(d, "eeee d MMMM, HH:mm", { locale: es });
-                                                        })()}
-                                                    </span>
                                                 </div>
                                             ) : (
                                                 <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-tighter break-words min-w-0">
@@ -886,7 +897,7 @@ export default function HistoryPage() {
                                         {isEditing && editable && fieldKey ? (
                                             <input
                                                 type="number"
-                                                className="bg-transparent text-sm md:text-base font-black text-gray-900 text-center outline-none border-b border-black/10 pb-0.5"
+                                                className="bg-transparent text-sm md:text-base font-black text-gray-900 text-center outline-none border-none"
                                                 value={value || ''}
                                                 onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
                                             />

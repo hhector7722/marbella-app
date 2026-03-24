@@ -741,8 +741,8 @@ export default function LaborHistoryPage() {
                                                     <div className="truncate text-[13px] font-black text-zinc-800 flex-1 pr-2">
                                                         {firstNameOnly(w.name)}
                                                     </div>
-                                                    <div className="flex items-center shrink-0 w-[65%] sm:w-[60%] justify-end gap-2 sm:gap-3 text-center">
-                                                        <div className="min-w-0 flex-[1.5]">
+                                                    <div className="grid grid-cols-4 shrink-0 w-[190px] min-[400px]:w-[210px] sm:w-[240px] gap-1 text-center items-center">
+                                                        <div className="min-w-0">
                                                             <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 Fijo
                                                             </span>
@@ -750,7 +750,7 @@ export default function LaborHistoryPage() {
                                                                 {formatEuroRead(w.fixed)}
                                                             </span>
                                                         </div>
-                                                        <div className="min-w-0 flex-[1.5]">
+                                                        <div className="min-w-0">
                                                             <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 Extras
                                                             </span>
@@ -758,7 +758,7 @@ export default function LaborHistoryPage() {
                                                                 {formatEuroRead(w.overtime)}
                                                             </span>
                                                         </div>
-                                                        <div className="min-w-0 flex-[1.5]">
+                                                        <div className="min-w-0">
                                                             <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 Total
                                                             </span>
@@ -766,7 +766,7 @@ export default function LaborHistoryPage() {
                                                                 {formatEuroRead(w.total)}
                                                             </span>
                                                         </div>
-                                                        <div className="min-w-0 flex-[1.2]">
+                                                        <div className="min-w-0">
                                                             <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 %
                                                             </span>

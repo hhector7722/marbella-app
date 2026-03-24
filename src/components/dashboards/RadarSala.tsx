@@ -17,7 +17,7 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
       {/* Tiempo en esquina superior derecha */}
       <div className="flex justify-end mb-1">
         <span className={`text-[9px] md:text-[11px] font-bold flex items-center ${estado.texto}`}>
-          <Clock size={10} className="mr-1" /> {estado.min} min
+          <Clock size={10} className="mr-1" /> {estado.hora}
         </span>
       </div>
 
@@ -91,10 +91,13 @@ export default function RadarSala() {
   }, []);
 
   const calcularEstado = (fechaApertura: string) => {
-    const minutos = Math.floor((new Date().getTime() - new Date(fechaApertura).getTime()) / 60000);
-    if (minutos > 45) return { color: 'bg-red-950/60 border-red-500/80', texto: 'text-red-400', min: minutos };
-    if (minutos > 30) return { color: 'bg-yellow-950/60 border-yellow-500/80', texto: 'text-yellow-400', min: minutos };
-    return { color: 'bg-emerald-950/40 border-emerald-500/50', texto: 'text-emerald-400', min: minutos };
+    const fecha = new Date(fechaApertura);
+    const minutos = Math.floor((new Date().getTime() - fecha.getTime()) / 60000);
+    const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (minutos > 45) return { color: 'bg-red-950/60 border-red-500/80', texto: 'text-red-400', min: minutos, hora };
+    if (minutos > 30) return { color: 'bg-yellow-950/60 border-yellow-500/80', texto: 'text-yellow-400', min: minutos, hora };
+    return { color: 'bg-emerald-950/40 border-emerald-500/50', texto: 'text-emerald-400', min: minutos, hora };
   };
 
   const mesasOrdenadas = [...mesas].sort((a, b) => new Date(a.fecha_apertura).getTime() - new Date(b.fecha_apertura).getTime());
