@@ -308,7 +308,7 @@ export default function NewOrderPage() {
                         {/* Fila 1: Proveedor y Buscador */}
                         <div className="flex items-center gap-2">
                             <div className={cn(
-                                "shrink-0 px-4 min-h-[48px] bg-white/90 rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-white/50",
+                                "shrink-0 px-4 py-2 bg-white/90 rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-white/50",
                                 selectedSupplier && "text-[#5E35B1] ring-1 ring-[#5E35B1]/10 border-[#5E35B1]/20 bg-white"
                             )}>
                                 {selectedSupplier || "PROVEEDOR"}
@@ -320,7 +320,7 @@ export default function NewOrderPage() {
                                     placeholder="Buscar ingrediente..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-white/95 rounded-xl shadow-sm outline-none text-[13px] font-medium text-gray-700 min-h-[48px] focus:ring-2 focus:ring-white/30 transition-all border border-transparent focus:border-[#5E35B1]/20"
+                                    className="w-full pl-10 pr-4 py-2 bg-white/95 rounded-xl shadow-sm outline-none text-[13px] font-medium text-gray-700 focus:ring-2 focus:ring-white/30 transition-all border border-transparent focus:border-[#5E35B1]/20"
                                 />
                             </div>
                         </div>
@@ -330,13 +330,13 @@ export default function NewOrderPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleNewOrder}
-                                    className="flex-1 px-4 min-h-[48px] bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
+                                    className="flex-1 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
                                 >
                                     Borrar Pedido
                                 </button>
                                 <button
                                     onClick={() => setIsSummaryOpen(true)}
-                                    className="flex-1 px-4 min-h-[48px] bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
+                                    className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
                                 >
                                     Tramitar ({selectedItems.length})
                                 </button>
