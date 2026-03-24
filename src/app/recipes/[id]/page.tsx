@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, Ch
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import CreateIngredientModal from '@/components/CreateIngredientModal';
+import { cn } from '@/lib/utils';
 import { recipeLineCost, RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
 
 const CATEGORY_OPTIONS = ['Tapas', 'Entrantes', 'Principales', 'Postres', 'Bebidas', 'Vinos', 'Cocktails'];
@@ -411,12 +412,50 @@ function RecipeDetailContent() {
                             </div>
                             <div className="p-3 flex-1 flex flex-col justify-between">
                                 <div>
-                                    <div className="flex gap-2 justify-center mb-2">
-                                        <button onClick={() => setView(v => ({ ...v, location: 'pvp' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pvp' ? themeColors.toggle : themeColors.toggleInactive}`}>PVP</button>
-                                        <button onClick={() => setView(v => ({ ...v, location: 'pavello' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.location === 'pavello' ? themeColors.toggle : themeColors.toggleInactive}`}>PAV</button>
-                                        <div className="w-px bg-gray-300 mx-1"></div>
-                                        <button onClick={() => setView(v => ({ ...v, size: 'full' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'full' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/1</button>
-                                        <button onClick={() => setView(v => ({ ...v, size: 'half' }))} className={`px-3 py-1 rounded text-[10px] font-bold transition ${view.size === 'half' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1/2</button>
+                                    <div className="flex gap-4 justify-center mb-2">
+                                        {/* Toggle PVP / PAV */}
+                                        <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm shrink-0">
+                                            <button 
+                                                onClick={() => setView(v => ({ ...v, location: 'pvp' }))} 
+                                                className={cn(
+                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
+                                                    view.location === 'pvp' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                                )}
+                                            >
+                                                PVP
+                                            </button>
+                                            <button 
+                                                onClick={() => setView(v => ({ ...v, location: 'pavello' }))} 
+                                                className={cn(
+                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
+                                                    view.location === 'pavello' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                                )}
+                                            >
+                                                PAV
+                                            </button>
+                                        </div>
+
+                                        {/* Toggle 1 / 1/2 */}
+                                        <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm shrink-0">
+                                            <button 
+                                                onClick={() => setView(v => ({ ...v, size: 'full' }))} 
+                                                className={cn(
+                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
+                                                    view.size === 'full' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                                )}
+                                            >
+                                                1
+                                            </button>
+                                            <button 
+                                                onClick={() => setView(v => ({ ...v, size: 'half' }))} 
+                                                className={cn(
+                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
+                                                    view.size === 'half' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
+                                                )}
+                                            >
+                                                1/2
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-center gap-1 my-2">

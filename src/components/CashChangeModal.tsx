@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Minus, Plus, ArrowRight, ArrowLeft, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Minus, Plus, ArrowRight, ArrowLeft, Eye, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -15,7 +15,7 @@ const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 const ALL_DENOMS = [...BILLS, ...COINS];
 
-export type BoxOption = { id: string; name: string; hasInventory: boolean };
+export type BoxOption = { id: string; name: string; hasInventory: boolean; image_url?: string };
 
 interface CashChangeModalProps {
     /** Legacy: una sola caja (arqueo interno). Si se pasa, se usa flujo antiguo SWAP. */
@@ -484,12 +484,22 @@ export const CashChangeModal = ({
                                             type="button"
                                             onClick={() => setBoxA(isA ? null : opt)}
                                             className={cn(
-                                                "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide transition-all flex items-center justify-center text-center px-1 leading-tight",
-                                                isA ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
-                                                boxB?.id === opt.id && !isA ? "opacity-40" : ""
+                                                "w-full min-h-[64px] rounded-2xl border-2 font-black text-[10px] uppercase tracking-wide transition-all flex flex-col items-center justify-center text-center p-2 leading-tight gap-1.5 shadow-sm active:scale-95",
+                                                isA ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F] shadow-[#5B8FB9]/20" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
+                                                boxB?.id === opt.id && !isA ? "opacity-30" : ""
                                             )}
                                         >
-                                            {opt.name}
+                                            <div className={cn(
+                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 border shadow-sm flex items-center justify-center transition-all",
+                                                isA ? "border-[#5B8FB9]/30 bg-white" : "border-zinc-100 bg-zinc-50"
+                                            )}>
+                                                {opt.image_url ? (
+                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Wallet size={18} className={cn("transition-colors", isA ? "text-[#5B8FB9]" : "text-zinc-300")} strokeWidth={2.5} />
+                                                )}
+                                            </div>
+                                            <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
                                         </button>
                                     );
                                 })}
@@ -504,12 +514,22 @@ export const CashChangeModal = ({
                                             type="button"
                                             onClick={() => setBoxB(isB ? null : opt)}
                                             className={cn(
-                                                "w-full min-h-[48px] rounded-xl border-2 font-black text-[11px] uppercase tracking-wide transition-all flex items-center justify-center text-center px-1 leading-tight",
-                                                isB ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F]" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
-                                                boxA?.id === opt.id && !isB ? "opacity-40" : ""
+                                                "w-full min-h-[64px] rounded-2xl border-2 font-black text-[10px] uppercase tracking-wide transition-all flex flex-col items-center justify-center text-center p-2 leading-tight gap-1.5 shadow-sm active:scale-95",
+                                                isB ? "border-[#5B8FB9] bg-[#5B8FB9]/10 text-[#36606F] shadow-[#5B8FB9]/20" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
+                                                boxA?.id === opt.id && !isB ? "opacity-30" : ""
                                             )}
                                         >
-                                            {opt.name}
+                                            <div className={cn(
+                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 border shadow-sm flex items-center justify-center transition-all",
+                                                isB ? "border-[#5B8FB9]/30 bg-white" : "border-zinc-100 bg-zinc-50"
+                                            )}>
+                                                {opt.image_url ? (
+                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Wallet size={18} className={cn("transition-colors", isB ? "text-[#5B8FB9]" : "text-zinc-300")} strokeWidth={2.5} />
+                                                )}
+                                            </div>
+                                            <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
                                         </button>
                                     );
                                 })}

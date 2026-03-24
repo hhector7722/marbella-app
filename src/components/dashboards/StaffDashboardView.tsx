@@ -9,13 +9,14 @@ import {
     Check, Info, Package,
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
     Clock, ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
-    Plus, Minus, BookOpen, CalendarCheck, ExternalLink
+    Plus, Minus, BookOpen, CalendarCheck, ExternalLink, Image as ImageIcon
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
-import { CashChangeModal } from '@/components/CashChangeModal';
+import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
+import { CashBoxEditModal } from '@/components/modals/CashBoxEditModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
@@ -126,6 +127,7 @@ export default function StaffDashboardView() {
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
+    const [editingBox, setEditingBox] = useState<any>(null);
 
     useEffect(() => { initialize(); }, []);
 
@@ -388,12 +390,12 @@ export default function StaffDashboardView() {
         }
     };
 
-    const buildPaymentSources = (): PaymentSourceOption[] => {
-        const list: PaymentSourceOption[] = [];
+    const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
+        const list: any[] = [];
         const op = allBoxes.find(b => b.type === 'operational');
         const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true });
-        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true }));
+        if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
+        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
         list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
         list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         return list;
@@ -1098,6 +1100,33 @@ export default function StaffDashboardView() {
                                         <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
                                     </div>
                                 </button>
+
+                                {userRole === 'manager' && (
+                                    <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-2">
+                                        <p className="text-[10px] font-black uppercase text-gray-400 px-4">Configuración de Cajas</p>
+                                        <div className="grid grid-cols-2 gap-2 px-2 pb-2">
+                                            {allBoxes.filter(b => b.type === 'operational' || b.type === 'change').sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(box => (
+                                                <button
+                                                    key={box.id}
+                                                    onClick={() => {
+                                                        setIsCashOptionsModalOpen(false);
+                                                        setEditingBox(box);
+                                                    }}
+                                                    className="flex items-center gap-2 p-2 bg-white border border-gray-100 rounded-xl hover:border-[#5B8FB9]/30 transition-all active:scale-95 group"
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-100 shrink-0 bg-zinc-50 flex items-center justify-center">
+                                                        {box.image_url ? (
+                                                            <Image src={box.image_url} alt={box.name} width={32} height={32} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <ImageIcon size={14} className="text-zinc-300" />
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[8px] font-black uppercase tracking-tight text-gray-600 truncate">{box.name.replace('Caja ', '')}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1174,6 +1203,13 @@ export default function StaffDashboardView() {
                 userRole={userRole}
                 userId={userId}
             />
+            {editingBox && (
+                <CashBoxEditModal
+                    box={editingBox}
+                    onClose={() => setEditingBox(null)}
+                    onSuccess={() => { initialize(); setEditingBox(null); }}
+                />
+            )}
         </div>
     );
 }

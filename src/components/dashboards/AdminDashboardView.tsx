@@ -10,15 +10,16 @@ import {
     CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
     PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check,
-    Coins, Landmark, AlertTriangle, ChevronLeft, ChevronRight
+    Coins, Landmark, AlertTriangle, ChevronLeft, ChevronRight, Image as ImageIcon
 } from 'lucide-react';
 
 import CashClosingModal from '@/components/CashClosingModal';
-import { CashChangeModal } from '@/components/CashChangeModal';
+import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { CashBoxEditModal } from '@/components/modals/CashBoxEditModal';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -222,6 +223,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const tooltipRef = useRef<HTMLDivElement>(null);
     // Filtro tabla ventas por rango de horas (7-23)
     const [filterHourRange, setFilterHourRange] = useState<{ start: number; end: number } | null>(null);
+    const [editingBox, setEditingBox] = useState<any>(null);
 
     useEffect(() => {
         setIsDesktop(window.innerWidth >= 768);
@@ -501,12 +503,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         } catch (error) { console.error(error); alert("Error"); }
     };
 
-    const buildPaymentSources = (): PaymentSourceOption[] => {
-        const list: PaymentSourceOption[] = [];
+    const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
+        const list: any[] = [];
         const op = boxes.find((b: any) => b.type === 'operational');
         const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true });
-        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true }));
+        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
+        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
         list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
         list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         return list;
@@ -971,12 +973,21 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             {boxes.filter(b => b.type === 'operational').map(box => (
                         <div key={box.id} className="flex flex-col h-full">
                             <div className="flex flex-row gap-1.5 md:gap-2 items-center">
-                                <button onClick={() => router.push('/dashboard/movements')} className="shrink-0 w-fit min-w-0 px-3 py-2 md:py-2 rounded-xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 text-white active:scale-95">
-                                    <span className="text-sm md:text-base font-black leading-none">
-                                        {Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}
-                                    </span>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
-                                </button>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    <button onClick={() => router.push('/dashboard/movements')} className="shrink-0 w-fit min-w-0 px-3 py-2 md:py-2 rounded-xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 text-white active:scale-95">
+                                        <span className="text-sm md:text-base font-black leading-none">
+                                            {Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}
+                                        </span>
+                                        <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setEditingBox(box)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all active:scale-90 shadow-sm border border-emerald-100/50"
+                                        title="Editar imagen"
+                                    >
+                                        <ImageIcon size={14} strokeWidth={2.5} />
+                                    </button>
+                                </div>
                                 <div className="flex items-center justify-center min-w-0 flex-1">
                                     {isDifferenceZero ? (
                                         <span className="text-emerald-500 flex items-center">
@@ -1193,8 +1204,15 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 const isOk = Math.abs(diff) < 0.01;
                                 return (
                                     <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
-                                        <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-start text-white shrink-0">
+                                        <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-between text-white shrink-0">
                                             <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
+                                            <button
+                                                onClick={() => setEditingBox(box)}
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition-all active:scale-90"
+                                                title="Editar imagen"
+                                            >
+                                                <ImageIcon size={12} strokeWidth={2.5} />
+                                            </button>
                                         </div>
                                         <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5 min-w-0">
                                             <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1.5 sm:gap-x-2 md:gap-x-3 px-1 sm:px-1.5 md:px-2">
@@ -1649,6 +1667,13 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 </div>
             )}
 
+            {editingBox && (
+                <CashBoxEditModal
+                    box={editingBox}
+                    onClose={() => setEditingBox(null)}
+                    onSuccess={() => { fetchData(); setEditingBox(null); }}
+                />
+            )}
         </div>
     );
 }

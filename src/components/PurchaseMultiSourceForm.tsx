@@ -13,6 +13,7 @@ export interface PaymentSourceOption {
     name: string;
     shortLabel: string;
     hasInventory: boolean;
+    image_url?: string;
 }
 
 export interface SourceEntry {
