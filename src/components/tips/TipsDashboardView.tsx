@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit3, Plus, RefreshCw } from 'lucide-react';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
@@ -76,7 +76,7 @@ export default function TipsDashboardView({
   });
   const [endDate, setEndDate] = useState(() => {
     const now = new Date();
-    return format(endOfMonth(now), 'yyyy-MM-dd');
+    return format(now, 'yyyy-MM-dd');
   });
 
   const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
@@ -271,15 +271,13 @@ export default function TipsDashboardView({
                   hasActiveFilter={(() => {
                     const now = new Date();
                     const start = format(startOfMonth(now), 'yyyy-MM-dd');
-                    const end = format(endOfMonth(now), 'yyyy-MM-dd');
+                    const end = format(now, 'yyyy-MM-dd');
                     return startDate !== start || endDate !== end;
                   })()}
                   onClear={() => {
                     const now = new Date();
-                    const start = format(startOfMonth(now), 'yyyy-MM-dd');
-                    const end = format(endOfMonth(now), 'yyyy-MM-dd');
-                    setStartDate(start);
-                    setEndDate(end);
+                    setStartDate(format(startOfMonth(now), 'yyyy-MM-dd'));
+                    setEndDate(format(now, 'yyyy-MM-dd'));
                   }}
                 />
                 <button
@@ -393,20 +391,8 @@ export default function TipsDashboardView({
                         return (
                         <tr
                           key={s.id}
-                          className="relative hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
+                          className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70"
                         >
-                          {/* Strike-through line: starts at H column (col2), ends at TOT (last col). */}
-                          {/* Las 5 columnas de datos tienen w-[8%] cada una = 40% del ancho total. */}
-                          {/* La columna de nombre ocupa el 60% restante. La línea va del 60% al 100%. */}
-                          {isSanc && (
-                            <td
-                              aria-hidden="true"
-                              className="absolute inset-y-0 left-[60%] right-0 pointer-events-none z-10 flex items-center"
-                              style={{ display: 'flex' }}
-                            >
-                              <div className="w-full h-px bg-black/70" />
-                            </td>
-                          )}
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
                             onClick={() => openOverride('weekday', s.id, s.name)}
