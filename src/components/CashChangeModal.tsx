@@ -490,11 +490,11 @@ export const CashChangeModal = ({
                                             )}
                                         >
                                             <div className={cn(
-                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 border shadow-sm flex items-center justify-center transition-all",
-                                                isA ? "border-[#5B8FB9]/30 bg-white" : "border-zinc-100 bg-zinc-50"
+                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 shadow-sm flex items-center justify-center transition-all bg-white",
+                                                isA ? "ring-2 ring-[#5B8FB9]/50" : ""
                                             )}>
                                                 {opt.image_url ? (
-                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-cover" />
+                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-contain" />
                                                 ) : (
                                                     <Wallet size={18} className={cn("transition-colors", isA ? "text-[#5B8FB9]" : "text-zinc-300")} strokeWidth={2.5} />
                                                 )}
@@ -520,11 +520,11 @@ export const CashChangeModal = ({
                                             )}
                                         >
                                             <div className={cn(
-                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 border shadow-sm flex items-center justify-center transition-all",
-                                                isB ? "border-[#5B8FB9]/30 bg-white" : "border-zinc-100 bg-zinc-50"
+                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 shadow-sm flex items-center justify-center transition-all bg-white",
+                                                isB ? "ring-2 ring-[#5B8FB9]/50" : ""
                                             )}>
                                                 {opt.image_url ? (
-                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-cover" />
+                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-contain" />
                                                 ) : (
                                                     <Wallet size={18} className={cn("transition-colors", isB ? "text-[#5B8FB9]" : "text-zinc-300")} strokeWidth={2.5} />
                                                 )}

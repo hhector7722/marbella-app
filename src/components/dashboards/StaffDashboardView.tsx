@@ -1159,9 +1159,9 @@ export default function StaffDashboardView() {
                                                     }}
                                                     className="flex items-center gap-2 p-2 bg-white border border-gray-100 rounded-xl hover:border-[#5B8FB9]/30 transition-all active:scale-95 group"
                                                 >
-                                                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-100 shrink-0 bg-zinc-50 flex items-center justify-center">
+                                                    <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
                                                         {box.image_url ? (
-                                                            <Image src={box.image_url} alt={box.name} width={32} height={32} className="w-full h-full object-cover" />
+                                                            <Image src={box.image_url} alt={box.name} width={32} height={32} className="w-full h-full object-contain" />
                                                         ) : (
                                                             <ImageIcon size={14} className="text-zinc-300" />
                                                         )}
