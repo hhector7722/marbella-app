@@ -30,9 +30,6 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
           <span className="text-[9px] md:text-[10px] font-bold flex items-center shrink-0 text-white/90">
             <Clock size={10} className="mr-0.5" /> {estado.hora}
           </span>
-          <div className="text-white/70">
-            {abierto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </div>
         </div>
       </div>
 
@@ -106,7 +103,7 @@ export default function RadarSala() {
       min: minutos, hora 
     };
     return { 
-      color: 'bg-[#5B8FB9]', // Marbella Blue (Petrol claro)
+      color: 'bg-[#407080]', // Petrol (Dashboard buttons style)
       texto: 'text-white', 
       min: minutos, hora 
     };

@@ -349,7 +349,10 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                         <X size={18} strokeWidth={3} />
                     </button>
                 </div>
-                <div className="p-4 bg-zinc-50 flex-1 overflow-y-auto min-h-0">
+                <div className={cn(
+                    "p-4 flex-1 overflow-y-auto min-h-0",
+                    tab === 'calculator' ? 'bg-[#36606F]/5' : 'bg-zinc-50'
+                )}>
                     {tab === 'calculator' && (
                         <>
                             <div className="h-12 bg-white rounded-xl border border-zinc-200 px-3 flex items-center justify-end mb-3">
@@ -371,7 +374,7 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                             key === '%' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
                                             ['+', '-', '*', '/'].includes(key) && 'bg-purple-600 text-white hover:bg-purple-500',
                                             key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600',
-                                            !['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%', '±'].includes(key) && 'bg-white border border-zinc-200 text-zinc-800 hover:bg-zinc-50',
+                                            !['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%', '±'].includes(key) && 'bg-[#36606F]/10 border border-[#36606F]/20 text-[#36606F] hover:bg-[#36606F]/20',
                                             key === '' && 'invisible pointer-events-none'
                                         )}
                                     >

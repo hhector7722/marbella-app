@@ -980,13 +980,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         </span>
                                         <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
                                     </button>
-                                    <button
-                                        onClick={() => setEditingBox(box)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all active:scale-90 shadow-sm border border-emerald-100/50"
-                                        title="Editar imagen"
-                                    >
-                                        <ImageIcon size={14} strokeWidth={2.5} />
-                                    </button>
                                 </div>
                                 <div className="flex items-center justify-center min-w-0 flex-1">
                                     {isDifferenceZero ? (
@@ -1206,13 +1199,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <div key={box.id} className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
                                         <div className="bg-[#36606F] pl-4 pr-2 md:pl-4 md:pr-3 py-1 md:py-1 flex items-center justify-between text-white shrink-0">
                                             <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">{title}</h3>
-                                            <button
-                                                onClick={() => setEditingBox(box)}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition-all active:scale-90"
-                                                title="Editar imagen"
-                                            >
-                                                <ImageIcon size={12} strokeWidth={2.5} />
-                                            </button>
                                         </div>
                                         <div className="flex-1 flex items-center justify-center min-h-0 p-1.5 md:p-1.5 min-w-0">
                                             <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1.5 sm:gap-x-2 md:gap-x-3 px-1 sm:px-1.5 md:px-2">

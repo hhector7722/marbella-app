@@ -457,12 +457,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-5 sm:gap-y-6 gap-x-3 sm:gap-x-4">
                                     {BILLS.map(bill => (
                                         <div key={bill} className="flex flex-col items-center gap-1.5 group transition-all">
-                                            <div className="h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <div className="h-11 sm:h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <Image
                                                     src={CURRENCY_IMAGES[bill]}
                                                     alt={bill + "€"}
-                                                    width={120}
-                                                    height={120}
+                                                    width={140}
+                                                    height={140}
                                                     className="h-full w-auto object-contain drop-shadow-lg"
                                                 />
                                             </div>
@@ -480,12 +480,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     ))}
                                     {COINS.map(coin => (
                                         <div key={coin} className="flex flex-col items-center gap-1.5 group transition-all">
-                                            <div className="h-10 w-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <div className="h-11 sm:h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
                                                 <Image
                                                     src={CURRENCY_IMAGES[coin]}
                                                     alt={coin + "€"}
-                                                    width={100}
-                                                    height={100}
+                                                    width={140}
+                                                    height={140}
                                                     className="h-full w-auto object-contain drop-shadow-md"
                                                 />
                                             </div>

@@ -9,7 +9,8 @@ import {
     Check, Info, Package,
     Phone, FileText, Scale, ShoppingCart, Boxes, X, MessageCircle,
     Clock, ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
-    Plus, Minus, BookOpen, CalendarCheck, ExternalLink, Image as ImageIcon
+    Plus, Minus, BookOpen, CalendarCheck, ExternalLink, Image as ImageIcon,
+    Settings
 } from 'lucide-react';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
@@ -120,6 +121,7 @@ export default function StaffDashboardView() {
     const [operationalBox, setOperationalBox] = useState<any>(null);
     const [allBoxes, setAllBoxes] = useState<any[]>([]);
     const [isCashOptionsModalOpen, setIsCashOptionsModalOpen] = useState(false);
+    const [showBoxManagement, setShowBoxManagement] = useState(false);
     const [cashOptionsCalculatorOpen, setCashOptionsCalculatorOpen] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
@@ -1048,7 +1050,19 @@ export default function StaffDashboardView() {
                             <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
                                 <h3 className="text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
                                 <div className="flex items-center gap-1 shrink-0">
-                                    {canEditTipsPools && (
+                                    {userRole === 'manager' && (
+                                        <button
+                                            onClick={() => setShowBoxManagement(!showBoxManagement)}
+                                            className={cn(
+                                                "w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-90 min-h-[48px] min-w-[48px]",
+                                                showBoxManagement ? "bg-white text-[#36606F]" : "bg-white/10 text-white hover:bg-white/20"
+                                            )}
+                                            aria-label="Gestionar Cajas"
+                                        >
+                                            <Settings size={20} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                    {canEditTipsPools && !showBoxManagement && (
                                         <Link
                                             href="/dashboard/propinas"
                                             onClick={() => setIsCashOptionsModalOpen(false)}
@@ -1058,59 +1072,78 @@ export default function StaffDashboardView() {
                                             <Clock size={20} strokeWidth={3} />
                                         </Link>
                                     )}
-                                    <button onClick={() => setIsCashOptionsModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"><X size={20} strokeWidth={3} /></button>
+                                    <button 
+                                        onClick={() => {
+                                            setIsCashOptionsModalOpen(false);
+                                            setShowBoxManagement(false);
+                                        }} 
+                                        className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"
+                                    >
+                                        <X size={20} strokeWidth={3} />
+                                    </button>
                                 </div>
                             </div>
                             <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
                             <div className="p-4 flex flex-col gap-3 bg-gray-50/50">
-                                <button
-                                    onClick={() => {
-                                        setIsCashOptionsModalOpen(false);
-                                        setShowSwapModal(true);
-                                    }}
-                                    className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
-                                >
-                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                        <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
-                                    </div>
-                                    <div className="flex flex-col text-left">
-                                        <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
-                                        <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas entre cajas</span>
-                                    </div>
-                                </button>
+                                {!showBoxManagement ? (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                setIsCashOptionsModalOpen(false);
+                                                setShowSwapModal(true);
+                                            }}
+                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                                <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="flex flex-col text-left">
+                                                <span className="font-black text-gray-800 uppercase tracking-wide">Cambio</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Intercambiar billetes o monedas entre cajas</span>
+                                            </div>
+                                        </button>
 
-                                <button
-                                    onClick={() => {
-                                        const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change');
-                                        if (cashBoxes.length === 0) {
-                                            toast.error('No hay cajas configuradas');
-                                            return;
-                                        }
-                                        setIsCashOptionsModalOpen(false);
-                                        openPurchaseMultiSourceModal();
-                                    }}
-                                    className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
-                                >
-                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
-                                        <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="w-full h-full object-contain" />
-                                    </div>
-                                    <div className="flex flex-col text-left">
-                                        <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
-                                        <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
-                                    </div>
-                                </button>
-
-                                {userRole === 'manager' && (
-                                    <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-2">
-                                        <p className="text-[10px] font-black uppercase text-gray-400 px-4">Configuración de Cajas</p>
-                                        <div className="grid grid-cols-2 gap-2 px-2 pb-2">
+                                        <button
+                                            onClick={() => {
+                                                const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change');
+                                                if (cashBoxes.length === 0) {
+                                                    toast.error('No hay cajas configuradas');
+                                                    return;
+                                                }
+                                                setIsCashOptionsModalOpen(false);
+                                                openPurchaseMultiSourceModal();
+                                            }}
+                                            className="w-full bg-white border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-md p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] group"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                                <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="flex flex-col text-left">
+                                                <span className="font-black text-gray-800 uppercase tracking-wide">Compra</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Salida de caja para compras o gastos</span>
+                                            </div>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <button 
+                                                onClick={() => setShowBoxManagement(false)}
+                                                className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 hover:bg-gray-200"
+                                            >
+                                                <ArrowLeft size={16} strokeWidth={3} />
+                                            </button>
+                                            <p className="text-[10px] font-black uppercase text-gray-400">Seleccionar caja para editar</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
                                             {allBoxes.filter(b => b.type === 'operational' || b.type === 'change').sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(box => (
                                                 <button
                                                     key={box.id}
                                                     onClick={() => {
                                                         setIsCashOptionsModalOpen(false);
                                                         setEditingBox(box);
+                                                        setShowBoxManagement(false);
                                                     }}
                                                     className="flex items-center gap-2 p-2 bg-white border border-gray-100 rounded-xl hover:border-[#5B8FB9]/30 transition-all active:scale-95 group"
                                                 >
