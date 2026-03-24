@@ -347,39 +347,59 @@ function RecipeDetailContent() {
 
             {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
             <div className={`max-w-6xl mx-auto w-full flex-1 flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden ${!isRestricted ? 'min-h-0' : ''}`}>
-                {/* CABECERA COLOR PETRÓLEO */}
-                <div className="bg-[#36606F] px-4 md:px-6 py-4 flex flex-col sm:flex-row items-center justify-center gap-4 shrink-0">
-                    <button onClick={handlePreviousRecipe} disabled={currentRecipeIndex <= 0} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition disabled:opacity-30 text-white"><ChevronLeft className="w-5 h-5" /></button>
-                    <div className="bg-white rounded-2xl p-1 shadow-md w-fit">
-                        <div className="relative group w-32 h-20 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
-                            {recipe.photo_url ? (
-                                <img src={recipe.photo_url} alt={recipe.name} className="w-full h-full object-contain" />
-                            ) : (
-                                <Camera className="w-6 h-6 text-gray-300" />
-                            )}
-                            {!isRestricted && (
-                                <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition cursor-pointer text-white">
-                                    <Camera className="w-5 h-5" />
-                                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
-                                </label>
-                            )}
-                            {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="sm" className="text-blue-600" /></div>}
-                        </div>
-                    </div>
-                    <button onClick={handleNextRecipe} disabled={currentRecipeIndex >= allRecipes.length - 1} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition disabled:opacity-30 text-white"><ChevronRight className="w-5 h-5" /></button>
-                    <div className="flex items-center gap-2 text-white/90">
-                        {isRestricted ? (
-                            <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[10px]">{recipe.category}</span>
-                        ) : (
-                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-full font-medium uppercase tracking-wider text-[10px] transition-colors">{recipe.category}</button>
-                        )}
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold"><Users className="w-3.5 h-3.5" /><span>{recipe.servings || 1} rac</span></div>
-                    </div>
-                    {!isRestricted && (
-                        <button onClick={handleDelete} className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition font-semibold text-xs flex items-center gap-2">
-                            <Trash2 size={14} /> Eliminar
+                {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
+                <div className="bg-[#36606F] px-4 md:px-6 py-2 flex flex-col items-center justify-center shrink-0">
+                    <div className="relative flex items-center justify-center w-fit">
+                        <button 
+                            onClick={handlePreviousRecipe} 
+                            disabled={currentRecipeIndex <= 0} 
+                            className="absolute -left-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                        >
+                            <ChevronLeft className="w-8 h-8" />
                         </button>
-                    )}
+                        
+                        <div className="bg-white rounded-xl p-0.5 shadow-sm">
+                            <div className="relative group w-24 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-100/50">
+                                {recipe.photo_url ? (
+                                    <img src={recipe.photo_url} alt={recipe.name} className="w-full h-full object-contain" />
+                                ) : (
+                                    <Camera className="w-5 h-5 text-gray-300" />
+                                )}
+                                {!isRestricted && (
+                                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition cursor-pointer text-white">
+                                        <Camera className="w-4 h-4" />
+                                        <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+                                    </label>
+                                )}
+                                {uploadingPhoto && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><LoadingSpinner size="sm" className="text-blue-600" /></div>}
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleNextRecipe} 
+                            disabled={currentRecipeIndex >= allRecipes.length - 1} 
+                            className="absolute -right-12 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
+                        >
+                            <ChevronRight className="w-8 h-8" />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
+                        {isRestricted ? (
+                            <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">{recipe.category}</span>
+                        ) : (
+                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-full font-medium uppercase tracking-wider text-[9px] transition-colors">{recipe.category}</button>
+                        )}
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>{recipe.servings || 1} rac</span>
+                        </div>
+                        {!isRestricted && (
+                            <button onClick={handleDelete} className="px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-100 border border-rose-500/30 rounded-full transition font-black text-[9px] flex items-center gap-1.5 active:scale-95">
+                                <Trash2 size={11} strokeWidth={3} /> ELIMINAR
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* CUERPO: fondo blanco roto */}
