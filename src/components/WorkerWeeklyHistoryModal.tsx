@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { X } from 'lucide-react';
-import { format, isSameDay, addDays, parseISO } from 'date-fns';
+import { format, isSameDay, addDays, parseISO, startOfWeek } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -265,12 +266,8 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                         {(() => {
                                             const startBalance = weekData.summary.startBalance ?? 0;
                                             const hasPending = Math.abs(startBalance) > 0.05;
-                                            const weekStartStr = typeof weekData.startDate === 'string' 
-                                                ? weekData.startDate.split('T')[0] 
-                                                : format(weekData.startDate as Date, 'yyyy-MM-dd');
-                                            const weekStartDate = parseISO(weekStartStr);
                                             const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-                                            const isFutureWeek = weekStartDate > currentWeekStart;
+                                            const isFutureWeek = weekData.startDate > currentWeekStart;
                                             const showPending = hasPending && !isFutureWeek;
                                             const colorClass = !showPending ? "text-transparent" : startBalance >= 0 ? "text-emerald-600" : "text-red-600";
                                             const text = showPending ? formatWorked(Math.abs(startBalance)) : " ";

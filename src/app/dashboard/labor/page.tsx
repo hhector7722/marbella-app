@@ -623,25 +623,55 @@ export default function LaborHistoryPage() {
                             className="bg-white rounded-[2rem] w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="bg-[#36606F] px-4 py-4 md:py-5 text-white shrink-0">
-                                <div className="flex justify-end mb-1">
+                            <div className="bg-[#36606F] px-4 py-2 text-white shrink-0 flex items-center justify-between gap-1">
+                                <div className="flex-1" />
+                                <div className="flex items-center justify-center gap-1 sm:gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (selectedDayStr) {
+                                                const d = parseLocalSafe(selectedDayStr);
+                                                d.setDate(d.getDate() - 1);
+                                                openDayDetail(d);
+                                            }
+                                        }}
+                                        className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
+                                        aria-label="Día anterior"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-center">
+                                        {selectedDayStr
+                                            ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMM', { locale: es })
+                                            : ''}
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (selectedDayStr) {
+                                                const d = parseLocalSafe(selectedDayStr);
+                                                d.setDate(d.getDate() + 1);
+                                                openDayDetail(d);
+                                            }
+                                        }}
+                                        className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
+                                        aria-label="Día siguiente"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 flex justify-end">
                                     <button
                                         type="button"
                                         onClick={closeDetail}
-                                        className="p-2 hover:bg-white/10 rounded-xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                                        className="p-2 hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center -mr-2"
                                         aria-label="Cerrar"
                                     >
                                         <X size={20} />
                                     </button>
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 block">
-                                    Desglose por trabajador
-                                </span>
-                                <h3 className="text-lg font-black uppercase tracking-tight pr-8">
-                                    {selectedDayStr
-                                        ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMMM', { locale: es })
-                                        : ''}
-                                </h3>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col min-h-0">
                                 {detailLoading ? (
@@ -650,42 +680,42 @@ export default function LaborHistoryPage() {
                                     </div>
                                 ) : dayDetail && dayDetail.workers.length > 0 ? (
                                     <>
-                                        <div className="mb-4 rounded-2xl border border-[#36606F]/25 bg-[#36606F]/[0.06] p-3">
-                                            <p className="mb-2 text-center text-[9px] font-black uppercase tracking-widest text-[#36606F]">
+                                        <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
+                                            <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/90">
                                                 Resumen del día
                                             </p>
-                                            <div className="grid grid-cols-4 gap-1 text-center">
-                                                <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
-                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                            <div className="grid grid-cols-4 gap-1 sm:gap-2">
+                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
+                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
                                                         Coste total
                                                     </span>
-                                                    <span className="text-[10px] font-black tabular-nums text-rose-600 sm:text-[11px]">
+                                                    <span className="text-[11px] font-black tabular-nums text-rose-600 sm:text-[12px] leading-none">
                                                         {formatEuroRead(dayDetail.totalCost)}
                                                     </span>
                                                 </div>
-                                                <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
-                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
+                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
                                                         Fijo
                                                     </span>
-                                                    <span className="text-[10px] font-black tabular-nums text-zinc-800 sm:text-[11px]">
+                                                    <span className="text-[11px] font-black tabular-nums text-zinc-800 sm:text-[12px] leading-none">
                                                         {formatEuroRead(dayDetail.totalFixed)}
                                                     </span>
                                                 </div>
-                                                <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
-                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
+                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
                                                         Extras
                                                     </span>
-                                                    <span className="text-[10px] font-black tabular-nums text-amber-700 sm:text-[11px]">
+                                                    <span className="text-[11px] font-black tabular-nums text-amber-600 sm:text-[12px] leading-none">
                                                         {formatEuroRead(dayDetail.totalOvertime)}
                                                     </span>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <span className="block text-[7px] font-black uppercase text-zinc-500">
+                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
+                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
                                                         %
                                                     </span>
                                                     <span
                                                         className={cn(
-                                                            'text-[10px] font-black tabular-nums sm:text-[11px]',
+                                                            'text-[11px] font-black tabular-nums sm:text-[12px] leading-none',
                                                             laborPctTextClass(
                                                                 dayDetail.dayNetSales > 0
                                                                     ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
@@ -702,47 +732,47 @@ export default function LaborHistoryPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="mb-4 space-y-2">
+                                        <div className="mb-4 flex flex-col relative gap-1 pb-4">
                                             {dayDetail.workers.map((w) => (
                                                 <div
                                                     key={w.id}
-                                                    className="rounded-2xl border border-zinc-100 bg-zinc-50 p-2.5"
+                                                    className="flex items-center justify-between py-2 px-1 border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50 rounded-lg transition-colors"
                                                 >
-                                                    <div className="mb-1.5 truncate text-sm font-black text-zinc-800">
+                                                    <div className="truncate text-[13px] font-black text-zinc-800 flex-1 pr-2">
                                                         {firstNameOnly(w.name)}
                                                     </div>
-                                                    <div className="grid grid-cols-4 gap-1 text-center">
-                                                        <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
-                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
+                                                    <div className="flex items-center shrink-0 w-[65%] sm:w-[60%] justify-end gap-2 sm:gap-3 text-center">
+                                                        <div className="min-w-0 flex-[1.5]">
+                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 Fijo
                                                             </span>
-                                                            <span className="text-[10px] font-black tabular-nums text-zinc-700 sm:text-[11px]">
+                                                            <span className="text-[10px] font-black tabular-nums text-zinc-700 sm:text-[11px] leading-none">
                                                                 {formatEuroRead(w.fixed)}
                                                             </span>
                                                         </div>
-                                                        <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
-                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
+                                                        <div className="min-w-0 flex-[1.5]">
+                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 Extras
                                                             </span>
-                                                            <span className="text-[10px] font-black tabular-nums text-amber-700/90 sm:text-[11px]">
+                                                            <span className="text-[10px] font-black tabular-nums text-amber-600 sm:text-[11px] leading-none">
                                                                 {formatEuroRead(w.overtime)}
                                                             </span>
                                                         </div>
-                                                        <div className="min-w-0 border-r border-zinc-200/80 pr-0.5">
-                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
+                                                        <div className="min-w-0 flex-[1.5]">
+                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 Total
                                                             </span>
-                                                            <span className="text-[10px] font-black tabular-nums text-[#36606F] sm:text-[11px]">
+                                                            <span className="text-[10px] font-black tabular-nums text-[#36606F] sm:text-[11px] leading-none">
                                                                 {formatEuroRead(w.total)}
                                                             </span>
                                                         </div>
-                                                        <div className="min-w-0">
-                                                            <span className="block text-[7px] font-black uppercase text-zinc-400">
+                                                        <div className="min-w-0 flex-[1.2]">
+                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
                                                                 %
                                                             </span>
                                                             <span
                                                                 className={cn(
-                                                                    'text-[10px] font-black tabular-nums sm:text-[11px]',
+                                                                    'text-[10px] block font-black tabular-nums sm:text-[11px] leading-none',
                                                                     laborPctTextClass(w.laborPctOfSales),
                                                                 )}
                                                             >
