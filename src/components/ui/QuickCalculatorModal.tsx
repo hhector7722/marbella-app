@@ -349,49 +349,53 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                         <X size={18} strokeWidth={3} />
                     </button>
                 </div>
-                <div className={cn(
-                    "p-4 flex-1 overflow-y-auto min-h-0",
-                    tab === 'calculator' ? 'bg-[#36606F]/5' : 'bg-zinc-50'
-                )}>
-                    {tab === 'calculator' && (
-                        <>
-                            <div className="h-12 bg-white rounded-xl border border-zinc-200 px-3 flex items-center justify-end mb-3">
-                                <span className="text-xl font-black tabular-nums text-zinc-800 truncate max-w-full">
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                    {tab === 'calculator' ? (
+                        <div className="flex flex-col h-full bg-[#407080]">
+                            {/* Result cell — always white */}
+                            <div className="px-4 py-3 bg-white flex flex-col justify-end items-end min-h-[80px]">
+                                <div className="text-3xl font-black text-[#36606F] tracking-tighter tabular-nums truncate max-w-full">
                                     {display || '0'}
-                                </span>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-4 gap-1.5 mb-3">
-                                {BTN_VALUES.flat().map((key, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => handlePress(key)}
-                                        className={cn(
-                                            'min-h-[48px] rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center',
-                                            key === 'C' && 'bg-rose-100 text-rose-700 hover:bg-rose-200',
-                                            key === 'back' && 'bg-rose-500 text-white hover:bg-rose-600',
-                                            key === '±' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-                                            key === '%' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-                                            ['+', '-', '*', '/'].includes(key) && 'bg-purple-600 text-white hover:bg-purple-500',
-                                            key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600',
-                                            !['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%', '±'].includes(key) && 'bg-[#36606F]/10 border border-[#36606F]/20 text-[#36606F] hover:bg-[#36606F]/20',
-                                            key === '' && 'invisible pointer-events-none'
-                                        )}
-                                    >
-                                        {key === 'back' ? <Delete size={18} strokeWidth={2.5} /> : (key || '')}
-                                    </button>
-                                ))}
+
+                            {/* Keypad */}
+                            <div className="flex-1 p-3">
+                                <div className="grid grid-cols-4 gap-1.5 mb-2">
+                                    {BTN_VALUES.flat().map((key, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => handlePress(key)}
+                                            className={cn(
+                                                'min-h-[48px] rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center',
+                                                key === 'C' && 'bg-rose-100 text-rose-700 hover:bg-rose-200',
+                                                key === 'back' && 'bg-rose-500 text-white hover:bg-rose-600',
+                                                key === '±' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+                                                key === '%' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+                                                ['+', '-', '*', '/'].includes(key) && 'bg-purple-600 text-white hover:bg-purple-500',
+                                                key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600',
+                                                (!['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%', '±'].includes(key)) && 'bg-[#407080] text-white border border-white/20 hover:brightness-110',
+                                                key === '' && 'invisible pointer-events-none'
+                                            )}
+                                        >
+                                            {key === 'back' ? <Delete size={18} strokeWidth={2.5} /> : (key || '')}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleCopy}
+                                    className="w-full min-h-[48px] rounded-xl bg-white/20 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white/30 active:scale-[0.98] border border-white/20"
+                                >
+                                    <Copy size={16} />
+                                    Copiar resultado
+                                </button>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleCopy}
-                                className="w-full min-h-[48px] rounded-xl bg-emerald-500 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-[0.98] shadow-md"
-                            >
-                                <Copy size={16} />
-                                Copiar resultado
-                            </button>
-                        </>
-                    )}
+                        </div>
+                    ) : null}
                     {tab === 'breakdown' && (
                         <>
                             {zoomDenom !== null && (

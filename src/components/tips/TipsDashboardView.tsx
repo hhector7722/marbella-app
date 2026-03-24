@@ -297,54 +297,54 @@ export default function TipsDashboardView({
             {/* Fila Única: Contenedores bote combinados (Verde Marbella) */}
             <div className="grid grid-cols-2 gap-2 md:gap-4">
               {/* LUN - VIE */}
-              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-3 md:p-5 flex items-center justify-between gap-3 text-white border-b-4 border-emerald-800">
+              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-2 md:p-3 flex items-center justify-between gap-2 text-white border-b-2 md:border-b-4 border-emerald-800">
                 <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 min-w-0">
                   <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
                     Lun – Vie
                   </span>
                   <div className="min-w-0 leading-none">
                     {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
-                      <span className="text-sm md:text-2xl font-black tabular-nums truncate">
+                      <span className="text-sm md:text-xl font-black tabular-nums truncate">
                         {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
                         <span className="text-[8px] md:text-xs font-black ml-0.5 md:ml-1 opacity-80">€</span>
                       </span>
                     ) : (
-                      <span className="text-sm md:text-2xl font-black tabular-nums text-white/30 truncate"> </span>
+                      <span className="text-sm md:text-xl font-black tabular-nums text-white/30 truncate"> </span>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={() => openCash('weekday')}
-                  className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm group"
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm group"
                   title="Introducir cantidades"
                 >
-                  <Plus size={22} strokeWidth={4} className="md:w-7 md:h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
+                  <Plus size={18} strokeWidth={4} className="md:w-5 md:h-5 text-white group-hover:rotate-90 transition-transform duration-300" />
                 </button>
               </div>
 
               {/* SÁB - DOM */}
-              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-3 md:p-5 flex items-center justify-between gap-3 text-white border-b-4 border-emerald-800">
+              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md p-2 md:p-3 flex items-center justify-between gap-2 text-white border-b-2 md:border-b-4 border-emerald-800">
                 <div className="flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 min-w-0">
                   <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/70 whitespace-nowrap leading-none">
                     Sáb – Dom
                   </span>
                   <div className="min-w-0 leading-none">
                     {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
-                      <span className="text-sm md:text-2xl font-black tabular-nums truncate">
+                      <span className="text-sm md:text-xl font-black tabular-nums truncate">
                         {fmtZeroBlank(weekendPool!.cashTotal, 2)}
                         <span className="text-[8px] md:text-xs font-black ml-0.5 md:ml-1 opacity-80">€</span>
                       </span>
                     ) : (
-                      <span className="text-sm md:text-2xl font-black tabular-nums text-white/30 truncate"> </span>
+                      <span className="text-sm md:text-xl font-black tabular-nums text-white/30 truncate"> </span>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={() => openCash('weekend')}
-                  className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm group"
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm group"
                   title="Introducir cantidades"
                 >
-                  <Plus size={22} strokeWidth={4} className="md:w-7 md:h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
+                  <Plus size={18} strokeWidth={4} className="md:w-5 md:h-5 text-white group-hover:rotate-90 transition-transform duration-300" />
                 </button>
               </div>
             </div>
@@ -395,10 +395,13 @@ export default function TipsDashboardView({
                         const isSanc = s.isSanctioned;
                         const strikeClass = isSanc ? 'opacity-40' : '';
                         return (
-                        <tr key={s.id} className="group relative hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
-                          {isSanc && (
-                            <div className="absolute top-1/2 left-[20%] right-0 h-[1.5px] bg-black/70 pointer-events-none z-10" />
+                        <tr 
+                          key={s.id} 
+                          className={cn(
+                            "relative hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70",
+                            isSanc && "after:content-[''] after:absolute after:top-1/2 after:left-[20%] after:right-0 after:h-px after:bg-black/80 after:z-10 after:pointer-events-none"
                           )}
+                        >
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
                             onClick={() => openOverride('weekday', s.id, s.name)}
