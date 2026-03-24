@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, X, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
+import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, getHourFromTicketTime } from '@/lib/utils';
@@ -14,6 +14,8 @@ import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
+import type { VentasTab } from '@/components/dashboards/SubNavVentas';
 
 interface TicketSummary {
     numero_documento: string;
@@ -52,8 +54,19 @@ interface HourSlotRow {
 export default function VentasPage() {
     const supabase = createClient();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
-    const [activeTab, setActiveTab] = useState<'TICKETS' | 'PRODUCTOS' | 'HORAS'>('TICKETS');
+    const [activeTab, setActiveTab] = useState<VentasTab>('VENTAS');
+
+    // Leer el parámetro ?tab=X al montar (viene desde /dashboard/sala via SubNavVentas)
+    useEffect(() => {
+        const tab = searchParams.get('tab') as VentasTab | null;
+        const valid: VentasTab[] = ['VENTAS', 'PRODUCTOS', 'HORAS'];
+        if (tab && valid.includes(tab)) {
+            setActiveTab(tab);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
@@ -385,15 +398,6 @@ export default function VentasPage() {
                             </div>
 
                             <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                                <button
-                                    onClick={() => router.push('/dashboard/sala')}
-                                    className="flex items-center gap-1.5 outline-none min-h-[48px] px-1 active:scale-95 transition-transform"
-                                    type="button"
-                                >
-                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 animate-pulse" />
-                                    <span className="text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] leading-none pt-0.5">Live</span>
-                                </button>
-
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     hasActiveFilter={(() => {
@@ -566,64 +570,24 @@ export default function VentasPage() {
                         );
                     })()}
 
-                    {/* TOGGLE PRODUCTOS / TICKETS (cuerpo, debajo de resumen) */}
-                    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center relative print:hidden">
-                        <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
-                            <button
-                                onClick={() => setActiveTab('TICKETS')}
-                                className={cn(
-                                    "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
-                                    activeTab === 'TICKETS'
-                                        ? "bg-[#36606F] text-white"
-                                        : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                )}
-                            >
-                                Tickets
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('PRODUCTOS')}
-                                className={cn(
-                                    "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
-                                    activeTab === 'PRODUCTOS'
-                                        ? "bg-[#36606F] text-white"
-                                        : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                )}
-                            >
-                                Productos
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('HORAS')}
-                                className={cn(
-                                    "px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none",
-                                    activeTab === 'HORAS'
-                                        ? "bg-[#36606F] text-white"
-                                        : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                )}
-                            >
-                                Horas
-                            </button>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => window.print()}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none min-h-[48px] min-w-[48px] flex items-center justify-center"
-                            title="Imprimir"
-                        >
-                            <Printer size={16} />
-                        </button>
-                    </div>
+                    {/* SUB-NAV: TICKETS | LIVE | PRODUCTOS | HORAS */}
+                    <SubNavVentas
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        showPrint
+                    />
 
                     {/* TABLAS */}
                     <div className="p-4 md:p-6 bg-zinc-50/50 print:bg-white print:p-4">
                         <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">
-                            Ventas — {activeTab === 'TICKETS' ? 'Tickets' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
+                            Ventas — {activeTab === 'VENTAS' ? 'Tickets' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
                         </div>
                         <div className="bg-transparent w-full">
                             {loading ? (
                                 <div className="flex justify-center items-center py-20">
                                     <LoadingSpinner size="lg" className="text-[#36606F]" />
                                 </div>
-                            ) : activeTab === 'TICKETS' ? (
+                            ) : activeTab === 'VENTAS' ? (
                                 tickets.length === 0 ? (
                                     <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
