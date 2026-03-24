@@ -72,11 +72,11 @@ export default function TipsDashboardView({
 
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
-    return format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    return format(startOfMonth(now), 'yyyy-MM-dd');
   });
   const [endDate, setEndDate] = useState(() => {
     const now = new Date();
-    return format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    return format(endOfMonth(now), 'yyyy-MM-dd');
   });
 
   const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
@@ -270,14 +270,14 @@ export default function TipsDashboardView({
                   onClick={() => setIsTimeFilterOpen(true)}
                   hasActiveFilter={(() => {
                     const now = new Date();
-                    const start = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-                    const end = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                    const start = format(startOfMonth(now), 'yyyy-MM-dd');
+                    const end = format(endOfMonth(now), 'yyyy-MM-dd');
                     return startDate !== start || endDate !== end;
                   })()}
                   onClear={() => {
                     const now = new Date();
-                    const start = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-                    const end = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+                    const start = format(startOfMonth(now), 'yyyy-MM-dd');
+                    const end = format(endOfMonth(now), 'yyyy-MM-dd');
                     setStartDate(start);
                     setEndDate(end);
                   }}
