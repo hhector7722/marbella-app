@@ -396,10 +396,18 @@ export default function StaffDashboardView() {
         const list: any[] = [];
         const op = allBoxes.find(b => b.type === 'operational');
         const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const tpvBoxes = allBoxes.filter(b => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        
         if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
         changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
-        list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
-        list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
+        
+        // Add TPVs from DB if they exist, otherwise fallback for migration period
+        if (tpvBoxes.length > 0) {
+            tpvBoxes.forEach(b => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url }));
+        } else {
+            list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
+            list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
+        }
         return list;
     };
 
@@ -429,7 +437,11 @@ export default function StaffDashboardView() {
             const customDate = payload.customDate;
 
             for (const entry of payload.sources) {
-                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
+                // EXCLUDE TPVs from database inserts (they don't record inventory movements)
+                const isTpvByHardcodedId = entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2';
+                const isTpvByDb = allBoxes.some(b => b.id === entry.sourceId && b.type === 'tpv');
+                if (isTpvByHardcodedId || isTpvByDb) continue;
+                
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
                 Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
@@ -1106,7 +1118,7 @@ export default function StaffDashboardView() {
 
                                         <button
                                             onClick={() => {
-                                                const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change');
+                                                const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv');
                                                 if (cashBoxes.length === 0) {
                                                     toast.error('No hay cajas configuradas');
                                                     return;
@@ -1137,7 +1149,7 @@ export default function StaffDashboardView() {
                                             <p className="text-[10px] font-black uppercase text-gray-400">Seleccionar caja para editar</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
-                                            {allBoxes.filter(b => b.type === 'operational' || b.type === 'change').sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(box => (
+                                            {allBoxes.filter(b => b.type === 'operational' || b.type === 'change' || b.type === 'tpv').sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(box => (
                                                 <button
                                                     key={box.id}
                                                     onClick={() => {

@@ -207,12 +207,12 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 })}
             </div>
 
-            <div className="bg-white border-t border-gray-100 flex items-center h-10 relative z-10">
+            <div className="bg-white border-t border-gray-100 flex items-center h-8 relative z-10">
                 {week.summary.isPaid && (
                     <img
                         src="/sello/pagado.png"
                         alt="PAGADO"
-                        className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[64px] h-auto z-30 pointer-events-none md:w-[72px]"
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[48px] h-auto z-30 pointer-events-none md:w-[56px]"
                     />
                 )}
                 <div className="w-24 pl-3 shrink-0 flex items-center h-full">
@@ -220,14 +220,14 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         SEMANA {week.weekNumber}
                     </span>
                 </div>
-                <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-16 md:pr-24">
-                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                <div className="flex-1 grid grid-cols-4 h-full relative z-20 pr-14 md:pr-16">
+                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
                         <span className="text-[9px] font-black leading-none text-black block">
                             {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : " "}
                         </span>
                         <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
                     </div>
-                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
                         {(() => {
                             const startBalance = week.summary.startBalance ?? 0;
                             const hasPending = Math.abs(startBalance) > 0.05;
@@ -246,13 +246,13 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         })()}
                         <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
                     </div>
-                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
                         <span className="text-[9px] font-black leading-none text-black block">
                             {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : " "}
                         </span>
                         <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
                     </div>
-                    <div className="flex flex-col items-center justify-between h-full pt-2.5 pb-2.5">
+                    <div className="flex flex-col items-center justify-center gap-0.5 h-full py-1">
                         <span className="text-[9px] font-black leading-none text-emerald-600 block">
                             {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
                                 ? fmtMoney(week.summary.estimatedValue)
