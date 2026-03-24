@@ -262,7 +262,24 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                                 </div>
                                 <div className="flex flex-col items-center flex-1">
                                     <div className="h-4 md:h-5 flex items-center">
-                                        <span className="font-black text-[11px] md:text-sm leading-none text-red-600">{formatWorked(weekData.summary.startBalance)}</span>
+                                        {(() => {
+                                            const startBalance = weekData.summary.startBalance ?? 0;
+                                            const hasPending = Math.abs(startBalance) > 0.05;
+                                            const weekStartStr = typeof weekData.startDate === 'string' 
+                                                ? weekData.startDate.split('T')[0] 
+                                                : format(weekData.startDate as Date, 'yyyy-MM-dd');
+                                            const weekStartDate = parseISO(weekStartStr);
+                                            const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+                                            const isFutureWeek = weekStartDate > currentWeekStart;
+                                            const showPending = hasPending && !isFutureWeek;
+                                            const colorClass = !showPending ? "text-transparent" : startBalance >= 0 ? "text-emerald-600" : "text-red-600";
+                                            const text = showPending ? formatWorked(Math.abs(startBalance)) : " ";
+                                            return (
+                                                <span className={cn("font-black text-[11px] md:text-sm leading-none block", colorClass)}>
+                                                    {text}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                     <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
                                 </div>
