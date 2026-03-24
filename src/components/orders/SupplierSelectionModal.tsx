@@ -98,7 +98,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-[#FAF9F6] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
 
                 {/* Header Marbella Premium */}
                 <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
@@ -116,7 +116,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                     </button>
                 </div>
 
-                <div className="p-4 bg-[#FAF9F6] flex-1 overflow-hidden flex flex-col">
+                <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
                     {/* Buscador */}
                     <div className="relative mb-4 shrink-0">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -129,7 +129,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                         />
                     </div>
 
-                    <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
                         {loading ? (
                             <div className="col-span-full py-10 flex justify-center">
                                 <span className="text-sm font-bold text-gray-400 animate-pulse">Cargando proveedores...</span>
@@ -145,9 +145,9 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                                     <button
                                         key={supplier.id}
                                         onClick={() => handleSelectSupplier(supplier.name)}
-                                        className="rounded-2xl p-2 flex flex-col items-center justify-center gap-1.5 min-h-[90px] transition-all active:scale-95 border-0 bg-white shadow-md"
+                                        className="rounded-2xl p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 border-4 border-[#36606F] bg-white shadow-md"
                                     >
-                                        <div className="w-14 h-14 flex items-center justify-center overflow-hidden shrink-0">
+                                        <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
                                             {logo ? (
                                                 <img
                                                     src={logo}

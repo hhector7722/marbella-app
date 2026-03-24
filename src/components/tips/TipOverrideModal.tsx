@@ -11,8 +11,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 type PoolType = 'weekday' | 'weekend';
 
 export type TipOverrideDraft = {
-  overrideHours: number | null;
-  overrideAmount: number | null;
+  isSanctioned: boolean;
   notes: string;
 };
 
@@ -37,8 +36,7 @@ export function TipOverrideModal({
   initial?: TipOverrideDraft;
   onSave: (draft: TipOverrideDraft) => Promise<void> | void;
 }) {
-  const [overrideHours, setOverrideHours] = useState<number | ''>('');
-  const [overrideAmount, setOverrideAmount] = useState<number | ''>('');
+  const [isSanctioned, setIsSanctioned] = useState(false);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
@@ -46,8 +44,7 @@ export function TipOverrideModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    setOverrideHours(initial?.overrideHours ?? '');
-    setOverrideAmount(initial?.overrideAmount ?? '');
+    setIsSanctioned(initial?.isSanctioned ?? false);
     setNotes(initial?.notes ?? '');
     setProfile(null);
     if (staffId) {
@@ -68,18 +65,14 @@ export function TipOverrideModal({
 
   if (!isOpen) return null;
 
-  const canSave =
-    (overrideHours !== '' && Number(overrideHours) >= 0) ||
-    (overrideAmount !== '' && Number(overrideAmount) >= 0) ||
-    (notes || '').trim().length > 0;
+  const canSave = true; // Siempre se puede guardar
 
   const handleSave = async () => {
     if (!canSave) return;
     setSaving(true);
     try {
       await onSave({
-        overrideHours: overrideHours === '' ? null : Number(overrideHours),
-        overrideAmount: overrideAmount === '' ? null : Number(overrideAmount),
+        isSanctioned,
         notes: (notes || '').trim(),
       });
       onClose();
@@ -115,39 +108,36 @@ export function TipOverrideModal({
         <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
         <div className="p-2.5 md:p-4 bg-gray-50 flex-1 overflow-y-auto space-y-2 md:space-y-3">
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
-            <div className="bg-white rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2 md:p-3">
-              <label className="block text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 md:mb-2">
-                Horas (override)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={overrideHours}
-                onChange={(e) => setOverrideHours(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full min-h-[44px] h-10 md:h-12 rounded-xl md:rounded-2xl border border-zinc-200 px-3 md:px-4 text-sm md:text-base font-black text-zinc-800 outline-none focus:ring-2 focus:ring-[#5B8FB9]/20 focus:border-[#5B8FB9]/40"
-                placeholder="Opcional"
-              />
-            </div>
-
-            <div className="bg-white rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2 md:p-3">
-              <label className="block text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 md:mb-2">
-                Importe (override)
-              </label>
-              <div className="relative">
+          <div className="bg-white rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-4 md:p-5">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-lg border-2 border-zinc-300 bg-zinc-50 transition-all group-hover:border-rose-400">
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={overrideAmount}
-                  onChange={(e) => setOverrideAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full min-h-[44px] h-10 md:h-12 rounded-xl md:rounded-2xl border border-zinc-200 px-3 md:px-4 pr-8 md:pr-10 text-sm md:text-base font-black text-zinc-800 outline-none focus:ring-2 focus:ring-[#5B8FB9]/20 focus:border-[#5B8FB9]/40"
-                  placeholder="Opcional"
+                  type="checkbox"
+                  checked={isSanctioned}
+                  onChange={(e) => setIsSanctioned(e.target.checked)}
+                  className="peer absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 />
-                <span className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-black text-sm md:text-base">€</span>
+                <div className={cn(
+                  "absolute inset-0 rounded-md transition-all scale-0 opacity-0 bg-rose-500",
+                  isSanctioned && "scale-100 opacity-100"
+                )} />
+                <X 
+                  strokeWidth={4} 
+                  className={cn(
+                    "relative z-10 w-4 h-4 md:w-5 md:h-5 text-white transition-all scale-0 opacity-0",
+                    isSanctioned && "scale-100 opacity-100"
+                  )} 
+                />
               </div>
-            </div>
+              <div className="flex flex-col">
+                <span className="text-sm md:text-base font-black text-rose-600 uppercase tracking-wide">
+                  Sin propina
+                </span>
+                <span className="text-[9px] md:text-[11px] font-bold text-zinc-400 leading-tight">
+                  Excluye a este empleado del reparto y su parte se distribuye equitativamente.
+                </span>
+              </div>
+            </label>
           </div>
 
           <div className="bg-white rounded-xl md:rounded-2xl border border-zinc-100 shadow-sm p-2 md:p-3">

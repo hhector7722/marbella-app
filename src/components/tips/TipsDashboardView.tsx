@@ -26,6 +26,7 @@ type TipPreviewStaffRow = {
   weekdayAmount: number;
   weekendAmount: number;
   totalAmount: number;
+  isSanctioned?: boolean;
   hasOverrides: boolean;
 };
 
@@ -218,8 +219,9 @@ export default function TipsDashboardView({
       await supabase.rpc('upsert_tip_override', {
         p_pool_id: poolId,
         p_user_id: overrideModal.staffId,
-        p_override_hours: draft.overrideHours,
-        p_override_amount: draft.overrideAmount,
+        p_override_hours: null,
+        p_override_amount: null,
+        p_is_sanctioned: draft.isSanctioned,
         p_notes: draft.notes || null,
       });
       toast.success('Override guardado');
@@ -365,7 +367,7 @@ export default function TipsDashboardView({
                       <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
                         Lun – Vie
                       </th>
-                      <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest">
+                      <th colSpan={2} className="text-center px-1 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest bg-white/5">
                         Sáb – Dom
                       </th>
                       <th className="text-right px-3 md:px-4 py-2 md:py-3 text-[9px] md:text-[11px] font-black uppercase tracking-widest w-[12%]">
@@ -374,10 +376,10 @@ export default function TipsDashboardView({
                     </tr>
                     <tr className="bg-[#36606F]/90 text-white/90">
                       <th className="text-left px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
-                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
-                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
-                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
-                      <th className="text-center px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
+                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">H</th>
+                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%]">€</th>
+                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%] bg-white/5">H</th>
+                      <th className="text-center px-0.5 md:px-1 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest w-[8%] bg-white/5">€</th>
                       <th className="text-right px-3 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest" />
                     </tr>
                   </thead>
@@ -389,52 +391,60 @@ export default function TipsDashboardView({
                         </td>
                       </tr>
                     ) : (
-                      staffWithWorkedHours.map((s) => (
+                      staffWithWorkedHours.map((s) => {
+                        const isSanc = s.isSanctioned;
+                        const strikeClass = isSanc ? 'line-through decoration-rose-500/50 decoration-2 opacity-50' : '';
+                        return (
                         <tr key={s.id} className="hover:bg-zinc-50/60 transition-colors border-y border-zinc-200/70">
                           <td
                             className="px-2 md:px-4 py-2 md:py-3 cursor-pointer"
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             <div className="min-w-0">
-                              <div className="text-[10px] md:text-[13px] font-black text-zinc-900 truncate">
+                              <div className="text-[10px] md:text-[13px] font-black text-zinc-900 truncate flex items-center gap-1.5 md:gap-2">
                                 {(s.name || '').trim().split(/\s+/)[0] || s.name}
-                                {s.hasOverrides && (
-                                  <span className="ml-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500">
+                                {s.hasOverrides && !isSanc && (
+                                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-orange-500 shrink-0">
                                     OVERRIDE
+                                  </span>
+                                )}
+                                {isSanc && (
+                                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white bg-rose-500 px-1.5 py-0.5 rounded shadow-sm shrink-0">
+                                    SANCION
                                   </span>
                                 )}
                               </div>
                             </div>
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer"
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer", strikeClass)}
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             {fmtHours(s.weekdayHours)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-emerald-600 cursor-pointer"
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-emerald-600 cursor-pointer", strikeClass)}
                             onClick={() => openOverride('weekday', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekdayAmount, 2)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer"
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-[#36606F] cursor-pointer bg-zinc-50/80", strikeClass)}
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtHours(s.weekendHours)}
                           </td>
                           <td
-                            className="px-0.5 md:px-2 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-orange-600 cursor-pointer"
+                            className={cn("px-0 md:px-1 py-2 md:py-3 text-center text-[10px] md:text-[12px] font-black tabular-nums text-orange-600 cursor-pointer bg-zinc-50/80", strikeClass)}
                             onClick={() => openOverride('weekend', s.id, s.name)}
                           >
                             {fmtZeroBlank(s.weekendAmount, 2)}
                           </td>
-                          <td className="px-2 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-[13px] font-black tabular-nums text-zinc-900">
+                          <td className={cn("px-2 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-[13px] font-black tabular-nums text-zinc-900", strikeClass)}>
                             {fmtMoney(s.totalAmount)}
                           </td>
                         </tr>
-                      ))
+                      )})
                     )}
                   </tbody>
                 </table>
@@ -477,8 +487,7 @@ export default function TipsDashboardView({
           poolType={overrideModal.poolType}
           onSave={handleSaveOverride}
           initial={{
-            overrideHours: null,
-            overrideAmount: null,
+            isSanctioned: preview?.staff.find(x => x.id === overrideModal.staffId)?.isSanctioned ?? false,
             notes: '',
           }}
         />
