@@ -677,10 +677,15 @@ export const CashChangeModal = ({
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2 flex flex-col">
                     <div className="flex justify-center mb-3 mt-1">
-                        <div className={cn("px-4 py-1.5 rounded-xl shadow-sm", isStep1 ? "bg-rose-500" : "bg-emerald-500")}>
+                        <div className={cn("px-4 py-1.5 rounded-xl shadow-sm flex items-center gap-3", isStep1 ? "bg-rose-500" : "bg-emerald-500")}>
                             <span className="text-[14px] md:text-base font-black text-white text-center leading-tight tracking-tight drop-shadow-sm">
                                 {titleText}
                             </span>
+                            {boxA?.image_url && (
+                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-white shrink-0 shadow-sm border border-white/20 flex items-center justify-center">
+                                    <Image src={boxA.image_url} alt={boxA.name} width={36} height={36} className="w-full h-full object-contain" />
+                                </div>
+                            )}
                         </div>
                     </div>
 
