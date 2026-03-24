@@ -145,7 +145,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                                     <button
                                         key={supplier.id}
                                         onClick={() => handleSelectSupplier(supplier.name)}
-                                        className="rounded-2xl p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 border-4 border-[#36606F] bg-white shadow-md"
+                                        className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 bg-transparent"
                                     >
                                         <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
                                             {logo ? (
