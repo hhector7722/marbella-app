@@ -330,7 +330,7 @@ export default function NewOrderPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleNewOrder}
-                                    className="flex-1 px-4 min-h-[48px] bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
+                                    className="flex-1 px-4 min-h-[48px] bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
                                 >
                                     Borrar Pedido
                                 </button>
