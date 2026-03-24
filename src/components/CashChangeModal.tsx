@@ -270,11 +270,11 @@ export const CashChangeModal = ({
                 if (error) throw new Error(error.message);
             };
 
-            // Paso 1: "Dinero que entra en Origen". Significa movimiento De Destino a Origen
-            await insertExchange(boxB, boxA, step1Counts, `Intercambio: Entra en ${boxA.name}`);
+            // Paso 1: "Dinero que sale de Origen". Significa movimiento De Origen a Destino
+            await insertExchange(boxA, boxB, step1Counts, `Intercambio: Sale de ${boxA.name}`);
             
-            // Paso 2: "Dinero que sale de Origen". Significa movimiento De Origen a Destino
-            await insertExchange(boxA, boxB, step2Counts, `Intercambio: Sale de ${boxA.name}`);
+            // Paso 2: "Dinero que entra en Origen". Significa movimiento De Destino a Origen
+            await insertExchange(boxB, boxA, step2Counts, `Intercambio: Entra en ${boxA.name}`);
 
             toast.success('Cambio entre cajas guardado');
             if (onSuccess) onSuccess();
@@ -642,7 +642,7 @@ export const CashChangeModal = ({
     const stock = isStep1 ? stockA : stockB;
     const hasStockIssue = isStep1 ? hasStockIssueStep1 : hasStockIssueStep2;
 
-    const titleText = isStep1 ? `Dinero que entra en ${boxA?.name}` : `Dinero que sale de ${boxA?.name}`;
+    const titleText = isStep1 ? `Dinero que sale de ${boxA?.name}` : `Dinero que entra en ${boxA?.name}`;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
@@ -656,10 +656,12 @@ export const CashChangeModal = ({
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2 flex flex-col">
-                    <div className="flex flex-col items-center justify-center mb-3 mt-1">
-                        <span className="text-base font-black text-[#36606F] text-center leading-tight tracking-tight">
-                            {titleText}
-                        </span>
+                    <div className="flex justify-center mb-3 mt-1">
+                        <div className={cn("px-4 py-1.5 rounded-xl shadow-sm", isStep1 ? "bg-rose-500" : "bg-emerald-500")}>
+                            <span className="text-[14px] md:text-base font-black text-white text-center leading-tight tracking-tight drop-shadow-sm">
+                                {titleText}
+                            </span>
+                        </div>
                     </div>
 
                     {zoomDenom !== null && (
