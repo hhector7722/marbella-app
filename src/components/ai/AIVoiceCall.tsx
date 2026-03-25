@@ -35,14 +35,35 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
       setUserId(user.id);
 
       // 2. Cargar Script de Vapi dinámicamente
-      if (!window.vapiSDK) {
+      console.log('[VAPI] Iniciando carga de SDK...');
+      
+      const timeout = setTimeout(() => {
+        if (!vapiRef.current) {
+          console.error('[VAPI] Timeout alcanzado');
+          setAuthError('No se pudo conectar con el motor de voz (Timeout).');
+          setIsConnecting(false);
+        }
+      }, 10000);
+
+      if (window.Vapi || window.vapiSDK) {
+        clearTimeout(timeout);
+        startCall(user.id);
+      } else {
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/gh/vapi-ai/web-sdk@latest/dist/vapi-sdk.js';
         script.defer = true;
-        script.onload = () => startCall(user.id);
+        script.onload = () => {
+          clearTimeout(timeout);
+          console.log('[VAPI] SDK cargado ok');
+          startCall(user.id);
+        };
+        script.onerror = () => {
+          clearTimeout(timeout);
+          console.error('[VAPI] Error cargando SDK');
+          setAuthError('Error de red al cargar el motor de voz.');
+          setIsConnecting(false);
+        };
         document.body.appendChild(script);
-      } else {
-        startCall(user.id);
       }
     };
 
