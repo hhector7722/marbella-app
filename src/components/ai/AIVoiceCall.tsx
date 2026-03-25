@@ -48,11 +48,11 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
     const startCall = (uid: string) => {
       try {
         // @ts-ignore
-        const vapi = new window.Vapi('VAPI_PUBLIC_KEY_PLACEHOLDER'); 
+        const vapi = new window.Vapi('44f9b252-4f84-4549-9437-ce1f753179a9'); 
         vapiRef.current = vapi;
 
         // Configuración dinámica del asistente
-        vapi.start('VAPI_ASSISTANT_ID_PLACEHOLDER', {
+        vapi.start('634ba176-7eb8-4df6-9cda-6e5b4658a472', {
           variableValues: {
             userId: uid
           }
