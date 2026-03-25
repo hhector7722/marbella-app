@@ -479,58 +479,31 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
             const shiftsToInsert = activeShifts.map(shift => {
                 const existing = dbShiftMap.get(shift.employeeId);
-                // Fallback robusto: evita Invalid Date cuando start/end queden vacíos por UI condicional
-                const resolvedStart = (
-                    useDayHeader
-                        ? (defaultStart || shift.start || '09:00')
-                        : (shift.start || defaultStart || '09:00')
-                ).trim();
-                const resolvedEnd = (
-                    useDayHeader
-                        ? (defaultEnd || shift.end || '17:00')
-                        : (shift.end || defaultEnd || '17:00')
-                ).trim();
+                // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
+                // Los valores por defecto de la cabecera (defaultStart, activity, etc.) ya actúan como inicializadores 
+                // en handleAddEmployee, pero una vez creados, el turno del trabajador es independiente.
+                const resolvedStart = (shift.start || defaultStart || '09:00').trim();
+                const resolvedEnd = (shift.end || defaultEnd || '17:00').trim();
                 const startDateTime = new Date(`${date}T${resolvedStart}:00`);
                 const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
                 const isoStart = startDateTime.toISOString();
                 const isoEnd = endDateTime.toISOString();
-                const shiftActivity = useDayHeader
-                    ? (activity || null)
-                    : (shift.activity || activity || null);
-                const shiftCategory = useDayHeader
-                    ? (categoria || null)
-                    : (shift.categoria || categoria || null);
-                const shiftActivity2 = useDayHeader
-                    ? (activity2 || null)
-                    : (shift.activity2 || activity2 || null);
-                const shiftCategory2 = useDayHeader
-                    ? (categoria2 || null)
-                    : (shift.categoria2 || categoria2 || null);
 
-                const slot2Start = useDayHeader
-                    ? (defaultStart2 || shift.start2 || '')
-                    : (shift.start2 || defaultStart2 || '');
-                const slot2End = useDayHeader
-                    ? (defaultEnd2 || shift.end2 || '')
-                    : (shift.end2 || defaultEnd2 || '');
-                const slot2Participants = useDayHeader
-                    ? (participantsCount2 || shift.participantsCount2 || '')
-                    : (shift.participantsCount2 || participantsCount2 || '');
+                const shiftActivity = (shift.activity || activity || null);
+                const shiftCategory = (shift.categoria || categoria || null);
+                const shiftActivity2 = (shift.activity2 || activity2 || null);
+                const shiftCategory2 = (shift.categoria2 || categoria2 || null);
+
+                const slot2Start = (shift.start2 || defaultStart2 || '');
+                const slot2End = (shift.end2 || defaultEnd2 || '');
+                const slot2Participants = (shift.participantsCount2 || participantsCount2 || '');
                 const shiftNotes = JSON.stringify({
                     defaultStart: resolvedStart,
                     defaultEnd: resolvedEnd,
-                    participantsCount: useDayHeader
-                        ? (participantsCount || '')
-                        : (shift.participantsCount || participantsCount || ''),
-                    defaultStart2: useDayHeader
-                        ? (defaultStart2 || shift.start2 || '')
-                        : (shift.start2 || defaultStart2 || ''),
-                    defaultEnd2: useDayHeader
-                        ? (defaultEnd2 || shift.end2 || '')
-                        : (shift.end2 || defaultEnd2 || ''),
-                    participantsCount2: useDayHeader
-                        ? (participantsCount2 || '')
-                        : (shift.participantsCount2 || participantsCount2 || ''),
+                    participantsCount: (shift.participantsCount || participantsCount || ''),
+                    defaultStart2: (shift.start2 || defaultStart2 || ''),
+                    defaultEnd2: (shift.end2 || defaultEnd2 || ''),
+                    participantsCount2: (shift.participantsCount2 || participantsCount2 || ''),
                 });
 
                 const data: any = {
@@ -789,15 +762,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         wrapClassName="min-h-0 flex-1"
                                                         singleLine
                                                         type="text"
-                                                        value={editingIndex !== null ? (shifts[editingIndex].activity ?? '') : activity}
+                                                        value={activity}
                                                         onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            if (editingIndex !== null) {
-                                                                handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity: val });
-                                                            } else {
-                                                                setActivity(val);
-                                                                setHasUnsavedChanges(true);
-                                                            }
+                                                            setActivity(e.target.value);
+                                                            setHasUnsavedChanges(true);
                                                         }}
                                                         maxPx={11}
                                                         minPx={5}
@@ -815,15 +783,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="time"
-                                                                value={editingIndex !== null ? (shifts[editingIndex].start ?? '') : defaultStart}
+                                                                value={defaultStart}
                                                                 onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    if (editingIndex !== null) {
-                                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], start: val });
-                                                                    } else {
-                                                                        setDefaultStart(val);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }
+                                                                    setDefaultStart(e.target.value);
+                                                                    setHasUnsavedChanges(true);
                                                                 }}
                                                                 maxPx={11}
                                                                 minPx={5}
@@ -839,15 +802,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="time"
-                                                                value={editingIndex !== null ? (shifts[editingIndex].end ?? '') : defaultEnd}
+                                                                value={defaultEnd}
                                                                 onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    if (editingIndex !== null) {
-                                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], end: val });
-                                                                    } else {
-                                                                        setDefaultEnd(val);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }
+                                                                    setDefaultEnd(e.target.value);
+                                                                    setHasUnsavedChanges(true);
                                                                 }}
                                                                 maxPx={11}
                                                                 minPx={5}
@@ -863,15 +821,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="text"
-                                                                value={editingIndex !== null ? (shifts[editingIndex].participantsCount ?? '') : participantsCount}
+                                                                value={participantsCount}
                                                                 onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    if (editingIndex !== null) {
-                                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount: val });
-                                                                    } else {
-                                                                        setParticipantsCount(val);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }
+                                                                    setParticipantsCount(e.target.value);
+                                                                    setHasUnsavedChanges(true);
                                                                 }}
                                                                 maxPx={11}
                                                                 minPx={5}
@@ -888,15 +841,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 singleLine
                                                                 type="text"
-                                                                value={editingIndex !== null ? (shifts[editingIndex].categoria ?? '') : categoria}
+                                                                value={categoria}
                                                                 onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    if (editingIndex !== null) {
-                                                                        handleUpdateShift(editingIndex, { ...shifts[editingIndex], categoria: val });
-                                                                    } else {
-                                                                        setCategoria(val);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }
+                                                                    setCategoria(e.target.value);
+                                                                    setHasUnsavedChanges(true);
                                                                 }}
                                                                 maxPx={11}
                                                                 minPx={5}
@@ -955,15 +903,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             wrapClassName="min-h-0 flex-1"
                                                             singleLine
                                                             type="text"
-                                                            value={editingIndex !== null ? (shifts[editingIndex].activity2 ?? '') : activity2}
+                                                            value={activity2}
                                                             onChange={(e) => {
-                                                                const val = e.target.value;
-                                                                if (editingIndex !== null) {
-                                                                    handleUpdateShift(editingIndex, { ...shifts[editingIndex], activity2: val });
-                                                                } else {
-                                                                    setActivity2(val);
-                                                                    setHasUnsavedChanges(true);
-                                                                }
+                                                                setActivity2(e.target.value);
+                                                                setHasUnsavedChanges(true);
                                                             }}
                                                             maxPx={11}
                                                             minPx={5}
@@ -981,15 +924,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     type="time"
-                                                                    value={editingIndex !== null ? (shifts[editingIndex].start2 ?? '') : defaultStart2}
+                                                                    value={defaultStart2}
                                                                     onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        if (editingIndex !== null) {
-                                                                            handleUpdateShift(editingIndex, { ...shifts[editingIndex], start2: val });
-                                                                        } else {
-                                                                            setDefaultStart2(val);
-                                                                            setHasUnsavedChanges(true);
-                                                                        }
+                                                                        setDefaultStart2(e.target.value);
+                                                                        setHasUnsavedChanges(true);
                                                                     }}
                                                                     maxPx={11}
                                                                     minPx={5}
@@ -1004,15 +942,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
                                                                     type="time"
-                                                                    value={editingIndex !== null ? (shifts[editingIndex].end2 ?? '') : defaultEnd2}
+                                                                    value={defaultEnd2}
                                                                     onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        if (editingIndex !== null) {
-                                                                            handleUpdateShift(editingIndex, { ...shifts[editingIndex], end2: val });
-                                                                        } else {
-                                                                            setDefaultEnd2(val);
-                                                                            setHasUnsavedChanges(true);
-                                                                        }
+                                                                        setDefaultEnd2(e.target.value);
+                                                                        setHasUnsavedChanges(true);
                                                                     }}
                                                                     maxPx={11}
                                                                     minPx={5}
@@ -1028,15 +961,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     type="text"
-                                                                    value={editingIndex !== null ? (shifts[editingIndex].participantsCount2 ?? '') : participantsCount2}
+                                                                    value={participantsCount2}
                                                                     onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        if (editingIndex !== null) {
-                                                                            handleUpdateShift(editingIndex, { ...shifts[editingIndex], participantsCount2: val });
-                                                                        } else {
-                                                                            setParticipantsCount2(val);
-                                                                            setHasUnsavedChanges(true);
-                                                                        }
+                                                                        setParticipantsCount2(e.target.value);
+                                                                        setHasUnsavedChanges(true);
                                                                     }}
                                                                     maxPx={11}
                                                                     minPx={5}
@@ -1053,15 +981,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     singleLine
                                                                     type="text"
-                                                                    value={editingIndex !== null ? (shifts[editingIndex].categoria2 ?? '') : categoria2}
+                                                                    value={categoria2}
                                                                     onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        if (editingIndex !== null) {
-                                                                            handleUpdateShift(editingIndex, { ...shifts[editingIndex], categoria2: val });
-                                                                        } else {
-                                                                            setCategoria2(val);
-                                                                            setHasUnsavedChanges(true);
-                                                                        }
+                                                                        setCategoria2(e.target.value);
+                                                                        setHasUnsavedChanges(true);
                                                                     }}
                                                                     maxPx={11}
                                                                     minPx={5}
@@ -1133,17 +1056,48 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                     const step = SNAP_MINUTES;
                                     return (
                                         <div className="absolute top-[80px] md:top-[90px] left-0 right-0 z-[100] translate-y-2 pointer-events-none flex justify-center w-full px-4" onClick={(e) => e.stopPropagation()}>
-                                            <div className="w-full max-w-md pointer-events-auto h-14 flex items-center gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
-                                                <div className="flex flex-col gap-0.5 shrink-0">
-                                                    <button type="button" onClick={(e) => { e.stopPropagation(); upd({ ...s, start: stepTime(s.start, -step) }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
-                                                    <button type="button" onClick={(e) => { e.stopPropagation(); const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
+                                            <div className="w-full max-w-md pointer-events-auto flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
+                                                {/* Controles de Tiempo */}
+                                                <div className="h-14 flex items-center gap-2">
+                                                    <div className="flex flex-col gap-0.5 shrink-0">
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); upd({ ...s, start: stepTime(s.start, -step) }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
+                                                    </div>
+                                                    <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
+                                                        <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-0.5 shrink-0">
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); upd({ ...s, end: stepTime(s.end, -step) }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
-                                                    <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
-                                                </div>
-                                                <div className="flex flex-col gap-0.5 shrink-0">
-                                                    <button type="button" onClick={(e) => { e.stopPropagation(); const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
-                                                    <button type="button" onClick={(e) => { e.stopPropagation(); upd({ ...s, end: stepTime(s.end, -step) }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
+
+                                                {/* Controles de Actividad y Categoría del Trabajador */}
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Actividad Trabajador</span>
+                                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
+                                                            <input
+                                                                type="text"
+                                                                value={s.activity}
+                                                                onChange={(e) => upd({ ...s, activity: e.target.value })}
+                                                                placeholder="ACT."
+                                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Categoría Trabajador</span>
+                                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
+                                                            <input
+                                                                type="text"
+                                                                value={s.categoria}
+                                                                onChange={(e) => upd({ ...s, categoria: e.target.value })}
+                                                                placeholder="CAT."
+                                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1179,17 +1133,48 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     <>
                         <div className="fixed inset-0 z-[9998]" onClick={() => setEditingIndex(null)} aria-hidden />
                         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none" onClick={(e) => e.stopPropagation()}>
-                            <div className="pointer-events-auto h-14 flex items-center gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
-                                <div className="flex flex-col gap-0.5 shrink-0">
-                                    <button type="button" onClick={() => upd({ ...s, start: stepTime(s.start, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
-                                    <button type="button" onClick={() => { const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
+                            <div className="pointer-events-auto flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
+                                {/* Controles de Tiempo */}
+                                <div className="h-14 flex items-center gap-2">
+                                    <div className="flex flex-col gap-0.5 shrink-0">
+                                        <button type="button" onClick={() => upd({ ...s, start: stepTime(s.start, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
+                                        <button type="button" onClick={() => { const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
+                                    </div>
+                                    <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
+                                        <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 shrink-0">
+                                        <button type="button" onClick={() => { const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
+                                        <button type="button" onClick={() => upd({ ...s, end: stepTime(s.end, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
+                                    </div>
                                 </div>
-                                <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
-                                    <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
-                                </div>
-                                <div className="flex flex-col gap-0.5 shrink-0">
-                                    <button type="button" onClick={() => { const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
-                                    <button type="button" onClick={() => upd({ ...s, end: stepTime(s.end, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
+
+                                {/* Controles de Actividad y Categoría del Trabajador */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Actividad Trabajador</span>
+                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
+                                            <input
+                                                type="text"
+                                                value={s.activity}
+                                                onChange={(e) => upd({ ...s, activity: e.target.value })}
+                                                placeholder="ACT."
+                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Categoría Trabajador</span>
+                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
+                                            <input
+                                                type="text"
+                                                value={s.categoria}
+                                                onChange={(e) => upd({ ...s, categoria: e.target.value })}
+                                                placeholder="CAT."
+                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
