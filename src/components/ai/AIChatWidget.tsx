@@ -35,11 +35,16 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         },
         onError: (error) => {
             console.error("[CRÍTICO] Fallo en el stream de useChat:", error);
-            const msg = error.message ?? '';
-            if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
-                setAuthError('Sesión expirada. Cierra sesión y vuelve a entrar.');
-            } else {
-                setAuthError('Error de conexión con la IA. Reinténtalo.');
+            try {
+                const errorData = JSON.parse(error.message);
+                setAuthError(`Error IA: ${errorData.error}`);
+            } catch {
+                const msg = error.message ?? '';
+                if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
+                    setAuthError('Sesión expirada. Cierra sesión y vuelve a entrar.');
+                } else {
+                    setAuthError(`Error de conexión: ${msg || 'Desconocido'}`);
+                }
             }
         },
     });

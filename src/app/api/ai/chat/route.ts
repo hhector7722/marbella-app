@@ -7,13 +7,16 @@ import { createClient } from '@/utils/supabase/server';
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  console.log('[CHAT_API] Request received');
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      console.error('[CHAT_API] Auth error:', authError);
       return new Response('No autorizado', { status: 401 });
     }
+    console.log('[CHAT_API] User identified:', user.id);
 
     const { messages } = await req.json();
     const { data: profile } = await supabase
@@ -34,6 +37,7 @@ REGLA DE ESTILO: Sé extremadamente directo y breve. Máximo 2 frases por respue
 REGLA DE SEGURIDAD: Nunca menciones datos de otros usuarios a menos que seas manager.
 Formato: Usa Markdown para tablas de recetas. No uses asteriscos en los títulos.`;
 
+    console.log('[CHAT_API] Starting streamText with model gpt-4o-mini');
     const result = await streamText({
       model: openai('gpt-4o-mini'),
       system: systemPrompt,
@@ -71,6 +75,13 @@ Formato: Usa Markdown para tablas de recetas. No uses asteriscos en los títulos
     return result.toDataStreamResponse();
   } catch (error: any) {
     console.error('[CHAT_API_ERROR]', error);
-    return new Response(error.message || 'Error interno', { status: 500 });
+    // Devolvemos el error detallado para debuggear en el frontend
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Error desconocido',
+      stack: error.stack
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

@@ -48,8 +48,20 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
     const startCall = (uid: string) => {
       try {
         // @ts-ignore
+        console.log('[VAPI] window.Vapi type:', typeof window.Vapi);
+        if (typeof window.Vapi !== 'function') {
+           // Intentamos buscarlo en otra propiedad global si el CDN lo exporta distinto
+           // @ts-ignore
+           const VapiClass = window.vapiSDK?.Vapi || window.Vapi;
+           if (typeof VapiClass !== 'function') {
+             throw new Error('Vapi SDK not found in global window object');
+           }
+        }
+
+        // @ts-ignore
         const vapi = new window.Vapi('44f9b252-4f84-4549-9437-ce1f753179a9'); 
         vapiRef.current = vapi;
+        console.log('[VAPI] Instance created');
 
         // Configuración dinámica del asistente
         vapi.start('634ba176-7eb8-4df6-9cda-6e5b4658a472', {
@@ -57,6 +69,7 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
             userId: uid
           }
         });
+        console.log('[VAPI] vapi.start() called');
 
         vapi.on('call-start', () => {
           setIsConnecting(false);
