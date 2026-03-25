@@ -12,6 +12,7 @@ interface AIVoiceCallProps {
 declare global {
   interface Window {
     vapiSDK?: any;
+    Vapi?: any;
   }
 }
 
