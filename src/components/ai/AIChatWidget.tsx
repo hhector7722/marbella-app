@@ -23,7 +23,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
         append,
         isLoading,
     } = useChat({
-        api: '/api/chat',
+        api: '/api/ai/chat',
         headers: accessToken ? {
             'Authorization': `Bearer ${accessToken}`
         } : {},

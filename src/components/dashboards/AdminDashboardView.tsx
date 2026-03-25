@@ -1214,7 +1214,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                 </div>
                                                 <div className="flex min-h-[48px] min-w-0 items-center justify-center">
                                                     <button
-                                                        onClick={() => { setSelectedBox(box); setCashModalMode('swap'); }}
+                                                        onClick={() => { setCashModalMode('swap'); }}
                                                         className="bg-zinc-50/50 p-1.5 md:p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 md:gap-1.5 transition-all active:scale-95 group min-h-[48px] min-w-[48px] shrink-0"
                                                     >
                                                         <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
@@ -1349,8 +1349,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     )}
                     {cashModalMode === 'swap' && (
                         <CashChangeModal
-                            boxId={selectedBox?.id}
-                            boxName={selectedBox?.name || 'Caja'}
+                            boxOptions={buildPaymentSources()}
+                            isManager={true}
                             onClose={() => setCashModalMode('none')}
                             onSuccess={() => { fetchData(); setCashModalMode('none'); }}
                         />
