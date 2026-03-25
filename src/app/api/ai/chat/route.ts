@@ -7,10 +7,17 @@ import { createClient } from '@/utils/supabase/server';
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  console.log('[CHAT_API] Request received');
-  const openai = createOpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  const apiKey = process.env.OPENAI_API_KEY;
+  console.log('[CHAT_API] Request received. API Key present:', !!apiKey);
+  
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'Falta la API Key en el servidor (OPENAI_API_KEY)' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const openai = createOpenAI({ apiKey });
   
   try {
     const supabase = await createClient();
