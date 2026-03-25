@@ -40,7 +40,7 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
       const timeout = setTimeout(() => {
         if (!vapiRef.current) {
           console.error('[VAPI] Timeout alcanzado');
-          setAuthError('No se pudo conectar con el motor de voz (Timeout).');
+          setError('No se pudo conectar con el motor de voz (Timeout).');
           setIsConnecting(false);
         }
       }, 10000);
@@ -60,7 +60,7 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
         script.onerror = () => {
           clearTimeout(timeout);
           console.error('[VAPI] Error cargando SDK');
-          setAuthError('Error de red al cargar el motor de voz.');
+          setError('Error de red al cargar el motor de voz.');
           setIsConnecting(false);
         };
         document.body.appendChild(script);
