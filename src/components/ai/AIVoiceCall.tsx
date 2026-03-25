@@ -126,14 +126,26 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
         </div>
       </div>
 
-      {/* Visualizer Placeholder / Status */}
+      {/* Centered Status / Controls */}
       <div className="flex flex-col items-center gap-12 flex-1 justify-center">
-        <div className="relative w-48 h-48 rounded-full border border-zinc-800 bg-zinc-900/50 flex items-center justify-center shadow-[0_0_60px_-15px_rgba(16,185,129,0.3)]">
+        <div 
+          onClick={() => {
+            if (vapiRef.current && isConnecting) {
+               console.log('[VAPI] Manual retry/start triggered');
+               vapiRef.current.start('634ba176-7eb8-4df6-9cda-6e5b4658a472', {
+                 variableValues: { userId }
+               });
+            }
+          }}
+          className="relative w-48 h-48 rounded-full border border-zinc-800 bg-zinc-900/50 flex items-center justify-center shadow-[0_0_60px_-15px_rgba(16,185,129,0.3)] cursor-pointer"
+        >
           {isConnecting ? (
-            <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+              <span className="text-[10px] text-zinc-500 mt-2 font-bold animate-pulse">PULSA PARA REINTENTAR</span>
+            </div>
           ) : (
             <div className="flex items-center gap-1.5">
-               {/* Un visualizador simple basado en el estado */}
                {[1, 2, 3, 4, 5].map((i) => (
                  <div 
                    key={i}

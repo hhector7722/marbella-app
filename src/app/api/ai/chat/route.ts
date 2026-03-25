@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { UnifiedToolset } from '@/lib/ai/tools';
 import { createClient } from '@/utils/supabase/server';
@@ -8,6 +8,10 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   console.log('[CHAT_API] Request received');
+  const openai = createOpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
