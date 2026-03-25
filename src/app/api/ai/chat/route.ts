@@ -48,48 +48,19 @@ REGLA DE ESTILO: Sé extremadamente directo y breve. Máximo 2 frases por respue
 REGLA DE SEGURIDAD: Nunca menciones datos de otros usuarios a menos que seas manager.
 Formato: Usa Markdown para tablas de recetas. No uses asteriscos en los títulos.`;
 
-    console.log('[CHAT_API] Starting streamText with model gpt-4o-mini');
+    console.log('[CHAT_API] Starting simplified streamText');
     const result = await streamText({
       model: openai('gpt-4o-mini'),
-      system: systemPrompt,
       messages,
-      tools: {
-        get_labor_summary_tool: {
-          description: 'Consulta horas trabajadas, extras y deudas del usuario o de un empleado si eres manager.',
-          parameters: z.object({ targetEmployeeName: z.string().optional() }),
-          execute: async ({ targetEmployeeName }) => await UnifiedToolset.getLaborSummary(undefined, targetEmployeeName),
-        },
-        get_financials_tool: {
-          description: 'Consulta ventas y cierres de caja en un rango de fechas. Solo para Managers.',
-          parameters: z.object({ startDate: z.string(), endDate: z.string() }),
-          execute: async ({ startDate, endDate }) => await UnifiedToolset.getFinancials(undefined, startDate, endDate),
-        },
-        get_recipe_info_tool: {
-          description: 'Consulta ingredientes y elaboración de un plato del menú.',
-          parameters: z.object({ recipeName: z.string() }),
-          execute: async ({ recipeName }) => await UnifiedToolset.getRecipeInfo(undefined, recipeName),
-        },
-        update_order_draft_tool: {
-          description: 'Añadir, establecer o quitar productos del borrador de pedido (el carrito).',
-          parameters: z.object({
-            productName: z.string(),
-            quantity: z.number(),
-            action: z.enum(['add', 'set', 'remove'])
-          }),
-          execute: async ({ productName, quantity, action }) => 
-            await UnifiedToolset.updateOrderDraft(undefined, productName, quantity, action),
-        }
-      },
-      maxSteps: 5,
+      system: 'SISTEMA ACTIVO: Responde de forma muy breve confirmando recepción.',
     });
 
     return result.toDataStreamResponse();
   } catch (error: any) {
     console.error('[CHAT_API_ERROR]', error);
-    // Devolvemos el error detallado para debuggear en el frontend
     return new Response(JSON.stringify({ 
       error: error.message || 'Error desconocido',
-      stack: error.stack
+      type: error.name
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
