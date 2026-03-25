@@ -20,6 +20,7 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
   const [isConnecting, setIsConnecting] = useState(true);
   const [callStatus, setCallStatus] = useState<'idle' | 'listening' | 'speaking' | 'thinking'>('idle');
   const [userId, setUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const vapiRef = useRef<any>(null);
 
   useEffect(() => {
