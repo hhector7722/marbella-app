@@ -580,7 +580,7 @@ export default function VentasPage() {
                     {/* TABLAS */}
                     <div className="p-4 md:p-6 bg-zinc-50/50 print:bg-white print:p-4">
                         <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">
-                            Ventas — {activeTab === 'VENTAS' ? 'Tickets' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
+                            Ventas — {activeTab === 'VENTAS' ? 'Ventas' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
                         </div>
                         <div className="bg-transparent w-full">
                             {loading ? (

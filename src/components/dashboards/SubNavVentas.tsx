@@ -46,7 +46,7 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false }: SubN
   const tabs: { id: VentasTab; label: React.ReactNode }[] = [
     {
       id: 'VENTAS',
-      label: 'Tickets',
+      label: 'Ventas',
     },
     {
       id: 'LIVE',
