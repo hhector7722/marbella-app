@@ -40,10 +40,11 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                 setAuthError(`Error IA: ${errorData.error}`);
             } catch {
                 const msg = error.message ?? '';
+                const version = "BUILD_20260325_1435";
                 if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
-                    setAuthError('Sesión expirada. Cierra sesión y vuelve a entrar.');
+                    setAuthError(`[${version}] Sesión expirada. Reingresa.`);
                 } else {
-                    setAuthError(`Error de conexión: ${msg || 'Desconocido'}`);
+                    setAuthError(`[${version}] Error IA: ${msg || 'Desconocido'}`);
                 }
             }
         },
