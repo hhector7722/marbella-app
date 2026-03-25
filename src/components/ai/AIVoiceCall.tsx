@@ -143,7 +143,7 @@ export function AIVoiceCall({ onClose }: AIVoiceCallProps) {
             {isConnecting ? 'Conectando...' : 'Llamada de Voz Activa'}
           </span>
           <span className="text-zinc-500 text-xs font-medium">
-            Bar La Marbella AI - Voice Protocol v3
+            Bar La Marbella AI - Voice Protocol v3 [20260325_1435]
           </span>
         </div>
       </div>
