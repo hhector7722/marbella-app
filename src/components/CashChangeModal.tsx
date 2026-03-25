@@ -496,7 +496,7 @@ export const CashChangeModal = ({
                                                 {opt.image_url ? (
                                                     <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-contain" />
                                                 ) : (
-                                                    <Wallet size={18} className={cn("transition-colors", isA ? "text-[#5B8FB9]" : "text-zinc-300")} strokeWidth={2.5} />
+                                                    <Wallet size={18} className={cn("transition-colors", isA ? "text-emerald-500" : "text-zinc-300")} strokeWidth={2.5} />
                                                 )}
                                             </div>
                                             <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
