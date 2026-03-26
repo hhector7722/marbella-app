@@ -38,6 +38,16 @@ La app soporta grabación de voz en el cliente (MediaRecorder) y transcripción 
 - **Default**: 10
 - **Uso**: ajusta este valor si envías audios muy largos; valores pequeños reducen uso de disco/CPU. Reinicia la app tras cambiarlo.
 
+## Llamada de voz (WebSocket streaming)
+
+Opcional: puedes ejecutar un servidor WS independiente para “llamada” en tiempo real (baja latencia).
+
+- **Token efímero**: el cliente pide un token a `POST /api/ai/voice-token` (requiere sesión) y abre WS con `?token=...`.
+- **Secret**: `VOICE_WS_SECRET` existe solo en servidor (Next + voice-server). No se expone en `NEXT_PUBLIC_*`.
+- **Arranque voice-server**:
+  - `cd voice-server && npm install && npm run build && npm start`
+  - Requiere `ffmpeg` instalado y `STT_PROVIDER` configurado (igual que `/api/ai/stt`).
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

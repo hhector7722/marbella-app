@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { Mic, Send, Image as ImageIcon, X, Loader2, Phone, PhoneOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 import { useAIStore } from '@/store/aiStore';
@@ -29,6 +29,11 @@ export function AIChatWidget() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const recognitionRef = useRef<any>(null);
     const recorder = useVoiceRecorder();
+    const wsRef = useRef<WebSocket | null>(null);
+    const callRecorderRef = useRef<MediaRecorder | null>(null);
+    const callStreamRef = useRef<MediaStream | null>(null);
+    const [callConnected, setCallConnected] = useState(false);
+    const [callStatus, setCallStatus] = useState<string | null>(null);
 
     // Auto-scroll al final del chat
     useEffect(() => {
@@ -199,6 +204,126 @@ export function AIChatWidget() {
         }
     };
 
+    const startCall = async () => {
+        if (callConnected) return;
+        try {
+            setCallStatus('Conectando llamada…');
+            const tokenRes = await fetch('/api/ai/voice-token', { method: 'POST' });
+            if (!tokenRes.ok) {
+                const j = await tokenRes.json().catch(() => ({ error: 'token failed' }));
+                throw new Error(`No autorizado para abrir llamada: ${j.error || 'token error'}`);
+            }
+            const { token } = await tokenRes.json();
+            const wsUrlBase = process.env.NEXT_PUBLIC_VOICE_WS_URL || (window as any).__VOICE_WS_URL;
+            if (!wsUrlBase) throw new Error('Falta NEXT_PUBLIC_VOICE_WS_URL para conectar a voice-server.');
+            const ws = new WebSocket(`${wsUrlBase}?token=${encodeURIComponent(token)}`);
+            ws.binaryType = 'arraybuffer';
+            wsRef.current = ws;
+
+            ws.onopen = () => {
+                setCallConnected(true);
+                setCallStatus('Llamada conectada. Pulsa 🎤 para hablar.');
+                ws.send(JSON.stringify({ type: 'start_call' }));
+            };
+            ws.onmessage = (ev) => {
+                if (typeof ev.data === 'string') {
+                    try {
+                        const msg = JSON.parse(ev.data);
+                        if (msg.type === 'transcript_partial') {
+                            setCallStatus(`STT parcial: ${msg.text}`);
+                        } else if (msg.type === 'transcript_final') {
+                            setCallStatus('STT final recibido.');
+                        } else if (msg.type === 'agent_text') {
+                            const t = String(msg.text || '').trim();
+                            if (t) {
+                                setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: t }]);
+                                if ('speechSynthesis' in window) {
+                                    const u = new SpeechSynthesisUtterance(t);
+                                    u.lang = 'es-ES';
+                                    window.speechSynthesis.cancel();
+                                    window.speechSynthesis.speak(u);
+                                }
+                            }
+                            setCallStatus(null);
+                        } else if (msg.type === 'error') {
+                            setCallStatus(`Error: ${msg.message}`);
+                        }
+                    } catch {
+                        // ignore
+                    }
+                }
+            };
+            ws.onclose = () => {
+                setCallConnected(false);
+                setCallStatus('Llamada finalizada');
+                wsRef.current = null;
+            };
+            ws.onerror = () => setCallStatus('WS error');
+        } catch (e: any) {
+            const msg = e?.message ? String(e.message) : 'Error abriendo llamada';
+            toast.error(msg);
+            setCallStatus(msg);
+            setCallConnected(false);
+        }
+    };
+
+    const endCall = () => {
+        try {
+            wsRef.current?.send(JSON.stringify({ type: 'stop_call' }));
+        } catch {}
+        try {
+            wsRef.current?.close();
+        } catch {}
+        wsRef.current = null;
+        setCallConnected(false);
+        setCallStatus(null);
+        try {
+            callRecorderRef.current?.stop();
+        } catch {}
+        callRecorderRef.current = null;
+        callStreamRef.current?.getTracks().forEach((t) => t.stop());
+        callStreamRef.current = null;
+    };
+
+    const toggleCallTalking = async () => {
+        if (!callConnected || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+            toast.error('No hay llamada activa.');
+            return;
+        }
+        if (callRecorderRef.current && callRecorderRef.current.state === 'recording') {
+            callRecorderRef.current.stop();
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            callStreamRef.current = stream;
+            const mr = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+            callRecorderRef.current = mr;
+            mr.ondataavailable = (ev) => {
+                if (ev.data && ev.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
+                    ev.data.arrayBuffer().then((buf) => wsRef.current?.send(buf));
+                }
+            };
+            mr.onstart = () => setCallStatus('Hablando…');
+            mr.onstop = () => {
+                stream.getTracks().forEach((t) => t.stop());
+                callStreamRef.current = null;
+                callRecorderRef.current = null;
+                setCallStatus('Procesando…');
+            };
+            mr.start(600);
+        } catch (e: any) {
+            toast.error(e?.message || 'Error micrófono');
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            endCall();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const toggleRecording = () => {
         if (isRecording) {
             recognitionRef.current?.stop?.();
@@ -266,22 +391,62 @@ export function AIChatWidget() {
                     </button>
                     <img src="/icons/logo-white.png" alt="Logo Marbella" className="h-11 w-auto object-contain" />
                 </div>
-                <button
-                    type="button"
-                    onClick={() => setVoiceMode((v) => !v)}
-                    className={cn(
-                        "min-h-[40px] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors",
-                        voiceMode ? "bg-emerald-500 hover:bg-emerald-600" : "bg-white/10 hover:bg-white/15"
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setVoiceMode((v) => !v)}
+                        className={cn(
+                            "min-h-[40px] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors",
+                            voiceMode ? "bg-emerald-500 hover:bg-emerald-600" : "bg-white/10 hover:bg-white/15"
+                        )}
+                        aria-pressed={voiceMode}
+                        title="Mensaje de voz (STT batch)"
+                    >
+                        Voz {voiceMode ? 'ON' : 'OFF'}
+                    </button>
+
+                    {!callConnected ? (
+                        <button
+                            type="button"
+                            onClick={startCall}
+                            className="min-h-[40px] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white/10 hover:bg-white/15 transition-colors"
+                            title="Iniciar llamada (WebSocket)"
+                        >
+                            <Phone size={14} className="inline-block mr-1" />
+                            Llamada
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={endCall}
+                            className="min-h-[40px] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-rose-500 hover:bg-rose-600 transition-colors"
+                            title="Finalizar llamada"
+                        >
+                            <PhoneOff size={14} className="inline-block mr-1" />
+                            Cortar
+                        </button>
                     )}
-                    aria-pressed={voiceMode}
-                    title="Conversa por voz"
-                >
-                    Voz {voiceMode ? 'ON' : 'OFF'}
-                </button>
+                </div>
             </div>
 
             {/* Zona de Mensajes */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {callConnected && (
+                    <div className="bg-white border border-zinc-100 rounded-2xl p-3 text-[11px] text-zinc-700">
+                        <div className="flex items-center gap-2">
+                            <span className="font-black">Llamada activa</span>
+                            <span className="text-zinc-400">{callStatus || 'Listo'}</span>
+                            <button
+                                type="button"
+                                onClick={toggleCallTalking}
+                                className="ml-auto bg-zinc-900 text-white rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-wider min-h-[36px]"
+                                title="Hablar (mantén pulsado por turnos)"
+                            >
+                                🎤 Hablar
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {messages.length === 0 && (
                     <div className="h-full flex items-center justify-center opacity-0 pointer-events-none" />
                 )}
