@@ -59,7 +59,7 @@ export class AIAgent {
       const { context, actionPerformed } = await this.fetchContextAndActions(parsed, request);
       const contextSanitized = sanitizeContextForPrompt(context);
 
-      const systemPrompt = this.buildSystemPrompt(request.userRole);
+      const systemPrompt = this.buildSystemPrompt(request.userRole, request.userName);
       const userPrompt = [
         `Pregunta: ${request.query}`,
         `Contexto verificado (usa SOLO esto):`,
@@ -141,7 +141,7 @@ export class AIAgent {
     }
   }
 
-  private buildSystemPrompt(userRole: 'staff' | 'manager'): string {
+  private buildSystemPrompt(userRole: 'staff' | 'manager', userName: string): string {
     return `Eres la IA operativa de Bar La Marbella.
 Tono: DIRECTO, SARCÁSTICO y SIN RODEOS.
 Idioma: Español.
@@ -149,8 +149,9 @@ Reglas:
 - Responde basándote SOLO en los datos del Contexto.
 - Si el Contexto indica ausencia de datos, dilo explícitamente.
 - Máximo 2-3 líneas. Nada de explicaciones internas.
-Preferencias:
-- Usuario: ${userRole}.
+Información del usuario:
+- Nombre: ${userName}
+- Rol: ${userRole}
 `;
   }
 }

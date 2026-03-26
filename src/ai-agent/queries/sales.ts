@@ -41,6 +41,33 @@ export async function fetchSalesSummary(period: SalesPeriod): Promise<{
   const supabase = await createClient();
   const { startDate, endDate } = computePeriodRangeUTC(period);
 
+  // HOY EN CURSO: tickets live (tickets_marbella.total_documento) por fecha_negocio = hoy
+  if (period === 'today') {
+    const todayStr = toUTCDateString(new Date());
+
+    const { data: tickets, error: tError } = await supabase
+      .from('tickets_marbella')
+      .select('total_documento, fecha_negocio')
+      .eq('fecha_negocio', todayStr);
+
+    if (tError) throw new Error(`Error consultando tickets_marbella: ${tError.message}`);
+
+    const rows = tickets ?? [];
+    const totalSales = rows.reduce((sum, t: any) => sum + (Number(t.total_documento) || 0), 0);
+    const closureCount = rows.length; // aquí = nº tickets (no cierres)
+    const avgTicket = closureCount > 0 ? totalSales / closureCount : 0;
+
+    return {
+      period,
+      totalSales,
+      closureCount,
+      avgTicket,
+      startDate: todayStr,
+      endDate: todayStr,
+    };
+  }
+
+  // HISTÓRICO (días cerrados): cash_closings.net_sales por closing_date
   const { data: cls, error } = await supabase
     .from('cash_closings')
     .select('net_sales, closing_date')

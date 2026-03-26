@@ -8,6 +8,7 @@ export interface Message {
 export interface AgentRequest {
   query: string;
   userId: string;
+  userName: string;
   userRole: 'staff' | 'manager';
 }
 
