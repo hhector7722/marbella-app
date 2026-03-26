@@ -52,20 +52,19 @@ export async function POST(req: Request) {
     const userRole = dbRole === 'manager' || dbRole === 'supervisor' ? 'manager' : 'staff';
 
     const agent = new AIAgent();
-    // Construcción segura de displayName / userName:
-    // 1) Preferimos "first_name last_name" si existe.
-    // 2) Luego intentamos user.user_metadata.full_name or name (supabase auth metadata).
-    // 3) Finalmente fallback a la parte local del email o user.id.
-    const profileFullName = profile
-      ? `${(profile as any).first_name ?? ''} ${(profile as any).last_name ?? ''}`.trim()
-      : '';
+    // Preferimos el first_name de profiles (solo nombre de pila).
+    // Si no existe, intentamos extraer la primera palabra de user.user_metadata.full_name o name.
+    // Si tampoco hay metadata, usamos la parte local del email (antes del @) como fallback.
+    const profileFirstName = (profile && (profile as any).first_name && String((profile as any).first_name).trim()) || undefined;
 
-    const profileName =
-      (profileFullName && profileFullName !== '') ? profileFullName :
-      (user.user_metadata && ((user.user_metadata as any).full_name || (user.user_metadata as any).name)) ||
-      (typeof user.email === 'string' ? user.email.split('@')[0] : undefined);
+    const metaFullName = user.user_metadata && ((user.user_metadata as any).full_name || (user.user_metadata as any).name);
+    const metaFirstName = metaFullName ? String(metaFullName).trim().split(/\s+/)[0] : undefined;
 
-    const userName = profileName || user.email || user.id || 'Usuario';
+    const emailLocalPart = typeof user.email === 'string' ? String(user.email).split('@')[0] : undefined;
+    const emailFirstToken = emailLocalPart ? String(emailLocalPart).split(/[\._\-+]/)[0] : undefined;
+
+    // Construimos userName priorizando first_name, luego metadata first token, luego email local token.
+    const userName = profileFirstName || metaFirstName || emailFirstToken || user.id || 'Usuario';
     const result = await agent.processQuery({
       query,
       userId: user.id,
