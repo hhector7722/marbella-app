@@ -34,22 +34,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ response: 'No autorizado' }, { status: 401 });
     }
 
+    // Intentamos leer role y nombre desde profiles (first_name/last_name). Usamos maybeSingle para no lanzar si no hay fila.
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role, full_name, name')
+      .select('role, first_name, last_name')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError) throw new Error(profileError.message);
+    if (profileError) {
+      // No bloqueamos la petición por un problema con la consulta de perfil.
+      // Optional: log para debugging en servidor (no lanzamos error al cliente).
+      console.warn('Profile query returned error:', profileError.message);
+    }
 
     const dbRole = (profile?.role as string) || 'staff';
     // Normalizamos a staff/manager para el agente.
     const userRole = dbRole === 'manager' || dbRole === 'supervisor' ? 'manager' : 'staff';
 
     const agent = new AIAgent();
-    // Construcción segura de displayName / userName
+    // Construcción segura de displayName / userName:
+    // 1) Preferimos "first_name last_name" si existe.
+    // 2) Luego intentamos user.user_metadata.full_name or name (supabase auth metadata).
+    // 3) Finalmente fallback a la parte local del email o user.id.
+    const profileFullName = profile
+      ? `${(profile as any).first_name ?? ''} ${(profile as any).last_name ?? ''}`.trim()
+      : '';
+
     const profileName =
-      (profile && ((profile as any).full_name || (profile as any).name)) ||
+      (profileFullName && profileFullName !== '') ? profileFullName :
       (user.user_metadata && ((user.user_metadata as any).full_name || (user.user_metadata as any).name)) ||
       (typeof user.email === 'string' ? user.email.split('@')[0] : undefined);
 
