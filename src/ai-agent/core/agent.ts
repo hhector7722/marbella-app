@@ -55,6 +55,19 @@ export class AIAgent {
       };
     }
 
+    // Small-talk común: evitar LLM (especialmente útil si Ollama no está disponible)
+    const isSmallTalk =
+      /^\s*(qué tal|que tal|como estas|cómo estás|como va|cómo va|todo bien|todo ok|buenas)\b[\s!.,?]*$/i.test(
+        request.query,
+      );
+    if (isSmallTalk) {
+      const name = request.userName ?? 'Usuario';
+      return {
+        response: `¡Bien, ${name}! Dime qué necesitas y voy al grano.`,
+        metadata: { processingTimeMs: Date.now() - start, queryType: 'smalltalk' },
+      };
+    }
+
     if (!this.rbac.validateAccess(request.userRole, parsed)) {
       return {
         response: 'No tienes permisos para eso, campeón. (RBAC dice que no)',
@@ -66,6 +79,21 @@ export class AIAgent {
     }
 
     try {
+      // Si Ollama no está disponible, devolvemos un error operativo claro (sin "misterios").
+      // Esto ocurre en producción/Vercel si no hay un Ollama remoto configurado.
+      const healthy = await this.ollama.isHealthy();
+      if (!healthy) {
+        return {
+          response:
+            'IA offline: no puedo conectar con Ollama. ' +
+            'Arranca Ollama o configura `OLLAMA_BASE_URL` a un endpoint accesible (no localhost en Vercel).',
+          metadata: {
+            processingTimeMs: Date.now() - start,
+            queryType: parsed.type,
+          },
+        };
+      }
+
       const { context, actionPerformed } = await this.fetchContextAndActions(parsed, request);
       const contextSanitized = sanitizeContextForPrompt(context);
 
