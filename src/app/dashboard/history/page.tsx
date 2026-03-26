@@ -645,127 +645,127 @@ export default function HistoryPage() {
                                     )}
                                 </div>
                             ) : (
-                            <div className="bg-[#EFEDED] rounded-2xl border border-zinc-100 shadow-xl overflow-hidden">
-                                <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                                    <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
-                                        {METRICS.map(m => (
-                                            <button
-                                                key={m.value}
-                                                onClick={() => setSelectedMetric(m.value)}
-                                                className={cn(
-                                                    "flex-1 h-8 md:h-10 md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 whitespace-nowrap",
-                                                    selectedMetric === m.value
-                                                        ? "text-white md:bg-white md:text-[#36606F] md:shadow-lg"
-                                                        : "text-white/40 md:text-white/60 hover:text-white hover:bg-white/5"
-                                                )}
-                                            >
-                                                <m.icon size={12} className={cn("hidden sm:block", selectedMetric === m.value ? "md:text-[#36606F] text-white" : "text-white/40")} />
-                                                {m.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {loading ? (
-                                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                        <LoadingSpinner size="lg" className="text-[#36606F]" />
-                                    </div>
-                                ) : closings.length === 0 ? (
-                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                        <Calendar size={32} />
-                                        <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                    </div>
-                                ) : (
-                                    <div className="p-1 md:p-3 overflow-x-auto no-scrollbar">
-                                        <div className="min-w-0">
-                                            <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
-                                                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((d, index) => (
-                                                    <div key={d} className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.1em] md:tracking-[0.2em] text-center">
-                                                        <span className="hidden md:inline">{d}</span>
-                                                        <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            <div className="grid grid-cols-7 gap-1 md:gap-3">
-                                                {calendarDays.map((day, idx) => {
-                                                    const closing = closings.find(c => isSameDay(new Date(c.closed_at), day));
-                                                    const isCurrentMonth = filterMode === 'range' && rangeStart
-                                                        ? isSameMonth(day, new Date(rangeStart))
-                                                        : filterMode === 'single' ? isSameMonth(day, new Date(selectedDate)) : true;
-
-                                                    if (!closing) {
-                                                        return (
-                                                            <div key={idx} className={cn(
-                                                                "h-[50px] md:h-32 rounded-lg md:rounded-2xl border border-zinc-100/50 flex flex-col p-1 md:p-3 transition-opacity",
-                                                                isCurrentMonth ? "bg-white/40" : "bg-transparent opacity-10"
-                                                            )}>
-                                                                <span className="text-[8px] md:text-[10px] font-black text-zinc-300">{format(day, 'd')}</span>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    const mainVal = closing[selectedMetric] || 0;
-                                                    const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
-
-                                                    return (
-                                                        <div
-                                                            key={closing.id}
-                                                            onClick={() => setSelectedClosing(closing)}
-                                                            className="group relative bg-white h-full min-h-[50px] md:min-h-[120px] rounded-lg md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
-                                                        >
-                                                            <div className="bg-[#D64D5D] px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shadow-sm">
-                                                                <span className="text-[8px] md:text-[10px] font-black text-white">{format(day, 'd')}</span>
-                                                            </div>
-
-                                                            <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
-                                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-0 md:gap-1 mb-0.5 px-0.5 h-full">
-                                                                    <div className="flex flex-col h-full w-full justify-center md:block">
-                                                                        <div className="text-[8.5px] min-[370px]:text-[10px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter md:tracking-normal md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
-                                                                            {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
-                                                                            {selectedMetric !== 'tickets_count' && <span className="text-[6px] md:text-[12px] ml-[1px] md:ml-0.5 font-black">€</span>}
-                                                                        </div>
-
-                                                                        <div className="text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-auto md:mt-0 mb-0.5 md:mb-2 leading-tight text-center md:text-left">
-                                                                            {METRICS.find(m => m.value === selectedMetric)?.label}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className={cn(
-                                                                        "hidden md:block text-[8px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto",
-                                                                        parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
-                                                                    )}>
-                                                                        {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(Math.round(parseFloat(diffPerc)))}%
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="hidden md:grid grid-cols-2 gap-y-1.5 gap-x-1.5 mt-auto w-full pt-1.5 border-t border-zinc-100">
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Ventas</span>
-                                                                    </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Media</span>
-                                                                    </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Cash</span>
-                                                                    </div>
-                                                                    <div className="flex flex-col items-center justify-center py-0.5">
-                                                                        <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
-                                                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Tarjeta</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                                <div className="bg-[#EFEDED] rounded-2xl border border-zinc-100 shadow-xl overflow-hidden">
+                                    <div className="bg-[#36606F] p-1.5 md:p-2.5 flex justify-between items-center overflow-x-auto no-scrollbar">
+                                        <div className="flex gap-2 md:gap-3 w-full max-w-xl mx-auto justify-between">
+                                            {METRICS.map(m => (
+                                                <button
+                                                    key={m.value}
+                                                    onClick={() => setSelectedMetric(m.value)}
+                                                    className={cn(
+                                                        "flex-1 h-8 md:h-10 md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 px-2 whitespace-nowrap",
+                                                        selectedMetric === m.value
+                                                            ? "text-white md:bg-white md:text-[#36606F] md:shadow-lg"
+                                                            : "text-white/40 md:text-white/60 hover:text-white hover:bg-white/5"
+                                                    )}
+                                                >
+                                                    <m.icon size={12} className={cn("hidden sm:block", selectedMetric === m.value ? "md:text-[#36606F] text-white" : "text-white/40")} />
+                                                    {m.label}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                )}
-                            </div>
+
+                                    {loading ? (
+                                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                            <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                        </div>
+                                    ) : closings.length === 0 ? (
+                                        <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
+                                            <Calendar size={32} />
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
+                                        </div>
+                                    ) : (
+                                        <div className="p-1 md:p-3 overflow-x-auto no-scrollbar">
+                                            <div className="min-w-0">
+                                                <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2">
+                                                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((d, index) => (
+                                                        <div key={d} className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.1em] md:tracking-[0.2em] text-center">
+                                                            <span className="hidden md:inline">{d}</span>
+                                                            <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div className="grid grid-cols-7 gap-1 md:gap-3">
+                                                    {calendarDays.map((day, idx) => {
+                                                        const closing = closings.find(c => isSameDay(new Date(c.closed_at), day));
+                                                        const isCurrentMonth = filterMode === 'range' && rangeStart
+                                                            ? isSameMonth(day, new Date(rangeStart))
+                                                            : filterMode === 'single' ? isSameMonth(day, new Date(selectedDate)) : true;
+
+                                                        if (!closing) {
+                                                            return (
+                                                                <div key={idx} className={cn(
+                                                                    "h-[50px] md:h-32 rounded-lg md:rounded-2xl border border-zinc-100/50 flex flex-col p-1 md:p-3 transition-opacity",
+                                                                    isCurrentMonth ? "bg-white/40" : "bg-transparent opacity-10"
+                                                                )}>
+                                                                    <span className="text-[8px] md:text-[10px] font-black text-zinc-300">{format(day, 'd')}</span>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        const mainVal = closing[selectedMetric] || 0;
+                                                        const diffPerc = ((mainVal / (summary.totalNet / (summary.count || 1) || 1) - 1) * 100).toFixed(1);
+
+                                                        return (
+                                                            <div
+                                                                key={closing.id}
+                                                                onClick={() => setSelectedClosing(closing)}
+                                                                className="group relative bg-white h-full min-h-[50px] md:min-h-[120px] rounded-lg md:rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-zinc-100 flex flex-col overflow-hidden"
+                                                            >
+                                                                <div className="bg-[#D64D5D] px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shadow-sm">
+                                                                    <span className="text-[8px] md:text-[10px] font-black text-white">{format(day, 'd')}</span>
+                                                                </div>
+
+                                                                <div className="p-1 md:p-2 flex flex-col h-full bg-white group-hover:bg-[#EFEDED]/30 transition-colors">
+                                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-0 md:gap-1 mb-0.5 px-0.5 h-full">
+                                                                        <div className="flex flex-col h-full w-full justify-center md:block">
+                                                                            <div className="text-[8.5px] min-[370px]:text-[10px] md:text-[20px] font-black text-zinc-900 tabular-nums leading-none tracking-tighter md:tracking-normal md:max-w-[70%] text-center md:text-left mt-0.5 md:mt-0">
+                                                                                {selectedMetric === 'tickets_count' ? mainVal : Math.round(mainVal)}
+                                                                                {selectedMetric !== 'tickets_count' && <span className="text-[6px] md:text-[12px] ml-[1px] md:ml-0.5 font-black">€</span>}
+                                                                            </div>
+
+                                                                            <div className="text-[5px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-auto md:mt-0 mb-0.5 md:mb-2 leading-tight text-center md:text-left">
+                                                                                {METRICS.find(m => m.value === selectedMetric)?.label}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className={cn(
+                                                                            "hidden md:block text-[8px] md:text-[10px] font-black uppercase whitespace-nowrap ml-auto",
+                                                                            parseFloat(diffPerc) >= 0 ? "text-emerald-500" : "text-[#D64D5D]"
+                                                                        )}>
+                                                                            {parseFloat(diffPerc) >= 0 ? '↗' : '↘'}{Math.abs(Math.round(parseFloat(diffPerc)))}%
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="hidden md:grid grid-cols-2 gap-y-1.5 gap-x-1.5 mt-auto w-full pt-1.5 border-t border-zinc-100">
+                                                                        <div className="flex flex-col items-center justify-center py-0.5">
+                                                                            <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.tpv_sales)}</span>
+                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Ventas</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center justify-center py-0.5">
+                                                                            <span className="text-[8px] md:text-[11px] font-black text-[#36606F] tabular-nums leading-none">{(closing.tpv_sales / (closing.tickets_count || 1)).toFixed(0)}</span>
+                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Media</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center justify-center py-0.5">
+                                                                            <span className="text-[8px] md:text-[11px] font-black text-emerald-600 tabular-nums leading-none">{(closing.cash_counted || 0).toFixed(0)}</span>
+                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Cash</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center justify-center py-0.5">
+                                                                            <span className="text-[8px] md:text-[11px] font-black text-zinc-900 tabular-nums leading-none">{Math.round(closing.sales_card || 0)}</span>
+                                                                            <span className="text-[6px] md:text-[7px] font-black text-zinc-400 uppercase leading-none mt-1">Tarjeta</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

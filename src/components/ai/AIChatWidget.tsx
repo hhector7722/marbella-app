@@ -1,54 +1,21 @@
 'use client';
 
-import { useChat } from 'ai/react';
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Image as ImageIcon, X, Phone, Bot, Loader2 } from 'lucide-react';
+import { Mic, Send, Image as ImageIcon, X, Phone, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 import { useAIStore } from '@/store/aiStore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 
 export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
     const supabase = createClient();
-    const [accessToken, setAccessToken] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [messages, setMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const closeChat = useAIStore((state) => state.closeChat);
-    const {
-        messages,
-        input,
-        setInput,
-        handleInputChange,
-        handleSubmit,
-        append,
-        isLoading,
-    } = useChat({
-        api: '/api/ai/chat',
-        headers: accessToken ? {
-            'Authorization': `Bearer ${accessToken}`
-        } : {},
-        onResponse: (response) => {
-            console.log("[DEBUG] [useChat] Recibida respuesta del servidor:", response.status, response.statusText);
-        },
-        onFinish: (message) => {
-            console.log("[DEBUG] [useChat] Stream finalizado. Mensaje completo:", message.content.substring(0, 50) + "...");
-        },
-        onError: (error) => {
-            console.error("[CRÍTICO] Fallo en el stream de useChat:", error);
-            try {
-                const errorData = JSON.parse(error.message);
-                setAuthError(`Error IA: ${errorData.error}`);
-            } catch {
-                const msg = error.message ?? '';
-                const version = "BUILD_20260325_1435";
-                if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
-                    setAuthError(`[${version}] Sesión expirada. Reingresa.`);
-                } else {
-                    setAuthError(`[${version}] Error IA: ${msg || 'Desconocido'}`);
-                }
-            }
-        },
-    });
 
 
 
@@ -57,17 +24,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
-
-    // Recuperar token de sesión para RLS
-    useEffect(() => {
-        const fetchSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.access_token) setAccessToken(session.access_token);
-        };
-        fetchSession();
-    }, [supabase]);
+    const recognitionRef = useRef<any>(null);
 
     // Auto-scroll al final del chat
     useEffect(() => {
@@ -94,10 +51,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
             setSelectedImage(null);
         }
 
-        // La imagen se adjunta como dato extra
-        handleSubmit(e as React.FormEvent<HTMLFormElement>, {
-            data: mediaUrl ? { imageUrl: mediaUrl } : undefined
-        });
+        void sendMessage(trimmedInput, mediaUrl);
     };
 
     // Escucha Realtime para las inyecciones asíncronas del Agente de Voz
@@ -116,60 +70,131 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                 }, (payload) => {
                     const newMsg = payload.new;
                     if (newMsg.role === 'assistant' || newMsg.content_type === 'call_transcript') {
-                        append({
-                            role: newMsg.role as 'user' | 'assistant',
-                            content: newMsg.text_content || 'Transcripción guardada.',
-                        });
+                        setMessages((prev) => [
+                            ...prev,
+                            {
+                                id: crypto.randomUUID(),
+                                role: newMsg.role as 'user' | 'assistant',
+                                content: newMsg.text_content || 'Transcripción guardada.',
+                            },
+                        ]);
                     }
                 })
                 .subscribe();
         }
         initRealtime();
         return () => { if (channel) supabase.removeChannel(channel); }
-    }, [append, supabase]);
+    }, [supabase]);
 
-    const toggleRecording = async () => {
-        if (!isRecording) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                mediaRecorderRef.current = mediaRecorder;
-                audioChunksRef.current = [];
+    const sendMessage = async (text: string, imageUrl?: string) => {
+        const q = text.trim();
+        const finalQuery = q || (imageUrl ? 'Imagen adjunta.' : '');
+        if (!finalQuery) return;
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) audioChunksRef.current.push(event.data);
-                };
+        setAuthError(null);
+        setIsLoading(true);
+        setInput('');
 
-                mediaRecorder.onstop = async () => {
-                    setIsProcessingVoice(true);
-                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                    const formData = new FormData();
-                    formData.append('file', audioBlob, 'voice.webm');
+        setMessages((prev) => [
+            ...prev,
+            {
+                id: crypto.randomUUID(),
+                role: 'user',
+                content: finalQuery,
+            },
+        ]);
 
-                    try {
-                        const res = await fetch('/api/stt', { method: 'POST', body: formData });
-                        const data = await res.json();
-                        if (data.text) {
-                            setInput(data.text);
-                        }
-                    } catch (err) {
-                        console.error('Error transcripting audio', err);
-                    } finally {
-                        setIsProcessingVoice(false);
-                        stream.getTracks().forEach(track => track.stop());
-                    }
-                };
+        try {
+            const res = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: finalQuery, imageUrl }),
+            });
 
-                mediaRecorder.start();
-                setIsRecording(true);
-            } catch (err) {
-                console.error('Mic access denied or error', err);
-                alert('Por favor, permite el acceso al micrófono.');
+            if (res.status === 401 || res.status === 403) {
+                const msg = 'Sesión expirada. Reingresa.';
+                setAuthError(msg);
+                toast.error(msg);
+                return;
             }
-        } else {
-            mediaRecorderRef.current?.stop();
-            setIsRecording(false);
+
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                throw new Error(text || `HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            const assistantText = String(data?.response ?? '');
+
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: crypto.randomUUID(),
+                    role: 'assistant',
+                    content: assistantText || 'No pude responder. Intenta otra frase.',
+                },
+            ]);
+        } catch (err: any) {
+            const msg = err?.message ? String(err.message) : 'Error al llamar al agente IA';
+            setAuthError(msg);
+            toast.error(msg);
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    const toggleRecording = () => {
+        if (isRecording) {
+            recognitionRef.current?.stop?.();
+            setIsRecording(false);
+            return;
+        }
+
+        const SpeechRecognition =
+            typeof window !== 'undefined'
+                ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+                : null;
+
+        if (!SpeechRecognition) {
+            const msg = 'Speech Recognition no soportado en este navegador.';
+            setAuthError(msg);
+            toast.error(msg);
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognitionRef.current = recognition;
+        recognition.lang = 'es-ES';
+        recognition.interimResults = false;
+        recognition.continuous = false;
+
+        setIsProcessingVoice(false);
+        setIsRecording(true);
+        recognition.start();
+
+        recognition.onresult = (event: any) => {
+            const transcript = Array.from(event.results || [])
+                .map((r: any) => r?.[0]?.transcript)
+                .filter(Boolean)
+                .join(' ')
+                .trim();
+
+            if (transcript) {
+                setInput(transcript);
+                void sendMessage(transcript);
+            }
+        };
+
+        recognition.onerror = (event: any) => {
+            const err = event?.error ? String(event.error) : 'Error STT';
+            setAuthError(`STT: ${err}`);
+            toast.error(`STT: ${err}`);
+            setIsRecording(false);
+        };
+
+        recognition.onend = () => {
+            setIsRecording(false);
+        };
     };
 
     return (
@@ -255,7 +280,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     <div className="flex-1 bg-zinc-100 rounded-2xl flex items-center pr-2 pl-4 py-1 min-h-[48px] focus-within:ring-2 focus-within:ring-[#5B8FB9] transition-all">
                         <textarea
                             value={input}
-                            onChange={handleInputChange}
+                            onChange={(e) => setInput(e.target.value)}
                             className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-zinc-800 resize-none max-h-32 min-h-[20px] py-3"
                             rows={1}
                             onKeyDown={(e) => {

@@ -11,8 +11,10 @@ const PERMISSIONS: Record<string, UserRole[]> = {
   'view_financials': ['manager'],
   'view_own_labor': ['manager', 'staff', 'supervisor'],
   'view_team_labor': ['manager', 'supervisor'],
+  'view_tables': ['manager', 'staff', 'supervisor'],
   'manage_orders': ['manager', 'staff', 'supervisor'],
   'view_recipes': ['manager', 'staff', 'supervisor'],
+  'view_treasury': ['manager', 'supervisor'],
 };
 
 export async function verifyUserAction(action: string, providedUserId?: string) {
