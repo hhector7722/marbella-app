@@ -32,6 +32,12 @@ La app soporta grabación de voz en el cliente (MediaRecorder) y transcripción 
 - `STT_PROVIDER=whisper_local` + `WHISPER_COMMAND="... {file} ..."`
   - Ejecuta un comando local. Debe aceptar `{file}` como placeholder al `.wav` y devolver el texto por stdout (o generar un `.txt`).
 
+### STT file size limit
+
+- **Variable**: `MAX_STT_FILE_MB` (MB)
+- **Default**: 10
+- **Uso**: ajusta este valor si envías audios muy largos; valores pequeños reducen uso de disco/CPU. Reinicia la app tras cambiarlo.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

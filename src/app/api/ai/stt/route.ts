@@ -4,7 +4,13 @@ import path from 'node:path';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB
+// Configurable max file size for STT in MB (fallback to DEFAULT_MAX_STT_MB)
+const DEFAULT_MAX_STT_MB = 10;
+const MAX_MB = (() => {
+  const env = process.env.MAX_STT_FILE_MB;
+  const parsed = env ? parseInt(env, 10) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_STT_MB;
+})();
 
 async function runCommand(cmd: string, args: string[], opts: { cwd?: string } = {}) {
   return await new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve, reject) => {
@@ -52,9 +58,8 @@ export async function POST(req: Request) {
     const file = formData.get('file') as Blob | null;
     if (!file) return NextResponse.json({ error: 'No file uploaded (field "file")' }, { status: 400 });
 
-    if (typeof file.size === 'number' && file.size > MAX_BYTES) {
-      return NextResponse.json({ error: 'Audio demasiado grande (máx 10MB).' }, { status: 413 });
-    }
+    const sizeMb = (file.size || 0) / 1024 / 1024;
+    if (sizeMb > MAX_MB) return NextResponse.json({ error: `File too large (max ${MAX_MB} MB)` }, { status: 413 });
 
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'stt-'));
     const inPath = path.join(tmpDir, 'input.webm');
