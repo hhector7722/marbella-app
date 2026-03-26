@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, full_name, name')
       .eq('id', user.id)
       .single();
 
@@ -47,7 +47,13 @@ export async function POST(req: Request) {
     const userRole = dbRole === 'manager' || dbRole === 'supervisor' ? 'manager' : 'staff';
 
     const agent = new AIAgent();
-    const userName = user.email || (user.user_metadata && (user.user_metadata as any).full_name) || user.id;
+    // Construcción segura de displayName / userName
+    const profileName =
+      (profile && ((profile as any).full_name || (profile as any).name)) ||
+      (user.user_metadata && ((user.user_metadata as any).full_name || (user.user_metadata as any).name)) ||
+      (typeof user.email === 'string' ? user.email.split('@')[0] : undefined);
+
+    const userName = profileName || user.email || user.id || 'Usuario';
     const result = await agent.processQuery({
       query,
       userId: user.id,

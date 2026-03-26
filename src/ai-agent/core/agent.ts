@@ -45,6 +45,16 @@ export class AIAgent {
     const start = Date.now();
     const parsed = this.parser.parse(request.query);
 
+    // Detección simple de saludo: responder plantilla (sin LLM, sin preguntas personales)
+    const isGreeting = /^\s*(hola|buenas|buenos días|buenas tardes|buenas noches|hi|hey)\b[\s!.,]*$/i.test(request.query);
+    if (isGreeting) {
+      const name = request.userName ?? 'Usuario';
+      return {
+        response: `Hola ${name}. ¿En qué puedo ayudarte?`,
+        metadata: { processingTimeMs: Date.now() - start, queryType: 'greeting' },
+      };
+    }
+
     if (!this.rbac.validateAccess(request.userRole, parsed)) {
       return {
         response: 'No tienes permisos para eso, campeón. (RBAC dice que no)',
@@ -65,10 +75,9 @@ export class AIAgent {
         `Contexto verificado (usa SOLO esto):`,
         JSON.stringify(contextSanitized),
         actionPerformed ? `Acción realizada: ${actionPerformed.type} (${JSON.stringify(actionPerformed.details)})` : '',
+        'Regla adicional: Si la entrada es solo un saludo, responde únicamente con un saludo corto dirigido al usuario y NO hagas preguntas personales ni seguimientos innecesarios.',
         'Responde en 2-3 líneas máximo. Sin rodeos. Si no hay datos, dilo explícitamente.',
-      ]
-        .filter(Boolean)
-        .join('\n');
+      ].filter(Boolean).join('\n');
 
       const ollamaResponse = await this.ollama.generate(systemPrompt, userPrompt);
 
@@ -151,12 +160,13 @@ export class AIAgent {
     return `Eres la IA operativa de Bar La Marbella.
 Tono: DIRECTO, SARCÁSTICO y SIN RODEOS.
 Idioma: Español.
-Reglas:
-- Responde basándote SOLO en los datos del Contexto.
-- Si el Contexto indica ausencia de datos, dilo explícitamente.
-- Máximo 2-3 líneas. Nada de explicaciones internas.
+Reglas IMPORTANTES:
+- RESPONDE basándote SOLO en los datos del Contexto provisto.
+- NUNCA pidas datos personales (dirección, ubicación precisa, documentos). Si el usuario no los ha dado, no los solicites.
+- Si la entrada es únicamente un saludo corto (p.ej. "hola", "buenos días"), responde con un saludo corto dirigido al usuario y NO hagas preguntas de seguimiento innecesarias.
+- Máximo 2-3 líneas por respuesta. Nada de explicaciones internas.
 Información del usuario:
-- Nombre: ${userName ?? 'Usuario'}
+- Nombre para mostrar: ${userName ?? 'Usuario'}
 - Rol: ${userRole}.
 `;
   }
