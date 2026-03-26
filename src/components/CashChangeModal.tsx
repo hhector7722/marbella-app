@@ -485,18 +485,15 @@ export const CashChangeModal = ({
                                             onClick={() => setBoxA(isA ? null : opt)}
                                             className={cn(
                                                 "w-full min-h-[64px] rounded-2xl border-2 font-black text-[10px] uppercase tracking-wide transition-all flex flex-col items-center justify-center text-center p-2 leading-tight gap-1.5 shadow-sm active:scale-95",
-                                                isA ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-emerald-500/20" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
+                                                isA ? "border-emerald-600 bg-white text-emerald-700 shadow-emerald-500/20" : "border-emerald-500/40 bg-white text-zinc-400",
                                                 boxB?.id === opt.id && !isA ? "opacity-30" : ""
                                             )}
                                         >
-                                            <div className={cn(
-                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center transition-all bg-white",
-                                                isA ? "ring-2 ring-emerald-500/50" : ""
-                                            )}>
+                                            <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center transition-all bg-white">
                                                 {opt.image_url ? (
                                                     <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-contain" />
                                                 ) : (
-                                                    <Wallet size={18} className={cn("transition-colors", isA ? "text-emerald-500" : "text-zinc-300")} strokeWidth={2.5} />
+                                                    <Wallet size={18} className={cn("transition-colors", isA ? "text-emerald-600" : "text-zinc-300")} strokeWidth={2.5} />
                                                 )}
                                             </div>
                                             <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
@@ -515,18 +512,15 @@ export const CashChangeModal = ({
                                             onClick={() => setBoxB(isB ? null : opt)}
                                             className={cn(
                                                 "w-full min-h-[64px] rounded-2xl border-2 font-black text-[10px] uppercase tracking-wide transition-all flex flex-col items-center justify-center text-center p-2 leading-tight gap-1.5 shadow-sm active:scale-95",
-                                                isB ? "border-rose-500 bg-rose-50 text-rose-700 shadow-rose-500/20" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
+                                                isB ? "border-rose-600 bg-white text-rose-700 shadow-rose-500/20" : "border-rose-500/40 bg-white text-zinc-400",
                                                 boxA?.id === opt.id && !isB ? "opacity-30" : ""
                                             )}
                                         >
-                                            <div className={cn(
-                                                "w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center transition-all bg-white",
-                                                isB ? "ring-2 ring-rose-500/50" : ""
-                                            )}>
+                                            <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center transition-all bg-white">
                                                 {opt.image_url ? (
                                                     <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="w-full h-full object-contain" />
                                                 ) : (
-                                                    <Wallet size={18} className={cn("transition-colors", isB ? "text-rose-500" : "text-zinc-300")} strokeWidth={2.5} />
+                                                    <Wallet size={18} className={cn("transition-colors", isB ? "text-rose-600" : "text-zinc-300")} strokeWidth={2.5} />
                                                 )}
                                             </div>
                                             <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
