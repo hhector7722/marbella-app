@@ -8,6 +8,7 @@ import { useAIStore } from '@/store/aiStore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
 export function AIChatWidget() {
     const supabase = createClient();
@@ -19,12 +20,15 @@ export function AIChatWidget() {
 
 
 
-    const [isRecording, setIsRecording] = useState(false);
-    const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+    const [voiceMode, setVoiceMode] = useState(false);
+    const [isRecording, setIsRecording] = useState(false); // SpeechRecognition fallback only
+    const [isProcessingVoice, setIsProcessingVoice] = useState(false); // SpeechRecognition fallback only
+    const [voiceStatus, setVoiceStatus] = useState<'idle' | 'uploading' | 'transcribing' | 'error'>('idle');
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const recognitionRef = useRef<any>(null);
+    const recorder = useVoiceRecorder();
 
     // Auto-scroll al final del chat
     useEffect(() => {
@@ -143,6 +147,58 @@ export function AIChatWidget() {
         }
     };
 
+    const transcribeOnServer = async (blob: Blob): Promise<string> => {
+        setVoiceStatus('uploading');
+        const fd = new FormData();
+        fd.append('file', blob, 'voice.webm');
+
+        const res = await fetch('/api/ai/stt', { method: 'POST', body: fd });
+        if (!res.ok) {
+            let errMsg = `STT falló (HTTP ${res.status})`;
+            const j = await res.json().catch(() => null);
+            if (j?.error) errMsg = String(j.error);
+            throw new Error(errMsg);
+        }
+        setVoiceStatus('transcribing');
+        const { text } = await res.json();
+        return String(text || '').trim();
+    };
+
+    const handleRecordVoiceMessage = async () => {
+        // Preferimos servidor (MediaRecorder + /api/ai/stt). Si no existe soporte, fallback SpeechRecognition.
+        if (recorder.status === 'recording') {
+            const blob = await recorder.stopRecording();
+            if (!blob) return;
+            try {
+                const text = await transcribeOnServer(blob);
+                setVoiceStatus('idle');
+                if (!text) {
+                    toast.error('No pude transcribir. Prueba otra vez.');
+                    return;
+                }
+                setInput(text);
+                await sendMessage(text);
+            } catch (e: any) {
+                setVoiceStatus('error');
+                const msg = e?.message ? String(e.message) : 'Error STT';
+                toast.error(msg);
+                // fallback si el servidor no está configurado
+                if (msg.includes('No STT provider configured') || msg.includes('STT_PROVIDER')) {
+                    toast.error('STT servidor no configurado. Usando STT del navegador como fallback.');
+                    toggleRecording();
+                }
+            } finally {
+                setVoiceStatus('idle');
+            }
+            return;
+        }
+
+        if (recorder.status === 'idle') {
+            await recorder.startRecording();
+            return;
+        }
+    };
+
     const toggleRecording = () => {
         if (isRecording) {
             recognitionRef.current?.stop?.();
@@ -210,7 +266,18 @@ export function AIChatWidget() {
                     </button>
                     <img src="/icons/logo-white.png" alt="Logo Marbella" className="h-11 w-auto object-contain" />
                 </div>
-                <div className="h-[40px]" />
+                <button
+                    type="button"
+                    onClick={() => setVoiceMode((v) => !v)}
+                    className={cn(
+                        "min-h-[40px] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors",
+                        voiceMode ? "bg-emerald-500 hover:bg-emerald-600" : "bg-white/10 hover:bg-white/15"
+                    )}
+                    aria-pressed={voiceMode}
+                    title="Conversa por voz"
+                >
+                    Voz {voiceMode ? 'ON' : 'OFF'}
+                </button>
             </div>
 
             {/* Zona de Mensajes */}
@@ -304,17 +371,40 @@ export function AIChatWidget() {
 
                         <button
                             type="button"
-                            onClick={toggleRecording}
-                            disabled={isProcessingVoice}
+                            onClick={voiceMode ? handleRecordVoiceMessage : toggleRecording}
+                            disabled={voiceMode ? (voiceStatus === 'uploading' || voiceStatus === 'transcribing') : isProcessingVoice}
                             className={cn(
                                 "p-2 rounded-xl transition-colors shrink-0 mx-1",
-                                isRecording ? "bg-red-100 text-red-600 animate-pulse" : "text-zinc-400 hover:text-zinc-600",
-                                isProcessingVoice ? "opacity-50 cursor-not-allowed" : ""
+                                voiceMode
+                                    ? (recorder.status === 'recording'
+                                        ? "bg-red-100 text-red-600 animate-pulse"
+                                        : "text-zinc-400 hover:text-zinc-600")
+                                    : (isRecording ? "bg-red-100 text-red-600 animate-pulse" : "text-zinc-400 hover:text-zinc-600"),
+                                (voiceMode ? (voiceStatus !== 'idle') : isProcessingVoice) ? "opacity-50 cursor-not-allowed" : ""
                             )}
                         >
-                            {isProcessingVoice ? <Loader2 size={20} className="animate-spin" /> : <Mic size={20} />}
+                            {voiceMode ? (
+                                voiceStatus === 'uploading' || voiceStatus === 'transcribing' ? (
+                                    <Loader2 size={20} className="animate-spin" />
+                                ) : (
+                                    <Mic size={20} />
+                                )
+                            ) : (
+                                isProcessingVoice ? <Loader2 size={20} className="animate-spin" /> : <Mic size={20} />
+                            )}
                         </button>
                     </div>
+
+                    {voiceMode && recorder.status === 'recording' && (
+                        <button
+                            type="button"
+                            onClick={recorder.cancelRecording}
+                            className="bg-red-100 text-red-700 px-3 py-3 rounded-2xl min-h-[48px] text-[10px] font-black uppercase tracking-wider shrink-0"
+                            title="Cancelar grabación"
+                        >
+                            Cancelar
+                        </button>
+                    )}
 
                     <button
                         type="submit"
@@ -324,6 +414,12 @@ export function AIChatWidget() {
                         <Send size={18} className="translate-x-0.5" />
                     </button>
                 </form>
+
+                {voiceMode && recorder.status === 'recording' && (
+                    <div className="mt-2 text-[10px] font-bold text-zinc-500">
+                        Grabando… {Math.floor(recorder.durationMs / 1000)}s
+                    </div>
+                )}
             </div>
         </div>
     );

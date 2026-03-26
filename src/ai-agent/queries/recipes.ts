@@ -25,14 +25,16 @@ export async function fetchRecipeInfo(recipeName: string): Promise<{
 
   const { data: ingredientsRows, error: ingError } = await supabase
     .from('recipe_ingredients')
-    .select('quantity, unit, ingredients(name)')
+    .select('quantity_gross, quantity_net, unit, ingredients(name)')
     .eq('recipe_id', recipe.id);
 
   if (ingError) throw new Error(`Error consultando ingredientes: ${ingError.message}`);
 
   const ingredients =
     ingredientsRows?.map((ing: any) => ({
-      quantity: Number(ing.quantity) || 0,
+      // quantity principal: use quantity_gross (cantidad bruta)
+      quantity: Number(ing.quantity_gross) || 0,
+      quantity_net: Number(ing.quantity_net) || null,
       unit: String(ing.unit ?? ''),
       ingredientName: String(ing.ingredients?.name ?? ''),
     })) ?? [];

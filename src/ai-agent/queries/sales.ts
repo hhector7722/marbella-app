@@ -41,20 +41,19 @@ export async function fetchSalesSummary(period: SalesPeriod): Promise<{
   const supabase = await createClient();
   const { startDate, endDate } = computePeriodRangeUTC(period);
 
-  // HOY EN CURSO: tickets live (tickets_marbella.total_documento) por fecha_negocio = hoy
+  // Si el periodo es 'today' usamos tickets_marbella (total por ticket)
   if (period === 'today') {
-    const todayStr = toUTCDateString(new Date());
-
-    const { data: tickets, error: tError } = await supabase
+    const { data: tickets, error: ticketsError } = await supabase
       .from('tickets_marbella')
-      .select('total_documento, fecha_negocio')
-      .eq('fecha_negocio', todayStr);
+      .select('total_documento, fecha')
+      .gte('fecha', startDate)
+      .lte('fecha', endDate);
 
-    if (tError) throw new Error(`Error consultando tickets_marbella: ${tError.message}`);
+    if (ticketsError) throw new Error(`Error consultando tickets_marbella: ${ticketsError.message}`);
 
-    const rows = tickets ?? [];
-    const totalSales = rows.reduce((sum, t: any) => sum + (Number(t.total_documento) || 0), 0);
-    const closureCount = rows.length; // aquí = nº tickets (no cierres)
+    const rowsTickets = tickets ?? [];
+    const totalSales = rowsTickets.reduce((sum: number, t: any) => sum + (Number(t.total_documento) || 0), 0);
+    const closureCount = rowsTickets.length;
     const avgTicket = closureCount > 0 ? totalSales / closureCount : 0;
 
     return {
@@ -62,12 +61,15 @@ export async function fetchSalesSummary(period: SalesPeriod): Promise<{
       totalSales,
       closureCount,
       avgTicket,
-      startDate: todayStr,
-      endDate: todayStr,
+      startDate,
+      endDate,
     };
   }
 
-  // HISTÓRICO (días cerrados): cash_closings.net_sales por closing_date
+  // Para consultas por producto (p.e. "¿cuánto café se ha vendido hoy?") usar ticket_lines_marbella filtrando por fecha_negocio y articulo_id;
+  // esa consulta puede implementarse posteriormente donde se detecte intención de producto.
+
+  // Para last_week/month seguimos usando cash_closings (histórico)
   const { data: cls, error } = await supabase
     .from('cash_closings')
     .select('net_sales, closing_date')
@@ -90,4 +92,60 @@ export async function fetchSalesSummary(period: SalesPeriod): Promise<{
     endDate,
   };
 }
+
+export async function fetchUnitsSoldByProduct(params: {
+  period: SalesPeriod;
+  productName: string;
+}): Promise<{
+  period: SalesPeriod;
+  productName: string;
+  units: number;
+  startDate: string;
+  endDate: string;
+}> {
+  await verifyUserAction('view_financials');
+  const supabase = await createClient();
+
+  const { period, productName } = params;
+  const { startDate, endDate } = computePeriodRangeUTC(period);
+
+  // MVP: contamos unidades desde ticket_lines_marbella por fecha_negocio (y filtro por articulo_id via mapeo)
+  // 1) Resolver articulo_id desde bdp_articulos (si existe) por nombre aproximado.
+  const { data: art, error: artError } = await supabase
+    .from('bdp_articulos')
+    .select('id, nombre')
+    .ilike('nombre', `%${productName}%`)
+    .limit(1)
+    .maybeSingle();
+
+  if (artError) throw new Error(`Error consultando bdp_articulos: ${artError.message}`);
+  if (!art?.id) {
+    throw new Error(`No encontré el artículo "${productName}" en bdp_articulos (no puedo mapear articulo_id).`);
+  }
+
+  const articuloId = Number((art as any).id);
+  if (!Number.isFinite(articuloId)) {
+    throw new Error(`articulo_id inválido para "${productName}".`);
+  }
+
+  const { data: lines, error: linesError } = await supabase
+    .from('ticket_lines_marbella')
+    .select('unidades, fecha_negocio, articulo_id')
+    .eq('articulo_id', articuloId)
+    .gte('fecha_negocio', startDate)
+    .lte('fecha_negocio', endDate);
+
+  if (linesError) throw new Error(`Error consultando ticket_lines_marbella: ${linesError.message}`);
+
+  const units = (lines ?? []).reduce((s: number, l: any) => s + (Number(l.unidades) || 0), 0);
+
+  return {
+    period,
+    productName: String((art as any).nombre ?? productName),
+    units,
+    startDate,
+    endDate,
+  };
+}
+
 

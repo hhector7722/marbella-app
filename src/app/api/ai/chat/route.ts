@@ -47,10 +47,11 @@ export async function POST(req: Request) {
     const userRole = dbRole === 'manager' || dbRole === 'supervisor' ? 'manager' : 'staff';
 
     const agent = new AIAgent();
+    const userName = user.email || (user.user_metadata && (user.user_metadata as any).full_name) || user.id;
     const result = await agent.processQuery({
       query,
       userId: user.id,
-      userName: user.email || String((user.user_metadata as Record<string, unknown> | undefined)?.full_name || '') || 'Usuario',
+      userName,
       userRole,
     });
 

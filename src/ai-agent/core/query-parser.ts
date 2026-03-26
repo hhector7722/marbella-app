@@ -101,6 +101,23 @@ export class QueryParser {
       };
     }
 
+    // SALES por PRODUCTO (unidades vendidas): "¿Cuántos cafés se han vendido hoy?"
+    // Heurística simple: detectar "cuánt" + "vendid" y extraer el nombre entre ambos.
+    if (q.includes('cuánt') && q.includes('vendid')) {
+      const match =
+        q.match(/cu[aá]nt(?:os|as)?\s+(.+?)\s+(?:se\s+han\s+|se\s+ha\s+)?vendid(?:o|os|as)?/i) ||
+        q.match(/vendid(?:o|os|as)?\s+hoy\s+de\s+(.+?)\s*$/i);
+
+      const productName = match?.[1]?.trim() || '';
+      if (productName) {
+        return {
+          type: 'sales',
+          parameters: { period, productName },
+          confidence: 0.85,
+        };
+      }
+    }
+
     // SALES / FINANCIALS
     if (containsAny(q, ['facturaci', 'facturado', 'venta', 'ventas', 'cierres', 'net sales', 'import'])) {
       return {

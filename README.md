@@ -16,6 +16,22 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Voz (STT) para el chat IA
+
+La app soporta grabación de voz en el cliente (MediaRecorder) y transcripción en servidor vía `/api/ai/stt`.
+
+### Requisitos servidor
+
+- **ffmpeg** instalado (para convertir `webm` → `wav` 16k mono).
+  - Debian/Ubuntu: `apt install ffmpeg`
+
+### Variables de entorno
+
+- `STT_PROVIDER=openai` + `OPENAI_API_KEY=...`
+  - Usa OpenAI Audio Transcriptions con `whisper-1` (puede tener coste).
+- `STT_PROVIDER=whisper_local` + `WHISPER_COMMAND="... {file} ..."`
+  - Ejecuta un comando local. Debe aceptar `{file}` como placeholder al `.wav` y devolver el texto por stdout (o generar un `.txt`).
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

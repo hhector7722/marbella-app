@@ -5,7 +5,7 @@ import { AgentRequest, AgentResponse, ParsedQuery } from './types';
 import { fetchOvertimeHours, type LaborPeriod } from '../queries/labor';
 import { fetchOperationalTreasury } from '../queries/treasury';
 import { fetchOpenTables } from '../queries/tables';
-import { fetchSalesSummary, type SalesPeriod } from '../queries/sales';
+import { fetchSalesSummary, fetchUnitsSoldByProduct, type SalesPeriod } from '../queries/sales';
 import { fetchRecipeInfo } from '../queries/recipes';
 import { updateOrderDraft } from '../queries/orders';
 
@@ -99,6 +99,12 @@ export class AIAgent {
     switch (parsed.type) {
       case 'sales': {
         const period = (parsed.parameters.period as SalesPeriod) || 'today';
+        const productName = typeof (parsed.parameters as any)?.productName === 'string' ? String((parsed.parameters as any).productName) : '';
+        if (productName) {
+          const context = await fetchUnitsSoldByProduct({ period, productName });
+          return { context };
+        }
+
         const context = await fetchSalesSummary(period);
         return { context };
       }
@@ -141,7 +147,7 @@ export class AIAgent {
     }
   }
 
-  private buildSystemPrompt(userRole: 'staff' | 'manager', userName: string): string {
+  private buildSystemPrompt(userRole: 'staff' | 'manager', userName?: string): string {
     return `Eres la IA operativa de Bar La Marbella.
 Tono: DIRECTO, SARCÁSTICO y SIN RODEOS.
 Idioma: Español.
@@ -150,8 +156,8 @@ Reglas:
 - Si el Contexto indica ausencia de datos, dilo explícitamente.
 - Máximo 2-3 líneas. Nada de explicaciones internas.
 Información del usuario:
-- Nombre: ${userName}
-- Rol: ${userRole}
+- Nombre: ${userName ?? 'Usuario'}
+- Rol: ${userRole}.
 `;
   }
 }
