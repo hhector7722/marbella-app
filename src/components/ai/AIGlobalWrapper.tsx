@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAIStore } from '@/store/aiStore';
 import { AIChatWidget } from './AIChatWidget';
-import { AIVoiceCall } from './AIVoiceCall';
 import { cn } from '@/lib/utils';
 
 export function AIGlobalWrapper() {
     const isOpen = useAIStore((state) => state.isOpen);
-    const isCallActive = useAIStore((state) => state.isCallActive);
     const closeChat = useAIStore((state) => state.closeChat);
-    const setCallActive = useAIStore((state) => state.setCallActive);
     const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({ inset: 0, position: 'fixed' });
 
     useEffect(() => {
@@ -49,18 +46,8 @@ export function AIGlobalWrapper() {
     }, [isOpen]);
 
     const handleBackdropClick = useCallback(() => {
-        // RESTRICCIÓN CRÍTICA: Bloquear cierre si hay llamada de voz activa
-        if (isCallActive) return;
         closeChat();
-    }, [isCallActive, closeChat]);
-
-    const handleCallStart = useCallback(() => {
-        setCallActive(true);
-    }, [setCallActive]);
-
-    const handleCallEnd = useCallback(() => {
-        setCallActive(false);
-    }, [setCallActive]);
+    }, [closeChat]);
 
     // Prevenimos el scroll touch en el backdrop móvil para evitar arrastrar el body
     useEffect(() => {
@@ -93,12 +80,7 @@ export function AIGlobalWrapper() {
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Widget de Chat Asíncrono — SIEMPRE en el DOM */}
-                <AIChatWidget onStartCall={handleCallStart} />
-
-                {/* Modal de Llamada — Solo se monta/desmonta aquí porque tiene su propio fixed inset-0 */}
-                {isCallActive && (
-                    <AIVoiceCall onClose={handleCallEnd} />
-                )}
+                <AIChatWidget />
             </div>
         </div>
     );

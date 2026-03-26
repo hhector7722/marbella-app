@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Image as ImageIcon, X, Phone, Loader2 } from 'lucide-react';
+import { Mic, Send, Image as ImageIcon, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 import { useAIStore } from '@/store/aiStore';
@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 
-export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
+export function AIChatWidget() {
     const supabase = createClient();
     const [authError, setAuthError] = useState<string | null>(null);
     const [messages, setMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([]);
@@ -210,14 +210,7 @@ export function AIChatWidget({ onStartCall }: { onStartCall: () => void }) {
                     </button>
                     <img src="/icons/logo-white.png" alt="Logo Marbella" className="h-11 w-auto object-contain" />
                 </div>
-                <button
-                    type="button"
-                    onClick={onStartCall}
-                    className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg min-h-[40px]"
-                >
-                    <Phone size={14} fill="currentColor" />
-                    <span className="font-black text-[10px] uppercase tracking-wider">Llamada</span>
-                </button>
+                <div className="h-[40px]" />
             </div>
 
             {/* Zona de Mensajes */}
