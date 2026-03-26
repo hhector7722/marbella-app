@@ -43,6 +43,7 @@ La app soporta grabación de voz en el cliente (MediaRecorder) y transcripción 
 Opcional: puedes ejecutar un servidor WS independiente para “llamada” en tiempo real (baja latencia).
 
 - **Token efímero**: el cliente pide un token a `POST /api/ai/voice-token` (requiere sesión) y abre WS con `?token=...`.
+- **Identidad + RBAC**: el `voice-server` envía ese token como `Authorization: Bearer <token>` a `POST /api/ai/voice-chat`, que valida firma/expiración y ejecuta el agente con `userId/userRole` reales.
 - **Secret**: `VOICE_WS_SECRET` existe solo en servidor (Next + voice-server). No se expone en `NEXT_PUBLIC_*`.
 - **Arranque voice-server**:
   - `cd voice-server && npm install && npm run build && npm start`
