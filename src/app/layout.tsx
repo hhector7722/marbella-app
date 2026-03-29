@@ -8,7 +8,6 @@ import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import SileoProvider from "@/components/SileoProvider";
-// 1. IMPORTACIÓN DEL CHAT
 import ChatMarbella from "@/components/chat/ChatMarbella";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -54,23 +53,26 @@ export default async function RootLayout({
       .select('needs_onboarding')
       .eq('id', user.id)
       .single();
-
     needsOnboarding = profile?.needs_onboarding || false;
   }
 
   return (
     <html lang="es" className="light">
-      <body className={`${inter.className} bg-[#5B8FB9] touch-manipulation`}>
+      <body className={`${inter.className} bg-[#5B8FB9] touch-manipulation pb-safe`}>
         <SileoProvider />
         <ServiceWorkerRegistration />
         <Navbar />
         <MainWrapper>
           <OnboardingOverlay needsOnboarding={needsOnboarding} />
           {children}
-        </MainWrapper>
-        <BottomNavWrapper />
 
-        {/* 2. INYECCIÓN DEL CHAT MINIMALISTA */}
+          {/* CONTENEDOR DONDE SE INYECTARÁ EL CHAT */}
+          <div className="px-4 pb-20 mt-6">
+            <div id="n8n-chat-marbella-container"></div>
+          </div>
+        </MainWrapper>
+
+        <BottomNavWrapper />
         <ChatMarbella />
       </body>
     </html>

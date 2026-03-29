@@ -3,129 +3,78 @@
 @tailwind utilities;
 
 @layer utilities {
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .h-header-safe {
-    height: calc(3.5rem + env(safe-area-inset-top));
-  }
-
-  .mt-header-safe {
-    margin-top: calc(3.5rem + env(safe-area-inset-top));
-  }
-
-  .pt-header-safe {
-    padding-top: calc(3.5rem + env(safe-area-inset-top));
-  }
-
-  .top-header-safe {
-    top: calc(3.5rem + env(safe-area-inset-top));
-  }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .h-header-safe { height: calc(3.5rem + env(safe-area-inset-top)); }
+  .mt-header-safe { margin-top: calc(3.5rem + env(safe-area-inset-top)); }
+  .pt-header-safe { padding-top: calc(3.5rem + env(safe-area-inset-top)); }
+  .top-header-safe { top: calc(3.5rem + env(safe-area-inset-top)); }
 }
 
 @keyframes animate-spinner-fade {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0.15;
-  }
+  0% { opacity: 1; }
+  100% { opacity: 0.15; }
 }
 
-.animate-spinner-fade {
-  animation: animate-spinner-fade 1.2s linear infinite;
-}
+.animate-spinner-fade { animation: animate-spinner-fade 1.2s linear infinite; }
 
 @layer base {
-
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
+  input[type="number"] { -moz-appearance: textfield; }
 }
 
-/* --- CONFIGURACIÓN DE IMPRESIÓN (Tickets y Cierres) --- */
-@page {
-  size: auto;
-  margin: 15mm;
-}
-
+/* --- CONFIGURACIÓN DE IMPRESIÓN --- */
+@page { size: auto; margin: 15mm; }
 @media print {
-  main {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  html {
-    background: #fff !important;
-  }
-
-  .print-table-cierres thead,
-  .print-table-ventas thead {
-    display: table-header-group !important;
-  }
-
-  .print-table-cierres tbody tr,
-  .print-table-ventas tbody tr {
-    page-break-inside: avoid;
-  }
-
-  /* Ocultar el Chat al imprimir tickets */
-  .n8n-chat-widget {
-    display: none !important;
-  }
+  main { padding-top: 0 !important; padding-bottom: 0 !important; }
+  body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  .print-table-cierres thead, .print-table-ventas thead { display: table-header-group !important; }
+  #n8n-chat-marbella-container { display: none !important; }
 }
 
-/* --- N8N CHAT MINIMALISMO EXTREMO (MARBELLA OS) --- */
+/* --- N8N CHAT INTEGRADO (MARBELLA OS) --- */
 
-/* Ocultar elementos de UI innecesarios (Limpieza Visual) */
-.n8n-chat-header-subtitle,
-.n8n-chat-footer,
-.n8n-chat-get-started-button,
-.n8n-chat-get-started-text {
-  display: none !important;
+#n8n-chat-marbella-container {
+  width: 100%;
+  background: white;
+  border-radius: 1.5rem; /* Cabecera redondeada */
+  overflow: hidden;
+  border: 1px solid rgba(63, 94, 122, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Posicionamiento Inteligente: Sube la burbuja para no tapar el BottomNavWrapper */
-.n8n-chat-widget {
-  bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
-  right: 1.25rem !important;
-  z-index: 50 !important;
+/* Cabecera integrada estilo Petróleo */
+#n8n-chat-marbella-container::before {
+  content: "ASISTENTE I+D MARBELLA";
+  display: block;
+  background-color: #3F5E7A; /* Color Petróleo */
+  color: white;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-align: center;
 }
 
-/* Estética Minimalista del Input */
+/* Forzar visualización de la caja de texto y limpieza de branding */
+.n8n-chat-footer, .n8n-chat-header { display: none !important; }
+
 .n8n-chat-input-container {
-  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: none !important;
-  background-color: #ffffff !important;
+  border-top: 1px solid #f3f4f6 !important;
+  padding: 0.75rem !important;
 }
 
 .n8n-chat-input {
+  background: #f9fafb !important;
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 1rem !important;
   font-size: 16px !important;
-  /* Evita zoom automático en iOS al escribir */
 }
 
-/* Ajuste de Colores (Azul Marbella) */
-.n8n-chat-button {
-  background-color: #5B8FB9 !important;
-  box-shadow: 0 4px 12px rgba(91, 143, 185, 0.3) !important;
+.n8n-chat-send-button {
+  background-color: #3F5E7A !important; /* Botón Petróleo */
 }
