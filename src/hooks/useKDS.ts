@@ -10,18 +10,23 @@ export function useKDS() {
     const [isOffline, setIsOffline] = useState(false);
     const supabase = createClient();
 
-    // 1. CARGA INICIAL: Sincronización absoluta del estado de cocina
+    // 1. CARGA INICIAL: Sincronizamos Activas y Completadas recientes (ej. último día)
     const fetchActiveOrders = useCallback(async () => {
         setLoading(true);
+
+        // Calculamos la fecha de hace 24 horas para no cargar todo el historial
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
         const { data, error } = await supabase
             .from('kds_orders')
             .select('*, lineas:kds_order_lines(*)')
-            .eq('estado', 'activa')
+            .or(`estado.eq.activa,and(estado.eq.completada,completed_at.gte.${yesterday.toISOString()})`)
             .order('created_at', { ascending: true });
 
         if (!error && data) {
             setOrders(data);
-            setIsOffline(false); // Reset offline if we can fetch
+            setIsOffline(false);
         } else if (error) {
             console.error('Error KDS Initial Fetch:', error.message);
             setIsOffline(true);
@@ -31,7 +36,7 @@ export function useKDS() {
 
     useEffect(() => {
         let reconnectTimeout: any;
-        let backoffDelay = 2000; // Iniciamos con 2s
+        let backoffDelay = 2000;
 
         const setupSubscription = () => {
             fetchActiveOrders();
@@ -43,11 +48,8 @@ export function useKDS() {
                         const newOrder = { ...p.new, lineas: [] } as unknown as KDSOrder;
                         setOrders(prev => [...prev, newOrder]);
                     } else if (p.eventType === 'UPDATE') {
-                        if (p.new.estado === 'completada') {
-                            setOrders(prev => prev.filter(o => o.id !== p.new.id));
-                        } else {
-                            setOrders(prev => prev.map(o => o.id === p.new.id ? { ...o, ...p.new } : o));
-                        }
+                        // Ahora NO eliminamos las completadas del estado local, solo actualizamos
+                        setOrders(prev => prev.map(o => o.id === p.new.id ? { ...o, ...p.new } : o));
                     }
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_order_lines' }, (p) => {
@@ -58,27 +60,22 @@ export function useKDS() {
                         const ul = p.new as KDSOrderLine;
                         setOrders(prev => prev.map(o => {
                             if (o.id !== ul.kds_order_id) return o;
-                            return { ...o, lineas: o.lineas?.map(l => l.id === ul.id ? ul : l) };
+                            return { ...o, lineas: (o.lineas || []).map(l => l.id === ul.id ? ul : l) };
                         }));
                     }
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        console.log('✅ KDS: Conectado a Realtime');
                         setIsOffline(false);
-                        backoffDelay = 2000; // Reset backoff
-                        // Sincronización obligatoria tras reconexión para no perder lo que entró offline
+                        backoffDelay = 2000;
                         await fetchActiveOrders();
                     }
 
                     if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                        console.error('⚠️ KDS: Error de Conexión / Desconectado');
                         setIsOffline(true);
-
-                        // Reintento con Backoff Exponencial
                         clearTimeout(reconnectTimeout);
                         reconnectTimeout = setTimeout(() => {
-                            backoffDelay = Math.min(backoffDelay * 1.5, 30000); // Max 30s
+                            backoffDelay = Math.min(backoffDelay * 1.5, 30000);
                             supabase.removeChannel(channel);
                             setupSubscription();
                         }, backoffDelay);
@@ -96,32 +93,26 @@ export function useKDS() {
         };
     }, [supabase, fetchActiveOrders]);
 
-    // 3. TACHADO OPTIMISTA PURO (Con Rollback de Precisión)
+    // 3. TACHADO OPTIMISTA
     const tacharProducto = async (lineId: string, currentState: KDSItemStatus) => {
         const nextState: KDSItemStatus = currentState === 'pendiente' ? 'terminado' : 'pendiente';
         const completedAt = nextState === 'terminado' ? new Date().toISOString() : null;
 
-        // A. Mutación Optimista Instantánea
         setOrders(prev => prev.map(o => ({
             ...o,
-            lineas: o.lineas?.map(l => l.id === lineId ? { ...l, estado: nextState, completed_at: completedAt } : l)
+            lineas: (o.lineas || []).map(l => l.id === lineId ? { ...l, estado: nextState, completed_at: completedAt } : l)
         })));
 
-        // B. Persistencia
         const { error } = await supabase
             .from('kds_order_lines')
             .update({ estado: nextState, completed_at: completedAt })
             .eq('id', lineId);
 
-        // C. Rollback de Precisión (Solo deshace esta línea, respetando clics paralelos)
         if (error) {
-            console.error(`KDS Rollback: Fallo en línea ${lineId}`, error.message);
             setOrders(prev => prev.map(o => ({
                 ...o,
-                lineas: o.lineas?.map(l => l.id === lineId ? {
-                    ...l,
-                    estado: currentState,
-                    completed_at: currentState === 'terminado' ? new Date().toISOString() : null
+                lineas: (o.lineas || []).map(l => l.id === lineId ? {
+                    ...l, estado: currentState, completed_at: currentState === 'terminado' ? new Date().toISOString() : null
                 } : l)
             })));
         }
@@ -129,40 +120,29 @@ export function useKDS() {
 
     // 4. CIERRE DE COMANDA OPTIMISTA
     const completarComanda = async (orderId: string) => {
-        // Foto local solo de esta orden por si falla
-        const orderToArchive = orders.find(o => o.id === orderId);
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
 
-        // A. Mutación
-        setOrders(prev => prev.filter(o => o.id !== orderId));
-
-        // B. Persistencia
         const { error } = await supabase
             .from('kds_orders')
             .update({ estado: 'completada', completed_at: new Date().toISOString() })
             .eq('id', orderId);
 
-        // C. Rollback local
-        if (error && orderToArchive) {
-            console.error(`KDS Rollback: Fallo al completar comanda ${orderId}`, error.message);
-            setOrders(prev => [...prev, orderToArchive].sort((a, b) =>
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            ));
+        if (error) {
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'activa', completed_at: null } : o));
         }
     };
 
-    // 5. RECUPERAR COMANDA (Deshacer completada por error)
+    // 5. RECUPERAR COMANDA OPTIMISTA
     const recuperarComanda = async (orderId: string) => {
-        // A. Persistencia (volvemos a ponerla 'activa' y quitamos la fecha de completado)
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'activa', completed_at: null } : o));
+
         const { error } = await supabase
             .from('kds_orders')
             .update({ estado: 'activa', completed_at: null })
             .eq('id', orderId);
 
         if (error) {
-            console.error(`KDS Error: Fallo al recuperar comanda ${orderId}`, error.message);
-        } else {
-            // B. Refrescar el estado global para que vuelva a aparecer en el grid
-            fetchActiveOrders();
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
         }
     };
 
