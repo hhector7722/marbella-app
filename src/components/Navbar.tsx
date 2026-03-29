@@ -14,6 +14,8 @@ export default function Navbar() {
     const supabase = createClient();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+
+    // ANÁLISIS CRÍTICO: Tienes esta función de Zustand activada en el botón.
     const toggleChat = useAIStore((state) => state.toggleChat);
 
     useEffect(() => {
@@ -28,7 +30,6 @@ export default function Navbar() {
                     .eq('id', user.id)
                     .single();
 
-                // Rol: prioridad perfil > JWT (raw_app_meta_data sincronizado por trigger)
                 const role = (profile?.role ?? user.user_metadata?.role ?? 'staff') as string;
                 const name = profile?.first_name ?? user.user_metadata?.first_name ?? 'Empleado';
                 const email = profile?.email ?? user.email ?? '';
@@ -56,7 +57,6 @@ export default function Navbar() {
     const isAdminMode = pathname.startsWith('/dashboard') || pathname.startsWith('/recipes') || pathname.startsWith('/ingredients');
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard';
 
-    // Authorization logic for the special "CIERRE" button
     const showClosureButton = pathname === '/staff/dashboard' &&
         (userData?.role === 'manager' || userData?.is_supervisor === true || userData?.role === 'supervisor');
 
@@ -65,7 +65,6 @@ export default function Navbar() {
             <nav className={`bg-[#5B8FB9] text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/10 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden`}>
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full">
 
-                    {/* BLOQUE IZQUIERDO: BOTÓN VOLVER + LOGO + SALUDO */}
                     <div className="flex items-center gap-1">
                         {!isDashboard && (
                             <button
@@ -86,9 +85,7 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    {/* BLOQUE DERECHO: INTERRUPTOR + BOTÓN IA */}
                     <div className="flex items-center gap-2 md:gap-3">
-                        {/* BOTÓN + CIERRE (SOLO EMPLEADOS AUTORIZADOS EN STAFF DASHBOARD) */}
                         {showClosureButton && (
                             <button
                                 onClick={() => setIsClosingModalOpen(true)}
@@ -101,7 +98,6 @@ export default function Navbar() {
                             </button>
                         )}
 
-                        {/* INTERRUPTOR STAFF/ADM — visible solo para rol manager (no staff ni supervisor) */}
                         {userData?.role === 'manager' && (
                             <button
                                 onClick={() => router.push(isAdminMode ? '/staff/dashboard' : '/dashboard')}
@@ -118,8 +114,9 @@ export default function Navbar() {
                             </button>
                         )}
 
-                        {/* BOTÓN IA RECTANGULAR */}
+                        {/* BOTÓN IA RECTANGULAR CON EL ID AÑADIDO */}
                         <button
+                            id="ia-button"
                             onClick={toggleChat}
                             className="flex items-center gap-2 px-3 h-8 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95 group"
                         >

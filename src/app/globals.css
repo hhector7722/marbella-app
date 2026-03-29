@@ -28,39 +28,77 @@
   }
 }
 
-/* --- ANTES DE NADA: MATAR EL WIDGET ROJO Y BRANDING --- */
+@keyframes animate-spinner-fade {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner-fade {
+  animation: animate-spinner-fade 1.2s linear infinite;
+}
+
+@layer base {
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+/* --- CONFIGURACIÓN DE IMPRESIÓN --- */
+@page {
+  size: auto;
+  margin: 15mm;
+}
+
+@media print {
+  main {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .n8n-chat-widget,
+  .marbella-chat-modal {
+    display: none !important;
+  }
+}
+
+/* --- LIMPIEZA TOTAL N8N Y ESTILO INTERIOR --- */
+
+/* Matar el widget rojo flotante y branding */
 .n8n-chat-widget,
 .n8n-chat-button,
 .n8n-chat-footer,
-[class*="powered-by"],
-.n8n-chat-get-started-button {
+[class*="powered-by"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
-  pointer-events: none !important;
 }
 
-/* --- ESTILO DEL MODAL MARBELLA --- */
-.marbella-modal-overlay {
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.marbella-chat-container {
-  background: white;
-  height: 70vh;
-  display: flex;
-  flex-direction: column;
-}
-
+/* Estilo de los globos y el input dentro del modal */
 .n8n-chat-messages {
   background: #f8fafc !important;
   padding: 1rem !important;
-  flex-grow: 1;
 }
 
 .n8n-chat-input-container {
-  border-top: 1px solid #e2e8f0 !important;
+  border-top: 1px solid #f1f5f9 !important;
   padding: 1rem !important;
   background: white !important;
 }
@@ -74,10 +112,4 @@
 
 .n8n-chat-send-button {
   background-color: #3F5E7A !important;
-}
-
-@media print {
-  .marbella-modal-overlay {
-    display: none !important;
-  }
 }
