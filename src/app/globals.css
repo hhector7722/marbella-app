@@ -28,121 +28,56 @@
   }
 }
 
-@keyframes animate-spinner-fade {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0.15;
-  }
+/* --- ANTES DE NADA: MATAR EL WIDGET ROJO Y BRANDING --- */
+.n8n-chat-widget,
+.n8n-chat-button,
+.n8n-chat-footer,
+[class*="powered-by"],
+.n8n-chat-get-started-button {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-.animate-spinner-fade {
-  animation: animate-spinner-fade 1.2s linear infinite;
+/* --- ESTILO DEL MODAL MARBELLA --- */
+.marbella-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
 }
 
-@layer base {
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
-}
-
-/* --- CONFIGURACIÓN DE IMPRESIÓN --- */
-@page {
-  size: auto;
-  margin: 15mm;
-}
-
-@media print {
-  main {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  #n8n-chat-marbella-container {
-    display: none !important;
-  }
-}
-
-/* --- N8N CHAT INTEGRADO PETRÓLEO (MARBELLA OS) --- */
-
-#n8n-chat-marbella-container {
-  width: 100%;
-  min-height: 400px;
+.marbella-chat-container {
   background: white;
-  border-radius: 1.5rem;
-  /* Cabecera redondeada */
-  overflow: hidden;
-  border: 1px solid rgba(63, 94, 122, 0.2);
+  height: 70vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Cabecera falsa color Petróleo */
-#n8n-chat-marbella-container::before {
-  content: "ASISTENTE OPERATIVO";
-  display: block;
-  background-color: #3F5E7A;
-  /* Petróleo */
-  color: white;
-  padding: 1rem;
-  font-size: 0.8rem;
-  font-weight: 800;
-  text-align: center;
-  letter-spacing: 0.1em;
-}
-
-/* ELIMINACIÓN DE PUBLICIDAD Y ELEMENTOS SOBRANTES */
-.n8n-chat-footer,
-.n8n-chat-header,
-.n8n-chat-get-started-button,
-[class*="powered-by"] {
-  display: none !important;
-  height: 0 !important;
-  visibility: hidden !important;
-}
-
-/* Estilo del área de conversación */
 .n8n-chat-messages {
-  flex-grow: 1;
-  background: #fdfdfd;
+  background: #f8fafc !important;
   padding: 1rem !important;
+  flex-grow: 1;
 }
 
-/* CAJA DE TEXTO: Siempre visible y accesible */
 .n8n-chat-input-container {
-  border-top: 2px solid #f3f4f6 !important;
+  border-top: 1px solid #e2e8f0 !important;
   padding: 1rem !important;
   background: white !important;
-  display: flex !important;
-  visibility: visible !important;
 }
 
 .n8n-chat-input {
-  background: #f3f4f6 !important;
-  border: 1px solid #e5e7eb !important;
+  background: #f1f5f9 !important;
   border-radius: 0.75rem !important;
   padding: 0.75rem !important;
   font-size: 16px !important;
-  color: #1f2937 !important;
 }
 
 .n8n-chat-send-button {
   background-color: #3F5E7A !important;
-  /* Botón Petróleo */
-  margin-left: 0.5rem !important;
+}
+
+@media print {
+  .marbella-modal-overlay {
+    display: none !important;
+  }
 }
