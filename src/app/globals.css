@@ -55,7 +55,7 @@
   }
 }
 
-/* Imprimir: sin cabecera/pie del navegador (URL, fecha, hora, página) y tabla con cabecera/fin por hoja */
+/* --- CONFIGURACIÓN DE IMPRESIÓN (Tickets y Cierres) --- */
 @page {
   size: auto;
   margin: 15mm;
@@ -67,7 +67,6 @@
     padding-bottom: 0 !important;
   }
 
-  /* Fondo blanco al imprimir (evitar azul de la app) y márgenes del cuerpo */
   body {
     margin: 0 !important;
     padding: 0 !important;
@@ -80,21 +79,53 @@
     background: #fff !important;
   }
 
-  /* Tabla Cierres: cabecera repetida en cada hoja y pie "Fin de tabla" al final */
-  .print-table-cierres thead {
-    display: table-header-group !important;
-  }
-
-  .print-table-cierres tbody tr {
-    page-break-inside: avoid;
-  }
-
-  /* Tabla Ventas (Tickets / Productos): cabecera repetida y pie "Fin de tabla" */
+  .print-table-cierres thead,
   .print-table-ventas thead {
     display: table-header-group !important;
   }
 
+  .print-table-cierres tbody tr,
   .print-table-ventas tbody tr {
     page-break-inside: avoid;
   }
+
+  /* Ocultar el Chat al imprimir tickets */
+  .n8n-chat-widget {
+    display: none !important;
+  }
+}
+
+/* --- N8N CHAT MINIMALISMO EXTREMO (MARBELLA OS) --- */
+
+/* Ocultar elementos de UI innecesarios (Limpieza Visual) */
+.n8n-chat-header-subtitle,
+.n8n-chat-footer,
+.n8n-chat-get-started-button,
+.n8n-chat-get-started-text {
+  display: none !important;
+}
+
+/* Posicionamiento Inteligente: Sube la burbuja para no tapar el BottomNavWrapper */
+.n8n-chat-widget {
+  bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+  right: 1.25rem !important;
+  z-index: 50 !important;
+}
+
+/* Estética Minimalista del Input */
+.n8n-chat-input-container {
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
+  background-color: #ffffff !important;
+}
+
+.n8n-chat-input {
+  font-size: 16px !important;
+  /* Evita zoom automático en iOS al escribir */
+}
+
+/* Ajuste de Colores (Azul Marbella) */
+.n8n-chat-button {
+  background-color: #5B8FB9 !important;
+  box-shadow: 0 4px 12px rgba(91, 143, 185, 0.3) !important;
 }
