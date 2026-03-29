@@ -8,7 +8,6 @@ import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import SileoProvider from "@/components/SileoProvider";
-import { AIGlobalWrapper } from "@/components/ai/AIGlobalWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -68,8 +67,6 @@ export default async function RootLayout({
           {children}
         </MainWrapper>
         <BottomNavWrapper />
-        {/* AI Global — nunca se desmonta del DOM (visibilidad por CSS) */}
-        <AIGlobalWrapper />
       </body>
     </html>
   );
