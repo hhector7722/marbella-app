@@ -8,6 +8,8 @@ import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import SileoProvider from "@/components/SileoProvider";
+// 1. IMPORTACIÓN DEL CHAT
+import ChatMarbella from "@/components/chat/ChatMarbella";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -67,6 +69,9 @@ export default async function RootLayout({
           {children}
         </MainWrapper>
         <BottomNavWrapper />
+
+        {/* 2. INYECCIÓN DEL CHAT MINIMALISTA */}
+        <ChatMarbella />
       </body>
     </html>
   );
