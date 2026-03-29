@@ -3,78 +3,146 @@
 @tailwind utilities;
 
 @layer utilities {
-  .pt-safe { padding-top: env(safe-area-inset-top); }
-  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-  .h-header-safe { height: calc(3.5rem + env(safe-area-inset-top)); }
-  .mt-header-safe { margin-top: calc(3.5rem + env(safe-area-inset-top)); }
-  .pt-header-safe { padding-top: calc(3.5rem + env(safe-area-inset-top)); }
-  .top-header-safe { top: calc(3.5rem + env(safe-area-inset-top)); }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .h-header-safe {
+    height: calc(3.5rem + env(safe-area-inset-top));
+  }
+
+  .mt-header-safe {
+    margin-top: calc(3.5rem + env(safe-area-inset-top));
+  }
+
+  .pt-header-safe {
+    padding-top: calc(3.5rem + env(safe-area-inset-top));
+  }
+
+  .top-header-safe {
+    top: calc(3.5rem + env(safe-area-inset-top));
+  }
 }
 
 @keyframes animate-spinner-fade {
-  0% { opacity: 1; }
-  100% { opacity: 0.15; }
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.15;
+  }
 }
 
-.animate-spinner-fade { animation: animate-spinner-fade 1.2s linear infinite; }
+.animate-spinner-fade {
+  animation: animate-spinner-fade 1.2s linear infinite;
+}
 
 @layer base {
+
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  input[type="number"] { -moz-appearance: textfield; }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 }
 
 /* --- CONFIGURACIÓN DE IMPRESIÓN --- */
-@page { size: auto; margin: 15mm; }
-@media print {
-  main { padding-top: 0 !important; padding-bottom: 0 !important; }
-  body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-  .print-table-cierres thead, .print-table-ventas thead { display: table-header-group !important; }
-  #n8n-chat-marbella-container { display: none !important; }
+@page {
+  size: auto;
+  margin: 15mm;
 }
 
-/* --- N8N CHAT INTEGRADO (MARBELLA OS) --- */
+@media print {
+  main {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  #n8n-chat-marbella-container {
+    display: none !important;
+  }
+}
+
+/* --- N8N CHAT INTEGRADO PETRÓLEO (MARBELLA OS) --- */
 
 #n8n-chat-marbella-container {
   width: 100%;
+  min-height: 400px;
   background: white;
-  border-radius: 1.5rem; /* Cabecera redondeada */
+  border-radius: 1.5rem;
+  /* Cabecera redondeada */
   overflow: hidden;
-  border: 1px solid rgba(63, 94, 122, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(63, 94, 122, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Cabecera integrada estilo Petróleo */
+/* Cabecera falsa color Petróleo */
 #n8n-chat-marbella-container::before {
-  content: "ASISTENTE I+D MARBELLA";
+  content: "ASISTENTE OPERATIVO";
   display: block;
-  background-color: #3F5E7A; /* Color Petróleo */
+  background-color: #3F5E7A;
+  /* Petróleo */
   color: white;
-  padding: 0.75rem;
-  font-size: 0.75rem;
+  padding: 1rem;
+  font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
   text-align: center;
+  letter-spacing: 0.1em;
 }
 
-/* Forzar visualización de la caja de texto y limpieza de branding */
-.n8n-chat-footer, .n8n-chat-header { display: none !important; }
+/* ELIMINACIÓN DE PUBLICIDAD Y ELEMENTOS SOBRANTES */
+.n8n-chat-footer,
+.n8n-chat-header,
+.n8n-chat-get-started-button,
+[class*="powered-by"] {
+  display: none !important;
+  height: 0 !important;
+  visibility: hidden !important;
+}
 
+/* Estilo del área de conversación */
+.n8n-chat-messages {
+  flex-grow: 1;
+  background: #fdfdfd;
+  padding: 1rem !important;
+}
+
+/* CAJA DE TEXTO: Siempre visible y accesible */
 .n8n-chat-input-container {
-  border-top: 1px solid #f3f4f6 !important;
-  padding: 0.75rem !important;
+  border-top: 2px solid #f3f4f6 !important;
+  padding: 1rem !important;
+  background: white !important;
+  display: flex !important;
+  visibility: visible !important;
 }
 
 .n8n-chat-input {
-  background: #f9fafb !important;
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
   border-radius: 0.75rem !important;
-  padding: 0.5rem 1rem !important;
+  padding: 0.75rem !important;
   font-size: 16px !important;
+  color: #1f2937 !important;
 }
 
 .n8n-chat-send-button {
-  background-color: #3F5E7A !important; /* Botón Petróleo */
+  background-color: #3F5E7A !important;
+  /* Botón Petróleo */
+  margin-left: 0.5rem !important;
 }

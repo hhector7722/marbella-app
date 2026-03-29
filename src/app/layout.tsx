@@ -53,6 +53,7 @@ export default async function RootLayout({
       .select('needs_onboarding')
       .eq('id', user.id)
       .single();
+
     needsOnboarding = profile?.needs_onboarding || false;
   }
 
@@ -62,17 +63,30 @@ export default async function RootLayout({
         <SileoProvider />
         <ServiceWorkerRegistration />
         <Navbar />
+        
         <MainWrapper>
           <OnboardingOverlay needsOnboarding={needsOnboarding} />
+          
+          {/* Contenido principal de la página */}
           {children}
 
-          {/* CONTENEDOR DONDE SE INYECTARÁ EL CHAT */}
-          <div className="px-4 pb-20 mt-6">
-            <div id="n8n-chat-marbella-container"></div>
+          {/* CONTENEDOR NATIVO PARA EL CHAT 
+              Ubicado al final del scroll del MainWrapper para que no flote 
+          */}
+          <div className="px-4 mt-8 mb-24">
+            <div 
+              id="n8n-chat-marbella-container" 
+              className="w-full overflow-hidden"
+            >
+              {/* n8n inyectará el chat aquí */}
+            </div>
           </div>
         </MainWrapper>
 
+        {/* Menú inferior de navegación */}
         <BottomNavWrapper />
+
+        {/* Lógica de inicialización del chat */}
         <ChatMarbella />
       </body>
     </html>
