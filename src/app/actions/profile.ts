@@ -67,10 +67,10 @@ export async function addEmployeeDocument(userId: string, docData: { type: 'cont
     return { success: true };
 }
 
-/** Sube comunicado o contrato para un empleado (bucket employee-documents, tabla employee_documents) */
+/** Sube comunicado, contrato o nómina para un empleado (bucket employee-documents, tabla employee_documents) */
 export async function addEmployeeDocumentByTipo(
     userId: string,
-    docData: { tipo: 'comunicado' | 'contrato'; storage_path: string; filename: string }
+    docData: { tipo: 'comunicado' | 'contrato' | 'nomina'; storage_path: string; filename: string; mes?: string; year?: number }
 ) {
     const supabase = await createClient();
 
@@ -84,7 +84,7 @@ export async function addEmployeeDocumentByTipo(
         .single();
 
     if (currentProfile?.role !== 'manager' && currentProfile?.role !== 'supervisor') {
-        return { success: false, error: 'Solo managers pueden subir comunicados y contratos' };
+        return { success: false, error: 'Solo managers pueden subir documentos' };
     }
 
     const { data: targetProfile } = await supabase
@@ -101,8 +101,8 @@ export async function addEmployeeDocumentByTipo(
             user_id: userId,
             codigo_empleado: codigoEmpleado,
             tipo: docData.tipo,
-            mes: null,
-            year: null,
+            mes: docData.mes ?? null,
+            year: docData.year ?? null,
             filename: docData.filename,
             storage_path: docData.storage_path
         });

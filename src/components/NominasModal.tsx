@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { X, Download, FileText } from 'lucide-react';
+import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -12,6 +12,7 @@ interface NominasModalProps {
     onClose: () => void;
     /** ID del perfil cuyas nóminas mostrar. Si no se pasa, usa el usuario logueado (propio perfil). */
     targetUserId?: string;
+    isManager?: boolean;
 }
 
 interface NominaRow {
@@ -22,110 +23,108 @@ interface NominaRow {
     filename: string;
     storage_path: string;
     created_at?: string;
+    bucket: 'nominas' | 'employee-documents';
 }
 
-export default function NominasModal({ isOpen, onClose, targetUserId }: NominasModalProps) {
+export default function NominasModal({ isOpen, onClose, targetUserId, isManager = false }: NominasModalProps) {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [nominas, setNominas] = useState<NominaRow[]>([]);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+
+    // Estados para el formulario de subida
+    const [uploadMonth, setUploadMonth] = useState<string>(new Date().toLocaleString('es-ES', { month: 'long' }).toLowerCase());
+    const [uploadYear, setUploadYear] = useState<number>(new Date().getFullYear());
+
+    const fetchNominas = async () => {
+        setLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error('Debes iniciar sesión para ver tus nóminas');
+                onClose();
+                setLoading(false);
+                return;
+            }
+            const effectiveUserId = targetUserId ?? user.id;
+
+            const { data: edData, error: edError } = await supabase
+                .from('employee_documents')
+                .select('id, user_id, mes, year, filename, storage_path, created_at')
+                .eq('user_id', effectiveUserId)
+                .eq('tipo', 'nomina')
+                .order('created_at', { ascending: false });
+
+            if (edError) console.error('Error fetching employee_documents nominas:', edError);
+
+            const { data: nomData, error: nomError } = await supabase
+                .from('nominas')
+                .select('id, empleado_id, mes_anio, file_path, created_at')
+                .eq('empleado_id', effectiveUserId)
+                .order('created_at', { ascending: false });
+
+            if (nomError) console.error('Error fetching nominas legacy:', nomError);
+
+            const seen = new Set<string>();
+            const merged: NominaRow[] = [];
+
+            for (const row of edData ?? []) {
+                if (row.storage_path && !seen.has(row.storage_path)) {
+                    seen.add(row.storage_path);
+                    merged.push({
+                        id: row.id,
+                        user_id: row.user_id,
+                        mes: row.mes ?? '',
+                        year: row.year ?? 0,
+                        filename: row.filename ?? '',
+                        storage_path: row.storage_path,
+                        created_at: row.created_at,
+                        bucket: 'employee-documents'
+                    });
+                }
+            }
+
+            for (const row of nomData ?? []) {
+                if (row.file_path && !seen.has(row.file_path)) {
+                    seen.add(row.file_path);
+                    const parts = (row.mes_anio ?? '').split('-');
+                    const [a, b] = parts;
+                    const isYearFirst = a?.length === 4;
+                    const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
+                    const mes = isYearFirst ? (b ?? '') : (a ?? '');
+                    merged.push({
+                        id: row.id,
+                        user_id: row.empleado_id,
+                        mes,
+                        year,
+                        filename: `Nómina ${row.mes_anio ?? ''}`,
+                        storage_path: row.file_path,
+                        created_at: row.created_at,
+                        bucket: 'nominas'
+                    });
+                }
+            }
+
+            merged.sort((a, b) => {
+                const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+                return db - da;
+            });
+
+            setNominas(merged);
+        } catch (err) {
+            console.error('NominasModal fetch error:', err);
+            toast.error('Error al cargar las nóminas');
+            setNominas([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        if (!isOpen) return;
-
-        const fetchNominas = async () => {
-            setLoading(true);
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    toast.error('Debes iniciar sesión para ver tus nóminas');
-                    onClose();
-                    setLoading(false);
-                    return;
-                }
-                // Si targetUserId viene (manager viendo ficha empleado), usar ese; si no, el propio usuario
-                const effectiveUserId = targetUserId ?? user.id;
-
-                // 1. employee_documents (webhook flow: codigo_empleado, tipo=nomina)
-                const { data: edData, error: edError } = await supabase
-                    .from('employee_documents')
-                    .select('id, user_id, mes, year, filename, storage_path, created_at')
-                    .eq('user_id', effectiveUserId)
-                    .eq('tipo', 'nomina')
-                    .order('created_at', { ascending: false });
-
-                if (edError) {
-                    console.error('Error fetching employee_documents nominas:', edError);
-                }
-
-                // 2. nominas (tabla legacy: empleado_id, mes_anio, file_path)
-                const { data: nomData, error: nomError } = await supabase
-                    .from('nominas')
-                    .select('id, empleado_id, mes_anio, file_path, created_at')
-                    .eq('empleado_id', effectiveUserId)
-                    .order('created_at', { ascending: false });
-
-                if (nomError) {
-                    console.error('Error fetching nominas legacy:', nomError);
-                }
-
-                // Normalizar y fusionar (evitar duplicados por storage_path)
-                const seen = new Set<string>();
-                const merged: NominaRow[] = [];
-
-                for (const row of edData ?? []) {
-                    if (row.storage_path && !seen.has(row.storage_path)) {
-                        seen.add(row.storage_path);
-                        merged.push({
-                            id: row.id,
-                            user_id: row.user_id,
-                            mes: row.mes ?? '',
-                            year: row.year ?? 0,
-                            filename: row.filename ?? '',
-                            storage_path: row.storage_path,
-                            created_at: row.created_at
-                        });
-                    }
-                }
-
-                for (const row of nomData ?? []) {
-                    if (row.file_path && !seen.has(row.file_path)) {
-                        seen.add(row.file_path);
-                        const parts = (row.mes_anio ?? '').split('-');
-                        const [a, b] = parts;
-                        const isYearFirst = a?.length === 4;
-                        const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
-                        const mes = isYearFirst ? (b ?? '') : (a ?? '');
-                        merged.push({
-                            id: row.id,
-                            user_id: row.empleado_id,
-                            mes,
-                            year,
-                            filename: `Nómina ${row.mes_anio ?? ''}`,
-                            storage_path: row.file_path,
-                            created_at: row.created_at
-                        });
-                    }
-                }
-
-                merged.sort((a, b) => {
-                    const da = a.created_at ? new Date(a.created_at).getTime() : 0;
-                    const db = b.created_at ? new Date(b.created_at).getTime() : 0;
-                    return db - da;
-                });
-
-                setNominas(merged);
-            } catch (err) {
-                console.error('NominasModal fetch error:', err);
-                toast.error('Error al cargar las nóminas');
-                setNominas([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchNominas();
-    }, [isOpen, onClose, targetUserId]);
+        if (isOpen) fetchNominas();
+    }, [isOpen, targetUserId]);
 
     const handleDownload = async (row: NominaRow) => {
         if (!row.storage_path) {
@@ -134,26 +133,76 @@ export default function NominasModal({ isOpen, onClose, targetUserId }: NominasM
         }
         setDownloadingId(row.id);
         try {
-            // 1. Descarga silenciosa del archivo a la memoria local (Blob)
             const { data, error } = await supabase.storage
-                .from('nominas')
+                .from(row.bucket)
                 .download(row.storage_path);
 
             if (error) throw error;
-
-            // 2. Crear una URL local invisible (tipo blob:...)
             const blobUrl = URL.createObjectURL(data);
-
-            // 3. Abrir en el visor nativo del dispositivo (Previsualización limpia)
             window.open(blobUrl, '_blank');
-
-            // 4. Limpiar la memoria del dispositivo tras 10 segundos
             setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
         } catch (err) {
             console.error('Error previsualizando nómina:', err);
             toast.error('No se pudo cargar el documento.');
         } finally {
             setDownloadingId(null);
+        }
+    };
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !targetUserId) return;
+
+        setUploading(true);
+        try {
+            const ext = file.name.split('.').pop() || 'pdf';
+            const fileName = `nomina_${uploadMonth}_${uploadYear}_${Date.now()}.${ext}`;
+            const filePath = `${targetUserId}/nominas/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('employee-documents')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw new Error(uploadError.message);
+
+            const { addEmployeeDocumentByTipo } = await import('@/app/actions/profile');
+            const result = await addEmployeeDocumentByTipo(targetUserId, {
+                tipo: 'nomina',
+                storage_path: filePath,
+                filename: file.name,
+                mes: uploadMonth,
+                year: uploadYear
+            });
+
+            if (result.success) {
+                toast.success('Nómina subida correctamente');
+                fetchNominas();
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Error al subir la nómina');
+        } finally {
+            setUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleDelete = async (row: NominaRow) => {
+        if (!confirm(`¿Seguro que quieres borrar la nómina de ${row.mes} ${row.year}?`)) return;
+        
+        try {
+            const { deleteEmployeeDocumentByTipo } = await import('@/app/actions/profile');
+            const result = await deleteEmployeeDocumentByTipo(row.id, row.storage_path);
+            
+            if (result.success) {
+                toast.success('Nómina eliminada');
+                fetchNominas();
+            } else {
+                toast.error(result.error || 'Error al eliminar');
+            }
+        } catch (err) {
+            toast.error('Error al eliminar');
         }
     };
 
@@ -166,38 +215,56 @@ export default function NominasModal({ isOpen, onClose, targetUserId }: NominasM
         return row.filename || 'Nómina';
     };
 
+    const MESES = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+
     return (
-        <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
-            onClick={onClose}
-        >
-            <div
-                className={cn(
-                    'bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden',
-                    'animate-in zoom-in-95 duration-200'
-                )}
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Header — petróleo Marbella (#36606F) */}
-                <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F]">
-                    <h2 className="text-base font-black text-white uppercase tracking-wider">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
+                <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
+                    <h2 className="text-base font-black uppercase tracking-wider">
                         {targetUserId ? 'Nóminas del empleado' : 'Mis nóminas'}
                     </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors active:scale-95"
-                        aria-label="Cerrar"
-                    >
-                        <X size={22} strokeWidth={2.5} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {isManager && targetUserId && (
+                            <>
+                                <input type="file" id="nomina-upload" className="hidden" accept=".pdf" onChange={handleUpload} disabled={uploading} />
+                                <label htmlFor="nomina-upload" className={cn('min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30', uploading && 'opacity-60 cursor-wait')}>
+                                    {uploading ? <LoadingSpinner size="sm" className="text-white" /> : <Plus size={22} strokeWidth={2.5} />}
+                                </label>
+                            </>
+                        )}
+                        <button type="button" onClick={onClose} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors" aria-label="Cerrar">
+                            <X size={22} strokeWidth={2.5} />
+                        </button>
+                    </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto max-h-[70vh] p-4">
+                {isManager && targetUserId && (
+                    <div className="px-6 py-3 bg-zinc-50 border-b border-zinc-100 flex items-center gap-3">
+                        <select 
+                            value={uploadMonth} 
+                            onChange={(e) => setUploadMonth(e.target.value)}
+                            className="flex-1 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#36606F]/20"
+                        >
+                            {MESES.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        <select 
+                            value={uploadYear} 
+                            onChange={(e) => setUploadYear(parseInt(e.target.value))}
+                            className="w-24 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#36606F]/20"
+                        >
+                            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto max-h-[60vh] p-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12">
-                            <LoadingSpinner className="w-10 h-10 text-[#36606F]" />
+                            <LoadingSpinner size="lg" className="text-[#36606F]" />
                             <p className="mt-3 text-sm text-zinc-500 font-medium">Cargando nóminas…</p>
                         </div>
                     ) : nominas.length === 0 ? (
@@ -212,38 +279,26 @@ export default function NominasModal({ isOpen, onClose, targetUserId }: NominasM
                     ) : (
                         <ul className="space-y-2">
                             {nominas.map((row) => (
-                                <li
-                                    key={row.id}
-                                    className="min-h-[60px] flex items-center justify-between gap-3 p-4 rounded-2xl border border-zinc-100 bg-white hover:bg-zinc-50/80 transition-colors"
-                                >
+                                <li key={row.id} className="min-h-[60px] flex items-center justify-between gap-3 p-4 rounded-2xl border border-zinc-100 bg-white hover:bg-zinc-50/80 transition-colors">
                                     <div className="flex-1 min-w-0 flex items-center gap-3">
                                         <div className="shrink-0 bg-[#36606F]/10 p-3 rounded-xl text-[#36606F]">
                                             <FileText size={20} strokeWidth={2.5} />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="font-semibold text-zinc-800 truncate">
-                                                {labelPeriod(row)}
-                                            </p>
-                                            {row.filename ? (
-                                                <p className="text-xs text-zinc-400 truncate">
-                                                    {row.filename}
-                                                </p>
-                                            ) : null}
+                                            <p className="font-semibold text-zinc-800 truncate uppercase text-sm">{labelPeriod(row)}</p>
+                                            <p className="text-[10px] text-zinc-400 truncate">{row.filename}</p>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDownload(row)}
-                                        disabled={!!downloadingId}
-                                        className="shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60 transition-all active:scale-95"
-                                        aria-label="Descargar"
-                                    >
-                                        {downloadingId === row.id ? (
-                                            <LoadingSpinner className="w-5 h-5 text-white" />
-                                        ) : (
-                                            <Download size={22} strokeWidth={2.5} />
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button type="button" onClick={() => handleDownload(row)} disabled={!!downloadingId} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60">
+                                            {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-white" /> : <Download size={22} strokeWidth={2.5} />}
+                                        </button>
+                                        {isManager && row.bucket === 'employee-documents' && (
+                                            <button type="button" onClick={() => handleDelete(row)} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-500 hover:bg-rose-50 hover:text-rose-500 transition-colors">
+                                                <Trash2 size={20} strokeWidth={2.5} />
+                                            </button>
                                         )}
-                                    </button>
+                                    </div>
                                 </li>
                             ))}
                         </ul>

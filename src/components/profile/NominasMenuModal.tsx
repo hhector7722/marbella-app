@@ -13,8 +13,8 @@ interface NominasMenuModalProps {
 
 const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
     { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin.png' },
-    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
     { key: 'contrato', label: 'Contrato', iconPath: '/icons/contract.png' },
+    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
 ];
 
 export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasMenuModalProps) {
