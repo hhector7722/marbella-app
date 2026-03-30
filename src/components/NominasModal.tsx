@@ -38,6 +38,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewFileName, setPreviewFileName] = useState('');
+    const [previewIsPDF, setPreviewIsPDF] = useState(true);
     const [isPreparingPreview, setIsPreparingPreview] = useState<string | null>(null);
 
     // Estados para el formulario de subida
@@ -176,6 +177,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             const blobUrl = URL.createObjectURL(data);
             setPreviewUrl(blobUrl);
             setPreviewFileName(row.filename || labelPeriod(row));
+            setPreviewIsPDF(row.filename.toLowerCase().endsWith('.pdf') || row.storage_path.toLowerCase().endsWith('.pdf'));
             setIsPreviewOpen(true);
         } catch (err) {
             console.error('Error previsualizando nómina:', err);
@@ -361,6 +363,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 }}
                 fileUrl={previewUrl}
                 fileName={previewFileName}
+                isPDF={previewIsPDF}
                 onDownload={() => {
                     // Podemos reusar la URL del blob si existe
                 }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Download, Maximize2 } from 'lucide-react';
+import { X, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
@@ -9,6 +9,7 @@ interface DocumentPreviewModalProps {
     onClose: () => void;
     fileUrl: string | null;
     fileName: string;
+    isPDF?: boolean;
     onDownload?: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function DocumentPreviewModal({
     onClose,
     fileUrl,
     fileName,
+    isPDF = true,
     onDownload
 }: DocumentPreviewModalProps) {
     const [isLoaded, setIsLoaded] = useState(false);
@@ -25,6 +27,13 @@ export default function DocumentPreviewModal({
         if (isOpen) {
             document.body.style.overflow = 'hidden';
             setIsLoaded(false);
+            
+            // Fallback para forzar carga si el evento onLoad no dispara (común en PDFs de iOS)
+            const timer = setTimeout(() => {
+                setIsLoaded(true);
+            }, 3000);
+            
+            return () => clearTimeout(timer);
         } else {
             document.body.style.overflow = 'unset';
         }
@@ -32,23 +41,22 @@ export default function DocumentPreviewModal({
 
     if (!isOpen || !fileUrl) return null;
 
-    const isPDF = fileUrl.toLowerCase().includes('.pdf') || fileUrl.includes('nomina_');
     const previewUrl = isPDF ? `${fileUrl}#view=Fit` : fileUrl;
 
     return (
         <div 
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-4 md:p-8 animate-in fade-in duration-300"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)' }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-2 md:p-8 animate-in fade-in duration-300"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(15px)' }}
             onClick={onClose}
         >
-            {/* Header flotante minimalista */}
+            {/* Header flotante */}
             <div 
-                className="absolute top-6 left-6 right-6 flex items-center justify-between z-10"
+                className="absolute top-4 left-4 right-4 flex items-center justify-between z-10"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex flex-col">
+                <div className="flex flex-col bg-black/20 backdrop-blur-md p-3 rounded-2xl border border-white/5">
                     <span className="text-[10px] text-white/50 font-black uppercase tracking-[0.2em] mb-1">Previsualización</span>
-                    <h3 className="text-white font-black text-sm md:text-base uppercase tracking-wider truncate max-w-[200px] md:max-w-md">
+                    <h3 className="text-white font-black text-xs md:text-sm uppercase tracking-wider truncate max-w-[150px] md:max-w-md">
                         {fileName}
                     </h3>
                 </div>
@@ -57,31 +65,33 @@ export default function DocumentPreviewModal({
                     {onDownload && (
                         <button 
                             onClick={onDownload}
-                            className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
-                            title="Descargar"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
                         >
-                            <Download size={20} />
+                            <Download size={18} />
                         </button>
                     )}
                     <button 
                         onClick={onClose}
-                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
+                        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
                         aria-label="Cerrar"
                     >
-                        <X size={24} strokeWidth={2.5} />
+                        <X size={20} strokeWidth={3} />
                     </button>
                 </div>
             </div>
 
-            {/* Contenedor del documento "flotando" */}
+            {/* Contenedor del documento */}
             <div 
-                className={cn(
-                    "relative w-full h-full max-w-4xl flex items-center justify-center transition-all duration-500 transform",
-                    isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
-                )}
+                className="relative w-full h-full max-w-5xl flex items-center justify-center transition-all duration-300 transform"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="w-full h-full bg-white rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex items-center justify-center border border-white/10">
+                {!isLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center z-[11] bg-white/5 backdrop-blur-sm rounded-xl">
+                        <Loader2 className="w-10 h-10 text-white animate-spin opacity-50" />
+                    </div>
+                )}
+                
+                <div className="w-full h-full bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center border border-white/10 relative">
                     {isPDF ? (
                         <iframe 
                             src={previewUrl}
@@ -93,16 +103,16 @@ export default function DocumentPreviewModal({
                         <img 
                             src={previewUrl}
                             alt={fileName}
-                            className="max-w-full max-h-full object-contain p-4"
+                            className="max-w-full max-h-full object-contain p-2"
                             onLoad={() => setIsLoaded(true)}
                         />
                     )}
                 </div>
             </div>
 
-            {/* Hint de esquinas visibles */}
-            <div className="absolute bottom-6 text-white/30 text-[8px] font-black uppercase tracking-widest pointer-events-none">
-                Vista de impresión completa • 4 esquinas visibles
+            {/* Footer flotante */}
+            <div className="mt-4 text-white/40 text-[8px] font-black uppercase tracking-widest pointer-events-none text-center">
+                Vista de impresión completa • Ajustado al alto
             </div>
         </div>
     );

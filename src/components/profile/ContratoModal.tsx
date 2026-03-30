@@ -34,6 +34,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewFileName, setPreviewFileName] = useState('');
+    const [previewIsPDF, setPreviewIsPDF] = useState(true);
     const [isPreparingPreview, setIsPreparingPreview] = useState<string | null>(null);
 
     const fetchDocs = async () => {
@@ -96,6 +97,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
             const blobUrl = URL.createObjectURL(data);
             setPreviewUrl(blobUrl);
             setPreviewFileName(doc.filename || 'Contrato');
+            setPreviewIsPDF(doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf'));
             setIsPreviewOpen(true);
         } catch {
             toast.error('Error al previsualizar el contrato');
@@ -264,6 +266,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 }}
                 fileUrl={previewUrl}
                 fileName={previewFileName}
+                isPDF={previewIsPDF}
             />
         </div>
     );

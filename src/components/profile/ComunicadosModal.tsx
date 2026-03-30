@@ -35,6 +35,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewFileName, setPreviewFileName] = useState('');
+    const [previewIsPDF, setPreviewIsPDF] = useState(true);
     const [isPreparingPreview, setIsPreparingPreview] = useState<string | null>(null);
 
     const fetchDocs = async () => {
@@ -97,6 +98,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             const blobUrl = URL.createObjectURL(data);
             setPreviewUrl(blobUrl);
             setPreviewFileName(doc.filename || 'Comunicado');
+            setPreviewIsPDF(doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf'));
             setIsPreviewOpen(true);
         } catch {
             toast.error('Error al previsualizar el documento');
@@ -267,6 +269,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                 }}
                 fileUrl={previewUrl}
                 fileName={previewFileName}
+                isPDF={previewIsPDF}
             />
         </div>
     );
