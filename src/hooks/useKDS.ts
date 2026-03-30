@@ -10,18 +10,18 @@ export function useKDS() {
     const [isOffline, setIsOffline] = useState(false);
     const supabase = createClient();
 
-    // 1. CARGA INICIAL: Sincronizamos Activas y Completadas recientes (ej. último día)
+    // 1. CARGA INICIAL: Sincronizamos solo las comandas del día en curso
     const fetchActiveOrders = useCallback(async () => {
         setLoading(true);
 
-        // Calculamos la fecha de hace 24 horas para no cargar todo el historial
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Medianoche local
+        const startOfToday = today.toISOString();
 
         const { data, error } = await supabase
             .from('kds_orders')
             .select('*, lineas:kds_order_lines(*)')
-            .or(`estado.eq.activa,and(estado.eq.completada,completed_at.gte.${yesterday.toISOString()})`)
+            .gte('created_at', startOfToday)
             .order('created_at', { ascending: true });
 
         if (!error && data) {
@@ -93,7 +93,7 @@ export function useKDS() {
         };
     }, [supabase, fetchActiveOrders]);
 
-    // 3. TACHADO OPTIMISTA
+    // 3. TACHADO OPTIMISTA SINGLE
     const tacharProducto = async (lineId: string, currentState: KDSItemStatus) => {
         const nextState: KDSItemStatus = currentState === 'pendiente' ? 'terminado' : 'pendiente';
         const completedAt = nextState === 'terminado' ? new Date().toISOString() : null;
@@ -112,6 +112,33 @@ export function useKDS() {
             setOrders(prev => prev.map(o => ({
                 ...o,
                 lineas: (o.lineas || []).map(l => l.id === lineId ? {
+                    ...l, estado: currentState, completed_at: currentState === 'terminado' ? new Date().toISOString() : null
+                } : l)
+            })));
+        }
+    };
+
+    // 3.5 TACHADO OPTIMISTA EN LOTE (BATCH)
+    const tacharProductos = async (lineIds: string[], currentState: KDSItemStatus) => {
+        if (lineIds.length === 0) return;
+        
+        const nextState: KDSItemStatus = currentState === 'pendiente' ? 'terminado' : 'pendiente';
+        const completedAt = nextState === 'terminado' ? new Date().toISOString() : null;
+
+        setOrders(prev => prev.map(o => ({
+            ...o,
+            lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? { ...l, estado: nextState, completed_at: completedAt } : l)
+        })));
+
+        const { error } = await supabase
+            .from('kds_order_lines')
+            .update({ estado: nextState, completed_at: completedAt })
+            .in('id', lineIds);
+
+        if (error) {
+            setOrders(prev => prev.map(o => ({
+                ...o,
+                lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? {
                     ...l, estado: currentState, completed_at: currentState === 'terminado' ? new Date().toISOString() : null
                 } : l)
             })));
@@ -146,5 +173,5 @@ export function useKDS() {
         }
     };
 
-    return { orders, loading, isOffline, tacharProducto, completarComanda, recuperarComanda, refresh: fetchActiveOrders };
+    return { orders, loading, isOffline, tacharProducto, tacharProductos, completarComanda, recuperarComanda, refresh: fetchActiveOrders };
 }

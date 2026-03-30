@@ -6,12 +6,12 @@ import { KDSOrder, KDSOrderLine, KDSItemStatus } from './types';
 
 interface CommandCardProps {
     order: KDSOrder;
-    onTacharItem: (lineId: string, currentState: KDSItemStatus) => void;
+    onTacharProductos: (lineIds: string[], currentState: KDSItemStatus) => void;
     onCompletarComanda: (orderId: string) => void;
     onRecuperarComanda: (orderId: string) => void;
 }
 
-export function CommandCard({ order, onTacharItem, onCompletarComanda, onRecuperarComanda }: CommandCardProps) {
+export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRecuperarComanda }: CommandCardProps) {
     const [elapsed, setElapsed] = useState<number>(0);
     const isCompleted = order.estado === 'completada';
 
@@ -67,12 +67,32 @@ export function CommandCard({ order, onTacharItem, onCompletarComanda, onRecuper
     const orderTime = new Date(effectiveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const isFullyDone = (order.lineas?.length || 0) > 0 && order.lineas?.every(l => l.estado === 'terminado' || l.estado === 'cancelado');
 
+    // Agrupamiento de líneas iguales (mismo nombre, notas y estado)
+    const groupedLines = (order.lineas || []).reduce((acc, line) => {
+        const key = `${line.producto_nombre}_${line.notas || ''}_${line.estado}`;
+        if (!acc[key]) {
+            acc[key] = {
+                ids: [line.id],
+                producto_nombre: line.producto_nombre,
+                notas: line.notas,
+                estado: line.estado,
+                cantidad: 1
+            };
+        } else {
+            acc[key].ids.push(line.id);
+            acc[key].cantidad++;
+        }
+        return acc;
+    }, {} as Record<string, { ids: string[]; producto_nombre: string; notas: string | null; estado: KDSItemStatus; cantidad: number }>);
+
+    const groupedArray = Object.values(groupedLines);
+
     return (
-        <div className={`flex flex-col rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 border-2 border-white/90 ${isCompleted
-                ? 'bg-slate-800 opacity-60'
+        <div className={`flex flex-col rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 border-2 border-white/90 bg-[url('/icons/comandero.png')] bg-cover bg-center ${isCompleted
+                ? 'opacity-60'
                 : isFullyDone
-                    ? 'bg-green-50/30'
-                    : 'bg-slate-800/40'
+                    ? 'opacity-90'
+                    : ''
             }`}>
 
             {/* Cabecera */}
@@ -118,42 +138,54 @@ export function CommandCard({ order, onTacharItem, onCompletarComanda, onRecuper
 
             {/* Lista de Líneas */}
             <div className="flex-1 p-3 space-y-2 overflow-y-auto max-h-[450px] custom-scrollbar">
-                {order.lineas?.map((line) => (
+                {groupedArray.map((group) => (
                     <div
-                        key={line.id}
-                        onClick={() => !isCompleted && line.estado !== 'cancelado' && onTacharItem(line.id, line.estado)}
-                        className={`group relative flex items-center p-3 rounded-2xl select-none transition-all duration-200 shadow-[0_4px_20px_rgba(0,0,0,0.12)] ${isCompleted
-                                ? 'opacity-40 cursor-default'
-                                : line.estado === 'terminado'
-                                    ? 'bg-green-500/20 grayscale-[0.5] cursor-pointer'
-                                    : line.estado === 'cancelado'
-                                        ? 'opacity-60 cursor-not-allowed'
-                                        : 'bg-slate-700/40 hover:bg-slate-700/60 cursor-pointer active:scale-[0.98]'
+                        key={group.ids.join(',')}
+                        onClick={() => !isCompleted && group.estado !== 'cancelado' && onTacharProductos(group.ids, group.estado)}
+                        className={`group relative flex items-center p-3 sm:p-4 rounded-xl select-none transition-all duration-200 shadow-md border ${isCompleted
+                                ? 'opacity-40 cursor-default bg-white/50 border-gray-300'
+                                : group.estado === 'terminado'
+                                    ? 'bg-green-100/90 grayscale-[0.5] cursor-pointer border-green-300'
+                                    : group.estado === 'cancelado'
+                                        ? 'bg-white/50 opacity-60 cursor-not-allowed border-gray-300'
+                                        : 'bg-white/95 hover:bg-white cursor-pointer active:scale-[0.98] border-gray-200'
                             }`}
                     >
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300 ${isCompleted ? 'bg-slate-600 text-slate-400' :
-                                line.estado === 'terminado' ? 'bg-green-500 text-white scale-110' :
-                                    line.estado === 'cancelado' ? 'bg-slate-400 text-white' :
-                                        'bg-slate-800/80 text-slate-400 border border-slate-700'
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl transition-all duration-300 ${isCompleted ? 'bg-slate-200 text-slate-400' :
+                                group.estado === 'terminado' ? 'bg-green-500 text-white scale-110' :
+                                    group.estado === 'cancelado' ? 'bg-slate-300 text-slate-500' :
+                                        'bg-slate-100 text-slate-400 border border-slate-300'
                             }`}>
-                            {line.estado === 'cancelado' ? <X size={18} strokeWidth={3} /> : <CheckCircle size={18} strokeWidth={line.estado === 'terminado' ? 3 : 2} />}
+                            {group.estado === 'cancelado' ? <X size={20} strokeWidth={3} /> : <CheckCircle size={20} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
                         </div>
 
-                        <div className="ml-3 flex-1 min-w-0">
-                            <span className={`text-sm md:text-base font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-500 line-through' :
-                                    line.estado === 'terminado' ? 'text-green-300/60 line-through decoration-2' :
-                                        line.estado === 'cancelado' ? 'text-slate-500 line-through decoration-slate-500 decoration-2' :
-                                            'text-slate-100'
-                                }`}>
-                                {line.producto_nombre}
-                            </span>
+                        <div className="ml-3 sm:ml-4 flex-1 min-w-0 flex items-center justify-between">
+                            <div className="flex flex-col pr-2 min-w-0">
+                                <span className={`text-[15px] sm:text-[17px] font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-500 line-through' :
+                                        group.estado === 'terminado' ? 'text-green-800/60 line-through decoration-2' :
+                                            group.estado === 'cancelado' ? 'text-slate-500 line-through decoration-slate-500 decoration-2' :
+                                                'text-slate-900'
+                                    }`}>
+                                    {group.producto_nombre}
+                                </span>
 
-                            {line.notas && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg italic ${line.estado === 'cancelado' || isCompleted ? 'text-slate-500' : 'text-amber-500'
-                                        }`}>
-                                        "{line.notas}"
-                                    </span>
+                                {group.notas && (
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <span className={`text-[11px] font-bold px-2 py-0.5 bg-amber-100 border border-amber-200 rounded-lg italic ${group.estado === 'cancelado' || isCompleted ? 'text-slate-500 border-slate-200 bg-slate-100' : 'text-amber-800'
+                                            }`}>
+                                            "{group.notas}"
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Mostramos el multiplicador bien grande */}
+                            {group.cantidad > 0 && (
+                                <div className={`shrink-0 flex items-center justify-center rounded-lg px-2 py-1 border-2 min-w-[2.5rem] ${
+                                    group.estado === 'terminado' ? 'border-green-300 text-green-700 bg-green-50' : 
+                                    'border-slate-800 text-slate-900 bg-slate-100'
+                                }`}>
+                                    <span className="text-xl sm:text-2xl font-black">{group.cantidad}</span>
                                 </div>
                             )}
                         </div>
