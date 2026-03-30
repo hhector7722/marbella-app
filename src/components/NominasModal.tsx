@@ -80,6 +80,10 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             for (const row of edData ?? []) {
                 if (row.storage_path && !seen.has(row.storage_path)) {
                     seen.add(row.storage_path);
+                    
+                    // Los documentos antiguos de nóminas se guardaban en el bucket 'nominas' con rutas como '01/2026/febrero_...'
+                    const isLegacyBucket = /^\d{2}\/\d{4}\//.test(row.storage_path);
+                    
                     merged.push({
                         id: row.id,
                         user_id: row.user_id,
@@ -88,7 +92,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                         filename: row.filename ?? '',
                         storage_path: row.storage_path,
                         created_at: row.created_at,
-                        bucket: 'employee-documents'
+                        bucket: isLegacyBucket ? 'nominas' : 'employee-documents'
                     });
                 }
             }
