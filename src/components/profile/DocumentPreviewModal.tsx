@@ -22,6 +22,11 @@ export default function DocumentPreviewModal({
     onDownload
 }: DocumentPreviewModalProps) {
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -40,7 +45,12 @@ export default function DocumentPreviewModal({
 
     if (!isOpen || !fileUrl) return null;
 
-    const previewUrl = isPDF ? `${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit` : fileUrl;
+    // URL para ordenador (Visor nativo con parámetros de ajuste)
+    const desktopPreviewUrl = isPDF ? `${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit` : fileUrl;
+    // URL para móviles (Google Docs Viewer procesa el PDF como imagen, perfecto para iOS Safari)
+    const mobilePreviewUrl = isPDF ? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true` : fileUrl;
+    
+    const finalPreviewUrl = isMobile && isPDF ? mobilePreviewUrl : desktopPreviewUrl;
 
     return (
         <div 
@@ -92,22 +102,14 @@ export default function DocumentPreviewModal({
                         </div>
                     )}
 
-                    {/* Contenedor que ocupa todo el espacio del modal (que ahora es estrecho) */}
+                    {/* Contenedor que ocupa todo el espacio del modal */}
                     <div className="w-full relative shadow-[0_0_40px_rgba(0,0,0,0.15)] bg-white origin-top">
                         {isPDF ? (
                             <div className="w-full aspect-[1/1.414] overflow-hidden bg-white relative">
-                                {/* HACK: Hacemos el iframe 4 veces más grande y lo escalamos al 25%. 
-                                    Esto obliga a los navegadores móviles (iOS Safari) a renderizar el PDF alejado 
-                                    y asegura un visor tipo miniatura perfecto en todos los dispositivos. */}
                                 <iframe 
-                                    src={previewUrl}
-                                    className="absolute top-0 left-0 border-none origin-top-left"
-                                    style={{ 
-                                        width: '400%', 
-                                        height: '400%', 
-                                        transform: 'scale(0.25)', 
-                                        pointerEvents: 'none' 
-                                    }}
+                                    src={finalPreviewUrl}
+                                    className="absolute inset-0 w-full h-full border-none"
+                                    style={{ pointerEvents: 'none' }}
                                     onLoad={() => setIsLoaded(true)}
                                     title={fileName}
                                 />
@@ -116,7 +118,7 @@ export default function DocumentPreviewModal({
                             </div>
                         ) : (
                             <img 
-                                src={previewUrl}
+                                src={finalPreviewUrl}
                                 alt={fileName}
                                 className="w-full h-auto object-contain p-2"
                                 onLoad={() => setIsLoaded(true)}

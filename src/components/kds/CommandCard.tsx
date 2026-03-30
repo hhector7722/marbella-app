@@ -136,7 +136,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             )}
 
             {/* Lista de Líneas */}
-            <div className="flex-1 p-1.5 space-y-1 overflow-y-auto max-h-[160px] sm:max-h-[200px] custom-scrollbar">
+            <div className="flex-1 p-1.5 space-y-1">
                 {groupedArray.map((group) => (
                     <div
                         key={group.ids.join(',')}

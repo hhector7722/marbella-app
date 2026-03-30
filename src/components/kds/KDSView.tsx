@@ -174,7 +174,7 @@ export default function KDSView() {
                                 />
                                 
                                 <div 
-                                    className="px-6 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2"
+                                    className="px-6 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2 items-start"
                                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                                 >
                                     {row.map(order => (
