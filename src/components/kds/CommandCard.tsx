@@ -96,30 +96,30 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             }`}
             style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '8px solid #cbd5e1' }}
         >
-            {/* Cabecera Transparente sobre papel blanco */}
-            <div className={`px-3 pb-1.5 flex justify-between items-start transition-colors duration-500 border-b border-slate-100 relative font-black`}>
+            {/* Cabecera Coloreada con el indicador */}
+            <div className={`px-3 pb-1.5 flex justify-between items-start transition-colors duration-500 relative font-black ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
                 {isCompleted && (
-                    <div className="absolute top-0 right-3 bg-slate-200 px-1.5 py-0.5 rounded-b-md text-[7px] font-black uppercase tracking-widest text-slate-500">
+                    <div className="absolute top-0 right-3 bg-white/50 px-1.5 py-0.5 rounded-b-md text-[7px] font-black uppercase tracking-widest text-slate-700">
                         FINALIZADA
                     </div>
                 )}
 
-                <div className="flex items-center gap-2 w-full pt-0.5">
-                    {/* Mesa */}
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white flex items-center justify-center shrink-0 shadow-sm ${getIndicatorColor()} text-white mt-0.5`}>
+                <div className="flex items-center gap-3 w-full pt-1.5">
+                    {/* Mesa: Círculo Invertido (Fondo Blanco) */}
+                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-slate-900`}>
                         <span className="text-base sm:text-lg font-black tracking-tighter uppercase tabular-nums">
                             {order.mesa || '--'}
                         </span>
                     </div>
 
-                    {/* Información y tiempo */}
+                    {/* Información y tiempo: TAMAÑO AUMENTADO */}
                     <div className="flex flex-col items-end flex-1 pr-1">
-                        <div className="flex items-center gap-1 text-right w-full justify-end text-slate-700">
-                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-90 truncate">
+                        <div className="flex items-center gap-1 text-right w-full justify-end opacity-95">
+                            <span className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest truncate">
                                 {orderTime} • HACE {formatElapsed(elapsed)}
                             </span>
                         </div>
-                        <div className="text-[7px] sm:text-[8px] font-mono opacity-60 mt-0.5 uppercase tracking-widest text-slate-500">
+                        <div className="text-[9px] sm:text-[10px] font-mono font-bold mt-0.5 uppercase tracking-widest opacity-80">
                             TK #{order.origen_referencia?.slice(-5) || '-----'}
                         </div>
                     </div>
@@ -141,26 +141,30 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     <div
                         key={group.ids.join(',')}
                         onClick={() => !isCompleted && group.estado !== 'cancelado' && onTacharProductos(group.ids, group.estado)}
-                        className={`group relative flex items-center p-2 sm:p-2.5 rounded-lg select-none transition-all duration-200 shadow-sm border ${isCompleted
-                                ? 'opacity-40 cursor-default bg-white/50 border-gray-300'
+                        className={`group relative flex items-center p-1.5 sm:p-2 select-none transition-all duration-200 border-b border-dashed border-slate-200/50 last:border-none ${isCompleted
+                                ? 'opacity-40 cursor-default'
                                 : group.estado === 'terminado'
-                                    ? 'bg-green-100/90 grayscale-[0.5] cursor-pointer border-green-300'
+                                    ? 'hover:bg-slate-50/50 cursor-pointer opacity-70'
                                     : group.estado === 'cancelado'
-                                        ? 'bg-white/50 opacity-60 cursor-not-allowed border-gray-300'
-                                        : 'bg-white/95 hover:bg-white cursor-pointer active:scale-[0.98] border-gray-200'
+                                        ? 'opacity-60 cursor-not-allowed rounded-lg'
+                                        : 'hover:bg-slate-50/50 cursor-pointer active:scale-[0.98]'
                             }`}
                     >
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl transition-all duration-300 ${isCompleted ? 'bg-slate-200 text-slate-400' :
-                                group.estado === 'terminado' ? 'bg-green-500 text-white scale-110' :
-                                    group.estado === 'cancelado' ? 'bg-slate-300 text-slate-500' :
-                                        'bg-slate-100 text-slate-400 border border-slate-300'
-                            }`}>
-                            {group.estado === 'cancelado' ? <X size={20} strokeWidth={3} /> : <CheckCircle size={20} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
-                        </div>
+                        {/* Mostrar tick solo si NO está pendiente */}
+                        {group.estado !== 'pendiente' && (
+                            <div className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center rounded-xl transition-all duration-300 mr-2 ${isCompleted ? 'bg-slate-200 text-slate-400' :
+                                    group.estado === 'terminado' ? 'bg-green-500 text-white scale-110' :
+                                        group.estado === 'cancelado' ? 'bg-slate-300 text-slate-500' :
+                                            'bg-slate-100 text-slate-400 border border-slate-300'
+                                }`}>
+                                {group.estado === 'cancelado' ? <X size={20} strokeWidth={3} /> : <CheckCircle size={20} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
+                            </div>
+                        )}
 
-                        <div className="ml-2 flex-1 min-w-0 flex items-center justify-between pointer-events-none">
+                        <div className="flex-1 min-w-0 flex items-center justify-between pointer-events-none">
                             <div className="flex flex-col pr-1 min-w-0">
-                                <span className={`text-[11px] sm:text-[12px] leading-tight font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                                {/* TEXTO DEL PRODUCTO MUCHO MÁS PEQUEÑO */}
+                                <span className={`text-[10px] sm:text-[11px] leading-tight font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
                                         group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
                                             group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
                                                 'text-slate-800'
@@ -192,20 +196,20 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 ))}
             </div>
 
-            <div className="p-3">
+            <div className="p-2 border-t border-slate-100">
                 {isCompleted ? (
                     <button
                         onClick={() => onRecuperarComanda(order.id)}
-                        className="w-full py-3.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 shadow-lg active:translate-y-1"
+                        className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 active:translate-y-1"
                     >
                         Restaurar
                     </button>
                 ) : (
                     <button
                         onClick={() => onCompletarComanda(order.id)}
-                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 active:translate-y-1 ${isFullyDone
-                                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-900/20'
-                                : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700/80'
+                        className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 active:translate-y-1 ${isFullyDone
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 shadow-sm'
+                                : 'bg-slate-100/80 text-slate-400 hover:bg-slate-200/80'
                             }`}
                     >
                         Finalizar
