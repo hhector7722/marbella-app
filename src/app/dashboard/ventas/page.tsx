@@ -65,7 +65,7 @@ export default function VentasPage() {
         if (tab && valid.includes(tab)) {
             setActiveTab(tab);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Filtros de fecha (Arquitectura calcada de HistoryPage)
@@ -691,8 +691,8 @@ export default function VentasPage() {
                                                                 </tr>
                                                             )}
                                                         </React.Fragment>
-                                                            );
-                                                        })}
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
