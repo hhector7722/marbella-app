@@ -175,6 +175,16 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
             if (error) throw error;
             
+            if (data.size === 0) {
+                toast.error('El archivo está vacío o corrupto. Se ha eliminado el residuo.');
+                if (row.bucket === 'employee-documents') {
+                    const { deleteEmployeeDocumentByTipo } = await import('@/app/actions/profile');
+                    await deleteEmployeeDocumentByTipo(row.id, row.storage_path);
+                    fetchNominas();
+                }
+                return;
+            }
+
             // Forzar el tipo MIME correcto para PDFs para evitar que el navegador lo descargue en lugar de mostrarlo
             const isPdf = row.filename.toLowerCase().endsWith('.pdf') || row.storage_path.toLowerCase().endsWith('.pdf');
             const fileBlob = new Blob([data], { type: isPdf ? 'application/pdf' : data.type });

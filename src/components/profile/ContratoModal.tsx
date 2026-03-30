@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
+import { X, Download, FileText, Plus, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -94,10 +94,21 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 .from('employee-documents')
                 .download(doc.storage_path);
             if (error) throw error;
-            const blobUrl = URL.createObjectURL(data);
+            
+            if (data.size === 0) {
+                toast.error('El archivo está vacío o corrupto. Se ha eliminado el residuo.');
+                await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path);
+                fetchDocs();
+                return;
+            }
+
+            const isPdf = doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf');
+            const fileBlob = new Blob([data], { type: isPdf ? 'application/pdf' : data.type });
+
+            const blobUrl = URL.createObjectURL(fileBlob);
             setPreviewUrl(blobUrl);
             setPreviewFileName(doc.filename || 'Contrato');
-            setPreviewIsPDF(doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf'));
+            setPreviewIsPDF(isPdf);
             setIsPreviewOpen(true);
         } catch {
             toast.error('Error al previsualizar el contrato');
@@ -227,25 +238,39 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                             )}
                         </div>
                     ) : (
-                        <ul className="space-y-2">
+                        <ul className="space-y-1">
                             {docs.map((row) => (
-                                <li key={row.id} className="min-h-[60px] flex items-center justify-between gap-3 p-4 rounded-2xl border border-zinc-100 bg-white hover:bg-zinc-50/80">
-                                    <p className="font-semibold text-zinc-800 truncate flex-1 min-w-0">{row.filename || 'Contrato'}</p>
-                                    <div className="flex items-center gap-2 shrink-0">
+                                <li key={row.id} className="min-h-[56px] flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-colors hover:bg-zinc-50 border border-transparent hover:border-zinc-100">
+                                    <div className="flex-1 min-w-0 pr-4">
+                                        <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{row.filename.replace('.pdf', '') || 'Contrato'}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
                                         <button 
                                             type="button" 
                                             onClick={() => handleView(row)} 
                                             disabled={!!isPreparingPreview || !!downloadingId} 
-                                            className="min-h-[48px] px-4 flex items-center justify-center rounded-xl border border-[#36606F] text-[#36606F] hover:bg-[#36606F]/5 font-black text-[10px] uppercase tracking-widest disabled:opacity-60 transition-colors"
+                                            className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
+                                            title="Ver documento"
                                         >
-                                            {isPreparingPreview === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : "Ver"}
+                                            {isPreparingPreview === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Eye size={18} strokeWidth={2} />}
                                         </button>
-                                        <button type="button" onClick={() => handleDownload(row)} disabled={!!downloadingId || !!isPreparingPreview} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60">
-                                            {downloadingId === row.id ? <LoadingSpinner className="w-5 h-5 text-white" /> : <Download size={22} strokeWidth={2.5} />}
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleDownload(row)} 
+                                            disabled={!!downloadingId || !!isPreparingPreview} 
+                                            className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
+                                            title="Descargar"
+                                        >
+                                            {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Download size={18} strokeWidth={2} />}
                                         </button>
                                         {isManager && (
-                                            <button type="button" onClick={() => handleDelete(row)} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-500 hover:bg-rose-50 hover:text-rose-500 transition-colors">
-                                                <Trash2 size={20} strokeWidth={2.5} />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleDelete(row)} 
+                                                className="p-2.5 flex items-center justify-center rounded-lg text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-1"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={16} strokeWidth={2} />
                                             </button>
                                         )}
                                     </div>
