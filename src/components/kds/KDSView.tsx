@@ -126,19 +126,26 @@ export default function KDSView() {
 
             {isOffline && <div className="absolute inset-0 bg-red-900/10 pointer-events-none z-[90] backdrop-blur-[1px]" />}
 
-            <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-hidden flex flex-col bg-[#0f1522] relative">
+
+                {/* THE METAL RAIL (Comandero) OVERLAY */}
+                {visibleOrders.length > 0 && (
+                    <div 
+                        className="w-full h-12 sm:h-14 lg:h-16 bg-[url('/icons/comandero.png')] bg-repeat-x bg-[length:auto_100%] shrink-0 z-30 shadow-[0_10px_20px_rgba(0,0,0,0.5)] border-b border-black/40" 
+                    />
+                )}
 
                 {/* GRID DE COMANDAS COMPULSIVO */}
-                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 pb-12 custom-scrollbar">
                     {visibleOrders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700 rounded-3xl bg-slate-800/30">
+                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl">
                             {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
                             <h3 className="text-lg font-bold text-slate-400 uppercase tracking-tighter">
                                 {showCompleted ? 'Sin comandas finalizadas hoy' : 'No hay comandas pendientes'}
                             </h3>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 gap-y-10 relative -mt-4 z-10 pt-4">
                             {sortedOrders.map(order => (
                                 <CommandCard
                                     key={order.id}

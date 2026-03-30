@@ -52,16 +52,16 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
     const getHeaderColor = () => {
         if (isCompleted) return 'bg-slate-700 border-slate-800';
-        if (elapsed >= 15) return 'bg-[#cf6a6a] border-[#b55b5b]';
-        if (elapsed >= 10) return 'bg-amber-600 border-amber-700';
-        return 'bg-[#407080] border-[#36606F]';
+        if (elapsed >= 15) return 'bg-[#b84a4a] border-[#a13f3f]';
+        if (elapsed >= 10) return 'bg-[#cf6a6a] border-[#b55b5b]';
+        return 'bg-[#d65f5f] border-[#b55b5b]'; // Rojo similar al pantallazo
     };
 
     const getIndicatorColor = () => {
         if (isCompleted) return 'bg-slate-600';
-        if (elapsed >= 15) return 'bg-red-700';
-        if (elapsed >= 10) return 'bg-amber-500';
-        return 'bg-emerald-500';
+        if (elapsed >= 15) return 'bg-[#a33b3b]';
+        if (elapsed >= 10) return 'bg-[#c25a5a]';
+        return 'bg-[#cc5151]';
     };
 
     const orderTime = new Date(effectiveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -88,47 +88,45 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     const groupedArray = Object.values(groupedLines);
 
     return (
-        <div className={`flex flex-col rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 border-2 border-white/90 bg-[url('/icons/comandero.png')] bg-cover bg-center ${isCompleted
+        <div className={`relative flex flex-col rounded-b-2xl rounded-t-sm overflow-hidden shadow-2xl transition-all duration-300 border border-slate-700/50 bg-[#1e293b] mt-4 ${isCompleted
                 ? 'opacity-60'
                 : isFullyDone
                     ? 'opacity-90'
                     : ''
             }`}>
 
-            {/* Cabecera */}
-            <div className={`p-4 text-white ${getHeaderColor()} flex justify-between items-center transition-colors duration-500 border-b relative font-black`}>
+            {/* Cabecera Tipo Ticket */}
+            <div className={`p-3 text-white ${getHeaderColor()} flex justify-between items-center transition-colors duration-500 border-b relative font-black`}>
                 {isCompleted && (
                     <div className="absolute top-0 right-0 bg-slate-900/50 px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-widest">
                         FINALIZADA
                     </div>
                 )}
 
-                <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-full border-2 border-white flex items-center justify-center shadow-lg shrink-0 ${getIndicatorColor()}`}>
-                        <span className="text-xl font-black tracking-tighter uppercase tabular-nums">
+                <div className="flex items-center gap-3 w-full">
+                    {/* Mesa - Exactamente como la foto (Circulo con numero) */}
+                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-white/90 flex items-center justify-center shrink-0 ${getIndicatorColor()}`}>
+                        <span className="text-sm sm:text-base font-black tracking-tighter uppercase tabular-nums">
                             {order.mesa || '--'}
                         </span>
                     </div>
-                </div>
 
-                {/* Información a la derecha */}
-                <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[11px] uppercase tracking-widest opacity-90">
-                            {orderTime}
-                        </span>
-                        <span className="text-[11px] uppercase tracking-widest opacity-90">
-                            • hace {formatElapsed(elapsed)}
-                        </span>
-                    </div>
-                    <div className="text-[10px] font-mono opacity-80 mt-0.5">
-                        TICKET #{order.origen_referencia?.slice(-4) || '----'}
+                    {/* Información y tiempo */}
+                    <div className="flex flex-col items-end flex-1 pr-1">
+                        <div className="flex items-center gap-1.5 text-right w-full justify-end">
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-90 truncate">
+                                {orderTime} • HACE {formatElapsed(elapsed)}
+                            </span>
+                        </div>
+                        <div className="text-[7px] sm:text-[8px] font-mono opacity-80 mt-0.5 uppercase tracking-widest text-[#ffebeb]">
+                            TICKET #{order.origen_referencia?.slice(-5) || '-----'}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {order.notas_comanda && (
-                <div className={`${isCompleted ? 'bg-slate-700/50' : 'bg-amber-100/10'} px-4 py-2.5 flex items-start gap-2 border-b border-amber-200/20`}>
+                <div className={`${isCompleted ? 'bg-slate-700/50' : 'bg-amber-100/10'} px-4 py-2 flex items-start gap-2 border-b border-white/10`}>
                     <AlertTriangle size={16} className={`${isCompleted ? 'text-slate-400' : 'text-amber-500'} mt-0.5 shrink-0`} />
                     <p className={`text-xs font-black leading-tight uppercase tracking-tight ${isCompleted ? 'text-slate-400' : 'text-amber-200'}`}>
                         {order.notas_comanda}
