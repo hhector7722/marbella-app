@@ -163,12 +163,16 @@ export default function KDSView() {
                         </div>
                     ) : (
                         orderRows.map((row, rowIdx) => (
-                            <div key={rowIdx} className="w-full relative pt-6 sm:pt-10 mb-8 sm:mb-12">
-                                {/* THE METAL RAIL (Comandero) PER ROW */}
-                                <div className="absolute top-0 left-0 w-full h-12 md:h-16 bg-[url('/icons/comandero.png')] bg-repeat-x bg-[length:auto_100%] z-20 shadow-md border-b border-black/40" />
+                            <div key={rowIdx} className="w-full relative pt-5 sm:pt-6 mb-2 sm:mb-4">
+                                {/* THE METAL RAIL (Comandero) PER ROW STRETCHED */}
+                                <img 
+                                    src="/icons/comandero.png" 
+                                    className="absolute top-0 left-0 w-full h-8 sm:h-10 z-20 shadow-lg object-fill border-b border-slate-900/50" 
+                                    alt="Comandero rail"
+                                />
                                 
                                 <div 
-                                    className="px-4 lg:px-6 relative z-10 w-full grid gap-4 sm:gap-6 -mt-2 sm:-mt-4"
+                                    className="px-2 lg:px-4 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2"
                                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                                 >
                                     {row.map(order => (

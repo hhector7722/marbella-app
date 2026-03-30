@@ -95,24 +95,20 @@ export default function DocumentPreviewModal({
                         </div>
                     )}
 
-                    {/* Contenedor reducido drásticamente para simular el zoom del 30% solicitado en todas las pantallas */}
-                    <div className="w-[45%] md:w-[25%] flex flex-col bg-white shadow-2xl origin-top my-8 transition-transform duration-500">
+                    {/* Contenedor que ocupa todo el espacio disponible, dejando que el motor PDF aplique el zoom alejado */}
+                    <div className="w-full h-full flex flex-col bg-white shadow-2xl origin-top">
                         {isPDF ? (
-                            <div className="relative w-full aspect-[1/1.414]">
-                                <iframe 
-                                    src={previewUrl}
-                                    className="absolute inset-0 w-full h-full border-none"
-                                    onLoad={() => setIsLoaded(true)}
-                                    title={fileName}
-                                />
-                                {/* Overlay transparente para evitar interacciones accidentales con el iframe en modo miniatura */}
-                                <div className="absolute inset-0 z-10" />
-                            </div>
+                            <iframe 
+                                src={previewUrl.includes('#') ? previewUrl.replace('#toolbar=0&navpanes=0&scrollbar=0&view=Fit', '#toolbar=0&navpanes=0&scrollbar=0&zoom=30') : `${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&zoom=30`}
+                                className="w-full h-full border-none min-h-[50vh] md:min-h-[70vh]"
+                                onLoad={() => setIsLoaded(true)}
+                                title={fileName}
+                            />
                         ) : (
                             <img 
                                 src={previewUrl}
                                 alt={fileName}
-                                className="w-full h-auto object-contain"
+                                className="w-full h-full object-contain p-4"
                                 onLoad={() => setIsLoaded(true)}
                             />
                         )}

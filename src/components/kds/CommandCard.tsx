@@ -94,54 +94,54 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     ? 'opacity-90'
                     : ''
             }`}
-            style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '10px solid #e2e8f0' }}
+            style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '8px solid #cbd5e1' }}
         >
             {/* Cabecera Transparente sobre papel blanco */}
-            <div className={`px-4 pb-2 flex justify-between items-start transition-colors duration-500 border-b border-slate-100 relative font-black`}>
+            <div className={`px-3 pb-1.5 flex justify-between items-start transition-colors duration-500 border-b border-slate-100 relative font-black`}>
                 {isCompleted && (
-                    <div className="absolute top-0 right-4 bg-slate-200 px-2 py-0.5 rounded-b-md text-[8px] font-black uppercase tracking-widest text-slate-500">
+                    <div className="absolute top-0 right-3 bg-slate-200 px-1.5 py-0.5 rounded-b-md text-[7px] font-black uppercase tracking-widest text-slate-500">
                         FINALIZADA
                     </div>
                 )}
 
-                <div className="flex items-center gap-4 w-full pt-1">
-                    {/* Mesa - Exactamente como la foto (Circulo con numero) - ¡MUCHO MÁS GRANDE! */}
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-[3px] border-white flex items-center justify-center shrink-0 shadow-md ${getIndicatorColor()} text-white`}>
-                        <span className="text-xl sm:text-2xl font-black tracking-tighter uppercase tabular-nums">
+                <div className="flex items-center gap-2 w-full pt-0.5">
+                    {/* Mesa */}
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white flex items-center justify-center shrink-0 shadow-sm ${getIndicatorColor()} text-white mt-0.5`}>
+                        <span className="text-base sm:text-lg font-black tracking-tighter uppercase tabular-nums">
                             {order.mesa || '--'}
                         </span>
                     </div>
 
-                    {/* Información y tiempo (Texto Oscuro por el fondo blanco) */}
+                    {/* Información y tiempo */}
                     <div className="flex flex-col items-end flex-1 pr-1">
-                        <div className="flex items-center gap-1.5 text-right w-full justify-end text-slate-700">
-                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest opacity-90 truncate">
+                        <div className="flex items-center gap-1 text-right w-full justify-end text-slate-700">
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-90 truncate">
                                 {orderTime} • HACE {formatElapsed(elapsed)}
                             </span>
                         </div>
-                        <div className="text-[8px] sm:text-[9px] font-mono opacity-60 mt-0.5 uppercase tracking-widest text-slate-500">
-                            TICKET #{order.origen_referencia?.slice(-5) || '-----'}
+                        <div className="text-[7px] sm:text-[8px] font-mono opacity-60 mt-0.5 uppercase tracking-widest text-slate-500">
+                            TK #{order.origen_referencia?.slice(-5) || '-----'}
                         </div>
                     </div>
                 </div>
             </div>
 
             {order.notas_comanda && (
-                <div className={`px-4 py-2 flex items-start gap-2 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-red-50'}`}>
-                    <AlertTriangle size={16} className={`${isCompleted ? 'text-slate-400' : 'text-red-500'} mt-0.5 shrink-0`} />
-                    <p className={`text-xs font-black leading-tight uppercase tracking-tight ${isCompleted ? 'text-slate-500' : 'text-red-700'}`}>
+                <div className={`px-3 py-1.5 flex items-start gap-1.5 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-red-50'}`}>
+                    <AlertTriangle size={14} className={`${isCompleted ? 'text-slate-400' : 'text-red-500'} mt-0.5 shrink-0`} />
+                    <p className={`text-[10px] font-black leading-tight uppercase tracking-tight ${isCompleted ? 'text-slate-500' : 'text-red-700'}`}>
                         {order.notas_comanda}
                     </p>
                 </div>
             )}
 
             {/* Lista de Líneas */}
-            <div className="flex-1 p-3 space-y-2 overflow-y-auto max-h-[450px] custom-scrollbar">
+            <div className="flex-1 p-1.5 space-y-1 overflow-y-auto max-h-[160px] sm:max-h-[200px] custom-scrollbar">
                 {groupedArray.map((group) => (
                     <div
                         key={group.ids.join(',')}
                         onClick={() => !isCompleted && group.estado !== 'cancelado' && onTacharProductos(group.ids, group.estado)}
-                        className={`group relative flex items-center p-3 sm:p-4 rounded-xl select-none transition-all duration-200 shadow-md border ${isCompleted
+                        className={`group relative flex items-center p-2 sm:p-2.5 rounded-lg select-none transition-all duration-200 shadow-sm border ${isCompleted
                                 ? 'opacity-40 cursor-default bg-white/50 border-gray-300'
                                 : group.estado === 'terminado'
                                     ? 'bg-green-100/90 grayscale-[0.5] cursor-pointer border-green-300'
@@ -158,9 +158,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                             {group.estado === 'cancelado' ? <X size={20} strokeWidth={3} /> : <CheckCircle size={20} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
                         </div>
 
-                        <div className="ml-3 sm:ml-4 flex-1 min-w-0 flex items-center justify-between">
-                            <div className="flex flex-col pr-2 min-w-0">
-                                <span className={`text-[15px] sm:text-[17px] font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                        <div className="ml-2 flex-1 min-w-0 flex items-center justify-between pointer-events-none">
+                            <div className="flex flex-col pr-1 min-w-0">
+                                <span className={`text-[11px] sm:text-[12px] leading-tight font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
                                         group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
                                             group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
                                                 'text-slate-800'
@@ -169,8 +169,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                 </span>
 
                                 {group.notas && (
-                                    <div className="flex items-center gap-1 mt-0.5">
-                                        <span className={`text-[11px] font-bold px-2 py-0.5 bg-red-50 border border-red-100 rounded-lg italic ${group.estado === 'cancelado' || isCompleted ? 'text-slate-400 border-slate-100 bg-slate-50' : 'text-red-700'
+                                    <div className="flex items-center gap-1 mt-px">
+                                        <span className={`text-[8px] font-black px-1 py-0.5 bg-red-50 border border-red-100 rounded text-red-700 italic ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''
                                             }`}>
                                             "{group.notas}"
                                         </span>
@@ -178,13 +178,13 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                 )}
                             </div>
                             
-                            {/* Mostramos el multiplicador bien grande */}
+                            {/* Multiplicador adaptado mini */}
                             {group.cantidad > 0 && (
-                                <div className={`shrink-0 flex items-center justify-center rounded-lg px-2 py-1 border-2 min-w-[2.5rem] ${
+                                <div className={`shrink-0 flex items-center justify-center rounded px-1.5 py-0.5 border-2 min-w-[1.5rem] ${
                                     group.estado === 'terminado' ? 'border-green-200 text-green-600 bg-green-50' : 
-                                    'border-slate-800 text-slate-900 bg-slate-50 shadow-sm'
+                                    'border-slate-800 text-slate-900 bg-slate-50'
                                 }`}>
-                                    <span className="text-xl sm:text-2xl font-black">{group.cantidad}</span>
+                                    <span className="text-sm sm:text-base font-black">{group.cantidad}</span>
                                 </div>
                             )}
                         </div>
