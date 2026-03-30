@@ -27,7 +27,6 @@ export async function getDashboardData() {
         const third = parseInt(thirdDigit, 10) || 0;
         let roundedFrac = parseInt(frac2 || '0', 10) || 0;
         let roundedInt = intPart;
-
         if (third >= 5) {
             roundedFrac += 1;
             if (roundedFrac >= 100) {
@@ -60,7 +59,9 @@ export async function getDashboardData() {
                 .from('tickets_marbella')
                 .select('hora_cierre, total_documento')
                 .gte('fecha', todayStr)
-                .lte('fecha', todayStr);
+                .lte('fecha', todayStr)
+                .limit(5000); // MODIFICACIÓN: Única alteración realizada.
+
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
             (tickets || []).forEach((t: { hora_cierre?: string; total_documento?: number }) => {
                 const hour = getHourFromTicketTime(t.hora_cierre);
@@ -71,6 +72,7 @@ export async function getDashboardData() {
             return Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
         }
     })();
+
     const [
         { data: salesStats },
         salesChartDataRaw,
@@ -86,14 +88,15 @@ export async function getDashboardData() {
         supabase.from('profiles').select('*'),
         supabase.rpc('get_operational_box_status')
     ]);
-    const salesChartData = Array.isArray(salesChartDataRaw) ? salesChartDataRaw : Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
 
+    const salesChartData = Array.isArray(salesChartDataRaw) ? salesChartDataRaw : Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
 
     // --- PROCESS LABOR COST (Daily Stats) ---
     let dailyStats = null;
     if (lastClose) {
         const closeDate = new Date(lastClose.closed_at);
-        const closeDateStart = new Date(closeDate); closeDateStart.setHours(0, 0, 0, 0);
+        const closeDateStart = new Date(closeDate);
+        closeDateStart.setHours(0, 0, 0, 0);
 
         // Fetch labor cost using RPC
         const { data: laborCostData } = await supabase.rpc('get_daily_labor_cost', {
@@ -102,7 +105,6 @@ export async function getDashboardData() {
         const laborCost = laborCostData || 0;
 
         const laborPercent = lastClose.net_sales > 0 ? (laborCost / lastClose.net_sales) * 100 : 0;
-
         dailyStats = {
             date: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
             fullDate: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
@@ -140,12 +142,10 @@ export async function getDashboardData() {
                 .order('created_at', { ascending: false })
                 .order('id', { ascending: false })
                 .limit(1);
-
             if (ledgerError) throw ledgerError;
             const raw = ledgerRows?.[0]?.running_balance;
             latestLedgerSaldoCents = parseNumericToCents(raw ?? 0);
         } catch (e) {
-            // No silenciar: al fallar, dejamos difference = 0 para evitar UX incorrecta.
             console.error('Error calculando latestLedgerSaldo en getDashboardData:', e);
         }
 
@@ -173,7 +173,6 @@ export async function getDashboardData() {
     }
 
     // --- PROCESS OVERTIME (Last 60 days) ---
-    // Unificación con RPC centralizada (SSOT)
     let overtimeData: any[] = [];
     let initialPaidStatus: Record<string, boolean> = {};
 
@@ -188,21 +187,18 @@ export async function getDashboardData() {
     if (rpcError) {
         console.error("Error fetching overtime from RPC in dashboard:", rpcError);
     } else if (rpcData) {
-        // Mapeamos el formato de la RPC al formato que espera el Dashboard
-        // La RPC devuelve { weeksResult: WeeklyStats[], summary: ... }
         overtimeData = rpcData.weeksResult.map((week: any) => ({
             weekId: week.weekId,
             total: week.totalAmount,
             expanded: false,
             staff: week.staff.map((s: any) => ({
                 id: s.id,
-                name: s.name.split(' ')[0], // Solo el primer nombre como estaba antes
+                name: s.name.split(' ')[0],
                 amount: s.totalCost,
                 hours: s.overtimeHours
             }))
         }));
 
-        // Poblamos initialPaidStatus
         rpcData.weeksResult.forEach((week: any) => {
             week.staff.forEach((s: any) => {
                 initialPaidStatus[`${week.weekId}-${s.id}`] = s.isPaid;
@@ -210,8 +206,6 @@ export async function getDashboardData() {
         });
 
         // FILTRO DE SEMANA EN CURSO: Solo mostramos semanas finalizadas en el dashboard.
-        // Normalizar weekId a YYYY-MM-DD (p. ej. si la API devuelve ISO "2026-03-09T00:00:00.000Z",
-        // la comparación string a string dejaría fuera todas; con slice(0,10) comparamos solo la fecha).
         const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const toDateStr = (id: any) => typeof id === 'string' ? id.slice(0, 10) : String(id).slice(0, 10);
         overtimeData = overtimeData.filter((week: any) => toDateStr(week.weekId) < currentWeekStart);
