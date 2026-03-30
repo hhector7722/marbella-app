@@ -8,12 +8,14 @@ import { KDSOrder } from './types';
 import Image from 'next/image';
 
 function useColumns() {
-    const [cols, setCols] = useState(5);
+    const [cols, setCols] = useState(6);
     useEffect(() => {
         const update = () => {
-            if (window.innerWidth >= 1536) setCols(5);
-            else if (window.innerWidth >= 1280) setCols(4);
-            else if (window.innerWidth >= 1024) setCols(3);
+            if (window.innerWidth >= 1920) setCols(7);
+            else if (window.innerWidth >= 1536) setCols(6);
+            else if (window.innerWidth >= 1280) setCols(5);
+            else if (window.innerWidth >= 1024) setCols(4);
+            else if (window.innerWidth >= 768) setCols(3);
             else if (window.innerWidth >= 640) setCols(2);
             else setCols(1);
         };
@@ -172,7 +174,7 @@ export default function KDSView() {
                                 />
                                 
                                 <div 
-                                    className="px-2 lg:px-4 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2"
+                                    className="px-6 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2"
                                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                                 >
                                     {row.map(order => (

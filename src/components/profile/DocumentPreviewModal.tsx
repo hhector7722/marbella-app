@@ -95,20 +95,25 @@ export default function DocumentPreviewModal({
                         </div>
                     )}
 
-                    {/* Contenedor que ocupa todo el espacio disponible, dejando que el motor PDF aplique el zoom alejado */}
-                    <div className="w-full h-full flex flex-col bg-white shadow-2xl origin-top">
+                    {/* Contenedor que simula un zoom del 30% reduciendo su ancho drásticamente */}
+                    <div className="w-[85%] sm:w-[50%] md:w-[35%] lg:w-[30%] flex flex-col bg-white shadow-[0_0_40px_rgba(0,0,0,0.15)] origin-top my-4 sm:my-8 transition-transform duration-500">
                         {isPDF ? (
-                            <iframe 
-                                src={previewUrl.includes('#') ? previewUrl.replace('#toolbar=0&navpanes=0&scrollbar=0&view=Fit', '#toolbar=0&navpanes=0&scrollbar=0&zoom=30') : `${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&zoom=30`}
-                                className="w-full h-full border-none min-h-[50vh] md:min-h-[70vh]"
-                                onLoad={() => setIsLoaded(true)}
-                                title={fileName}
-                            />
+                            <div className="relative w-full aspect-[1/1.414]">
+                                <iframe 
+                                    src={previewUrl}
+                                    className="absolute inset-0 w-full h-full border-none"
+                                    onLoad={() => setIsLoaded(true)}
+                                    title={fileName}
+                                    style={{ pointerEvents: 'none' }} /* Desactiva interacción interna para que funcione como miniatura */
+                                />
+                                {/* Capa invisible protectora */}
+                                <div className="absolute inset-0 z-10" />
+                            </div>
                         ) : (
                             <img 
                                 src={previewUrl}
                                 alt={fileName}
-                                className="w-full h-full object-contain p-4"
+                                className="w-full h-auto object-contain p-2"
                                 onLoad={() => setIsLoaded(true)}
                             />
                         )}
