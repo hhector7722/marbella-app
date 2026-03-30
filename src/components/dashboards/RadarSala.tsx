@@ -11,7 +11,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   const [abierto, setAbierto] = useState(false);
 
-  // Filtramos previamente los productos válidos para no hacer cálculos con nulos
   const productosValidos = m.productos?.filter((p: any) => parseFloat(p.unidades) > 0) || [];
 
   return (
@@ -26,7 +25,7 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-1 justify-end">
           <span className="text-[11px] md:text-sm font-bold text-white flex items-center tabular-nums tracking-tight">
-            {parseFloat(m.total_importe || 0).toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
+            {parseFloat(m.total_provisional || 0).toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
           </span>
           <span className="text-[9px] md:text-[10px] font-bold flex items-center shrink-0 text-white/90">
             <Clock size={10} className="mr-0.5" /> {estado.hora}
@@ -90,15 +89,20 @@ export default function RadarSala() {
     if (isNaN(fecha.getTime())) fecha = new Date();
 
     const minutos = Math.floor((new Date().getTime() - fecha.getTime()) / 60000);
-    const matchHora = fechaString.match(/(\d{2}):(\d{2})/);
-    const hora = matchHora ? `${matchHora[1]}:${matchHora[2]}` : "--:--";
+
+    // Extracción de hora segura independientemente de la zona horaria
+    const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
     if (minutos > 45) return { color: 'bg-[#D64D5D]', texto: 'text-white', min: minutos, hora };
     if (minutos > 30) return { color: 'bg-amber-500', texto: 'text-white', min: minutos, hora };
     return { color: 'bg-[#407080]', texto: 'text-white', min: minutos, hora };
   };
 
-  const mesasOrdenadas = [...mesas].sort((a, b) => new Date(a.hora_apertura).getTime() - new Date(b.hora_apertura).getTime());
+  const mesasOrdenadas = [...mesas].sort((a, b) => {
+    const timeA = new Date(a.timestamp_tpv || a.fecha_apertura || 0).getTime();
+    const timeB = new Date(b.timestamp_tpv || b.fecha_apertura || 0).getTime();
+    return timeA - timeB;
+  });
 
   return (
     <div className="font-sans bg-white rounded-xl shadow-sm overflow-hidden">
@@ -113,7 +117,7 @@ export default function RadarSala() {
 
       <div className="p-3 md:p-6 lg:p-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 xl:gap-10">
         {mesasOrdenadas.map((m) => (
-          <TarjetaMesa key={m.id_ticket} m={m} estado={calcularEstado(m.hora_apertura)} />
+          <TarjetaMesa key={m.id_ticket} m={m} estado={calcularEstado(m.timestamp_tpv || m.fecha_apertura)} />
         ))}
         {mesas.length === 0 && (
           <div className="col-span-full text-center py-10 text-gray-400 italic">
