@@ -2,7 +2,7 @@
 
 import { X, Download, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface DocumentPreviewModalProps {
     isOpen: boolean;
@@ -22,11 +22,26 @@ export default function DocumentPreviewModal({
     onDownload
 }: DocumentPreviewModalProps) {
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+    
+    // Dimensiones base de un A4 para engañar al motor PDF de Safari (Renderizado Gigante)
+    const PDF_WIDTH = 800;
+    const PDF_HEIGHT = 1131;
 
     useEffect(() => {
-        setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    }, []);
+        if (!containerRef.current || !isOpen) return;
+        
+        const observer = new ResizeObserver((entries) => {
+            const width = entries[0].contentRect.width;
+            if (width > 0) {
+                setScale(width / PDF_WIDTH);
+            }
+        });
+        
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -44,13 +59,6 @@ export default function DocumentPreviewModal({
     }, [isOpen]);
 
     if (!isOpen || !fileUrl) return null;
-
-    // URL para ordenador (Visor nativo con parámetros de ajuste)
-    const desktopPreviewUrl = isPDF ? `${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit` : fileUrl;
-    // URL para móviles (Google Docs Viewer procesa el PDF como imagen, perfecto para iOS Safari)
-    const mobilePreviewUrl = isPDF ? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true` : fileUrl;
-    
-    const finalPreviewUrl = isMobile && isPDF ? mobilePreviewUrl : desktopPreviewUrl;
 
     return (
         <div 
@@ -102,23 +110,42 @@ export default function DocumentPreviewModal({
                         </div>
                     )}
 
-                    {/* Contenedor que ocupa todo el espacio del modal */}
-                    <div className="w-full relative shadow-[0_0_40px_rgba(0,0,0,0.15)] bg-white origin-top">
+                    {/* Contenedor Ref que mide el espacio disponible para hacer matemáticas */}
+                    <div 
+                        ref={containerRef}
+                        className="w-full relative shadow-[0_0_40px_rgba(0,0,0,0.15)] bg-white origin-top"
+                    >
                         {isPDF ? (
-                            <div className="w-full aspect-[1/1.414] overflow-hidden bg-white relative">
+                            <div 
+                                className="w-full relative overflow-hidden bg-white"
+                                style={{ paddingTop: '141.4%' /* Ratio A4 perfecto */ }}
+                            >
+                                {/* HACK DEFINITIVO: Renderizar a un tamaño fijo brutalmente grande y reducirlo vía cálculo dinámico.
+                                    Safari no podrá colapsar o auto-zoomear este iframe porque tiene píxeles fijos. */}
                                 <iframe 
-                                    src={finalPreviewUrl}
-                                    className="absolute inset-0 w-full h-full border-none"
-                                    style={{ pointerEvents: 'none' }}
+                                    src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: `${PDF_WIDTH}px`,
+                                        height: `${PDF_HEIGHT}px`,
+                                        transform: `scale(${scale})`,
+                                        transformOrigin: '0 0',
+                                        border: 'none',
+                                        pointerEvents: 'none',
+                                        backgroundColor: 'transparent'
+                                    }}
                                     onLoad={() => setIsLoaded(true)}
                                     title={fileName}
+                                    scrolling="no"
                                 />
                                 {/* Capa invisible protectora */}
                                 <div className="absolute inset-0 z-10" />
                             </div>
                         ) : (
                             <img 
-                                src={finalPreviewUrl}
+                                src={fileUrl}
                                 alt={fileName}
                                 className="w-full h-auto object-contain p-2"
                                 onLoad={() => setIsLoaded(true)}
