@@ -26,7 +26,7 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-1 justify-end">
           <span className="text-[11px] md:text-sm font-bold text-white flex items-center tabular-nums tracking-tight">
-            {parseFloat(m.total_provisional || 0).toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
+            {parseFloat(m.total_importe || 0).toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
           </span>
           <span className="text-[9px] md:text-[10px] font-bold flex items-center shrink-0 text-white/90">
             <Clock size={10} className="mr-0.5" /> {estado.hora}
@@ -98,7 +98,7 @@ export default function RadarSala() {
     return { color: 'bg-[#407080]', texto: 'text-white', min: minutos, hora };
   };
 
-  const mesasOrdenadas = [...mesas].sort((a, b) => new Date(a.fecha_apertura).getTime() - new Date(b.fecha_apertura).getTime());
+  const mesasOrdenadas = [...mesas].sort((a, b) => new Date(a.hora_apertura).getTime() - new Date(b.hora_apertura).getTime());
 
   return (
     <div className="font-sans bg-white rounded-xl shadow-sm overflow-hidden">
@@ -113,7 +113,7 @@ export default function RadarSala() {
 
       <div className="p-3 md:p-6 lg:p-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 xl:gap-10">
         {mesasOrdenadas.map((m) => (
-          <TarjetaMesa key={m.id_ticket} m={m} estado={calcularEstado(m.fecha_apertura)} />
+          <TarjetaMesa key={m.id_ticket} m={m} estado={calcularEstado(m.hora_apertura)} />
         ))}
         {mesas.length === 0 && (
           <div className="col-span-full text-center py-10 text-gray-400 italic">

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { addEmployeeDocumentByTipo, deleteEmployeeDocumentByTipo } from '@/app/actions/profile';
+import DocumentPreviewModal from '@/components/profile/DocumentPreviewModal';
 
 interface ContratoModalProps {
     isOpen: boolean;
@@ -28,6 +29,12 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
     const [docs, setDocs] = useState<DocRow[]>([]);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+
+    // Estado previsualización
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewFileName, setPreviewFileName] = useState('');
+    const [isPreparingPreview, setIsPreparingPreview] = useState<string | null>(null);
 
     const fetchDocs = async () => {
         setLoading(true);
@@ -57,21 +64,45 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
         fetchDocs();
     }, [isOpen, userId]);
 
-    const handleOpen = async (doc: DocRow) => {
+    const handleDownload = async (doc: DocRow) => {
         setDownloadingId(doc.id);
         try {
             const { data, error } = await supabase.storage
                 .from('employee-documents')
-                .createSignedUrl(doc.storage_path, 60);
+                .download(doc.storage_path);
             if (error) throw error;
-            window.open(data.signedUrl, '_blank');
+            const blobUrl = URL.createObjectURL(data);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = doc.filename || 'contrato.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
         } catch {
-            toast.error('Error al abrir el contrato');
+            toast.error('Error al descargar el contrato');
         } finally {
             setDownloadingId(null);
         }
     };
 
+    const handleView = async (doc: DocRow) => {
+        setIsPreparingPreview(doc.id);
+        try {
+            const { data, error } = await supabase.storage
+                .from('employee-documents')
+                .download(doc.storage_path);
+            if (error) throw error;
+            const blobUrl = URL.createObjectURL(data);
+            setPreviewUrl(blobUrl);
+            setPreviewFileName(doc.filename || 'Contrato');
+            setIsPreviewOpen(true);
+        } catch {
+            toast.error('Error al previsualizar el contrato');
+        } finally {
+            setIsPreparingPreview(null);
+        }
+    };
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -199,7 +230,15 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                                 <li key={row.id} className="min-h-[60px] flex items-center justify-between gap-3 p-4 rounded-2xl border border-zinc-100 bg-white hover:bg-zinc-50/80">
                                     <p className="font-semibold text-zinc-800 truncate flex-1 min-w-0">{row.filename || 'Contrato'}</p>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <button type="button" onClick={() => handleOpen(row)} disabled={!!downloadingId} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleView(row)} 
+                                            disabled={!!isPreparingPreview || !!downloadingId} 
+                                            className="min-h-[48px] px-4 flex items-center justify-center rounded-xl border border-[#36606F] text-[#36606F] hover:bg-[#36606F]/5 font-black text-[10px] uppercase tracking-widest disabled:opacity-60 transition-colors"
+                                        >
+                                            {isPreparingPreview === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : "Ver"}
+                                        </button>
+                                        <button type="button" onClick={() => handleDownload(row)} disabled={!!downloadingId || !!isPreparingPreview} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60">
                                             {downloadingId === row.id ? <LoadingSpinner className="w-5 h-5 text-white" /> : <Download size={22} strokeWidth={2.5} />}
                                         </button>
                                         {isManager && (
@@ -214,6 +253,18 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                     )}
                 </div>
             </div>
+
+            <DocumentPreviewModal 
+                isOpen={isPreviewOpen} 
+                onClose={() => {
+                    setIsPreviewOpen(false);
+                    setTimeout(() => {
+                        if (previewUrl) URL.revokeObjectURL(previewUrl);
+                    }, 5000);
+                }}
+                fileUrl={previewUrl}
+                fileName={previewFileName}
+            />
         </div>
     );
 }

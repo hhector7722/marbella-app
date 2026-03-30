@@ -6,6 +6,7 @@ import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import DocumentPreviewModal from '@/components/profile/DocumentPreviewModal';
 
 interface NominasModalProps {
     isOpen: boolean;
@@ -32,6 +33,12 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const [nominas, setNominas] = useState<NominaRow[]>([]);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+
+    // Estado previsualización
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewFileName, setPreviewFileName] = useState('');
+    const [isPreparingPreview, setIsPreparingPreview] = useState<string | null>(null);
 
     // Estados para el formulario de subida
     const [uploadMonth, setUploadMonth] = useState<string>(new Date().toLocaleString('es-ES', { month: 'long' }).toLowerCase());
@@ -139,13 +146,42 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
             if (error) throw error;
             const blobUrl = URL.createObjectURL(data);
-            window.open(blobUrl, '_blank');
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = row.filename || 'nomina.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
         } catch (err) {
-            console.error('Error previsualizando nómina:', err);
-            toast.error('No se pudo cargar el documento.');
+            console.error('Error descargando nómina:', err);
+            toast.error('No se pudo descargar el documento.');
         } finally {
             setDownloadingId(null);
+        }
+    };
+
+    const handleView = async (row: NominaRow) => {
+        if (!row.storage_path) {
+            toast.error('No se puede previsualizar este documento');
+            return;
+        }
+        setIsPreparingPreview(row.id);
+        try {
+            const { data, error } = await supabase.storage
+                .from(row.bucket)
+                .download(row.storage_path);
+
+            if (error) throw error;
+            const blobUrl = URL.createObjectURL(data);
+            setPreviewUrl(blobUrl);
+            setPreviewFileName(row.filename || labelPeriod(row));
+            setIsPreviewOpen(true);
+        } catch (err) {
+            console.error('Error previsualizando nómina:', err);
+            toast.error('No se pudo cargar la previsualización.');
+        } finally {
+            setIsPreparingPreview(null);
         }
     };
 
@@ -290,7 +326,15 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <button type="button" onClick={() => handleDownload(row)} disabled={!!downloadingId} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleView(row)} 
+                                            disabled={!!isPreparingPreview || !!downloadingId} 
+                                            className="min-h-[48px] px-4 flex items-center justify-center rounded-xl border border-[#36606F] text-[#36606F] hover:bg-[#36606F]/5 font-black text-[10px] uppercase tracking-widest disabled:opacity-60 transition-colors"
+                                        >
+                                            {isPreparingPreview === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : "Ver"}
+                                        </button>
+                                        <button type="button" onClick={() => handleDownload(row)} disabled={!!downloadingId || !!isPreparingPreview} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[#36606F] text-white hover:bg-[#2d4d59] disabled:opacity-60">
                                             {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-white" /> : <Download size={22} strokeWidth={2.5} />}
                                         </button>
                                         {isManager && row.bucket === 'employee-documents' && (
@@ -305,6 +349,22 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                     )}
                 </div>
             </div>
+
+            <DocumentPreviewModal 
+                isOpen={isPreviewOpen} 
+                onClose={() => {
+                    setIsPreviewOpen(false);
+                    // No revocamos inmediatamente por si tarda en renderizar el iframe
+                    setTimeout(() => {
+                        if (previewUrl) URL.revokeObjectURL(previewUrl);
+                    }, 5000);
+                }}
+                fileUrl={previewUrl}
+                fileName={previewFileName}
+                onDownload={() => {
+                    // Podemos reusar la URL del blob si existe
+                }}
+            />
         </div>
     );
 }
