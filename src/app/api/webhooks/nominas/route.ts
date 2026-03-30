@@ -1,83 +1,107 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function POST(req: Request) {
+// Bypass para librería CommonJS sin default export en TypeScript
+const pdfParse = require('pdf-parse');
+
+// Inicializa Supabase saltando RLS (uso exclusivo interno de servidor)
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// 🧠 Validador Matemático Módulo 23 (Tolerancia Cero a Falsos Positivos)
+function isValidDNI(dni: string): boolean {
+    const validChars = 'TRWAGMYFPDXBNJZSQVHLCKE';
+    const regex = /^[XYZ]?\d{7,8}[A-Z]$/i;
+
+    if (!regex.test(dni)) return false;
+
+    let str = dni.toUpperCase();
+    let letter = str.slice(-1);
+    let numberStr = str.slice(0, -1);
+
+    // Normalización de NIE (Extranjeros)
+    numberStr = numberStr.replace('X', '0').replace('Y', '1').replace('Z', '2');
+
+    const number = parseInt(numberStr, 10);
+    const calculatedLetter = validChars.charAt(number % 23);
+
+    return letter === calculatedLetter;
+}
+
+export async function POST(request: Request) {
     try {
-        // 1. Validación del Token de Google Apps Script
-        const authHeader = req.headers.get('authorization');
+        // 1. Barrera de Seguridad
+        const authHeader = request.headers.get('authorization');
         if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 2. Cliente Supabase en Runtime (Service Role para saltar RLS en la subida)
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        const { fileBase64, filename, emailDate } = await request.json();
 
-        // 3. Recepción del payload crudo
-        // Soporta dos métodos: codigo_empleado (legacy) o dni (extracción desde PDF)
-        const body = await req.json();
-        const { fileBase64, filename, codigo_empleado, dni, mes, year } = body;
-
-        const has = (v: unknown) => v != null && String(v).trim() !== '';
-        if (!has(fileBase64) || !has(filename) || !has(mes) || !has(year)) {
-            return NextResponse.json({ error: 'Faltan parámetros requeridos (fileBase64, filename, mes, year). Además se necesita codigo_empleado O dni.' }, { status: 400 });
-        }
-        if (!has(codigo_empleado) && !has(dni)) {
-            return NextResponse.json({ error: 'Se requiere codigo_empleado o dni para identificar al empleado.' }, { status: 400 });
+        if (!fileBase64) {
+            return NextResponse.json({ error: 'Payload incompleto' }, { status: 400 });
         }
 
-        // 4. Buscar perfil por codigo_empleado (prioridad) o por dni (extracción desde PDF)
-        let profile: { id: string; codigo_empleado?: string | null } | null = null;
+        // 2. Extracción de Texto en Memoria
+        const pdfBuffer = Buffer.from(fileBase64, 'base64');
+        const pdfData = await pdfParse(pdfBuffer);
+        const textContent = pdfData.text;
 
-        if (has(codigo_empleado)) {
-            const r = await supabase.from('profiles').select('id, codigo_empleado').eq('codigo_empleado', codigo_empleado).single();
-            profile = r.data ?? null;
-            if (r.error) return NextResponse.json({ error: `Empleado con código ${codigo_empleado} no encontrado.` }, { status: 404 });
+        // 3. Captura y Validación de DNI/NIE
+        const dniRegex = /\b([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z])\b/gi;
+        const potentialMatches = textContent.match(dniRegex) || [];
+
+        let extractedDni = null;
+        for (const match of potentialMatches) {
+            if (isValidDNI(match)) {
+                extractedDni = match.toUpperCase();
+                break; // Detiene la búsqueda al encontrar el primer DNI matemáticamente real
+            }
         }
-        if (!profile && has(dni)) {
-            const dniNorm = String(dni).trim().toUpperCase().replace(/[\s\-\.]/g, '');
-            const { data: profiles } = await supabase.from('profiles').select('id, codigo_empleado, dni');
-            profile = (profiles ?? []).find(p => p.dni && String(p.dni).toUpperCase().replace(/[\s\-\.]/g, '') === dniNorm) ?? null;
-            if (!profile) return NextResponse.json({ error: `Empleado con DNI ${dni} no encontrado. Verifica que profiles.dni coincida.` }, { status: 404 });
+
+        if (!extractedDni) {
+            return NextResponse.json({ error: 'No se detectó DNI/NIE matemáticamente válido en el texto' }, { status: 422 });
         }
 
-        if (!profile) return NextResponse.json({ error: 'No se pudo identificar al empleado.' }, { status: 404 });
+        // 4. Cruce Determinista con Supabase
+        const { data: profile, error: dbError } = await supabase
+            .from('profiles')
+            .select('id, first_name')
+            .eq('dni', extractedDni)
+            .single();
 
-        const pathPrefix = has(codigo_empleado) ? codigo_empleado : (profile.codigo_empleado ?? profile.id);
-        const buffer = Buffer.from(fileBase64, 'base64');
-        const filePath = `${pathPrefix}/${year}/${mes}_${filename}`;
+        if (dbError || !profile) {
+            return NextResponse.json({ error: `DNI ${extractedDni} no encontrado en perfiles activos` }, { status: 404 });
+        }
 
-        const { error: uploadError } = await supabase.storage
+        // 5. Cálculo de Devengo (Mes anterior a la recepción)
+        const dateObj = new Date(emailDate);
+        dateObj.setMonth(dateObj.getMonth() - 1);
+        const mesDevengo = dateObj.toLocaleString('es-ES', { month: 'long' });
+        const anioDevengo = dateObj.getFullYear();
+
+        // 6. Persistencia Física en Storage
+        const safeFilename = `${anioDevengo}_${mesDevengo}_${extractedDni}.pdf`;
+        const { error: storageError } = await supabase.storage
             .from('nominas')
-            .upload(filePath, buffer, {
+            .upload(`${profile.id}/${safeFilename}`, pdfBuffer, {
                 contentType: 'application/pdf',
                 upsert: true
             });
 
-        if (uploadError) throw uploadError;
+        if (storageError) throw new Error(`Fallo Storage: ${storageError.message}`);
 
-        // 6. Guardar referencia en BD (Sin publicUrl porque el bucket es privado)
-        const codigoParaInsert = has(codigo_empleado) ? codigo_empleado : (profile.codigo_empleado ?? profile.id);
-        const { error: dbError } = await supabase
-            .from('employee_documents')
-            .insert({
-                user_id: profile.id,
-                codigo_empleado: codigoParaInsert,
-                tipo: 'nomina',
-                mes: mes,
-                year: Number(year),
-                filename: filename,
-                storage_path: filePath
-            });
-
-        if (dbError) throw dbError;
-
-        return NextResponse.json({ success: true, message: 'Nómina procesada' });
+        return NextResponse.json({
+            success: true,
+            empleado: profile.first_name,
+            dni: extractedDni,
+            periodo: `${mesDevengo} ${anioDevengo}`
+        }, { status: 200 });
 
     } catch (error: any) {
-        console.error('Webhook Error Crítico:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('Error procesando nómina:', error);
+        return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
     }
 }

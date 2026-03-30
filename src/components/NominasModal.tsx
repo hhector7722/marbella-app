@@ -189,12 +189,16 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 return;
             }
 
-            // Forzar el tipo MIME correcto para PDFs para evitar que el navegador lo descargue en lugar de mostrarlo
-            const isPdf = row.filename.toLowerCase().endsWith('.pdf') || row.storage_path.toLowerCase().endsWith('.pdf');
-            const fileBlob = new Blob([data], { type: isPdf ? 'application/pdf' : data.type });
+            // Generar una URL firmada en lugar de un Blob para máxima compatibilidad con navegadores móviles
+            const { data: signedData, error: signedError } = await supabase.storage
+                .from(row.bucket)
+                .createSignedUrl(row.storage_path, 3600); // 1 hora de validez
+
+            if (signedError) throw signedError;
             
-            const blobUrl = URL.createObjectURL(fileBlob);
-            setPreviewUrl(blobUrl);
+            const isPdf = row.filename.toLowerCase().endsWith('.pdf') || row.storage_path.toLowerCase().endsWith('.pdf');
+            
+            setPreviewUrl(signedData.signedUrl);
             setPreviewFileName(row.filename || labelPeriod(row));
             setPreviewIsPDF(isPdf);
             setIsPreviewOpen(true);
@@ -382,10 +386,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 isOpen={isPreviewOpen} 
                 onClose={() => {
                     setIsPreviewOpen(false);
-                    // No revocamos inmediatamente por si tarda en renderizar el iframe
-                    setTimeout(() => {
-                        if (previewUrl) URL.revokeObjectURL(previewUrl);
-                    }, 5000);
+                    // Ya no revocamos porque usamos Signed URLs no Blobs
                 }}
                 fileUrl={previewUrl}
                 fileName={previewFileName}

@@ -24,6 +24,7 @@
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
     "papaparse": "^5.5.3",
+    "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.5.207",
     "react": "19.2.3",
     "react-dom": "19.2.3",

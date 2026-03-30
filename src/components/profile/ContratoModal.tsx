@@ -21,6 +21,7 @@ interface DocRow {
     filename: string;
     storage_path: string;
     created_at: string;
+    bucket: 'nominas' | 'employee-documents';
 }
 
 export default function ContratoModal({ isOpen, onClose, userId, isManager = false }: ContratoModalProps) {
@@ -51,7 +52,11 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 toast.error('Error al cargar contratos');
                 setDocs([]);
             } else {
-                setDocs((data as DocRow[]) ?? []);
+                const mapped = (data || []).map(row => ({
+                    ...row,
+                    bucket: /^\d{2}\/\d{4}\//.test(row.storage_path) ? 'nominas' : 'employee-documents'
+                })) as DocRow[];
+                setDocs(mapped);
             }
         } catch {
             setDocs([]);
@@ -69,7 +74,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
         setDownloadingId(doc.id);
         try {
             const { data, error } = await supabase.storage
-                .from('employee-documents')
+                .from(doc.bucket)
                 .download(doc.storage_path);
             if (error) throw error;
             const blobUrl = URL.createObjectURL(data);
@@ -91,7 +96,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
         setIsPreparingPreview(doc.id);
         try {
             const { data, error } = await supabase.storage
-                .from('employee-documents')
+                .from(doc.bucket)
                 .download(doc.storage_path);
             if (error) throw error;
             
@@ -102,11 +107,16 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 return;
             }
 
-            const isPdf = doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf');
-            const fileBlob = new Blob([data], { type: isPdf ? 'application/pdf' : data.type });
+            // URL firmada para máxima compatibilidad
+            const { data: signedData, error: signedError } = await supabase.storage
+                .from(doc.bucket)
+                .createSignedUrl(doc.storage_path, 3600);
+            
+            if (signedError) throw signedError;
 
-            const blobUrl = URL.createObjectURL(fileBlob);
-            setPreviewUrl(blobUrl);
+            const isPdf = doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf');
+
+            setPreviewUrl(signedData.signedUrl);
             setPreviewFileName(doc.filename || 'Contrato');
             setPreviewIsPDF(isPdf);
             setIsPreviewOpen(true);
@@ -285,9 +295,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 isOpen={isPreviewOpen} 
                 onClose={() => {
                     setIsPreviewOpen(false);
-                    setTimeout(() => {
-                        if (previewUrl) URL.revokeObjectURL(previewUrl);
-                    }, 5000);
+                    // Ya no revocamos porque usamos Signed URLs no Blobs
                 }}
                 fileUrl={previewUrl}
                 fileName={previewFileName}
