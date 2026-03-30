@@ -95,15 +95,19 @@ export default function DocumentPreviewModal({
                         </div>
                     )}
 
-                    {/* Contenedor al 30% para simular el zoom del 30% solicitado, asegurando visibilidad total de esquinas */}
-                    <div className="w-full md:w-[30%] flex flex-col bg-white shadow-2xl origin-top">
+                    {/* Contenedor reducido drásticamente para simular el zoom del 30% solicitado en todas las pantallas */}
+                    <div className="w-[45%] md:w-[25%] flex flex-col bg-white shadow-2xl origin-top my-8 transition-transform duration-500">
                         {isPDF ? (
-                            <iframe 
-                                src={previewUrl}
-                                className="w-full aspect-[1/1.414] border-none"
-                                onLoad={() => setIsLoaded(true)}
-                                title={fileName}
-                            />
+                            <div className="relative w-full aspect-[1/1.414]">
+                                <iframe 
+                                    src={previewUrl}
+                                    className="absolute inset-0 w-full h-full border-none"
+                                    onLoad={() => setIsLoaded(true)}
+                                    title={fileName}
+                                />
+                                {/* Overlay transparente para evitar interacciones accidentales con el iframe en modo miniatura */}
+                                <div className="absolute inset-0 z-10" />
+                            </div>
                         ) : (
                             <img 
                                 src={previewUrl}
