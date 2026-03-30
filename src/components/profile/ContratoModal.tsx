@@ -169,7 +169,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
 
     const handleDelete = async (doc: DocRow) => {
         if (!confirm('¿Seguro que quieres borrar este contrato?')) return;
-        const result = await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path);
+        const result = await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path, doc.bucket);
         if (result.success) {
             toast.success('Contrato eliminado');
             fetchDocs();

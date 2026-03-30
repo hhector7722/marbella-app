@@ -95,8 +95,8 @@ export default function DocumentPreviewModal({
                         </div>
                     )}
 
-                    {/* Contenedor al 60% para simular el zoom por defecto sin dejar espacios vacíos */}
-                    <div className="w-full md:w-[60%] flex flex-col bg-white shadow-xl origin-top">
+                    {/* Contenedor al 30% para simular el zoom del 30% solicitado, asegurando visibilidad total de esquinas */}
+                    <div className="w-full md:w-[30%] flex flex-col bg-white shadow-2xl origin-top">
                         {isPDF ? (
                             <iframe 
                                 src={previewUrl}

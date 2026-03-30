@@ -25,6 +25,7 @@ interface NominaRow {
     storage_path: string;
     created_at?: string;
     bucket: 'nominas' | 'employee-documents';
+    sourceTable: 'nominas' | 'employee_documents';
 }
 
 export default function NominasModal({ isOpen, onClose, targetUserId, isManager = false }: NominasModalProps) {
@@ -92,7 +93,8 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                         filename: row.filename ?? '',
                         storage_path: row.storage_path,
                         created_at: row.created_at,
-                        bucket: isLegacyBucket ? 'nominas' : 'employee-documents'
+                        bucket: isLegacyBucket ? 'nominas' : 'employee-documents',
+                        sourceTable: 'employee_documents'
                     });
                 }
             }
@@ -113,7 +115,8 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                         filename: `Nómina ${row.mes_anio ?? ''}`,
                         storage_path: row.file_path,
                         created_at: row.created_at,
-                        bucket: 'nominas'
+                        bucket: 'nominas',
+                        sourceTable: 'nominas'
                     });
                 }
             }
@@ -253,8 +256,14 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         if (!confirm(`¿Seguro que quieres borrar la nómina de ${row.mes} ${row.year}?`)) return;
         
         try {
-            const { deleteEmployeeDocumentByTipo } = await import('@/app/actions/profile');
-            const result = await deleteEmployeeDocumentByTipo(row.id, row.storage_path);
+            const { deleteEmployeeDocumentByTipo, deleteLegacyNomina } = await import('@/app/actions/profile');
+            
+            let result;
+            if (row.sourceTable === 'nominas') {
+                result = await deleteLegacyNomina(row.id, row.storage_path);
+            } else {
+                result = await deleteEmployeeDocumentByTipo(row.id, row.storage_path, row.bucket);
+            }
             
             if (result.success) {
                 toast.success('Nómina eliminada');
@@ -364,7 +373,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                                         >
                                             {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Download size={18} strokeWidth={2} />}
                                         </button>
-                                        {isManager && row.bucket === 'employee-documents' && (
+                                        {isManager && (
                                             <button 
                                                 type="button" 
                                                 onClick={() => handleDelete(row)} 

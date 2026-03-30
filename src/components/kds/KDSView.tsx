@@ -1,11 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
 import { Loader2, Package, LayoutGrid, Info, AlertTriangle, ListChecks } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
+
+function useColumns() {
+    const [cols, setCols] = useState(5);
+    useEffect(() => {
+        const update = () => {
+            if (window.innerWidth >= 1536) setCols(5);
+            else if (window.innerWidth >= 1280) setCols(4);
+            else if (window.innerWidth >= 1024) setCols(3);
+            else if (window.innerWidth >= 640) setCols(2);
+            else setCols(1);
+        };
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
+    return cols;
+}
 
 export default function KDSView() {
     const { orders, loading, isOffline, tacharProductos, completarComanda, recuperarComanda } = useKDS();
@@ -38,6 +55,12 @@ export default function KDSView() {
 
     const sortedOrders = [...visibleOrders].sort((a, b) => getEffectiveStartTime(a) - getEffectiveStartTime(b));
 
+    const cols = useColumns();
+    const orderRows = [];
+    for (let i = 0; i < sortedOrders.length; i += cols) {
+        orderRows.push(sortedOrders.slice(i, i + cols));
+    }
+
     if (loading && orders.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
@@ -60,83 +83,77 @@ export default function KDSView() {
                 </div>
             )}
 
-            <header className="bg-slate-900 p-4 md:px-8 flex justify-between items-center z-20 shrink-0">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 items-center justify-center flex">
-                        <Image src="/icons/logo-white.png" alt="Bar Marbella" width={56} height={56} className="object-contain drop-shadow-lg opacity-90" />
+            {/* CABECERA UNIFICADA DE COCINA */}
+            <header className="bg-slate-900 border-b border-black md:px-0 flex items-center justify-between z-20 shrink-0 h-16 w-full relative">
+                
+                {/* 1. Izquierda: Logo y Status */}
+                <div className="flex items-center gap-3 shrink-0 h-full px-4 border-r border-slate-800">
+                    <div className="flex items-center justify-center">
+                        <Image src="/icons/logo-white.png" alt="Bar Marbella" width={40} height={40} className="object-contain drop-shadow-lg opacity-90" />
                     </div>
-                    <div className="hidden sm:block">
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className={`flex h-2 w-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
-                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-[0.15em]">
-                                {isOffline ? 'DESCONECTADO' : 'Live'} • {visibleOrders.length} tickets {showCompleted ? 'terminados' : 'pendientes'}
+                    <div className="hidden sm:flex flex-col justify-center">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className={`block h-1.5 w-1.5 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                {isOffline ? 'DESCONECTADO' : 'Live'}
                             </p>
                         </div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
+                            {visibleOrders.length} TICKETS
+                        </p>
                     </div>
                 </div>
 
-                {/* BOTONES DE FILTRO CENTRALES / DERECHA */}
-                <div className="flex bg-slate-800 p-1.5 rounded-2xl shadow-inner mx-auto sm:mx-0">
-                    <button 
-                         onClick={() => setShowCompleted(false)} 
-                         className={`flex items-center gap-2 px-4 py-2.5 sm:px-6 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-lg scale-100' : 'text-slate-400 hover:text-white scale-95'}`}
-                    >
-                        Cocina
-                    </button>
-                    <button 
-                         onClick={() => setShowCompleted(true)} 
-                         className={`flex items-center gap-2 px-4 py-2.5 sm:px-6 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-lg scale-100' : 'text-slate-400 hover:text-white scale-95'}`}
-                    >
-                        Finalizadas
-                    </button>
+                {/* 2. Centro: Resumen Preparación (Scroll Horizontal Intenso) */}
+                <div className="flex-1 flex items-center overflow-x-auto overflow-y-hidden custom-scrollbar-horizontal gap-2 px-4 h-full">
+                    <div className="hidden lg:flex items-center gap-1.5 shrink-0 pr-2">
+                        <Info size={14} className={showCompleted ? "text-slate-500" : "text-[#407080]"} />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${showCompleted ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {showCompleted ? 'FINALIZADOS' : 'RESUMEN'}
+                        </span>
+                    </div>
+                    {aggregatedItems.length === 0 ? (
+                        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic my-auto">
+                            Nada que preparar
+                        </div>
+                    ) : (
+                        aggregatedItems.map(item => (
+                            <div key={item.key} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md border border-slate-700 shrink-0 shadow-sm transition-colors cursor-default my-auto">
+                                <span className="text-[11px] font-bold text-slate-300 max-w-[120px] truncate">{item.nombre}</span>
+                                {item.notas && <span className="text-[9px] font-black tracking-tighter text-amber-500 italic max-w-[80px] truncate">"{item.notas}"</span>}
+                                <span className="bg-[#17253a] text-emerald-400 text-[10px] font-black px-1.5 py-0.5 rounded border border-emerald-900/40">
+                                    x{item.cantidad}
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
 
-                <div className="hidden md:flex items-center gap-3">
-                    <div className="bg-slate-800 px-4 py-3 rounded-xl border border-slate-700 flex items-center gap-3">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vista</span>
-                        <LayoutGrid size={18} className="text-[#407080]" />
+                {/* 3. Derecha: Toggles y Controles */}
+                <div className="flex items-center gap-3 shrink-0 h-full px-4 border-l border-slate-800">
+                    <div className="flex bg-slate-800 p-1 rounded-lg shadow-inner">
+                        <button 
+                             onClick={() => setShowCompleted(false)} 
+                             className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Cocina
+                        </button>
+                        <button 
+                             onClick={() => setShowCompleted(true)} 
+                             className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Finalizadas
+                        </button>
                     </div>
                 </div>
             </header>
-
-            {/* CARRUSEL DE TOTALES HORIZONTAL */}
-            <div className="bg-slate-800/80 border-y border-slate-700 p-2 md:px-8 flex items-center gap-3 overflow-x-auto custom-scrollbar-horizontal shadow-inner z-10 w-full shrink-0">
-                <div className="flex items-center gap-2 mr-2 pl-2 shrink-0">
-                    <Info size={16} className={showCompleted ? "text-slate-400" : "text-[#407080]"} />
-                    <h2 className={`text-[11px] sm:text-xs font-black uppercase tracking-widest ${showCompleted ? 'text-slate-500' : 'text-slate-300'}`}>
-                        {showCompleted ? 'Listado Finalizado' : 'Resumen Preparación'}
-                    </h2>
-                </div>
-                {aggregatedItems.length === 0 ? (
-                    <div className="text-slate-500 text-xs font-bold uppercase tracking-widest italic my-1.5 ml-4">
-                        Nada que preparar
-                    </div>
-                ) : (
-                    aggregatedItems.map(item => (
-                        <div key={item.key} className="flex items-center gap-2 bg-slate-700/80 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-600 shrink-0 shadow-sm transition-colors">
-                            <span className="text-[13px] sm:text-sm font-bold text-white max-w-[150px] truncate">{item.nombre}</span>
-                            {item.notas && <span className="text-[10px] font-black tracking-tight text-amber-500 italic max-w-[100px] truncate">"{item.notas}"</span>}
-                            <div className="w-7 h-7 rounded-lg bg-slate-950 flex items-center justify-center font-black text-emerald-400 text-sm shadow-inner border border-slate-800/50">
-                                x{item.cantidad}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
 
             {isOffline && <div className="absolute inset-0 bg-red-900/10 pointer-events-none z-[90] backdrop-blur-[1px]" />}
 
             <div className="flex-1 overflow-hidden flex flex-col bg-[#0f1522] relative">
 
-                {/* THE METAL RAIL (Comandero) OVERLAY */}
-                {visibleOrders.length > 0 && (
-                    <div 
-                        className="w-full h-12 sm:h-14 lg:h-16 bg-[url('/icons/comandero.png')] bg-repeat-x bg-[length:auto_100%] shrink-0 z-30 shadow-[0_10px_20px_rgba(0,0,0,0.5)] border-b border-black/40" 
-                    />
-                )}
-
-                {/* GRID DE COMANDAS COMPULSIVO */}
-                <div className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 pb-12 custom-scrollbar">
+                {/* AREA PRINCIPAL: ROWS DE COMANDAS CON SUS RIELES */}
+                <div className="flex-1 overflow-y-auto pb-12 custom-scrollbar">
                     {visibleOrders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl">
                             {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
@@ -145,17 +162,27 @@ export default function KDSView() {
                             </h3>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 gap-y-10 relative -mt-4 z-10 pt-4">
-                            {sortedOrders.map(order => (
-                                <CommandCard
-                                    key={order.id}
-                                    order={order}
-                                    onTacharProductos={tacharProductos}
-                                    onCompletarComanda={completarComanda}
-                                    onRecuperarComanda={recuperarComanda}
-                                />
-                            ))}
-                        </div>
+                        orderRows.map((row, rowIdx) => (
+                            <div key={rowIdx} className="w-full relative pt-6 sm:pt-10 mb-8 sm:mb-12">
+                                {/* THE METAL RAIL (Comandero) PER ROW */}
+                                <div className="absolute top-0 left-0 w-full h-12 md:h-16 bg-[url('/icons/comandero.png')] bg-repeat-x bg-[length:auto_100%] z-20 shadow-md border-b border-black/40" />
+                                
+                                <div 
+                                    className="px-4 lg:px-6 relative z-10 w-full grid gap-4 sm:gap-6 -mt-2 sm:-mt-4"
+                                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                                >
+                                    {row.map(order => (
+                                        <CommandCard
+                                            key={order.id}
+                                            order={order}
+                                            onTacharProductos={tacharProductos}
+                                            onCompletarComanda={completarComanda}
+                                            onRecuperarComanda={recuperarComanda}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))
                     )}
                 </div>
 

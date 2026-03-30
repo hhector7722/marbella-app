@@ -117,7 +117,7 @@ export async function addEmployeeDocumentByTipo(
 }
 
 /** Borra documento de tipo comunicado/contrato (storage + DB) */
-export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: string) {
+export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: string, bucket: string = 'employee-documents') {
     const supabase = await createClient();
 
     const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -134,7 +134,7 @@ export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: s
     }
 
     const { error: storageError } = await supabase.storage
-        .from('employee-documents')
+        .from(bucket)
         .remove([storagePath]);
 
     if (storageError) {
@@ -153,6 +153,48 @@ export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: s
     revalidatePath('/profile');
     return { success: true };
 }
+
+/** Borra nómina del sistema legado (bucket 'nominas' + tabla 'nominas') */
+export async function deleteLegacyNomina(nominaId: string, storagePath: string) {
+    const supabase = await createClient();
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) return { success: false, error: 'No autenticado' };
+
+    const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (currentProfile?.role !== 'manager') {
+        return { success: false, error: 'No tienes permisos de administrador' };
+    }
+
+    // 1. Borrar de Storage (bucket 'nominas')
+    const { error: storageError } = await supabase.storage
+        .from('nominas')
+        .remove([storagePath]);
+
+    if (storageError) {
+        console.error('Error deleting legacy file from storage:', storageError);
+    }
+
+    // 2. Borrar de DB (tabla 'nominas')
+    const { error: dbError } = await supabase
+        .from('nominas')
+        .delete()
+        .eq('id', nominaId);
+
+    if (dbError) {
+        return { success: false, error: dbError.message };
+    }
+
+    revalidatePath('/profile');
+    return { success: true };
+}
+
+
 
 export async function getEmployeeDocuments(userId: string) {
     const supabase = await createClient();

@@ -172,7 +172,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
 
     const handleDelete = async (doc: DocRow) => {
         if (!confirm('¿Seguro que quieres borrar este comunicado?')) return;
-        const result = await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path);
+        const result = await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path, doc.bucket);
         if (result.success) {
             toast.success('Comunicado eliminado');
             fetchDocs();

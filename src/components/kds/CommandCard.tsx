@@ -88,37 +88,38 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     const groupedArray = Object.values(groupedLines);
 
     return (
-        <div className={`relative flex flex-col rounded-b-2xl rounded-t-sm overflow-hidden shadow-2xl transition-all duration-300 border border-slate-700/50 bg-[#1e293b] mt-4 ${isCompleted
+        <div className={`relative flex flex-col rounded-b-xl rounded-t-sm overflow-hidden shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white ${isCompleted
                 ? 'opacity-60'
                 : isFullyDone
                     ? 'opacity-90'
                     : ''
-            }`}>
-
-            {/* Cabecera Tipo Ticket */}
-            <div className={`p-3 text-white ${getHeaderColor()} flex justify-between items-center transition-colors duration-500 border-b relative font-black`}>
+            }`}
+            style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '10px solid #e2e8f0' }}
+        >
+            {/* Cabecera Transparente sobre papel blanco */}
+            <div className={`px-4 pb-2 flex justify-between items-start transition-colors duration-500 border-b border-slate-100 relative font-black`}>
                 {isCompleted && (
-                    <div className="absolute top-0 right-0 bg-slate-900/50 px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-widest">
+                    <div className="absolute top-0 right-4 bg-slate-200 px-2 py-0.5 rounded-b-md text-[8px] font-black uppercase tracking-widest text-slate-500">
                         FINALIZADA
                     </div>
                 )}
 
-                <div className="flex items-center gap-3 w-full">
-                    {/* Mesa - Exactamente como la foto (Circulo con numero) */}
-                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-white/90 flex items-center justify-center shrink-0 ${getIndicatorColor()}`}>
-                        <span className="text-sm sm:text-base font-black tracking-tighter uppercase tabular-nums">
+                <div className="flex items-center gap-4 w-full pt-1">
+                    {/* Mesa - Exactamente como la foto (Circulo con numero) - ¡MUCHO MÁS GRANDE! */}
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-[3px] border-white flex items-center justify-center shrink-0 shadow-md ${getIndicatorColor()} text-white`}>
+                        <span className="text-xl sm:text-2xl font-black tracking-tighter uppercase tabular-nums">
                             {order.mesa || '--'}
                         </span>
                     </div>
 
-                    {/* Información y tiempo */}
+                    {/* Información y tiempo (Texto Oscuro por el fondo blanco) */}
                     <div className="flex flex-col items-end flex-1 pr-1">
-                        <div className="flex items-center gap-1.5 text-right w-full justify-end">
-                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-90 truncate">
+                        <div className="flex items-center gap-1.5 text-right w-full justify-end text-slate-700">
+                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest opacity-90 truncate">
                                 {orderTime} • HACE {formatElapsed(elapsed)}
                             </span>
                         </div>
-                        <div className="text-[7px] sm:text-[8px] font-mono opacity-80 mt-0.5 uppercase tracking-widest text-[#ffebeb]">
+                        <div className="text-[8px] sm:text-[9px] font-mono opacity-60 mt-0.5 uppercase tracking-widest text-slate-500">
                             TICKET #{order.origen_referencia?.slice(-5) || '-----'}
                         </div>
                     </div>
@@ -126,9 +127,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             </div>
 
             {order.notas_comanda && (
-                <div className={`${isCompleted ? 'bg-slate-700/50' : 'bg-amber-100/10'} px-4 py-2 flex items-start gap-2 border-b border-white/10`}>
-                    <AlertTriangle size={16} className={`${isCompleted ? 'text-slate-400' : 'text-amber-500'} mt-0.5 shrink-0`} />
-                    <p className={`text-xs font-black leading-tight uppercase tracking-tight ${isCompleted ? 'text-slate-400' : 'text-amber-200'}`}>
+                <div className={`px-4 py-2 flex items-start gap-2 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-red-50'}`}>
+                    <AlertTriangle size={16} className={`${isCompleted ? 'text-slate-400' : 'text-red-500'} mt-0.5 shrink-0`} />
+                    <p className={`text-xs font-black leading-tight uppercase tracking-tight ${isCompleted ? 'text-slate-500' : 'text-red-700'}`}>
                         {order.notas_comanda}
                     </p>
                 </div>
@@ -159,17 +160,17 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
                         <div className="ml-3 sm:ml-4 flex-1 min-w-0 flex items-center justify-between">
                             <div className="flex flex-col pr-2 min-w-0">
-                                <span className={`text-[15px] sm:text-[17px] font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-500 line-through' :
-                                        group.estado === 'terminado' ? 'text-green-800/60 line-through decoration-2' :
-                                            group.estado === 'cancelado' ? 'text-slate-500 line-through decoration-slate-500 decoration-2' :
-                                                'text-slate-900'
+                                <span className={`text-[15px] sm:text-[17px] font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                                        group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
+                                            group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
+                                                'text-slate-800'
                                     }`}>
                                     {group.producto_nombre}
                                 </span>
 
                                 {group.notas && (
                                     <div className="flex items-center gap-1 mt-0.5">
-                                        <span className={`text-[11px] font-bold px-2 py-0.5 bg-amber-100 border border-amber-200 rounded-lg italic ${group.estado === 'cancelado' || isCompleted ? 'text-slate-500 border-slate-200 bg-slate-100' : 'text-amber-800'
+                                        <span className={`text-[11px] font-bold px-2 py-0.5 bg-red-50 border border-red-100 rounded-lg italic ${group.estado === 'cancelado' || isCompleted ? 'text-slate-400 border-slate-100 bg-slate-50' : 'text-red-700'
                                             }`}>
                                             "{group.notas}"
                                         </span>
@@ -180,8 +181,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                             {/* Mostramos el multiplicador bien grande */}
                             {group.cantidad > 0 && (
                                 <div className={`shrink-0 flex items-center justify-center rounded-lg px-2 py-1 border-2 min-w-[2.5rem] ${
-                                    group.estado === 'terminado' ? 'border-green-300 text-green-700 bg-green-50' : 
-                                    'border-slate-800 text-slate-900 bg-slate-100'
+                                    group.estado === 'terminado' ? 'border-green-200 text-green-600 bg-green-50' : 
+                                    'border-slate-800 text-slate-900 bg-slate-50 shadow-sm'
                                 }`}>
                                     <span className="text-xl sm:text-2xl font-black">{group.cantidad}</span>
                                 </div>
