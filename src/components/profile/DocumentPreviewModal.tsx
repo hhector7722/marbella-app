@@ -2,7 +2,7 @@
 
 import { X, Download, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 interface DocumentPreviewModalProps {
     isOpen: boolean;
@@ -22,26 +22,6 @@ export default function DocumentPreviewModal({
     onDownload
 }: DocumentPreviewModalProps) {
     const [isLoaded, setIsLoaded] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(1);
-    
-    // Dimensiones base de un A4 para engañar al motor PDF de Safari (Renderizado Gigante)
-    const PDF_WIDTH = 800;
-    const PDF_HEIGHT = 1131;
-
-    useEffect(() => {
-        if (!containerRef.current || !isOpen) return;
-        
-        const observer = new ResizeObserver((entries) => {
-            const width = entries[0].contentRect.width;
-            if (width > 0) {
-                setScale(width / PDF_WIDTH);
-            }
-        });
-        
-        observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -103,53 +83,51 @@ export default function DocumentPreviewModal({
                 </div>
 
                 {/* Área de Visualización */}
-                <div className="flex-1 overflow-auto bg-zinc-50 flex flex-col items-center custom-scrollbar relative p-6 md:p-8">
+                <div className="flex-1 overflow-auto bg-zinc-50 flex flex-col p-4 md:p-6 custom-scrollbar relative">
                     {!isLoaded && (
                         <div className="absolute inset-0 flex items-center justify-center z-20 bg-zinc-50/80 backdrop-blur-xs">
                             <Loader2 className="w-10 h-10 text-[#36606F] animate-spin" />
                         </div>
                     )}
 
-                    {/* Contenedor Ref que mide el espacio disponible para hacer matemáticas */}
-                    <div 
-                        ref={containerRef}
-                        className="w-full relative shadow-[0_0_40px_rgba(0,0,0,0.15)] bg-white origin-top"
-                    >
+                    {/* Contenedor responsivo con scroll nativo para habilitar Pinch-to-Zoom */}
+                    <div className="w-full relative shadow-[0_4px_20px_rgba(0,0,0,0.1)] bg-white rounded-xl overflow-hidden border border-zinc-200 flex-1 min-h-[50vh] flex flex-col">
                         {isPDF ? (
                             <div 
-                                className="w-full relative overflow-hidden bg-white"
-                                style={{ paddingTop: '141.4%' /* Ratio A4 perfecto */ }}
+                                className="flex-1 w-full"
+                                style={{ 
+                                    overflow: 'auto', 
+                                    WebkitOverflowScrolling: 'touch'
+                                }}
                             >
-                                {/* HACK DEFINITIVO: Renderizar a un tamaño fijo brutalmente grande y reducirlo vía cálculo dinámico.
-                                    Safari no podrá colapsar o auto-zoomear este iframe porque tiene píxeles fijos. */}
+                                {/* HACK iOS PERFECTO: width: 1px con minWidth 100% obliga a Safari
+                                    a constreñir físicamente el PDF al ancho de este contenedor. 
+                                    Al no tener origin/scale mutado, el pinch-to-zoom nativo funciona perfecto. */}
                                 <iframe 
-                                    src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                    src={`${fileUrl}#view=FitH`}
                                     style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: `${PDF_WIDTH}px`,
-                                        height: `${PDF_HEIGHT}px`,
-                                        transform: `scale(${scale})`,
-                                        transformOrigin: '0 0',
+                                        width: '1px',
+                                        minWidth: '100%',
+                                        maxWidth: '100%',
+                                        height: '100%',
+                                        minHeight: '100%',
                                         border: 'none',
-                                        pointerEvents: 'none',
-                                        backgroundColor: 'transparent'
+                                        backgroundColor: '#ffffff'
                                     }}
                                     onLoad={() => setIsLoaded(true)}
                                     title={fileName}
-                                    scrolling="no"
+                                    // Eliminado scrolling="no" para devolverle el zoom natural al iframe
                                 />
-                                {/* Capa invisible protectora */}
-                                <div className="absolute inset-0 z-10" />
                             </div>
                         ) : (
-                            <img 
-                                src={fileUrl}
-                                alt={fileName}
-                                className="w-full h-auto object-contain p-2"
-                                onLoad={() => setIsLoaded(true)}
-                            />
+                            <div className="flex-1 w-full flex items-center justify-center bg-white p-2">
+                                <img 
+                                    src={fileUrl}
+                                    alt={fileName}
+                                    className="max-w-full max-h-[70vh] object-contain"
+                                    onLoad={() => setIsLoaded(true)}
+                                />
+                            </div>
                         )}
                     </div>
                 </div>
