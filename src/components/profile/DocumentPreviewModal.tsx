@@ -45,53 +45,53 @@ export default function DocumentPreviewModal({
 
     return (
         <div 
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-2 md:p-8 animate-in fade-in duration-300"
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 md:p-16 lg:p-24 animate-in fade-in duration-300"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(15px)' }}
             onClick={onClose}
         >
             {/* Header flotante */}
             <div 
-                className="absolute top-4 left-4 right-4 flex items-center justify-between z-10"
+                className="absolute top-6 left-6 right-6 flex items-center justify-between z-10"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex flex-col bg-black/20 backdrop-blur-md p-3 rounded-2xl border border-white/5">
+                <div className="flex flex-col bg-black/40 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl">
                     <span className="text-[10px] text-white/50 font-black uppercase tracking-[0.2em] mb-1">Previsualización</span>
                     <h3 className="text-white font-black text-xs md:text-sm uppercase tracking-wider truncate max-w-[150px] md:max-w-md">
                         {fileName}
                     </h3>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     {onDownload && (
                         <button 
                             onClick={onDownload}
-                            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
+                            className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-all active:scale-95 shadow-xl"
                         >
-                            <Download size={18} />
+                            <Download size={20} />
                         </button>
                     )}
                     <button 
                         onClick={onClose}
-                        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
+                        className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-all active:scale-95 shadow-xl"
                         aria-label="Cerrar"
                     >
-                        <X size={20} strokeWidth={3} />
+                        <X size={22} strokeWidth={3} />
                     </button>
                 </div>
             </div>
 
-            {/* Contenedor del documento */}
+            {/* Contenedor del documento "alejado" */}
             <div 
-                className="relative w-full h-full max-w-5xl flex items-center justify-center transition-all duration-300 transform"
+                className="relative w-full h-full max-w-4xl flex items-center justify-center transition-all duration-300 transform"
                 onClick={e => e.stopPropagation()}
             >
                 {!isLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center z-[11] bg-white/5 backdrop-blur-sm rounded-xl">
+                    <div className="absolute inset-0 flex items-center justify-center z-[11] bg-white/5 backdrop-blur-sm rounded-3xl">
                         <Loader2 className="w-10 h-10 text-white animate-spin opacity-50" />
                     </div>
                 )}
                 
-                <div className="w-full h-full bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center border border-white/10 relative">
+                <div className="w-[85%] h-[85%] md:w-[80%] md:h-[90%] bg-white rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden flex items-center justify-center border border-white/20 relative animate-in zoom-in-90 duration-500">
                     {isPDF ? (
                         <iframe 
                             src={previewUrl}
@@ -103,7 +103,7 @@ export default function DocumentPreviewModal({
                         <img 
                             src={previewUrl}
                             alt={fileName}
-                            className="max-w-full max-h-full object-contain p-2"
+                            className="max-w-full max-h-full object-contain p-6"
                             onLoad={() => setIsLoaded(true)}
                         />
                     )}
