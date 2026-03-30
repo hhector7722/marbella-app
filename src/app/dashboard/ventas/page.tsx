@@ -127,7 +127,7 @@ export default function VentasPage() {
                     .select('hora_cierre, total_documento, fecha')
                     .gte('fecha', chartDate)
                     .lte('fecha', chartDate)
-                    .limit(5000); // MODIFICACIÓN: Límite para la gráfica [cite: 130]
+                    .limit(5000); // CAMBIO 1: Límite ampliado
 
                 const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
                 (ticketsData || []).forEach((t: { hora_cierre?: string; total_documento?: number; fecha?: string }) => {
@@ -147,9 +147,7 @@ export default function VentasPage() {
         const handleClickOutside = (e: MouseEvent | TouchEvent) => {
             if (selectedChartHour === null) return;
             const target = e.target as Node;
-            const chartEl = chartContainerRef.current;
-            const tooltipEl = tooltipRef.current;
-            if (chartEl?.contains(target) || tooltipEl?.contains(target)) return;
+            if (chartContainerRef.current?.contains(target) || tooltipRef.current?.contains(target)) return;
             setSelectedChartHour(null);
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -213,7 +211,7 @@ export default function VentasPage() {
                 .lte('fecha', endDateStr)
                 .order('fecha', { ascending: false })
                 .order('hora_cierre', { ascending: false })
-                .limit(5000); // MODIFICACIÓN: Límite para el listado [cite: 152]
+                .limit(5000); // CAMBIO 2: Límite ampliado
 
             const productsPromise = supabase.rpc('get_product_sales_ranking', {
                 p_start_date: startDateStr,
@@ -222,14 +220,7 @@ export default function VentasPage() {
 
             const [ticketsRes, productsRes] = await Promise.all([ticketsPromise, productsPromise]);
 
-            if (ticketsRes.error) {
-                if (ticketsRes.error.code === '42P01') {
-                    console.warn("Tabla tickets_marbella no detectada.");
-                } else {
-                    console.error("Error tickets:", ticketsRes.error);
-                    throw ticketsRes.error;
-                }
-            }
+            if (ticketsRes.error) throw ticketsRes.error;
 
             const activeData = ticketsRes.data || [];
             const activeProducts = productsRes.data || [];
@@ -304,7 +295,6 @@ export default function VentasPage() {
             setExpandedTicket(null);
             return;
         }
-
         setExpandedTicket(numero_documento);
         setLoadingLines(true);
         setTicketLines([]);
@@ -313,12 +303,10 @@ export default function VentasPage() {
                 p_numero_documento: numero_documento
             });
             if (error) throw error;
-
             const groupedLines = (data || []).reduce((acc: any, line: any) => {
                 const key = `${line.articulo_nombre}-${line.precio_unidad}`;
                 const qty = Number(line.cantidad ?? line.unidades ?? 0);
                 const total = Number(line.importe_total ?? 0);
-
                 if (!acc[key]) {
                     acc[key] = { ...line, unidades: qty, importe_total: total };
                 } else {
@@ -370,7 +358,6 @@ export default function VentasPage() {
         <div className="min-h-screen bg-[#5B8FB9] p-4 md:p-8 pb-24 text-zinc-900 print:bg-white">
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-
                     <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3 print:hidden">
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 md:gap-3 shrink-0">
@@ -379,58 +366,43 @@ export default function VentasPage() {
                                 </button>
                                 <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">Ventas</h1>
                             </div>
-
-                            <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    hasActiveFilter={(() => {
-                                        const today = new Date().toISOString().split('T')[0];
-                                        return filterMode !== 'single' || selectedDate !== today || !!hourFilter;
-                                    })()}
-                                    onClear={() => {
-                                        const today = new Date().toISOString().split('T')[0];
-                                        setHourFilter(null);
-                                        setFilterMode('single');
-                                        setSelectedDate(today);
-                                    }}
-                                    className="text-white"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-center max-sm mx-auto pt-1">
-                            <button
-                                onClick={() => {
-                                    if (filterMode === 'single') {
-                                        const prev = subDays(parseLocalSafe(selectedDate), 1);
-                                        setSelectedDate(format(prev, 'yyyy-MM-dd'));
-                                    } else handlePrevMonth();
+                            <TimeFilterButton
+                                onClick={() => setIsTimeFilterOpen(true)}
+                                hasActiveFilter={(() => {
+                                    const today = new Date().toISOString().split('T')[0];
+                                    return filterMode !== 'single' || selectedDate !== today || !!hourFilter;
+                                })()}
+                                onClear={() => {
+                                    const today = new Date().toISOString().split('T')[0];
+                                    setHourFilter(null);
+                                    setFilterMode('single');
+                                    setSelectedDate(today);
                                 }}
-                                className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
-                            >
+                                className="text-white"
+                            />
+                        </div>
+                        <div className="flex items-center justify-center max-w-sm mx-auto pt-1">
+                            <button onClick={() => {
+                                if (filterMode === 'single') {
+                                    const prev = subDays(parseLocalSafe(selectedDate), 1);
+                                    setSelectedDate(format(prev, 'yyyy-MM-dd'));
+                                } else handlePrevMonth();
+                            }} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
                                 <ChevronLeft size={20} />
                             </button>
-
-                            <button
-                                onClick={() => setIsTimeFilterOpen(true)}
-                                className="px-2 md:px-6 text-[13px] sm:text-[15px] md:text-[18px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center"
-                            >
+                            <button onClick={() => setIsTimeFilterOpen(true)} className="px-2 md:px-6 text-[13px] sm:text-[15px] md:text-[18px] font-black text-white hover:text-blue-100 transition-colors capitalize tracking-wide whitespace-nowrap text-center">
                                 {filterMode === 'single'
                                     ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
                                     : (rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), "MMMM 'de' yyyy", { locale: es })
                                         : 'Periodo')}
                             </button>
-
-                            <button
-                                onClick={() => {
-                                    if (filterMode === 'single') {
-                                        const next = addDays(parseLocalSafe(selectedDate), 1);
-                                        setSelectedDate(format(next, 'yyyy-MM-dd'));
-                                    } else handleNextMonth();
-                                }}
-                                className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none"
-                            >
+                            <button onClick={() => {
+                                if (filterMode === 'single') {
+                                    const next = addDays(parseLocalSafe(selectedDate), 1);
+                                    setSelectedDate(format(next, 'yyyy-MM-dd'));
+                                } else handleNextMonth();
+                            }} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
                                 <ChevronRight size={20} />
                             </button>
                         </div>
@@ -438,35 +410,25 @@ export default function VentasPage() {
 
                     <div className="py-4 px-2 grid grid-cols-3 border-b border-zinc-50 print:hidden">
                         <div className="flex flex-col items-center justify-center text-center px-1">
-                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-emerald-500">
-                                {summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}
-                            </span>
+                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-emerald-500">{summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}</span>
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ventas Totales</span>
                         </div>
-
                         <div className="flex flex-col items-center justify-center text-center px-1">
-                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-zinc-900">
-                                {summary.count > 0 ? summary.count : " "}
-                            </span>
+                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-zinc-900">{summary.count > 0 ? summary.count : " "}</span>
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Nº Tickets</span>
                         </div>
-
                         <div className="flex flex-col items-center justify-center text-center px-1">
-                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-[#36606F]">
-                                {summary.avgTicket > 0 ? `${summary.avgTicket.toFixed(2)}€` : " "}
-                            </span>
+                            <span className="text-[13px] md:text-2xl font-black tabular-nums line-clamp-1 text-[#36606F]">{summary.avgTicket > 0 ? `${summary.avgTicket.toFixed(2)}€` : " "}</span>
                             <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">Ticket Medio</span>
                         </div>
                     </div>
 
-                    {/* Gráfica ventas por hora */}
                     {(() => {
                         const chartData = salesChartData;
                         const rangeData = chartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
                         const maxMain = Math.max(...rangeData.map(d => d.total), 0);
                         const scaleMax = Math.max(maxMain, 1);
-                        const hasData = maxMain > 0;
-                        if (!hasData) return null;
+                        if (maxMain === 0) return null;
                         const numPoints = rangeData.length;
                         const isChartDateToday = chartDate === format(new Date(), 'yyyy-MM-dd');
                         const maxSelectableHour = isChartDateToday ? new Date().getHours() : BUSINESS_HOURS.end;
