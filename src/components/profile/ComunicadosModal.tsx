@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { X, Download, FileText, Plus, Trash2, Eye } from 'lucide-react';
+import { X, FileText, Plus, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { addEmployeeDocumentByTipo, deleteEmployeeDocumentByTipo } from '@/app/actions/profile';
-import DocumentPreviewModal from '@/components/profile/DocumentPreviewModal';
-
 interface ComunicadosModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -32,12 +30,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     const [showUpload, setShowUpload] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    // Estado previsualización
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [previewFileName, setPreviewFileName] = useState('');
-    const [previewIsPDF, setPreviewIsPDF] = useState(true);
-    const [isPreparingPreview, setIsPreparingPreview] = useState<string | null>(null);
+
 
     const fetchDocs = async () => {
         setLoading(true);
@@ -93,40 +86,6 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
         }
     };
 
-    const handleView = async (doc: DocRow) => {
-        setIsPreparingPreview(doc.id);
-        try {
-            const { data, error } = await supabase.storage
-                .from(doc.bucket)
-                .download(doc.storage_path);
-            if (error) throw error;
-
-            if (data.size === 0) {
-                toast.error('El archivo está vacío o corrupto. Se ha eliminado el residuo.');
-                await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path);
-                fetchDocs();
-                return;
-            }
-
-            // URL firmada para máxima compatibilidad
-            const { data: signedData, error: signedError } = await supabase.storage
-                .from(doc.bucket)
-                .createSignedUrl(doc.storage_path, 3600);
-            
-            if (signedError) throw signedError;
-
-            const isPdf = doc.filename.toLowerCase().endsWith('.pdf') || doc.storage_path.toLowerCase().endsWith('.pdf');
-
-            setPreviewUrl(signedData.signedUrl);
-            setPreviewFileName(doc.filename || 'Comunicado');
-            setPreviewIsPDF(isPdf);
-            setIsPreviewOpen(true);
-        } catch {
-            toast.error('Error al previsualizar el documento');
-        } finally {
-            setIsPreparingPreview(null);
-        }
-    };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -260,21 +219,12 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                                     <div className="flex items-center gap-1 shrink-0">
                                         <button 
                                             type="button" 
-                                            onClick={() => handleView(row)} 
-                                            disabled={!!isPreparingPreview || !!downloadingId} 
-                                            className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
-                                            title="Ver documento"
-                                        >
-                                            {isPreparingPreview === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Eye size={18} strokeWidth={2} />}
-                                        </button>
-                                        <button 
-                                            type="button" 
                                             onClick={() => handleDownload(row)} 
-                                            disabled={!!downloadingId || !!isPreparingPreview} 
+                                            disabled={!!downloadingId} 
                                             className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
-                                            title="Descargar"
+                                            title="Descargar documento"
                                         >
-                                            {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Download size={18} strokeWidth={2} />}
+                                            {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Eye size={18} strokeWidth={2} />}
                                         </button>
                                         {isManager && (
                                             <button 
@@ -293,17 +243,6 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                     )}
                 </div>
             </div>
-
-            <DocumentPreviewModal 
-                isOpen={isPreviewOpen} 
-                onClose={() => {
-                    setIsPreviewOpen(false);
-                    // Ya no revocamos porque usamos Signed URLs no Blobs
-                }}
-                fileUrl={previewUrl}
-                fileName={previewFileName}
-                isPDF={previewIsPDF}
-            />
         </div>
     );
 }
