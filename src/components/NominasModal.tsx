@@ -58,6 +58,52 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             }
             const effectiveUserId = targetUserId ?? user.id;
 
+            const seen = new Set<string>();
+            const merged: NominaRow[] = [];
+
+            // ====================================================================
+            // 1. MOTOR DIRECTO: Leer PDFs físicos inyectados por el Webhook (NUEVA ARQUITECTURA)
+            // ====================================================================
+            const { data: storageFiles, error: storageError } = await supabase.storage
+                .from('nominas')
+                .list(effectiveUserId);
+
+            if (!storageError && storageFiles) {
+                for (const file of storageFiles) {
+                    if (file.name.startsWith('.')) continue; // Filtrar archivos basura de sistema
+
+                    const filePath = `${effectiveUserId}/${file.name}`;
+                    seen.add(filePath);
+
+                    // Descomponer el formato estándar YYYY_mes_DNI.pdf
+                    let mes = '';
+                    let year = 0;
+                    let displayName = file.name;
+
+                    const parts = file.name.replace('.pdf', '').split('_');
+                    if (parts.length >= 2 && !isNaN(parseInt(parts[0]))) {
+                        year = parseInt(parts[0], 10);
+                        mes = parts[1];
+                        displayName = `Nómina ${mes} ${year}`;
+                    }
+
+                    merged.push({
+                        id: file.id || filePath,
+                        user_id: effectiveUserId,
+                        mes: mes,
+                        year: year,
+                        filename: displayName,
+                        storage_path: filePath,
+                        created_at: file.created_at || new Date().toISOString(),
+                        bucket: 'nominas',
+                        sourceTable: 'nominas' // Tratado como legacy a efectos de borrado
+                    });
+                }
+            }
+
+            // ====================================================================
+            // 2. SUBIDAS MANUALES: Leer de tabla employee_documents (MANAGERS)
+            // ====================================================================
             const { data: edData, error: edError } = await supabase
                 .from('employee_documents')
                 .select('id, user_id, mes, year, filename, storage_path, created_at')
@@ -67,24 +113,10 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
             if (edError) console.error('Error fetching employee_documents nominas:', edError);
 
-            const { data: nomData, error: nomError } = await supabase
-                .from('nominas')
-                .select('id, empleado_id, mes_anio, file_path, created_at')
-                .eq('empleado_id', effectiveUserId)
-                .order('created_at', { ascending: false });
-
-            if (nomError) console.error('Error fetching nominas legacy:', nomError);
-
-            const seen = new Set<string>();
-            const merged: NominaRow[] = [];
-
             for (const row of edData ?? []) {
                 if (row.storage_path && !seen.has(row.storage_path)) {
                     seen.add(row.storage_path);
-                    
-                    // Los documentos antiguos de nóminas se guardaban en el bucket 'nominas' con rutas como '01/2026/febrero_...'
                     const isLegacyBucket = /^\d{2}\/\d{4}\//.test(row.storage_path);
-                    
                     merged.push({
                         id: row.id,
                         user_id: row.user_id,
@@ -99,6 +131,17 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 }
             }
 
+            // ====================================================================
+            // 3. ARCHIVOS LEGACY: Leer de tabla nominas antigua
+            // ====================================================================
+            const { data: nomData, error: nomError } = await supabase
+                .from('nominas')
+                .select('id, empleado_id, mes_anio, file_path, created_at')
+                .eq('empleado_id', effectiveUserId)
+                .order('created_at', { ascending: false });
+
+            if (nomError) console.error('Error fetching nominas legacy:', nomError);
+
             for (const row of nomData ?? []) {
                 if (row.file_path && !seen.has(row.file_path)) {
                     seen.add(row.file_path);
@@ -107,6 +150,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                     const isYearFirst = a?.length === 4;
                     const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
                     const mes = isYearFirst ? (b ?? '') : (a ?? '');
+
                     merged.push({
                         id: row.id,
                         user_id: row.empleado_id,
@@ -121,6 +165,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 }
             }
 
+            // Ordenamiento cronológico global
             merged.sort((a, b) => {
                 const da = a.created_at ? new Date(a.created_at).getTime() : 0;
                 const db = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -151,7 +196,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             const { data, error } = await supabase.storage
                 .from(row.bucket)
                 .download(row.storage_path);
-
             if (error) throw error;
             const blobUrl = URL.createObjectURL(data);
             const link = document.createElement('a');
@@ -179,9 +223,8 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             const { data, error } = await supabase.storage
                 .from(row.bucket)
                 .download(row.storage_path);
-
             if (error) throw error;
-            
+
             if (data.size === 0) {
                 toast.error('El archivo está vacío o corrupto. Se ha eliminado el residuo.');
                 if (row.bucket === 'employee-documents') {
@@ -192,15 +235,14 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 return;
             }
 
-            // Generar una URL firmada en lugar de un Blob para máxima compatibilidad con navegadores móviles
             const { data: signedData, error: signedError } = await supabase.storage
                 .from(row.bucket)
-                .createSignedUrl(row.storage_path, 3600); // 1 hora de validez
+                .createSignedUrl(row.storage_path, 3600);
 
             if (signedError) throw signedError;
-            
+
             const isPdf = row.filename.toLowerCase().endsWith('.pdf') || row.storage_path.toLowerCase().endsWith('.pdf');
-            
+
             setPreviewUrl(signedData.signedUrl);
             setPreviewFileName(row.filename || labelPeriod(row));
             setPreviewIsPDF(isPdf);
@@ -254,17 +296,15 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
     const handleDelete = async (row: NominaRow) => {
         if (!confirm(`¿Seguro que quieres borrar la nómina de ${row.mes} ${row.year}?`)) return;
-        
         try {
             const { deleteEmployeeDocumentByTipo, deleteLegacyNomina } = await import('@/app/actions/profile');
-            
             let result;
             if (row.sourceTable === 'nominas') {
                 result = await deleteLegacyNomina(row.id, row.storage_path);
             } else {
                 result = await deleteEmployeeDocumentByTipo(row.id, row.storage_path, row.bucket);
             }
-            
+
             if (result.success) {
                 toast.success('Nómina eliminada');
                 fetchNominas();
@@ -314,15 +354,15 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
                 {isManager && targetUserId && (
                     <div className="px-6 py-3 bg-zinc-50 border-b border-zinc-100 flex items-center gap-3">
-                        <select 
-                            value={uploadMonth} 
+                        <select
+                            value={uploadMonth}
                             onChange={(e) => setUploadMonth(e.target.value)}
                             className="flex-1 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#36606F]/20"
                         >
                             {MESES.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
-                        <select 
-                            value={uploadYear} 
+                        <select
+                            value={uploadYear}
                             onChange={(e) => setUploadYear(parseInt(e.target.value))}
                             className="w-24 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#36606F]/20"
                         >
@@ -355,28 +395,28 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                                         <p className="text-[10px] text-zinc-400 truncate">{row.filename.replace('.pdf', '')}</p>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
-                                        <button 
-                                            type="button" 
-                                            onClick={() => handleView(row)} 
-                                            disabled={!!isPreparingPreview || !!downloadingId} 
+                                        <button
+                                            type="button"
+                                            onClick={() => handleView(row)}
+                                            disabled={!!isPreparingPreview || !!downloadingId}
                                             className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
                                             title="Ver documento"
                                         >
                                             {isPreparingPreview === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Eye size={18} strokeWidth={2} />}
                                         </button>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => handleDownload(row)} 
-                                            disabled={!!downloadingId || !!isPreparingPreview} 
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownload(row)}
+                                            disabled={!!downloadingId || !!isPreparingPreview}
                                             className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
                                             title="Descargar"
                                         >
                                             {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Download size={18} strokeWidth={2} />}
                                         </button>
                                         {isManager && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleDelete(row)} 
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDelete(row)}
                                                 className="p-2.5 flex items-center justify-center rounded-lg text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-1"
                                                 title="Eliminar"
                                             >
@@ -391,18 +431,12 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 </div>
             </div>
 
-            <DocumentPreviewModal 
-                isOpen={isPreviewOpen} 
-                onClose={() => {
-                    setIsPreviewOpen(false);
-                    // Ya no revocamos porque usamos Signed URLs no Blobs
-                }}
+            <DocumentPreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
                 fileUrl={previewUrl}
                 fileName={previewFileName}
                 isPDF={previewIsPDF}
-                onDownload={() => {
-                    // Podemos reusar la URL del blob si existe
-                }}
             />
         </div>
     );
