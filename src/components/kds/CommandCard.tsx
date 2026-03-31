@@ -109,7 +109,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     {/* Mesa: Círculo Invertido (Fondo Blanco) */}
                     <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-slate-900`}>
                         <span className="text-base sm:text-lg font-black tracking-tighter uppercase tabular-nums">
-                            {order.mesa || '--'}
+                            {(() => {
+                                const mesaNum = parseInt(order.mesa || '');
+                                if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
+                                return order.mesa || '--';
+                            })()}
                         </span>
                     </div>
 
