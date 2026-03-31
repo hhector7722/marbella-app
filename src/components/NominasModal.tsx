@@ -34,9 +34,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const [uploading, setUploading] = useState(false);
 
 
-    // Estados para el formulario de subida
-    const [uploadMonth, setUploadMonth] = useState<string>(new Date().toLocaleString('es-ES', { month: 'long' }).toLowerCase());
-    const [uploadYear, setUploadYear] = useState<number>(new Date().getFullYear());
 
     const fetchNominas = async () => {
         setLoading(true);
@@ -213,6 +210,8 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         setUploading(true);
         try {
             const ext = file.name.split('.').pop() || 'pdf';
+            const uploadMonth = new Date().toLocaleString('es-ES', { month: 'long' }).toLowerCase();
+            const uploadYear = new Date().getFullYear();
             const fileName = `nomina_${uploadMonth}_${uploadYear}_${Date.now()}.${ext}`;
             const filePath = `${targetUserId}/nominas/${fileName}`;
 
@@ -276,17 +275,14 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         return row.filename || 'Nómina';
     };
 
-    const MESES = [
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
+
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
                 <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
                     <h2 className="text-base font-black uppercase tracking-wider">
-                        {targetUserId ? 'Nóminas del empleado' : 'Mis nóminas'}
+                        {targetUserId ? 'Nóminas' : 'Mis nóminas'}
                     </h2>
                     <div className="flex items-center gap-2">
                         {isManager && targetUserId && (
@@ -303,24 +299,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                     </div>
                 </div>
 
-                {isManager && targetUserId && (
-                    <div className="px-6 py-3 bg-zinc-50 border-b border-zinc-100 flex items-center gap-3">
-                        <select
-                            value={uploadMonth}
-                            onChange={(e) => setUploadMonth(e.target.value)}
-                            className="flex-1 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#36606F]/20"
-                        >
-                            {MESES.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                        <select
-                            value={uploadYear}
-                            onChange={(e) => setUploadYear(parseInt(e.target.value))}
-                            className="w-24 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#36606F]/20"
-                        >
-                            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                    </div>
-                )}
+
 
                 <div className="flex-1 overflow-y-auto max-h-[60vh] p-4">
                     {loading ? (
