@@ -119,9 +119,6 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                 {orderTime} • HACE {formatElapsed(elapsed)}
                             </span>
                         </div>
-                        <div className="text-[9px] sm:text-[10px] font-mono font-bold mt-0.5 uppercase tracking-widest opacity-80">
-                            TK #{order.origen_referencia?.slice(-5) || '-----'}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -174,9 +171,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
                                 {group.notas && (
                                     <div className="flex items-center gap-1 mt-px">
-                                        <span className={`text-[8px] font-black px-1 py-0.5 bg-red-50 border border-red-100 rounded text-red-700 italic ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''
+                                        <span className={`text-[8px] font-black text-red-600 italic ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''
                                             }`}>
-                                            "{group.notas}"
+                                            {group.notas}
                                         </span>
                                     </div>
                                 )}

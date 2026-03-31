@@ -122,7 +122,7 @@ export default function KDSView() {
                         aggregatedItems.map(item => (
                             <div key={item.key} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md border border-slate-700 shrink-0 shadow-sm transition-colors cursor-default my-auto">
                                 <span className="text-[11px] font-bold text-slate-300 max-w-[120px] truncate">{item.nombre}</span>
-                                {item.notas && <span className="text-[9px] font-black tracking-tighter text-amber-500 italic max-w-[80px] truncate">"{item.notas}"</span>}
+                                {item.notas && <span className="text-[9px] font-black tracking-tighter text-amber-500 italic max-w-[80px] truncate">{item.notas}</span>}
                                 <span className="bg-[#17253a] text-emerald-400 text-[10px] font-black px-1.5 py-0.5 rounded border border-emerald-900/40">
                                     x{item.cantidad}
                                 </span>
@@ -155,7 +155,7 @@ export default function KDSView() {
             <div className="flex-1 overflow-hidden flex flex-col bg-[#0f1522] relative">
 
                 {/* AREA PRINCIPAL: ROWS DE COMANDAS CON SUS RIELES */}
-                <div className="flex-1 overflow-y-auto pb-12 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto pt-10 pb-12 custom-scrollbar">
                     {visibleOrders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl">
                             {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
