@@ -59,9 +59,10 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
     const getIndicatorColor = () => {
         if (isCompleted) return 'bg-slate-600';
-        if (elapsed >= 15) return 'bg-[#a33b3b]';
-        if (elapsed >= 10) return 'bg-[#c25a5a]';
-        return 'bg-[#cc5151]';
+        if (elapsed >= 15) return 'animate-pulse-critical'; // Red 800 with pulse
+        if (elapsed >= 10) return 'bg-rose-600'; // Red
+        if (elapsed >= 5) return 'bg-amber-500';  // Amber
+        return 'bg-emerald-600'; // Green
     };
 
     const orderTime = new Date(effectiveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -215,6 +216,13 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             </div>
 
             <style jsx>{`
+        @keyframes pulse-critical {
+          0%, 100% { background-color: #991b1b; } /* bg-red-800 */
+          50% { background-color: #7f1d1d; } /* bg-red-900 */
+        }
+        .animate-pulse-critical {
+          animation: pulse-critical 2s ease-in-out infinite;
+        }
         @keyframes pulse-subtle {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.8; }

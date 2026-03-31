@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Motor nativo Serverless
 const PDFParser = require('pdf2json');
 
 const supabase = createClient(
@@ -9,7 +8,6 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// 🧠 Validador Matemático Módulo 23
 function isValidDNI(dni: string): boolean {
     const validChars = 'TRWAGMYFPDXBNJZSQVHLCKE';
     const regex = /^[XYZ]?\d{7,8}[A-Z]$/i;
@@ -37,36 +35,43 @@ export async function POST(request: Request) {
 
         const { fileBase64, filename, emailDate } = await request.json();
 
-        if (!fileBase64) {
+        if (!fileBase64 || !filename) {
             return NextResponse.json({ error: 'Payload incompleto' }, { status: 400 });
         }
 
         const pdfBuffer = Buffer.from(fileBase64, 'base64');
 
-        // 🧠 Extracción Determinista con Promesa y Decodificación
         const textContent = await new Promise<string>((resolve, reject) => {
-            const pdfParser = new PDFParser(null, 1); // El '1' fuerza la extracción de texto plano
-
+            const pdfParser = new PDFParser(null, 1);
             pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
             pdfParser.on("pdfParser_dataReady", () => {
-                try {
-                    resolve(decodeURIComponent(pdfParser.getRawTextContent()));
-                } catch (e) {
-                    resolve(pdfParser.getRawTextContent()); // Fallback de seguridad
-                }
+                try { resolve(decodeURIComponent(pdfParser.getRawTextContent())); }
+                catch (e) { resolve(pdfParser.getRawTextContent()); }
             });
-
             pdfParser.parseBuffer(pdfBuffer);
         });
 
-        // 🧠 Captura de DNI/NIE
-        const dniRegex = /\b([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z])\b/gi;
+        // 🧠 Regex Evolucionado: Captura sin límites de palabra, acepta guiones, puntos, espacios y ceros extra
+        const dniRegex = /(?:[XYZ][- \.]?[0-9]{7,8}[- \.]?[A-Z]|[0-9]{7,8}[- \.]?[A-Z])/gi;
         const potentialMatches = textContent.match(dniRegex) || [];
 
         let extractedDni = null;
-        for (const match of potentialMatches) {
-            if (isValidDNI(match)) {
-                extractedDni = match.toUpperCase();
+        for (const rawMatch of potentialMatches) {
+            // 1. Limpieza inicial: Quitar basura visual
+            let cleanMatch = rawMatch.replace(/[- \.]/g, '').toUpperCase();
+
+            // 2. Normalización de NIE: Si la gestoría añadió un 0 (Z01706686E), lo quitamos (Z1706686E)
+            if (/^[XYZ]0\d{7}[A-Z]$/.test(cleanMatch)) {
+                cleanMatch = cleanMatch.charAt(0) + cleanMatch.substring(2);
+            }
+
+            // 3. Normalización de DNI: Si falta un 0 inicial (1234567A), lo añadimos (01234567A)
+            if (/^\d{7}[A-Z]$/.test(cleanMatch)) {
+                cleanMatch = '0' + cleanMatch;
+            }
+
+            if (isValidDNI(cleanMatch)) {
+                extractedDni = cleanMatch;
                 break;
             }
         }
@@ -75,7 +80,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No se detectó DNI/NIE matemáticamente válido en el texto' }, { status: 422 });
         }
 
-        // 🧠 Cruce con Base de Datos
         const { data: profile, error: dbError } = await supabase
             .from('profiles')
             .select('id, first_name')
@@ -86,11 +90,27 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: `DNI ${extractedDni} no encontrado en perfiles activos` }, { status: 404 });
         }
 
-        // 🧠 Devengo y Persistencia
-        const dateObj = new Date(emailDate);
-        dateObj.setMonth(dateObj.getMonth() - 1);
-        const mesDevengo = dateObj.toLocaleString('es-ES', { month: 'long' });
-        const anioDevengo = dateObj.getFullYear();
+        let mesDevengo = '';
+        let anioDevengo = new Date(emailDate).getFullYear();
+        const filenameLower = filename.toLowerCase();
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+        for (const m of meses) {
+            if (filenameLower.includes(m)) {
+                mesDevengo = m;
+                break;
+            }
+        }
+
+        if (!mesDevengo) {
+            const dateObj = new Date(emailDate);
+            dateObj.setMonth(dateObj.getMonth() - 1);
+            mesDevengo = dateObj.toLocaleString('es-ES', { month: 'long' }).toLowerCase();
+        } else {
+            if (new Date(emailDate).getMonth() === 0 && mesDevengo === 'diciembre') {
+                anioDevengo -= 1;
+            }
+        }
 
         const safeFilename = `${anioDevengo}_${mesDevengo}_${extractedDni}.pdf`;
         const { error: storageError } = await supabase.storage
