@@ -154,11 +154,11 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 }
             }
 
-            // Ordenamiento cronológico global
+            // Ordenamiento por nombre de archivo (descendente para mostrar más recientes arriba)
             merged.sort((a, b) => {
-                const da = a.created_at ? new Date(a.created_at).getTime() : 0;
-                const db = b.created_at ? new Date(b.created_at).getTime() : 0;
-                return db - da;
+                const nameA = a.storage_path.split('/').pop() || '';
+                const nameB = b.storage_path.split('/').pop() || '';
+                return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
             });
 
             setNominas(merged);
