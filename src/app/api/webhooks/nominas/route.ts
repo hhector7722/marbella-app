@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Bypass para librería CommonJS sin default export en TypeScript
-const pdfParse = require('pdf-parse');
+// Motor nativo Serverless
+const PDFParser = require('pdf2json');
 
-// Inicializa Supabase saltando RLS (uso exclusivo interno de servidor)
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// 🧠 Validador Matemático Módulo 23 (Tolerancia Cero a Falsos Positivos)
+// 🧠 Validador Matemático Módulo 23
 function isValidDNI(dni: string): boolean {
     const validChars = 'TRWAGMYFPDXBNJZSQVHLCKE';
     const regex = /^[XYZ]?\d{7,8}[A-Z]$/i;
@@ -21,7 +20,6 @@ function isValidDNI(dni: string): boolean {
     let letter = str.slice(-1);
     let numberStr = str.slice(0, -1);
 
-    // Normalización de NIE (Extranjeros)
     numberStr = numberStr.replace('X', '0').replace('Y', '1').replace('Z', '2');
 
     const number = parseInt(numberStr, 10);
@@ -32,7 +30,6 @@ function isValidDNI(dni: string): boolean {
 
 export async function POST(request: Request) {
     try {
-        // 1. Barrera de Seguridad
         const authHeader = request.headers.get('authorization');
         if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,12 +41,25 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Payload incompleto' }, { status: 400 });
         }
 
-        // 2. Extracción de Texto en Memoria
         const pdfBuffer = Buffer.from(fileBase64, 'base64');
-        const pdfData = await pdfParse(pdfBuffer);
-        const textContent = pdfData.text;
 
-        // 3. Captura y Validación de DNI/NIE
+        // 🧠 Extracción Determinista con Promesa y Decodificación
+        const textContent = await new Promise<string>((resolve, reject) => {
+            const pdfParser = new PDFParser(null, 1); // El '1' fuerza la extracción de texto plano
+
+            pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
+            pdfParser.on("pdfParser_dataReady", () => {
+                try {
+                    resolve(decodeURIComponent(pdfParser.getRawTextContent()));
+                } catch (e) {
+                    resolve(pdfParser.getRawTextContent()); // Fallback de seguridad
+                }
+            });
+
+            pdfParser.parseBuffer(pdfBuffer);
+        });
+
+        // 🧠 Captura de DNI/NIE
         const dniRegex = /\b([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z])\b/gi;
         const potentialMatches = textContent.match(dniRegex) || [];
 
@@ -57,7 +67,7 @@ export async function POST(request: Request) {
         for (const match of potentialMatches) {
             if (isValidDNI(match)) {
                 extractedDni = match.toUpperCase();
-                break; // Detiene la búsqueda al encontrar el primer DNI matemáticamente real
+                break;
             }
         }
 
@@ -65,7 +75,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No se detectó DNI/NIE matemáticamente válido en el texto' }, { status: 422 });
         }
 
-        // 4. Cruce Determinista con Supabase
+        // 🧠 Cruce con Base de Datos
         const { data: profile, error: dbError } = await supabase
             .from('profiles')
             .select('id, first_name')
@@ -76,13 +86,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: `DNI ${extractedDni} no encontrado en perfiles activos` }, { status: 404 });
         }
 
-        // 5. Cálculo de Devengo (Mes anterior a la recepción)
+        // 🧠 Devengo y Persistencia
         const dateObj = new Date(emailDate);
         dateObj.setMonth(dateObj.getMonth() - 1);
         const mesDevengo = dateObj.toLocaleString('es-ES', { month: 'long' });
         const anioDevengo = dateObj.getFullYear();
 
-        // 6. Persistencia Física en Storage
         const safeFilename = `${anioDevengo}_${mesDevengo}_${extractedDni}.pdf`;
         const { error: storageError } = await supabase.storage
             .from('nominas')
