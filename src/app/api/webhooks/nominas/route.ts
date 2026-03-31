@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Bypass para librería CommonJS sin default export en TypeScript
+// ============================================================================
+// 🧠 PARCHE DE INFRAESTRUCTURA: BYPASS VERCEL SERVERLESS
+// Inyectamos APIs del DOM vacías en el entorno global para evitar que
+// el motor interno de pdf-parse crashee al no encontrar un navegador web.
+// ============================================================================
+if (typeof global.DOMMatrix === 'undefined') (global as any).DOMMatrix = class DOMMatrix { };
+if (typeof global.ImageData === 'undefined') (global as any).ImageData = class ImageData { };
+if (typeof global.Path2D === 'undefined') (global as any).Path2D = class Path2D { };
+
+// Bypass para librería CommonJS
 const pdfParse = require('pdf-parse');
 
 // Inicializa Supabase saltando RLS (uso exclusivo interno de servidor)
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
         for (const match of potentialMatches) {
             if (isValidDNI(match)) {
                 extractedDni = match.toUpperCase();
-                break; // Detiene la búsqueda al encontrar el primer DNI matemáticamente real
+                break;
             }
         }
 
