@@ -15,15 +15,16 @@ export function TimeFilterButton({
   onClear?: () => void;
 }) {
   return (
-    <div className={cn("inline-flex items-center gap-2 shrink-0", className)}>
+    <div className={cn("relative inline-flex shrink-0", className)}>
       <button
         type="button"
         onClick={onClick}
         className={cn(
           "inline-flex items-center gap-1.5",
           "text-[9px] md:text-[10px] font-black uppercase tracking-widest",
-          "transition-colors outline-none",
-          "min-h-[32px]"
+          "transition-all outline-none",
+          "bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl border border-white/10",
+          "min-h-[32px] md:min-h-[36px]"
         )}
         aria-label="Filtrar"
       >
@@ -40,15 +41,18 @@ export function TimeFilterButton({
           }}
           aria-label="Restablecer filtro"
           className={cn(
-            "min-h-[36px] min-w-[36px] w-9 h-9 rounded-xl",
-            "bg-rose-500 hover:bg-rose-600 text-white",
-            "active:scale-95 transition-all flex items-center justify-center"
+            "absolute -top-1.5 -right-1.5",
+            "w-5 h-5 md:w-6 md:h-6 rounded-full",
+            "bg-rose-500 hover:bg-rose-600 text-white shadow-lg",
+            "flex items-center justify-center transition-all active:scale-95",
+            "border-2 border-[#36606F]"
           )}
         >
-          <X size={14} strokeWidth={3} />
+          <X size={10} className="md:size-3" strokeWidth={4} />
         </button>
       )}
     </div>
+
   );
 }
 

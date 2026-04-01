@@ -397,10 +397,10 @@ export default function StaffDashboardView() {
         const op = allBoxes.find(b => b.type === 'operational');
         const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         const tpvBoxes = allBoxes.filter(b => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        
+
         if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
         changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
-        
+
         // Add TPVs from DB if they exist, otherwise fallback for migration period
         if (tpvBoxes.length > 0) {
             tpvBoxes.forEach(b => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url }));
@@ -441,7 +441,7 @@ export default function StaffDashboardView() {
                 const isTpvByHardcodedId = entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2';
                 const isTpvByDb = allBoxes.some(b => b.id === entry.sourceId && b.type === 'tpv');
                 if (isTpvByHardcodedId || isTpvByDb) continue;
-                
+
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
                 Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
@@ -1084,11 +1084,11 @@ export default function StaffDashboardView() {
                                             <Clock size={20} strokeWidth={3} />
                                         </Link>
                                     )}
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setIsCashOptionsModalOpen(false);
                                             setShowBoxManagement(false);
-                                        }} 
+                                        }}
                                         className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 min-h-[48px] min-w-[48px]"
                                     >
                                         <X size={20} strokeWidth={3} />
@@ -1140,7 +1140,7 @@ export default function StaffDashboardView() {
                                 ) : (
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <button 
+                                            <button
                                                 onClick={() => setShowBoxManagement(false)}
                                                 className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 hover:bg-gray-200"
                                             >
@@ -1149,7 +1149,7 @@ export default function StaffDashboardView() {
                                             <p className="text-[10px] font-black uppercase text-gray-400">Seleccionar caja para editar</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
-                                            {allBoxes.filter(b => b.type === 'operational' || b.type === 'change' || b.type === 'tpv').sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(box => (
+                                            {allBoxes.filter(b => b.type === 'operational' || b.type === 'change' || b.type === 'tpv').sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(box => (
                                                 <button
                                                     key={box.id}
                                                     onClick={() => {

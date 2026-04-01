@@ -23,6 +23,7 @@ interface TicketSummary {
     hora_cierre: string;
     origen: string;
     total_documento: number;
+    mesa?: number | null;
 }
 
 interface ProductRanking {
@@ -216,7 +217,7 @@ export default function VentasPage() {
             // Fetching paralelo de Tickets (Cabeceras) y Ranking de Productos
             const ticketsPromise = supabase
                 .from('tickets_marbella') // Endpoint/Tabla a utilizar
-                .select('numero_documento, fecha, hora_cierre, total_documento')
+                .select('numero_documento, fecha, hora_cierre, total_documento, mesa')
                 .gte('fecha', startDateStr)
                 .lte('fecha', endDateStr)
                 .order('fecha', { ascending: false })
@@ -599,6 +600,7 @@ export default function VentasPage() {
                                                 <tr>
                                                     <th className="py-4 px-3 md:px-6 whitespace-nowrap">Hora</th>
                                                     <th className="py-4 px-3 md:px-6 whitespace-nowrap">Documento</th>
+                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Mesa</th>
                                                     <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
                                                 </tr>
                                             </thead>
@@ -637,6 +639,9 @@ export default function VentasPage() {
                                                                 <td className="py-3 px-2 md:px-4 font-mono text-[10px] md:text-xs text-zinc-700">
                                                                     {cleanDocNumber}
                                                                 </td>
+                                                                <td className="py-3 px-2 md:px-4 font-mono text-[10px] md:text-xs text-zinc-500">
+                                                                    {(!ticket.mesa || ticket.mesa === 0) ? 'Barra' : ticket.mesa}
+                                                                </td>
                                                                 <td className={cn(
                                                                     "py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm",
                                                                     (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
@@ -646,7 +651,7 @@ export default function VentasPage() {
                                                             </tr>
                                                             {expandedTicket === ticket.numero_documento && (
                                                                 <tr className="bg-zinc-50/30 print:hidden">
-                                                                    <td colSpan={3} className="px-1 py-2 md:p-4">
+                                                                    <td colSpan={4} className="px-1 py-2 md:p-4">
                                                                         <div className="bg-[#fcfcfc] rounded-2xl p-2 md:p-4 animate-in slide-in-from-top-2 duration-200">
                                                                             {loadingLines ? (
                                                                                 <div className="flex justify-center py-6">
