@@ -432,3 +432,59 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
         return { success: false, error: e.message ?? 'Error al crear fichaje' };
     }
 }
+
+/**
+ * Elimina todos los registros de asistencia de un trabajador para un día concreto. Solo managers.
+ * Tras la eliminación se ejecuta fn_recalc_and_propagate_snapshots.
+ */
+export async function deleteManagerDayLogs(userId: string, dateStr: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: 'No autenticado' };
+
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role !== 'manager') return { success: false, error: 'Solo managers pueden eliminar registros' };
+
+        const [y, m, d] = dateStr.split('-').map(Number);
+        if (!y || !m || !d) return { success: false, error: 'Fecha inválida' };
+
+        // Definir el rango del día completo
+        const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
+        const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+
+        const { error: deleteErr } = await supabase
+            .from('time_logs')
+            .delete()
+            .eq('user_id', userId)
+            .gte('clock_in', startOfDay.toISOString())
+            .lte('clock_in', endOfDay.toISOString());
+
+        if (deleteErr) throw deleteErr;
+
+        // Calcular el lunes de esa semana para la propagación
+        const weekStart = (() => {
+            const date = new Date(y, m - 1, d);
+            const dayOfWeek = date.getDay();
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const monday = new Date(date);
+            monday.setDate(date.getDate() - daysToMonday);
+            return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+        })();
+
+        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+            p_user_id: userId,
+            p_start_date: weekStart,
+        });
+        if (rpcError) throw rpcError;
+
+        revalidatePath('/staff/history');
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/overtime');
+
+        return { success: true };
+    } catch (e: any) {
+        console.error('deleteManagerDayLogs:', e);
+        return { success: false, error: e.message ?? 'Error al eliminar registros' };
+    }
+}

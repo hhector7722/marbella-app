@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Coins, Landmark, Calendar, Plus } from 'lucide-react';
+import { X, Save, Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { updateWeeklyWorkerConfig, createManagerFichaje } from '@/app/actions/overtime';
+import { updateWeeklyWorkerConfig, createManagerFichaje, deleteManagerDayLogs } from '@/app/actions/overtime';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
@@ -366,6 +366,29 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
         }
     };
 
+    const handleDeleteDay = async () => {
+        if (!date || !userId) return;
+        if (!confirm('¿Estás seguro de que deseas eliminar TODOS los registros de este día?')) return;
+
+        setIsSaving(true);
+        try {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const result = await deleteManagerDayLogs(userId, dateStr);
+            if (result.success) {
+                toast.success('Día eliminado correctamente');
+                onSuccess();
+                onClose();
+            } else {
+                toast.error(result.error ?? 'Error al eliminar el día');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Error al eliminar el día');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -434,8 +457,18 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                     );
                                 }
                                 return (
-                                    <div className="py-8 flex flex-col items-center justify-center">
+                                    <div className="py-8 flex flex-col items-center justify-center gap-4">
                                         <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest text-center">Sin datos</span>
+                                        {isManager && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditWeekModalOpen(true)}
+                                                className="w-full max-w-[160px] min-h-[48px] rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
+                                            >
+                                                <Calendar size={14} strokeWidth={2.5} />
+                                                <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Editar semana</span>
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             }
@@ -531,31 +564,42 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                     </div>
 
                                     {isManager && (
-                                        <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-                                            <div className="bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
-                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
-                                                <select
-                                                    value={log.event_type}
-                                                    onChange={(e) => updateLog(0, 'event_type', e.target.value)}
-                                                    className="text-[9px] font-black text-zinc-800 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent w-full"
-                                                >
-                                                    {EVENT_TYPES.map(t => (
-                                                        <option key={t.value} value={t.value} className="text-gray-900 bg-white">
-                                                            {t.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                        <div className="flex flex-col gap-1.5 mt-1.5">
+                                            <div className="grid grid-cols-2 gap-1.5">
+                                                <div className="bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                                    <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
+                                                    <select
+                                                        value={log.event_type}
+                                                        onChange={(e) => updateLog(0, 'event_type', e.target.value)}
+                                                        className="text-[9px] font-black text-zinc-800 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent w-full"
+                                                    >
+                                                        {EVENT_TYPES.map(t => (
+                                                            <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                                {t.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="flex items-stretch min-w-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditWeekModalOpen(true)}
+                                                        className="w-full min-h-[44px] rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
+                                                    >
+                                                        <Calendar size={14} strokeWidth={2.5} />
+                                                        <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Semana</span>
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-stretch min-w-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setEditWeekModalOpen(true)}
-                                                    className="w-full min-h-[48px] rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
-                                                >
-                                                    <Calendar size={14} strokeWidth={2.5} />
-                                                    <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Editar semana</span>
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleDeleteDay}
+                                                disabled={isSaving}
+                                                className="w-full h-9 rounded-xl bg-red-50 border border-red-100 text-red-600 font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5 hover:bg-red-100/50 disabled:opacity-50"
+                                            >
+                                                <Trash2 size={12} strokeWidth={2.5} />
+                                                <span>Eliminar día completo</span>
+                                            </button>
                                         </div>
                                     )}
 

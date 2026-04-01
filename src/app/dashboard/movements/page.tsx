@@ -549,7 +549,7 @@ export default function MovementsPage() {
 
                         {/* FILTROS INTEGRADOS EN CABECERA */}
                         {/* FILTROS INTEGRADOS EN CABECERA */}
-                        <div className="flex items-center justify-between gap-2 pb-2">
+                        <div className="relative flex items-center justify-center gap-2 pb-2">
                             {/* NAVEGADOR MENSUAL PRINCIPAL */}
                             <div className="flex items-center gap-0.5 md:gap-1">
                                 <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none">
@@ -566,7 +566,7 @@ export default function MovementsPage() {
                             </div>
 
                             {/* FILTRO UNIFICADO */}
-                            <div className="flex items-center gap-1.5 shrink-0 text-white">
+                            <div className="absolute right-0 flex items-center gap-1.5 shrink-0 text-white">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     hasActiveFilter={(() => {
