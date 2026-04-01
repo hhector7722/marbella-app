@@ -31,7 +31,8 @@ export default function KDSView() {
     const [showCompleted, setShowCompleted] = useState(false);
 
     const visibleOrders = orders.filter(o => 
-        showCompleted ? o.estado === 'completada' : o.estado === 'activa'
+        (showCompleted ? o.estado === 'completada' : o.estado === 'activa') && 
+        (o.lineas?.length || 0) > 0
     );
 
     const aggregatedItems = visibleOrders.reduce((acc, order) => {
