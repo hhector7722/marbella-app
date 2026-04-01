@@ -13,6 +13,11 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 
   const productosValidos = m.productos?.filter((p: any) => parseFloat(p.unidades) > 0) || [];
 
+  // ✨ AQUÍ ESTÁ LA MAGIA: Calculamos el total sumando (unidades * precio)
+  const totalCalculado = productosValidos.reduce((suma: number, p: any) => {
+    return suma + (parseFloat(p.unidades) * parseFloat(p.precio || 0));
+  }, 0);
+
   return (
     <div className={`p-2 md:p-3 rounded-xl flex flex-col transition-all duration-300 h-fit ${estado.color} ${abierto ? 'shadow-2xl z-10 scale-[1.02]' : 'shadow-sm'}`}>
       <div
@@ -24,8 +29,9 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
         </span>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-1 justify-end">
+          {/* ✨ Y AQUÍ PINTAMOS EL TOTAL CALCULADO */}
           <span className="text-[11px] md:text-sm font-bold text-white flex items-center tabular-nums tracking-tight">
-            {parseFloat(m.total_provisional || 0).toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
+            {totalCalculado.toFixed(2)} <Euro size={10} className="ml-0.5 text-white/80" />
           </span>
           <span className="text-[9px] md:text-[10px] font-bold flex items-center shrink-0 text-white/90">
             <Clock size={10} className="mr-0.5" /> {estado.hora}
