@@ -50,19 +50,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         return `${hrs}h ${mins}m`;
     };
 
-    const getHeaderColor = () => {
-        if (isCompleted) return 'bg-slate-700 border-slate-800';
-        if (elapsed >= 15) return 'bg-[#b84a4a] border-[#a13f3f]';
-        if (elapsed >= 10) return 'bg-[#cf6a6a] border-[#b55b5b]';
-        return 'bg-[#d65f5f] border-[#b55b5b]'; // Rojo similar al pantallazo
-    };
-
     const getIndicatorColor = () => {
         if (isCompleted) return 'bg-slate-600';
-        if (elapsed >= 15) return 'animate-pulse-critical'; // Red 800 with pulse
-        if (elapsed >= 10) return 'bg-rose-600'; // Red
-        if (elapsed >= 5) return 'bg-amber-500';  // Amber
-        return 'bg-emerald-600'; // Green
+        if (elapsed >= 20) return 'animate-pulse-critical'; // Rojo crítico (más de 20 min)
+        if (elapsed >= 15) return 'bg-amber-500';  // Ámbar/Amarillo (15-20 min)
+        return 'bg-emerald-600'; // Verde (hasta 15 min)
     };
 
     const orderTime = new Date(effectiveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

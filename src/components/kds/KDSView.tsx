@@ -63,14 +63,7 @@ export default function KDSView() {
         orderRows.push(sortedOrders.slice(i, i + cols));
     }
 
-    if (loading && orders.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <Loader2 className="animate-spin mb-4" size={48} strokeWidth={1} />
-                <p className="text-sm font-bold uppercase tracking-widest animate-pulse">Sincronizando Cocina...</p>
-            </div>
-        );
-    }
+
 
     return (
         <div className={`fixed inset-0 z-[100] flex flex-col bg-slate-900 transition-all duration-500 ${isOffline ? 'grayscale-[0.5]' : ''}`}>
@@ -115,9 +108,11 @@ export default function KDSView() {
                         </span>
                     </div>
                     {aggregatedItems.length === 0 ? (
-                        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic my-auto">
-                            Nada que preparar
-                        </div>
+                        !loading && (
+                            <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic my-auto">
+                                Nada que preparar
+                            </div>
+                        )
                     ) : (
                         aggregatedItems.map(item => (
                             <div key={item.key} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md border border-slate-700 shrink-0 shadow-sm transition-colors cursor-default my-auto">
@@ -156,8 +151,13 @@ export default function KDSView() {
 
                 {/* AREA PRINCIPAL: ROWS DE COMANDAS CON SUS RIELES */}
                 <div className="flex-1 overflow-y-auto pt-10 pb-12 custom-scrollbar">
-                    {visibleOrders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl">
+                    {loading && orders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400 animate-in fade-in duration-700">
+                            <Loader2 className="animate-spin mb-4 opacity-20" size={48} strokeWidth={1} />
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 animate-pulse">Sincronizando...</p>
+                        </div>
+                    ) : visibleOrders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
                             {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
                             <h3 className="text-lg font-bold text-slate-400 uppercase tracking-tighter">
                                 {showCompleted ? 'Sin comandas finalizadas hoy' : 'No hay comandas pendientes'}

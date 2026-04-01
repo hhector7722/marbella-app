@@ -11,27 +11,30 @@ export function useKDS() {
     const supabase = createClient();
 
     // 1. CARGA INICIAL: Sincronizamos solo las comandas del día en curso
-    const fetchActiveOrders = useCallback(async () => {
-        setLoading(true);
+    const fetchActiveOrders = useCallback(async (options: { isInitial?: boolean } = {}) => {
+        if (options.isInitial) setLoading(true);
 
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Medianoche local
         const startOfToday = today.toISOString();
 
-        const { data, error } = await supabase
-            .from('kds_orders')
-            .select('*, lineas:kds_order_lines(*)')
-            .gte('created_at', startOfToday)
-            .order('created_at', { ascending: true });
+        try {
+            const { data, error } = await supabase
+                .from('kds_orders')
+                .select('*, lineas:kds_order_lines(*)')
+                .gte('created_at', startOfToday)
+                .order('created_at', { ascending: true });
 
-        if (!error && data) {
-            setOrders(data);
-            setIsOffline(false);
-        } else if (error) {
-            console.error('Error KDS Initial Fetch:', error.message);
-            setIsOffline(true);
+            if (!error && data) {
+                setOrders(data);
+                setIsOffline(false);
+            } else if (error) {
+                console.error('Error KDS Initial Fetch:', error.message);
+                setIsOffline(true);
+            }
+        } finally {
+            if (options.isInitial) setLoading(false);
         }
-        setLoading(false);
     }, [supabase]);
 
     useEffect(() => {
@@ -39,7 +42,7 @@ export function useKDS() {
         let backoffDelay = 2000;
 
         const setupSubscription = () => {
-            fetchActiveOrders();
+            fetchActiveOrders({ isInitial: true });
 
             const channel = supabase
                 .channel('kds_resilient_sync')
@@ -68,7 +71,9 @@ export function useKDS() {
                     if (status === 'SUBSCRIBED') {
                         setIsOffline(false);
                         backoffDelay = 2000;
-                        await fetchActiveOrders();
+                        // Ya hemos hecho un fetch inicial al inicio de setupSubscription,
+                        // este segundo fetch asegura que no nos perdimos nada en el ínterin.
+                        await fetchActiveOrders({ isInitial: false });
                     }
 
                     if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
