@@ -510,8 +510,9 @@ export default function HistoryPage() {
                                         filterMonth={filterMonth}
                                         filterYear={filterYear}
                                         onDayClick={handleDayClick}
-                                        showWeekOverrides={false}
+                                        showWeekOverrides={isManager}
                                         userId={selectedEmployeeId || currentUserId}
+
                                         onApplyWeekOverrides={async (contractedHours, preferStock) => {
                                             const uid = selectedEmployeeId || currentUserId;
                                             const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);

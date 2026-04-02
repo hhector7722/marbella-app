@@ -373,11 +373,9 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                 'min-h-[48px] rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center',
                                                 key === 'C' && 'bg-rose-100 text-rose-700 hover:bg-rose-200',
                                                 key === 'back' && 'bg-rose-500 text-white hover:bg-rose-600',
-                                                key === '±' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-                                                key === '%' && 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-                                                ['+', '-', '*', '/'].includes(key) && 'bg-purple-600 text-white hover:bg-purple-500',
-                                                key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600',
-                                                (!['C', 'back', '=', ''].includes(key) && !['+', '-', '*', '/', '%', '±'].includes(key)) && 'bg-[#407080] text-white border border-white/20 hover:brightness-110',
+                                                ['+', '-', '*', '/', '±', '%'].includes(key) && 'bg-white text-[#36606F] border border-[#36606F]/20 hover:bg-zinc-100 shadow-sm',
+                                                key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20',
+                                                (!['C', 'back', '=', '', '+', '-', '*', '/', '±', '%'].includes(key)) && 'bg-[#407080] text-white border border-white/20 hover:brightness-110',
                                                 key === '' && 'invisible pointer-events-none'
                                             )}
                                         >
@@ -408,39 +406,39 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                 />
                             )}
                             <div ref={breakdownCaptureRef}>
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5 mb-3">
+                                <div className="grid grid-cols-4 gap-y-5 gap-x-3 p-3">
                                     {DENOMINATIONS.map((denom) => {
                                         const qty = breakdownCounts[denom] || 0;
                                         return (
-                                            <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                                            <div key={denom} className="flex flex-col items-center gap-1.5 group transition-all">
                                                 <div
                                                     role="button"
                                                     tabIndex={0}
                                                     onClick={() => setZoomDenom(denom)}
                                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
-                                                    className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                                    className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer focus:outline-none min-h-[44px]"
                                                     aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
                                                 >
-                                        <img
-                                            src={CURRENCY_IMAGES[denom]}
-                                            alt={`${denom}€`}
-                                            width={140}
-                                            height={140}
-                                            className="h-full w-auto object-contain drop-shadow-lg pointer-events-none"
-                                            draggable={false}
-                                        />
+                                                    <img
+                                                        src={CURRENCY_IMAGES[denom]}
+                                                        alt={`${denom}€`}
+                                                        width={140}
+                                                        height={140}
+                                                        className="h-full w-auto object-contain drop-shadow-md pointer-events-none"
+                                                        draggable={false}
+                                                    />
                                                 </div>
-                                                <div className="text-center w-full">
-                                                    <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                                <div className="text-center w-full space-y-1">
+                                                    <span className="font-black text-gray-400 text-[8px] uppercase tracking-widest block">
                                                         {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                                     </span>
-                                                    <div className="flex items-center justify-between w-full h-10 min-h-[48px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
+                                                    <div className="flex items-center justify-between w-full h-9 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-[#5B8FB9]/20">
                                                         <button
                                                             type="button"
                                                             onClick={() => handleBreakdownAdjust(denom, -1)}
-                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                                            className="w-7 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
                                                         >
-                                                            <Minus size={14} strokeWidth={3} />
+                                                            <Minus size={12} strokeWidth={3} />
                                                         </button>
                                                         <input
                                                             type="number"
@@ -448,14 +446,14 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                                             value={qty > 0 ? qty : ''}
                                                             onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
                                                             placeholder=""
-                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => handleBreakdownAdjust(denom, 1)}
-                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                                            className="w-7 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
                                                         >
-                                                            <Plus size={14} strokeWidth={3} />
+                                                            <Plus size={12} strokeWidth={3} />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -463,24 +461,31 @@ export function QuickCalculatorModal({ isOpen, onClose }: QuickCalculatorModalPr
                                         );
                                     })}
                                 </div>
-                                <div className="flex items-center justify-between gap-2 p-3 bg-[#36606F] rounded-xl mb-3">
-                                    <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Total</span>
-                                    <span className="text-lg font-black text-white tabular-nums">
-                                        {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
-                                    </span>
+
+                                {/* Floating Total Indicator */}
+                                <div className="sticky bottom-0 left-0 right-0 p-3 pointer-events-none">
+                                    <div className="bg-[#36606F]/95 backdrop-blur-md px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-2xl border border-white/10 animate-in slide-in-from-bottom-2">
+                                        <span className="text-[10px] font-black text-white/70 uppercase tracking-[0.2em]">Total</span>
+                                        <span className="text-xl font-black text-white tabular-nums">
+                                            {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : '0.00€'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={handleBreakdownSend}
-                                    disabled={isSending || showConfirmEnviar}
-                                    className={cn(
-                                        "w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-md",
-                                        isSending && "opacity-60 cursor-not-allowed"
-                                    )}
-                                >
-                                    <Send size={16} />
-                                    {isSending ? 'Generando…' : 'Enviar'}
-                                </button>
+
+                                <div className="p-4 mt-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleBreakdownSend}
+                                        disabled={isSending || showConfirmEnviar}
+                                        className={cn(
+                                            "mx-auto w-[85%] min-h-[44px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-lg shadow-purple-900/20 transition-all",
+                                            isSending && "opacity-60 cursor-not-allowed"
+                                        )}
+                                    >
+                                        <Send size={14} />
+                                        {isSending ? 'Generando…' : 'Enviar'}
+                                    </button>
+                                </div>
                             </div>
                         </>
                     )}

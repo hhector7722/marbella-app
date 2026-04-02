@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
-import { Loader2, Package, LayoutGrid, Info, AlertTriangle, ListChecks } from 'lucide-react';
+import { Loader2, Package, LayoutGrid, Info, AlertTriangle, ListChecks, Check, X } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
 
@@ -27,7 +27,7 @@ function useColumns() {
 }
 
 export default function KDSView() {
-    const { orders, loading, isOffline, tacharProductos, completarComanda, recuperarComanda } = useKDS();
+    const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
 
     const visibleOrders = orders.filter(o => 
@@ -69,15 +69,7 @@ export default function KDSView() {
     return (
         <div className={`fixed inset-0 z-[100] flex flex-col bg-slate-900 transition-all duration-500 ${isOffline ? 'grayscale-[0.5]' : ''}`}>
 
-            {isOffline && (
-                <div className="bg-red-600 text-white py-4 px-6 flex items-center justify-center gap-4 z-[110] relative shadow-2xl">
-                    <AlertTriangle size={32} className="shrink-0 animate-pulse" />
-                    <div className="flex flex-col">
-                        <span className="text-xl font-black uppercase tracking-tighter">⚠️ DESCONECTADO DEL SERVIDOR</span>
-                        <span className="text-xs font-bold opacity-90 uppercase tracking-[0.1em]">Las nuevas comandas no entrarán. Reintentando...</span>
-                    </div>
-                </div>
-            )}
+
 
             {/* CABECERA UNIFICADA DE COCINA */}
             <header className="bg-slate-900 border-b border-black md:px-0 flex items-center justify-between z-20 shrink-0 h-16 w-full relative">
@@ -128,7 +120,14 @@ export default function KDSView() {
                 </div>
 
                 {/* 3. Derecha: Toggles y Controles */}
-                <div className="flex items-center gap-3 shrink-0 h-full px-4 border-l border-slate-800">
+                <div className="flex items-center gap-4 shrink-0 h-full px-4 border-l border-slate-800">
+                    {/* Indicador de Sincronización Dinámico */}
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-500 overflow-hidden ${syncStatus === 'idle' ? 'w-0 opacity-0' : 'w-8 opacity-100 bg-slate-800 border border-slate-700/50 shadow-inner'}`}>
+                        {syncStatus === 'syncing' && <Loader2 size={16} className="text-blue-400 animate-spin" />}
+                        {syncStatus === 'success' && <Check size={16} className="text-emerald-400" />}
+                        {syncStatus === 'error' && <X size={16} className="text-red-500" />}
+                    </div>
+
                     <div className="flex bg-slate-800 p-1 rounded-lg shadow-inner">
                         <button 
                              onClick={() => setShowCompleted(false)} 

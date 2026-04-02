@@ -8,7 +8,18 @@ export function useKDS() {
     const [orders, setOrders] = useState<KDSOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
     const supabase = createClient();
+
+    const setStatusWithTimeout = useCallback((status: 'success' | 'error') => {
+        setSyncStatus(status);
+        if (status === 'success') {
+            const timeout = setTimeout(() => {
+                setSyncStatus(prev => prev === 'success' ? 'idle' : prev);
+            }, 2000);
+            return () => clearTimeout(timeout);
+        }
+    }, []);
 
     // Conjunto de IDs de comandas que el cocinero marcó como completas localmente.
     // Actúa como "veto": aunque el servidor diga que están activas, aquí las
@@ -78,8 +89,9 @@ export function useKDS() {
     }, []);
 
     // 1. CARGA: Sincronizamos las comandas del día en curso
-    const fetchActiveOrders = useCallback(async (options: { isInitial?: boolean } = {}) => {
+    const fetchActiveOrders = useCallback(async (options: { isInitial?: boolean; isSilent?: boolean } = {}) => {
         if (options.isInitial) setLoading(true);
+        if (!options.isSilent) setSyncStatus('syncing');
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -105,14 +117,16 @@ export function useKDS() {
                     mergeOrders(data);
                 }
                 setIsOffline(false);
+                if (!options.isSilent) setStatusWithTimeout('success');
             } else if (error) {
                 console.error('Error KDS Fetch:', error.message);
                 setIsOffline(true);
+                setSyncStatus('error');
             }
         } finally {
             if (options.isInitial) setLoading(false);
         }
-    }, [supabase, mergeOrders]);
+    }, [supabase, mergeOrders, setStatusWithTimeout]);
 
     useEffect(() => {
         let reconnectTimeout: ReturnType<typeof setTimeout>;
@@ -164,11 +178,12 @@ export function useKDS() {
                         setIsOffline(false);
                         backoffDelay = 2000;
                         // Fetch de sincronización silencioso (merge, sin loading)
-                        await fetchActiveOrders({ isInitial: false });
+                        await fetchActiveOrders({ isInitial: false, isSilent: true });
                     }
 
                     if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
                         setIsOffline(true);
+                        setSyncStatus('error');
                         clearTimeout(reconnectTimeout);
                         reconnectTimeout = setTimeout(() => {
                             backoffDelay = Math.min(backoffDelay * 1.5, 30000);
@@ -192,6 +207,7 @@ export function useKDS() {
     // TACHADO OPTIMISTA EN LOTE (BATCH) — tachan todas las IDs del grupo
     const tacharProductos = async (lineIds: string[], currentState: KDSItemStatus) => {
         if (lineIds.length === 0) return;
+        setSyncStatus('syncing');
 
         const nextState: KDSItemStatus = currentState === 'pendiente' ? 'terminado' : 'pendiente';
         const completedAt = nextState === 'terminado' ? new Date().toISOString() : null;
@@ -213,17 +229,21 @@ export function useKDS() {
         lineIds.forEach(id => inFlightLineIds.current.delete(id));
 
         if (error) {
+            setSyncStatus('error');
             setOrders(prev => prev.map(o => ({
                 ...o,
                 lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? {
                     ...l, estado: currentState, completed_at: currentState === 'terminado' ? new Date().toISOString() : null
                 } : l)
             })));
+        } else {
+            setStatusWithTimeout('success');
         }
     };
 
     // CIERRE DE COMANDA OPTIMISTA
     const completarComanda = async (orderId: string) => {
+        setSyncStatus('syncing');
         // Registrar en el veto local ANTES del update
         localCompletedIds.current.add(orderId);
 
@@ -235,14 +255,18 @@ export function useKDS() {
             .eq('id', orderId);
 
         if (error) {
+            setSyncStatus('error');
             // Revertir el veto
             localCompletedIds.current.delete(orderId);
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'activa', completed_at: null } : o));
+        } else {
+            setStatusWithTimeout('success');
         }
     };
 
     // RECUPERAR COMANDA OPTIMISTA
     const recuperarComanda = async (orderId: string) => {
+        setSyncStatus('syncing');
         // Quitar del veto local
         localCompletedIds.current.delete(orderId);
 
@@ -254,10 +278,13 @@ export function useKDS() {
             .eq('id', orderId);
 
         if (error) {
+            setSyncStatus('error');
             localCompletedIds.current.add(orderId);
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
+        } else {
+            setStatusWithTimeout('success');
         }
     };
 
-    return { orders, loading, isOffline, tacharProductos, completarComanda, recuperarComanda, refresh: fetchActiveOrders };
+    return { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda, refresh: fetchActiveOrders };
 }

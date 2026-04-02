@@ -56,6 +56,7 @@ interface WeekSummary {
     estimatedValue: number;
     isPaid: boolean;
     preferStock?: boolean;
+    limitHours?: number;
 }
 
 interface WeekCardProps {
@@ -71,13 +72,15 @@ interface WeekCardProps {
 }
 
 export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showWeekOverrides, userId, onApplyWeekOverrides }: WeekCardProps) {
-    const [localContracted, setLocalContracted] = useState<number>(40);
+    const [localContracted, setLocalContracted] = useState<number>(week.summary.limitHours ?? 40);
     const [localPreferStock, setLocalPreferStock] = useState<boolean>(week.summary.preferStock ?? false);
     const [savingOverrides, setSavingOverrides] = useState(false);
 
     React.useEffect(() => {
         setLocalPreferStock(week.summary.preferStock ?? false);
-    }, [week.summary.preferStock]);
+        setLocalContracted(week.summary.limitHours ?? 40);
+    }, [week.summary.preferStock, week.summary.limitHours]);
+
 
     const handleApplyOverrides = async () => {
         if (!userId || !onApplyWeekOverrides) return;
