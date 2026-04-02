@@ -94,7 +94,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     return (
         <div
             ref={cardRef}
-            className={`relative flex flex-col rounded-b-xl rounded-t-sm overflow-hidden shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white ${isCompleted
+            className={`relative flex flex-col rounded-b-xl rounded-t-sm shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white ${
+                openDropdownKey ? 'z-[100]' : 'z-auto'
+            } ${isCompleted
                     ? 'opacity-60'
                     : isFullyDone
                         ? 'opacity-90'
@@ -103,7 +105,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '8px solid #cbd5e1' }}
         >
             {/* Cabecera coloreada */}
-            <div className={`px-3 pb-1.5 flex justify-between items-start transition-colors duration-500 relative font-black ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
+            <div className={`px-3 pb-1.5 flex justify-between items-start transition-colors duration-500 relative font-black rounded-t-sm ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
                 {isCompleted && (
                     <div className="absolute top-0 right-3 bg-white/50 px-1.5 py-0.5 rounded-b-md text-[7px] font-black uppercase tracking-widest text-slate-700">
                         FINALIZADA
@@ -126,14 +128,22 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     <div className="flex flex-col items-end flex-1 pr-1">
                         <div className="flex items-center gap-1 text-right w-full justify-end opacity-95">
                             <span className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest truncate">
-                                {orderTime} • HACE {formatElapsed(elapsed)}
+                                {orderTime}
                             </span>
                         </div>
-                        {order.origen_referencia && (
+                        <div className="flex items-center gap-1 text-right w-full justify-end">
                             <span className="text-[8px] sm:text-[9px] font-bold opacity-70 uppercase tracking-wider">
-                                {order.origen_referencia}
+                                HACE {formatElapsed(elapsed)}
                             </span>
-                        )}
+                            {order.origen_referencia && (
+                                <>
+                                    <span className="text-[8px] opacity-40 ml-1">•</span>
+                                    <span className="text-[8px] sm:text-[9px] font-bold opacity-70 uppercase tracking-wider ml-1">
+                                        {order.origen_referencia.replace(/^directo\s*-\s*/i, '').replace(/^directo-/i, '')}
+                                    </span>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -263,7 +273,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 })}
             </div>
 
-            <div className="p-2 border-t border-slate-100">
+            <div className="p-2 border-t border-slate-100 rounded-b-xl">
                 {isCompleted ? (
                     <button
                         onClick={() => onRecuperarComanda(order.id)}

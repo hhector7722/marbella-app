@@ -603,18 +603,6 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         </div>
                                     )}
 
-                                    <EditWeekModal
-                                        isOpen={editWeekModalOpen}
-                                        onClose={() => setEditWeekModalOpen(false)}
-                                        date={date}
-                                        userId={userId}
-                                        onSuccess={() => {
-                                            onSuccess();
-                                            setEditWeekModalOpen(false);
-                                        }}
-                                    />
-
-                                    {/* Botonera fija abajo */}
                                     <div className="mt-3 flex gap-1.5 shrink-0">
                                         {isManager ? (
                                             <>
@@ -644,6 +632,17 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             </button>
                                         )}
                                     </div>
+
+                                    <EditWeekModal
+                                        isOpen={editWeekModalOpen}
+                                        onClose={() => setEditWeekModalOpen(false)}
+                                        date={date}
+                                        userId={userId}
+                                        onSuccess={() => {
+                                            onSuccess();
+                                            setEditWeekModalOpen(false);
+                                        }}
+                                    />
                                 </>
                             );
                         })()

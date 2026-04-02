@@ -1,10 +1,7 @@
 -- =================================================================
--- RPC: get_weekly_worker_stats (V4 - Semana completa invariante por rango)
--- Centraliza la agregación de horas, redondeo y cálculo de costes.
--- Soporta filtrado por usuario en origen para máxima eficiencia.
--- FIX CRÍTICO: Las semanas que tocan [p_start_date, p_end_date] se agregan
--- por SEMANA COMPLETA (lunes-domingo). Así la misma semana devuelve siempre
--- el mismo total aunque se llame con febrero o con marzo (evita 1013€ vs 1204€).
+-- RPC: get_weekly_worker_stats (V5 - Lee final_balance del snapshot)
+-- Usa el final_balance calculado por fn_recalc_and_propagate_snapshots.
+-- totalCost sólo se muestra si el balance es positivo Y la semana es PAGO.
 -- =================================================================
 
 CREATE OR REPLACE FUNCTION public.get_weekly_worker_stats(
@@ -16,12 +13,10 @@ RETURNS jsonb AS $$
 DECLARE
     v_result jsonb;
 BEGIN
-    -- 0. Semanas cuyo intervalo [lunes, domingo] toca el rango pedido (solo listado)
     WITH weeks_in_range AS (
         SELECT DISTINCT date_trunc('week', d::timestamp)::date AS week_start
         FROM generate_series(p_start_date, p_end_date, '1 day'::interval) AS d
     ),
-    -- 1. Agregar por semana y usuario: SUMAR TODA LA SEMANA, no solo días en [p_start, p_end]
     weekly_user_logs AS (
         SELECT 
             date_trunc('week', clock_in AT TIME ZONE 'Europe/Madrid')::date AS week_start,
@@ -33,31 +28,43 @@ BEGIN
           AND (p_user_id IS NULL OR user_id = p_user_id)
         GROUP BY 1, 2
     ),
-    -- 2. CTE para unir con perfiles y snapshots (override semanal: guardar horas esta semana)
+    -- También incluir semanas con snapshot pero sin logs (semanas vacías con config manual)
+    weeks_with_snapshots AS (
+        SELECT DISTINCT s.week_start, s.user_id
+        FROM public.weekly_snapshots s
+        WHERE s.week_start IN (SELECT week_start FROM weeks_in_range)
+          AND (p_user_id IS NULL OR s.user_id = p_user_id)
+          AND NOT EXISTS (SELECT 1 FROM weekly_user_logs wl WHERE wl.week_start = s.week_start AND wl.user_id = s.user_id)
+    ),
+    all_week_users AS (
+        SELECT week_start, user_id, week_logs_sum FROM weekly_user_logs
+        UNION ALL
+        SELECT week_start, user_id, 0 FROM weeks_with_snapshots
+    ),
     staff_stats AS (
         SELECT 
-            wl.week_start,
+            wu.week_start,
             p.id as user_id,
             p.first_name || ' ' || COALESCE(p.last_name, '') as name,
             p.role,
             p.overtime_cost_per_hour as over_price,
+            -- prefer_stock: override semanal tiene prioridad
             COALESCE(s.prefer_stock_hours_override, p.prefer_stock_hours, false) as prefer_stock,
             COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0) as limit_hours,
-            wl.week_logs_sum,
+            wu.week_logs_sum,
             COALESCE(s.is_paid, false) as is_paid,
-            -- Lógica de Balance Semanal (Espejo de fn_recalc_and_propagate_snapshots)
-            CASE 
-                WHEN extract(month from wl.week_start) = 8 OR p.role = 'manager' OR p.is_fixed_salary = true 
-                THEN wl.week_logs_sum 
-                ELSE (wl.week_logs_sum - COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0))
-            END as weekly_balance,
-            COALESCE(s.pending_balance, 0) as pending_balance,
-            COALESCE(s.final_balance, 0) as final_balance
-        FROM weekly_user_logs wl
-        JOIN public.profiles p ON wl.user_id = p.id
-        LEFT JOIN public.weekly_snapshots s ON wl.user_id = s.user_id AND wl.week_start = s.week_start
+            -- final_balance del snapshot (ya propagado correctamente por fn_recalc)
+            COALESCE(s.final_balance, 
+                CASE 
+                    WHEN extract(month from wu.week_start) = 8 OR p.role = 'manager' OR p.is_fixed_salary = true 
+                    THEN wu.week_logs_sum 
+                    ELSE (wu.week_logs_sum - COALESCE(s.contracted_hours_snapshot, p.contracted_hours_weekly, 0))
+                END
+            ) as final_balance
+        FROM all_week_users wu
+        JOIN public.profiles p ON wu.user_id = p.id
+        LEFT JOIN public.weekly_snapshots s ON wu.user_id = s.user_id AND wu.week_start = s.week_start
     ),
-    -- 3. Formatear desglose por trabajador (StaffWeeklyStats)
     formatted_staff AS (
         SELECT 
             week_start,
@@ -67,13 +74,15 @@ BEGIN
                     'name', name,
                     'role', role,
                     'totalHours', CASE WHEN role = 'manager' THEN (limit_hours + week_logs_sum) ELSE week_logs_sum END,
-                    'regularHours', CASE WHEN role = 'manager' THEN limit_hours ELSE (week_logs_sum - CASE WHEN final_balance > 0 THEN final_balance ELSE 0 END) END,
-                    'overtimeHours', CASE WHEN final_balance > 0 THEN final_balance ELSE 0 END,
+                    'regularHours', CASE WHEN role = 'manager' THEN limit_hours ELSE GREATEST(week_logs_sum - GREATEST(final_balance, 0), 0) END,
+                    'overtimeHours', GREATEST(final_balance, 0),
+                    -- totalCost: solo si balance positivo Y semana configurada como PAGO
                     'totalCost', CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END,
                     'regularCost', 0,
                     'overtimeCost', CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END,
                     'isPaid', is_paid,
-                    'preferStock', prefer_stock
+                    'preferStock', prefer_stock,
+                    'pendingBalance', final_balance
                 ) ORDER BY (CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END) DESC
             ) as staff_list,
             SUM(CASE WHEN final_balance > 0 AND NOT prefer_stock THEN (final_balance * over_price) ELSE 0 END) as week_overtime_cost,
@@ -81,7 +90,6 @@ BEGIN
         FROM staff_stats
         GROUP BY week_start
     ),
-    -- 4. Formatear cada semana (WeeklyStats)
     weeks_array AS (
         SELECT 
             jsonb_agg(
