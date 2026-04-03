@@ -4,7 +4,7 @@
 
 import { useRouter } from 'next/navigation';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Monitor } from 'lucide-react';
 
 import RadarSala from '@/components/dashboards/RadarSala';
 
@@ -74,17 +74,41 @@ export default function SalaPage() {
 
 
 
-              {/* Indicador LIVE */}
+              {/* Botón Monitor & Indicador LIVE */}
 
-              <div className="flex items-center gap-1.5 px-1">
+              <div className="flex items-center gap-4 md:gap-6">
 
-                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-400 animate-pulse" />
+                <button
 
-                <span className="text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] leading-none pt-0.5">
+                  onClick={() => router.push('/dashboard/kds')}
 
-                  Live
+                  className="flex items-center gap-1.5 px-2 py-1 text-white/70 hover:text-white transition-colors active:scale-95 group shrink-0"
 
-                </span>
+                >
+
+                  <Monitor className="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:scale-110 transition-transform" strokeWidth={3} />
+
+                  <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.1em] pt-0.5">
+
+                    Monitor
+
+                  </span>
+
+                </button>
+
+
+
+                <div className="flex items-center gap-1.5 px-1 shrink-0">
+
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-400 animate-pulse" />
+
+                  <span className="text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] leading-none pt-0.5">
+
+                    Live
+
+                  </span>
+
+                </div>
 
               </div>
 
