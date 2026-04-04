@@ -54,7 +54,7 @@ export default function SalaPage() {
 
                 <button
 
-                  onClick={() => router.back()}
+                  onClick={() => router.push('/dashboard')}
 
                   className="flex items-center justify-center text-white bg-white/10 rounded-full border border-white/10 w-7 h-7 md:w-10 md:h-10 hover:bg-white/20 transition-all active:scale-95 shrink-0"
 

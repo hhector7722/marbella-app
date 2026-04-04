@@ -68,7 +68,13 @@ export default function Navbar() {
                     <div className="flex items-center gap-1">
                         {!isDashboard && (
                             <button
-                                onClick={() => router.back()}
+                                onClick={() => {
+                                    if (pathname === '/dashboard/ventas' || pathname === '/dashboard/sala') {
+                                        router.push('/dashboard');
+                                    } else {
+                                        router.back();
+                                    }
+                                }}
                                 className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
                                 aria-label="Volver"
                             >
