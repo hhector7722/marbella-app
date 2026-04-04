@@ -6,6 +6,7 @@ import { CommandCard } from './CommandCard';
 import { Loader2, Package, LayoutGrid, Info, AlertTriangle, ListChecks, Check, X } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
+import Link from 'next/link';
 
 function useColumns() {
     const [cols, setCols] = useState(6);
@@ -30,8 +31,8 @@ export default function KDSView() {
     const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
 
-    const visibleOrders = orders.filter(o => 
-        (showCompleted ? o.estado === 'completada' : o.estado === 'activa') && 
+    const visibleOrders = orders.filter(o =>
+        (showCompleted ? o.estado === 'completada' : o.estado === 'activa') &&
         (o.lineas?.length || 0) > 0
     );
 
@@ -73,19 +74,19 @@ export default function KDSView() {
 
             {/* CABECERA UNIFICADA DE COCINA */}
             <header className="bg-slate-900 border-b border-black md:px-0 flex items-center justify-between z-20 shrink-0 h-16 w-full relative">
-                
+
                 {/* 1. Izquierda: Logo y Status */}
                 <div className="flex items-center gap-3 shrink-0 h-full px-4 border-r border-slate-800">
                     <div className="flex items-center justify-center">
                         <Image src="/icons/logo-white.png" alt="Bar Marbella" width={40} height={40} className="object-contain drop-shadow-lg opacity-90" />
                     </div>
                     <div className="hidden sm:flex flex-col justify-center">
-                        <div className="flex items-center gap-1.5 mb-0.5">
+                        <Link href="/dashboard/sala" className="flex items-center gap-1.5 mb-0.5 cursor-pointer">
                             <span className={`block h-1.5 w-1.5 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                                 {isOffline ? 'DESCONECTADO' : 'Live'}
                             </p>
-                        </div>
+                        </Link>
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
                             {visibleOrders.length} TICKETS
                         </p>
@@ -129,15 +130,15 @@ export default function KDSView() {
                     </div>
 
                     <div className="flex bg-slate-800 p-1 rounded-lg shadow-inner">
-                        <button 
-                             onClick={() => setShowCompleted(false)} 
-                             className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                        <button
+                            onClick={() => setShowCompleted(false)}
+                            className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                         >
                             Cocina
                         </button>
-                        <button 
-                             onClick={() => setShowCompleted(true)} 
-                             className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                        <button
+                            onClick={() => setShowCompleted(true)}
+                            className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                         >
                             Finalizadas
                         </button>
@@ -167,13 +168,13 @@ export default function KDSView() {
                         orderRows.map((row, rowIdx) => (
                             <div key={rowIdx} className="w-full relative pt-5 sm:pt-6 mb-2 sm:mb-4">
                                 {/* THE METAL RAIL (Comandero) PER ROW STRETCHED */}
-                                <img 
-                                    src="/icons/comandero.png" 
-                                    className="absolute top-0 left-0 w-full h-8 sm:h-10 z-20 shadow-lg object-fill border-b border-slate-900/50" 
+                                <img
+                                    src="/icons/comandero.png"
+                                    className="absolute top-0 left-0 w-full h-8 sm:h-10 z-20 shadow-lg object-fill border-b border-slate-900/50"
                                     alt="Comandero rail"
                                 />
-                                
-                                <div 
+
+                                <div
                                     className="px-6 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2 items-start"
                                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                                 >
