@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
 import { Loader2, Package, LayoutGrid, Info, AlertTriangle, ListChecks, Check, X } from 'lucide-react';
@@ -31,12 +31,12 @@ export default function KDSView() {
     const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
 
-    const visibleOrders = orders.filter(o =>
+    const visibleOrders = useMemo(() => orders.filter(o =>
         (showCompleted ? o.estado === 'completada' : o.estado === 'activa') &&
         (o.lineas?.length || 0) > 0
-    );
+    ), [orders, showCompleted]);
 
-    const aggregatedItems = visibleOrders.reduce((acc, order) => {
+    const aggregatedItems = useMemo(() => visibleOrders.reduce((acc, order) => {
         order.lineas?.filter(l => l.estado === 'pendiente').forEach(line => {
             const key = line.notas ? `${line.producto_nombre} | ${line.notas}` : line.producto_nombre;
             const existing = acc.find(i => i.key === key);
@@ -48,7 +48,7 @@ export default function KDSView() {
         });
         return acc;
     }, [] as { key: string; nombre: string; notas: string | null; cantidad: number }[])
-        .sort((a, b) => b.cantidad - a.cantidad);
+        .sort((a, b) => b.cantidad - a.cantidad), [visibleOrders]);
 
     const getEffectiveStartTime = (order: KDSOrder) => {
         const pendingLines = order.lineas?.filter(l => l.estado === 'pendiente') || [];
@@ -57,13 +57,18 @@ export default function KDSView() {
         return new Date(order.created_at).getTime();
     };
 
-    const sortedOrders = [...visibleOrders].sort((a, b) => getEffectiveStartTime(a) - getEffectiveStartTime(b));
+    const sortedOrders = useMemo(() => [...visibleOrders].sort(
+        (a, b) => getEffectiveStartTime(a) - getEffectiveStartTime(b)
+    ), [visibleOrders]);
 
     const cols = useColumns();
-    const orderRows = [];
-    for (let i = 0; i < sortedOrders.length; i += cols) {
-        orderRows.push(sortedOrders.slice(i, i + cols));
-    }
+    const orderRows = useMemo(() => {
+        const rows = [];
+        for (let i = 0; i < sortedOrders.length; i += cols) {
+            rows.push(sortedOrders.slice(i, i + cols));
+        }
+        return rows;
+    }, [sortedOrders, cols]);
 
 
 

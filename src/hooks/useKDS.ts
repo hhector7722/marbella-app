@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, startTransition } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { KDSOrder, KDSOrderLine, KDSItemStatus } from '@/components/kds/types';
 
@@ -27,6 +27,22 @@ export function useKDS() {
     const localCompletedIds = useRef<Set<string>>(new Set());
     // IDs de líneas en vuelo (optimistic updates en curso)
     const inFlightLineIds = useRef<Set<string>>(new Set());
+    // Debounce para agrupar eventos realtime rápidos en un solo render
+    const realtimeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const pendingUpdates = useRef<Array<() => void>>([]);
+
+    // Acumula una función de actualización y la aplica tras un breve delay (80ms).
+    // Evita que ráfagas de INSERTs (e.g. 5 platos nuevos) provoquen 5 renders seguidos.
+    const scheduleUpdate = useCallback((fn: () => void) => {
+        pendingUpdates.current.push(fn);
+        clearTimeout(realtimeTimer.current);
+        realtimeTimer.current = setTimeout(() => {
+            const updates = pendingUpdates.current.splice(0);
+            startTransition(() => {
+                updates.forEach(update => update());
+            });
+        }, 80);
+    }, []);
 
     // Merge inteligente: no reemplaza todo el estado de golpe (evita parpadeo),
     // sino que fusiona las órdenes nuevas con el estado local existente.
@@ -77,9 +93,18 @@ export function useKDS() {
                 return { ...serverOrder, lineas: mergedLineas };
             });
 
-            // Conservar órdenes locales que el servidor aún no conoce (race conditions)
+            // Fusión final: conservar solo ítems locales que realmente sean nuevos 
+            // y que pertenezcan al turno actual (evita rescatar basura de días anteriores)
+            const now = new Date();
+            const shiftStart = new Date(now);
+            shiftStart.setHours(5, 0, 0, 0);
+            if (now < shiftStart) shiftStart.setDate(shiftStart.getDate() - 1);
+
             prev.forEach(localOrder => {
-                if (!merged.find(o => o.id === localOrder.id)) {
+                const isFromToday = new Date(localOrder.created_at) >= shiftStart;
+                const isWaitingSync = localCompletedIds.current.has(localOrder.id);
+                
+                if (!merged.find(o => o.id === localOrder.id) && (isFromToday || isWaitingSync)) {
                     merged.push(localOrder);
                 }
             });
@@ -88,60 +113,57 @@ export function useKDS() {
         });
     }, []);
 
-    // 1. CARGA: Sincronizamos las comandas del turno en curso.
+    // 1. CARGA: Sincronizamos las comandas del turno en curso (una sola query).
     // LÓGICA:
-    //   - Órdenes ACTIVAS que tengan al menos una línea 'pendiente' (sin límite de fecha,
-    //     porque las mesas del TPV pueden llevar días abiertas).
-    //   - Órdenes COMPLETADAS de HOY: historial del turno actual.
+    //   - Órdenes del día: activas O completadas de hoy.
+    //   - Filtrado de activas (sin líneas pendientes) y líneas canceladas: en JS post-fetch.
     const fetchActiveOrders = useCallback(async (options: { isInitial?: boolean; isSilent?: boolean } = {}) => {
         if (options.isInitial) setLoading(true);
         if (!options.isSilent) setSyncStatus('syncing');
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const startOfToday = today.toISOString();
+        // Calcular el inicio del turno (5:00 AM)
+        const now = new Date();
+        const shiftStart = new Date(now);
+        shiftStart.setHours(5, 0, 0, 0);
+        
+        // Si ahora mismo es antes de las 5 AM, el turno empezó ayer a las 5 AM
+        if (now < shiftStart) {
+            shiftStart.setDate(shiftStart.getDate() - 1);
+        }
+        
+        const startOfToday = shiftStart.toISOString();
 
         try {
-            // Obtenemos los IDs de órdenes con líneas pendientes.
-            // Sin filtro de fecha: una mesa abierta en el TPV es real aunque
-            // sus líneas KDS se crearan antes de hoy (mesa lleva horas/días abierta).
-            const { data: pendingLines } = await supabase
-                .from('kds_order_lines')
-                .select('kds_order_id')
-                .eq('estado', 'pendiente');
-
-            const orderIdsWithPending = [...new Set(
-                (pendingLines ?? []).map(l => l.kds_order_id).filter(Boolean)
-            )];
-
-            // Query principal: activas con pendientes O completadas de hoy
-            let query = supabase
+            // Query única: órdenes de hoy (activas + completadas de hoy).
+            // Sin doble round-trip — más rápido y sin estados intermedios vacíos.
+            const { data, error } = await supabase
                 .from('kds_orders')
                 .select('*, lineas:kds_order_lines(*)')
+                .gte('created_at', startOfToday)
+                .or(`estado.eq.activa,and(estado.eq.completada,completed_at.gte.${startOfToday})`)
                 .order('created_at', { ascending: true });
 
-            if (orderIdsWithPending.length > 0) {
-                query = query.or(
-                    `and(estado.eq.activa,id.in.(${orderIdsWithPending.join(',')})),and(estado.eq.completada,completed_at.gte.${startOfToday})`
-                );
-            } else {
-                // Sin pendientes en absoluto: solo historial de hoy
-                query = query.eq('estado', 'completada').gte('completed_at', startOfToday);
-            }
-
-            const { data, error } = await query;
-
             if (!error && data) {
+                // Limpiar líneas canceladas y filtrar órdenes activas sin pendientes
+                const cleanedData = data
+                    .map(order => ({
+                        ...order,
+                        lineas: (order.lineas ?? []).filter((l: { estado: string }) => l.estado !== 'cancelado'),
+                    }))
+                    .filter(order =>
+                        order.estado === 'completada' ||
+                        order.lineas.some((l: { estado: string }) => l.estado === 'pendiente')
+                    );
+
                 if (options.isInitial) {
-                    // En la carga inicial restauramos el localCompletedIds con las
-                    // comandas que ya están completadas en BD (sesión reanudada).
-                    data.forEach(o => {
+                    // Carga inicial: restaurar localCompletedIds y setear estado directamente
+                    cleanedData.forEach(o => {
                         if (o.estado === 'completada') localCompletedIds.current.add(o.id);
                     });
-                    setOrders(data);
+                    setOrders(cleanedData);
                 } else {
-                    // Actualizaciones posteriores: merge silencioso (sin parpadeo)
-                    mergeOrders(data);
+                    // Actualizaciones silenciosas: merge sin parpadeo
+                    startTransition(() => mergeOrders(cleanedData));
                 }
                 setIsOffline(false);
                 if (!options.isSilent) setStatusWithTimeout('success');
@@ -167,37 +189,37 @@ export function useKDS() {
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_orders' }, (p) => {
                     if (p.eventType === 'INSERT') {
                         const newOrder = { ...p.new, lineas: [] } as unknown as KDSOrder;
-                        setOrders(prev => {
+                        // Agrupar con debounce para no renderizar por separado cada Insert
+                        scheduleUpdate(() => setOrders(prev => {
                             if (prev.find(o => o.id === newOrder.id)) return prev;
                             return [...prev, newOrder];
-                        });
+                        }));
                     } else if (p.eventType === 'UPDATE') {
-                        setOrders(prev => prev.map(o => {
+                        scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== p.new.id) return o;
-                            // Si localmente la completamos, no dejar que el servidor la "destache"
                             if (localCompletedIds.current.has(o.id)) {
                                 return { ...o, ...p.new, estado: 'completada' };
                             }
                             return { ...o, ...p.new };
-                        }));
+                        })));
                     }
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'kds_order_lines' }, (p) => {
                     if (p.eventType === 'INSERT') {
                         const nl = p.new as KDSOrderLine;
-                        setOrders(prev => prev.map(o => {
+                        // Agrupar INSERTs de líneas: 5 platos nuevos = 1 render, no 5
+                        scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== nl.kds_order_id) return o;
                             if ((o.lineas || []).find(l => l.id === nl.id)) return o;
                             return { ...o, lineas: [...(o.lineas || []), nl] };
-                        }));
+                        })));
                     } else if (p.eventType === 'UPDATE') {
                         const ul = p.new as KDSOrderLine;
-                        setOrders(prev => prev.map(o => {
+                        scheduleUpdate(() => setOrders(prev => prev.map(o => {
                             if (o.id !== ul.kds_order_id) return o;
-                            // Si la línea está en un optimistic update en vuelo, ignorar el evento
                             if (inFlightLineIds.current.has(ul.id)) return o;
                             return { ...o, lineas: (o.lineas || []).map(l => l.id === ul.id ? ul : l) };
-                        }));
+                        })));
                     }
                 })
                 .subscribe(async (status) => {
