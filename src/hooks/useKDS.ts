@@ -88,7 +88,11 @@ export function useKDS() {
         });
     }, []);
 
-    // 1. CARGA: Sincronizamos las comandas del día en curso
+    // 1. CARGA: Sincronizamos las comandas del turno en curso.
+    // LÓGICA:
+    //   - Órdenes ACTIVAS que tengan al menos una línea 'pendiente' (sin límite de fecha,
+    //     porque las mesas del TPV pueden llevar días abiertas).
+    //   - Órdenes COMPLETADAS de HOY: historial del turno actual.
     const fetchActiveOrders = useCallback(async (options: { isInitial?: boolean; isSilent?: boolean } = {}) => {
         if (options.isInitial) setLoading(true);
         if (!options.isSilent) setSyncStatus('syncing');
@@ -98,11 +102,34 @@ export function useKDS() {
         const startOfToday = today.toISOString();
 
         try {
-            const { data, error } = await supabase
+            // Obtenemos los IDs de órdenes con líneas pendientes.
+            // Sin filtro de fecha: una mesa abierta en el TPV es real aunque
+            // sus líneas KDS se crearan antes de hoy (mesa lleva horas/días abierta).
+            const { data: pendingLines } = await supabase
+                .from('kds_order_lines')
+                .select('kds_order_id')
+                .eq('estado', 'pendiente');
+
+            const orderIdsWithPending = [...new Set(
+                (pendingLines ?? []).map(l => l.kds_order_id).filter(Boolean)
+            )];
+
+            // Query principal: activas con pendientes O completadas de hoy
+            let query = supabase
                 .from('kds_orders')
                 .select('*, lineas:kds_order_lines(*)')
-                .gte('created_at', startOfToday)
                 .order('created_at', { ascending: true });
+
+            if (orderIdsWithPending.length > 0) {
+                query = query.or(
+                    `and(estado.eq.activa,id.in.(${orderIdsWithPending.join(',')})),and(estado.eq.completada,completed_at.gte.${startOfToday})`
+                );
+            } else {
+                // Sin pendientes en absoluto: solo historial de hoy
+                query = query.eq('estado', 'completada').gte('completed_at', startOfToday);
+            }
+
+            const { data, error } = await query;
 
             if (!error && data) {
                 if (options.isInitial) {
