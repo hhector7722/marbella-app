@@ -94,14 +94,13 @@ export function useKDS() {
             });
 
             // Fusión final: conservar solo ítems locales que realmente sean nuevos 
-            // y que pertenezcan al turno actual (evita rescatar basura de días anteriores)
-            const now = new Date();
-            const shiftStart = new Date(now);
-            shiftStart.setHours(5, 0, 0, 0);
-            if (now < shiftStart) shiftStart.setDate(shiftStart.getDate() - 1);
+            // y que pertenezcan al día en curso (evita rescatar basura de días anteriores)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const startOfToday = today;
 
             prev.forEach(localOrder => {
-                const isFromToday = new Date(localOrder.created_at) >= shiftStart;
+                const isFromToday = new Date(localOrder.created_at) >= startOfToday;
                 const isWaitingSync = localCompletedIds.current.has(localOrder.id);
                 
                 if (!merged.find(o => o.id === localOrder.id) && (isFromToday || isWaitingSync)) {
@@ -121,17 +120,10 @@ export function useKDS() {
         if (options.isInitial) setLoading(true);
         if (!options.isSilent) setSyncStatus('syncing');
 
-        // Calcular el inicio del turno (5:00 AM)
-        const now = new Date();
-        const shiftStart = new Date(now);
-        shiftStart.setHours(5, 0, 0, 0);
-        
-        // Si ahora mismo es antes de las 5 AM, el turno empezó ayer a las 5 AM
-        if (now < shiftStart) {
-            shiftStart.setDate(shiftStart.getDate() - 1);
-        }
-        
-        const startOfToday = shiftStart.toISOString();
+        // Calcular el inicio del día (0:00 AM)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startOfToday = today.toISOString();
 
         try {
             // Query única: órdenes de hoy (activas + completadas de hoy).

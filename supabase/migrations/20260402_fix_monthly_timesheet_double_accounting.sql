@@ -1,8 +1,8 @@
 -- =================================================================
--- FIX: get_monthly_timesheet (Double Accounting Correction)
--- 1. Devuelve preferStock real de cada semana (snapshot o perfil).
--- 2. Asegura que estimatedValue sea 0 si la semana es Bolsa (preferStock=true).
--- 3. Incluye limitHours (contrato) en el summary.
+-- FIX: get_monthly_timesheet (Final - Double Accounting & Deuda Handling)
+-- 1. Devuelve preferStock y limitHours reales.
+-- 2. Asegura que estimatedValue sea 0 si la semana es Bolsa.
+-- 3. Asegura que estimatedValue sea 0 si el saldo es negativo (deuda).
 -- =================================================================
 
 CREATE OR REPLACE FUNCTION public.get_monthly_timesheet(p_user_id uuid, p_year integer, p_month integer)
@@ -20,7 +20,7 @@ BEGIN
     FROM public.profiles
     WHERE id = p_user_id;
 
-    -- 2. Calcular contrato efectivo (Tu regla de negocio: Agosto, Manager o Fijo = 0)
+    -- 2. Calcular contrato efectivo (Regla base)
     IF p_month = 8 OR v_profile.role = 'manager' OR v_profile.is_fixed_salary THEN
         v_eff_contract := 0;
     ELSE
@@ -50,14 +50,12 @@ BEGIN
             AND tl.user_id = p_user_id
     ),
     running_logs AS (
-        -- Suma acumulada de horas en la semana para detectar cuándo se supera el contrato
         SELECT 
             *,
             SUM(daily_hours) OVER (PARTITION BY week_start ORDER BY d_date) AS running_weekly_hours
         FROM daily_logs
     ),
     calculated_days AS (
-        -- Asignación de horas extra por día exacto
         SELECT 
             *,
             CASE 
@@ -91,7 +89,6 @@ BEGIN
         GROUP BY week_start
     ),
     weekly_data AS (
-        -- JOIN con snapshots para obtener saldo real y modo Bolsa/Pago
         SELECT
             ad.week_start,
             EXTRACT(WEEK FROM ad.week_start) AS week_number,
@@ -117,13 +114,13 @@ BEGIN
             'days', days_json,
             'summary', JSONB_BUILD_OBJECT(
                 'totalHours', COALESCE(snap_total, week_total_hours),
-                'startBalance', COALESCE(snap_start_balance, CASE WHEN NOT COALESCE(snap_prefer_stock, false) THEN 0 ELSE COALESCE(v_profile.hours_balance, 0) END),
+                'startBalance', COALESCE(snap_start_balance, 0), -- Se calcula en la propagación
                 'weeklyBalance', COALESCE(snap_balance, week_total_hours - v_eff_contract),
                 'finalBalance', COALESCE(snap_final_balance, 0),
-                -- FIX: Solo calcula importe si NO es Bolsa
+                -- FIX: Solo calcula importe si NO es Bolsa y saldo es POSITIVO
                 'estimatedValue', CASE 
                     WHEN snap_prefer_stock THEN 0 
-                    ELSE COALESCE(snap_final_balance, 0) * COALESCE(v_profile.overtime_cost_per_hour, 0) 
+                    ELSE GREATEST(0, COALESCE(snap_final_balance, 0)) * COALESCE(v_profile.overtime_cost_per_hour, 0) 
                 END,
                 'isPaid', COALESCE(is_paid, false),
                 'preferStock', snap_prefer_stock,

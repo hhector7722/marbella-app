@@ -72,13 +72,21 @@ interface WeekCardProps {
 }
 
 export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showWeekOverrides, userId, onApplyWeekOverrides }: WeekCardProps) {
-    const [localContracted, setLocalContracted] = useState<number>(week.summary.limitHours ?? 40);
+    const [localContracted, setLocalContracted] = useState<string>(
+        week.summary.limitHours !== undefined && week.summary.limitHours !== null 
+            ? String(week.summary.limitHours) 
+            : ""
+    );
     const [localPreferStock, setLocalPreferStock] = useState<boolean>(week.summary.preferStock ?? false);
     const [savingOverrides, setSavingOverrides] = useState(false);
 
     React.useEffect(() => {
         setLocalPreferStock(week.summary.preferStock ?? false);
-        setLocalContracted(week.summary.limitHours ?? 40);
+        setLocalContracted(
+            week.summary.limitHours !== undefined && week.summary.limitHours !== null 
+                ? String(week.summary.limitHours) 
+                : ""
+        );
     }, [week.summary.preferStock, week.summary.limitHours]);
 
 
@@ -86,7 +94,8 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
         if (!userId || !onApplyWeekOverrides) return;
         setSavingOverrides(true);
         try {
-            const result = await onApplyWeekOverrides(localContracted, localPreferStock);
+            const contractedValue = localContracted === "" ? 0 : Number(localContracted);
+            const result = await onApplyWeekOverrides(contractedValue, localPreferStock);
             if (!result.success && result.error) setSavingOverrides(false);
         } finally {
             setSavingOverrides(false);
@@ -300,7 +309,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         <input
                             type="number"
                             value={localContracted}
-                            onChange={(e) => setLocalContracted(Number(e.target.value) || 40)}
+                            onChange={(e) => setLocalContracted(e.target.value)}
                             className="w-10 h-6 text-center text-[10px] font-black bg-white border border-zinc-200 rounded focus:outline-none focus:ring-1 focus:ring-[#36606F]"
                         />
                         <span className="text-[8px] text-zinc-400 font-bold">H</span>
