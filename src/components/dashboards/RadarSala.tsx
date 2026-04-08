@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Clock, Euro } from 'lucide-react';
+import { parseTPVDate, parseDBDate, formatLocalTime } from '@/utils/date-utils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -69,19 +70,50 @@ export default function RadarSala() {
   const [ultimaAct, setUltimaAct] = useState<Date | null>(null);
 
   useEffect(() => {
+    const processData = (rawMesas: any[]) => {
+      // Deduplicar mesas: si hay varios tickets para la misma mesa, nos quedamos con el más reciente
+      const mesaMap = new Map();
+      
+      const distinctMesas = (rawMesas || []).map(m => {
+        // Normalizamos el número de mesa para evitar duplicados por formato (99 vs "99 ")
+        const mesaKey = String(m.mesa || '').trim();
+        if (!mesaKey) return null;
+
+        // Filtrar mesas que no tienen productos con unidades > 0
+        const hasProducts = m.productos?.some((p: any) => parseFloat(p.unidades) > 0);
+        if (!hasProducts) return null;
+
+        return { ...m, mesaKey };
+      }).filter(Boolean);
+
+      distinctMesas.forEach(m => {
+        const existing = mesaMap.get(m.mesaKey);
+        const currentTS = parseTPVDate(m.timestamp_tpv).getTime();
+        
+        // Si no existe o el actual es más reciente, sobreescribimos
+        if (!existing || currentTS > parseTPVDate(existing.timestamp_tpv).getTime()) {
+          mesaMap.set(m.mesaKey, m);
+        }
+      });
+      
+      const finalMesas = Array.from(mesaMap.values());
+      console.log(`[RadarSala] Data sync: ${rawMesas?.length || 0} raw entries -> ${finalMesas.length} unique tables.`);
+      return finalMesas;
+    };
+
     const fetchInicial = async () => {
       const { data, error } = await supabase.from('estado_sala').select('*').eq('id', 1).single();
       if (!error && data) {
-        setMesas(data.radiografia_completa || []);
-        setUltimaAct(data.ultima_actualizacion ? new Date(data.ultima_actualizacion) : new Date());
+        setMesas(processData(data.radiografia_completa));
+        setUltimaAct(data.ultima_actualizacion ? parseDBDate(data.ultima_actualizacion) : new Date());
       }
     };
     fetchInicial();
 
     const canal = supabase.channel('radar-sala')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'estado_sala' }, (payload) => {
-        setMesas(payload.new.radiografia_completa || []);
-        setUltimaAct(payload.new.ultima_actualizacion ? new Date(payload.new.ultima_actualizacion) : new Date());
+        setMesas(processData(payload.new.radiografia_completa));
+        setUltimaAct(payload.new.ultima_actualizacion ? parseDBDate(payload.new.ultima_actualizacion) : new Date());
       })
       .subscribe();
 
@@ -89,24 +121,21 @@ export default function RadarSala() {
   }, []);
 
   const calcularEstado = (fechaString: string) => {
-    if (!fechaString) return { color: 'bg-[#407080]', texto: 'text-white', min: 0, hora: "--:--" };
+    if (!fechaString) return { color: 'bg-[#407080]', texto: 'text-white', min: 0, hora: "--:--:--" };
 
-    let fecha = new Date(fechaString);
-    if (isNaN(fecha.getTime())) fecha = new Date();
-
+    // Usamos el parseador seguro que limpia el falso UTC (Z) del TPV
+    const fecha = parseTPVDate(fechaString);
     const minutos = Math.floor((new Date().getTime() - fecha.getTime()) / 60000);
+    const horaFormatted = formatLocalTime(fecha);
 
-    // Extracción de hora segura independientemente de la zona horaria
-    const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-    if (minutos > 45) return { color: 'bg-[#D64D5D]', texto: 'text-white', min: minutos, hora };
-    if (minutos > 30) return { color: 'bg-amber-500', texto: 'text-white', min: minutos, hora };
-    return { color: 'bg-[#407080]', texto: 'text-white', min: minutos, hora };
+    if (minutos > 45) return { color: 'bg-[#D64D5D]', texto: 'text-white', min: minutos, hora: horaFormatted };
+    if (minutos > 30) return { color: 'bg-amber-500', texto: 'text-white', min: minutos, hora: horaFormatted };
+    return { color: 'bg-[#407080]', texto: 'text-white', min: minutos, hora: horaFormatted };
   };
 
   const mesasOrdenadas = [...mesas].sort((a, b) => {
-    const timeA = new Date(a.timestamp_tpv || a.fecha_apertura || 0).getTime();
-    const timeB = new Date(b.timestamp_tpv || b.fecha_apertura || 0).getTime();
+    const timeA = parseTPVDate(a.timestamp_tpv || a.fecha_apertura || 0).getTime();
+    const timeB = parseTPVDate(b.timestamp_tpv || b.fecha_apertura || 0).getTime();
     return timeA - timeB;
   });
 
@@ -116,7 +145,7 @@ export default function RadarSala() {
         <div>
           <h2 className="text-lg md:text-xl font-bold tracking-tight text-white">Mesas Abiertas</h2>
           <p className="text-[10px] md:text-xs text-slate-300 mt-0.5">
-            {mesas.length} mesas activas • {ultimaAct ? ultimaAct.toLocaleTimeString() : '...'}
+            {mesas.length} mesas activas • {ultimaAct ? formatLocalTime(ultimaAct) : '...'}
           </p>
         </div>
       </header>

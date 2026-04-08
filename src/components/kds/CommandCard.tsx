@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { CheckCircle, AlertTriangle, X, ChevronDown } from 'lucide-react';
 import { KDSOrder, KDSItemStatus } from './types';
+import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
 
 interface CommandCardProps {
     order: KDSOrder;
@@ -21,13 +22,14 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     const getEffectiveStartTime = () => {
         const pendingLines = order.lineas?.filter(l => l.estado === 'pendiente') || [];
         if (pendingLines.length > 0) {
-            return Math.min(...pendingLines.map(l => new Date(l.created_at).getTime()));
+            return Math.min(...pendingLines.map(l => parseDBDate(l.created_at).getTime()));
         }
         if (order.lineas && order.lineas.length > 0) {
-            return Math.max(...order.lineas.map(l => new Date(l.created_at).getTime()));
+            return Math.max(...order.lineas.map(l => parseDBDate(l.created_at).getTime()));
         }
-        return new Date(order.created_at).getTime();
+        return parseDBDate(order.created_at).getTime();
     };
+
 
     const effectiveStart = getEffectiveStartTime();
 
@@ -68,7 +70,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         return 'bg-emerald-600';
     };
 
-    const orderTime = new Date(effectiveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const orderTime = formatLocalTime(new Date(effectiveStart));
     const isFullyDone = (order.lineas?.length || 0) > 0 && order.lineas?.every(l => l.estado === 'terminado' || l.estado === 'cancelado');
 
     // Agrupamiento de líneas: mismo nombre, notas y estado

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search, ChevronDown, Check, ArrowRight } from 'lucide-react';
+import { Search, ChevronDown, Check, ArrowRight, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { createClient } from "@/utils/supabase/client";
@@ -330,9 +330,12 @@ export default function NewOrderPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleNewOrder}
-                                    className="flex-1 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center animate-in zoom-in duration-200"
+                                    className="flex-1 px-4 py-2 bg-white hover:bg-zinc-50 text-black rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 animate-in zoom-in duration-200 border border-zinc-200"
                                 >
-                                    Borrar Pedido
+                                    <span>Pedido Nuevo</span>
+                                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+                                        <Plus className="w-3.5 h-3.5 text-white stroke-[4px]" />
+                                    </div>
                                 </button>
                                 <button
                                     onClick={() => setIsSummaryOpen(true)}
