@@ -106,17 +106,14 @@ export function useKDS() {
         if (!options.isSilent) setSyncStatus('syncing');
 
         const startOfToday = getStartOfLocalToday();
-        // Ventana rodante para comandas activas (mesas de la noche que cruzan medianoche).
-        const rollingStart = new Date(Date.now() - 36 * 60 * 60 * 1000);
         const startIso = startOfToday.toISOString();
-        const rollingIso = rollingStart.toISOString();
         // PostgREST: los ':' en ISO deben ir entre comillas dentro de .or() o el filtro falla y devuelve 0 filas.
         try {
             const { data, error } = await supabase
                 .from('kds_orders')
                 .select('*, lineas:kds_order_lines(*)')
                 .or(
-                    `and(estado.eq.activa,created_at.gte."${rollingIso}"),and(estado.eq.completada,completed_at.gte."${startIso}")`
+                    `and(estado.eq.activa,created_at.gte."${startIso}"),and(estado.eq.completada,completed_at.gte."${startIso}")`
                 )
                 .order('created_at', { ascending: true });
 
@@ -225,6 +222,21 @@ export function useKDS() {
             supabase.removeChannel(activeChannel);
         };
     }, [supabase, fetchActiveOrders]);
+
+    // A las 00:00 locales, se limpia (refetch con startOfToday nuevo).
+    useEffect(() => {
+        const scheduleMidnightRefresh = () => {
+            const now = new Date();
+            const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 50);
+            const ms = nextMidnight.getTime() - now.getTime();
+            return setTimeout(async () => {
+                await fetchActiveOrders({ isInitial: false, isSilent: true });
+                timer = scheduleMidnightRefresh();
+            }, ms);
+        };
+        let timer = scheduleMidnightRefresh();
+        return () => clearTimeout(timer);
+    }, [fetchActiveOrders]);
 
     const tacharProductos = async (lineIds: string[], currentState: KDSItemStatus) => {
         if (lineIds.length === 0) return;
