@@ -1,0 +1,147 @@
+
+
+Tipo: 1
+Salon_Barra: 1
+Numero_Referencia: 99
+Terminal: 1
+Linea: 1
+PLU: 1
+Descripcion: CAFÉ
+Unidades: 1.00000
+Precio: 1.60000
+Suplemento: 0.00000
+Total_Sin_Dto_Linea: 1.60000
+Dto1_Pct: 0.00
+Dto2_Pct: 0.00
+Dto1_Importe: 0.00000
+Dto2_Importe: 0.00000
+Dto1_De_Pct: False
+Total_Linea: 1.60000
+Departamento: 1
+Departamento_Principal: 0
+Descripcion_Modificada: False
+Descripcion_Ticket: CAFÉ
+Descripcion_Display: CAFÉ
+Descripcion_Cocina: CAFÉ
+Codigo_IVA: 1
+IVA: 10.00
+Empleado: 1
+Hora: 03/22/2026 19:10:38
+Invitacion: False
+Linea_Apertura_Auto: False
+Linea_Pax_Auto: False
+Personal: False
+Regalo: False
+Hora_Feliz: False
+Precio_Manual: False
+Dto1_Manual: False
+Dos_Por_Uno: False
+Entrada: False
+No_Imprimir_Ticket_Si_Valor_Cero: False
+Precio_Modificable: True
+Confir_Peso_Importe: False
+No_Avisar_Si_Precio_O_Unid_Cero: False
+Precio_Teorico_Venta: 1.60000
+Precio_Sin_Invita: 1.60000
+Suplemento_Sin_Invita: 0.00000
+Dto1_Pct_Sin_Invita: 0.00
+Dto1_Importe_Sin_Invita: 0.00000
+PMC: 0.00000
+UPC: 0.00000
+PLU_Aux_Combinado: 0
+Descripcion_Base: 
+Descripcion_Auxiliar: 
+Departamento_Aux_Combinado: 0
+Departamento_Principal_Aux_Combinado: 0
+Precio_Teor_Base_Comb: 0.00000
+Precio_Teor_Aux_Comb: 0.00000
+PMC_Base_Combinado: 0.00000
+UPC_Base_Combinado: 0.00000
+PMC_Aux_Combinado: 0.00000
+UPC_Aux_Combinado: 0.00000
+Numero_Proporcion: 1
+Uds_Proporcion: 1.00000
+PLU_Descontar_Proporcion: 1
+Tipo_Venta1: 1
+Tipo_Venta2: 1
+Tipo_Venta3: 1
+Tipo_Agrupacion_General: 1
+Imp_Aux: 1
+Nivel_Impresion: 9
+Uds_Impre_Cocina: 1.00000
+Tipo_Desglose: 0
+Codigo_Desglose: 0
+Codigo_Desglose_Mitad2: 0
+PLU_Mitad2: 0
+Mitad_Base_Comun: 0
+Puntos_PLU: 0.00000
+Puntos_Por_x_Importe: 0.00000
+Puntos_Regalar_x_Puntos: 0.00000
+Total_Puntos_Linea: 0.00000
+Puntos_Regalo: 0.00000
+Puntos_Regalo_Suplemento: 0.00000
+Total_Puntos_Regalo: 0.00000
+Listada_Slip: False
+Comprobante_Emitido: False
+Creada_Handy: False
+VieneDeLaDivision: False
+VieneDeLaSeparacion: False
+Rectificada: False
+Tipo_Vip: 0
+Linea_Oferta: 0
+Tipo_Oferta_Tda: 0
+Tipo_Oferta_Tda_Aplicada: 0
+Tipo_Articulo_Oferta_Tda: 1
+Descrip_Oferta_Tda: 
+Precio_Sin_Oferta_Tda: 1.60000
+Dto1_Pct_Sin_Oferta_Tda: 0.00
+Dto1_Importe_Sin_Oferta_Tda: 0.00000
+Dto1_De_Pct_Sin_Oferta_Tda: False
+PLU_Oferta: 0
+Encargo: 0
+Articulo_De_Peso: False
+Tara: 0.00000
+Tara_Predefinida: False
+RelacionesPublicas: 0
+Consumicion: False
+Tipo_Precio_Cons: -1
+Numero_Consumicion: 0
+Codigo_Guardarropa: 0
+Numero_Percha: 0
+Tipo_Bono: 0
+Numero_Bono: 0
+Numero_Elemento_Bono: 0
+Producto_Servicio: 1
+Tipo_Recarga: 0
+Recarga_HistTerm: 0
+Recarga_HistNum: 0
+TyC: False
+TyCD1: 0
+TyCNombre_D1: 
+TyCDescripcion_D1: 
+TyCD2: 0
+TyCNombre_D2: 
+TyCDescripcion_D2: 
+TyCD3: 0
+TyCNombre_D3: 
+TyCDescripcion_D3: 
+Rebajas: False
+Temporada: 
+Temporada_Activa: 
+Balanza_Fichero: False
+Obligatoriedad_Menu: True
+Num_Transaccion_Balanza: 
+GUID_Item: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+GUID_Descuento: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Terminal_Destino_Separacion: 0
+Motivo_Invitacion: 
+Linea_Aparcada: True
+Es_Proporcion: False
+TextoOfertaEnDescripcion: 
+Vending: False
+Autocomanda: False
+Peso_Aproximado: False
+Weblink: False
+Submesa: 1
+EmpleadoQueEfectuaLaInvitacion: 0
+LinMenuSupSeparadosAuto: False

@@ -1,0 +1,123 @@
+const path = require('path');
+
+
+
+
+
+
+
+
+
+
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const express = require('express');
+const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
+
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '20mb' }));
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERROR CRÍTICO: No se han encontrado las variables de Supabase en el archivo .env");
+    process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// =====================================
+// FASE 1: VENTAS Y LÍNEAS DE TICKET
+// =====================================
+app.post('/api/ventas', async (req, res) => {
+    try {
+        const ventas = req.body.ventas || [];
+        if (!ventas.length) return res.status(400).json({ error: "Vacío" });
+
+        console.log(`[VENTAS] Recibidos ${ventas.length} tickets cerrados.`);
+
+        for (const v of ventas) {
+            const { error: errCab } = await supabase.from('tickets_marbella').upsert([{
+                numero_documento: v.numero_documento,
+mesa: v.mesa || 0,
+                total_documento: v.total_documento,
+                fecha: v.fecha,
+                hora_cierre: v.fecha,
+            }], { onConflict: 'numero_documento' });
+
+            if (errCab) {
+                console.error(`Error cabecera ${v.numero_documento}:`, errCab.message);
+                continue;
+            }
+
+            if (v.lineas && v.lineas.length > 0) {
+                const lineasTransformadas = v.lineas.map((l, index) => ({
+                    numero_documento: v.numero_documento,
+                    linea: index + 1,
+                    articulo_id: l.articulo_id,
+                    unidades: l.unidades,
+                    precio_unidad: l.precio,
+                    importe_total: l.unidades * l.precio,
+                    fecha_negocio: v.fecha
+                }));
+
+                const { error: errLin } = await supabase.from('ticket_lines_marbella').upsert(
+                    lineasTransformadas,
+                    { onConflict: 'numero_documento, linea' }
+                );
+
+                if (errLin) console.error(`Error líneas de ${v.numero_documento}:`, errLin.message);
+            }
+        }
+        res.status(200).json({ success: true });
+    } catch (err) {
+        console.error("[VENTAS] Error general:", err.message);
+        res.status(500).send(err.message);
+    }
+});
+
+// =====================================
+// FASE 2: TELEMETRÍA Y COMANDERO (KDS)
+// =====================================
+app.post('/api/telemetria', async (req, res) => {
+// ✨ EL CHIVATO DEL JSON ✨
+    console.log("\n====== NUEVO PAQUETE DE WINDOWS ======");
+    console.log(JSON.stringify(req.body, null, 2));
+    console.log("======================================\n");
+ try {
+        const { total_mesas_vivas, sala } = req.body;
+        if (!sala) return res.status(200).send();
+
+        // EL TRUCO MAGICO: Recorremos el JSON y le metemos "id_ticket" a cada mesa
+        // para que tu Trigger de Supabase no falle.
+        const salaDisfrazada = sala.map(mesa => ({
+            ...mesa,
+            id_ticket: mesa.numero_documento // <--- ESTO ARREGLA EL ERROR 500
+        }));
+
+        const { error } = await supabase.from('estado_sala').upsert([{
+            id: 1,
+            ultima_actualizacion: new Date().toISOString(),
+            mesas_activas: parseInt(total_mesas_vivas) || 0,
+            radiografia_completa: salaDisfrazada // Mandamos el JSON disfrazado
+        }], { onConflict: 'id' });
+
+        if (error) throw error;
+
+        console.log(`[RADAR] Sala y KDS actualizados: ${total_mesas_vivas} mesas activas.`);
+
+        res.status(200).json({ success: true });
+    } catch (err) {
+        console.error("[TELEMETRIA] Error:", err.message);
+        res.status(500).send(err.message);
+    }
+});
+
+app.listen(3000, () => {
+    console.log('----------------------------------------');
+    console.log('🚀 RECEPTOR ERP BDP (PRODUCCIÓN ACTIVA)');
+    console.log('Conectado a Supabase y escuchando en el puerto 3000');
+    console.log('----------------------------------------');
+});

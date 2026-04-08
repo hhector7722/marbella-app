@@ -1,0 +1,156 @@
+const sql = require('mssql');
+const axios = require('axios');
+
+// ✨ CONEXIÓN DIRECTA POR RED LOCAL ✨
+const DOMINIO = "http://erp-marbella.duckdns.org:3000";
+
+const URL_VENTAS = `${DOMINIO}/api/ventas`;
+const URL_TELEMETRIA = `${DOMINIO}/api/telemetria`;
+
+const config = {
+    user: 'proxmox_reader', 
+    password: 'heyJUDE5!', 
+    server: 'localhost',
+    database: 'Bdp-Net_NetHos_34',
+    options: { encrypt: false, trustServerCertificate: true, instanceName: 'BDPSOFTWARE', enableArithAbort: true }
+};
+
+let memoriaTickets = new Set();
+
+async function start() {
+    try {
+        let pool = await sql.connect(config);
+        console.log('✅ Sistema Activado: Conectado a BDP y enlazado con erp-marbella.duckdns.org');
+
+        // 1. ENVÍO DE VENTAS (HISTORIAL DE COBRADOS)
+        setInterval(async () => {
+            try {
+                const res = await pool.request().query("SELECT TOP 50 Numero_Documento, Serie, Numero, Total_Documento, Fecha, ISNULL(Mesa, 0) AS Mesa FROM Documentos_Cabecera WITH (NOLOCK) WHERE Fecha >= CAST(GETDATE() AS DATE) ORDER BY Fecha DESC");
+                
+                for (const t of res.recordset) {
+                    if (!memoriaTickets.has(t.Numero_Documento)) {
+                        const lRes = await pool.request().input('s', t.Serie).input('n', t.Numero)
+                            .query("SELECT PLU, Descripcion, Unidades, Precio, Hora FROM Documentos_Lineas WITH (NOLOCK) WHERE Serie = @s AND Numero = @n");
+                        
+                        const payloadVenta = {
+                            numero_documento: t.Numero_Documento,
+                            mesa: t.Mesa, 
+                            total_documento: parseFloat(t.Total_Documento) || 0,
+                            fecha: lRes.recordset[0]?.Hora ? new Date(lRes.recordset[0].Hora).toISOString() : new Date().toISOString(),
+                            lineas: lRes.recordset.map(l => ({
+                                articulo_id: l.PLU,
+                                nombre: l.Descripcion?.trim() || "Sin Nombre",
+                                unidades: parseFloat(l.Unidades) || 0,
+                                precio: parseFloat(l.Precio) || 0
+                            }))
+                        };
+
+                        await axios.post(URL_VENTAS, { ventas: [payloadVenta] });
+                        memoriaTickets.add(t.Numero_Documento);
+                        console.log(`✅ Venta enviada -> Ticket: ${t.Numero_Documento} | Mesa: ${t.Mesa}`);
+                    }
+                }
+            } catch (e) {
+                console.error("❌ ERROR EN VENTAS:", e.message);
+            }
+        }, 10000);
+
+        // 2. TELEMETRÍA / MONITOR COCINA (CON CEREBRO MATEMÁTICO ANTIFRAUDE)
+        setInterval(async () => {
+            try {
+                const resVivas = await pool.request().query(`
+                    -- 1. MESAS VIVAS (Las normales de la sala)
+                    SELECT 
+                        CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
+                        ISNULL(C.Mesa, 0) AS Mesa, 
+                        C.Nota_Cabecera1, 
+                        L.PLU as articulo_id, 
+                        L.Descripcion as nombre, 
+                        L.Unidades as unidades, 
+                        L.Precio as precio, 
+                        L.Hora,
+                        LTRIM(RTRIM(ISNULL(L.Descripcion_Auxiliar, '') + ISNULL((SELECT ' [' + CC.Descripcion + ']' FROM Comandas_Comentarios CC WITH (NOLOCK) WHERE CC.Numero_Referencia = L.Numero_Referencia AND CC.Terminal = L.Terminal AND CC.Linea_Comandas = L.Linea FOR XML PATH('')), ''))) as notas
+                    FROM Comandas_Cabecera C WITH (NOLOCK)
+                    INNER JOIN Comandas_Lineas L WITH (NOLOCK) ON C.Numero_Referencia = L.Numero_Referencia AND C.Terminal = L.Terminal
+                    WHERE L.Unidades <> 0
+
+                    UNION ALL
+
+                    -- 2. VENTAS DIRECTAS NINJA (Cobradas al instante)
+                    SELECT 
+                        'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia, 
+                        ISNULL(D.Mesa, 0) AS Mesa, 
+                        D.Nota_Cabecera1, 
+                        L.PLU as articulo_id, 
+                        L.Descripcion as nombre, 
+                        L.Unidades as unidades, 
+                        L.Precio as precio, 
+                        L.Hora,
+                        ISNULL(L.Descripcion_Auxiliar, '') as notas
+                    FROM Documentos_Cabecera D WITH (NOLOCK)
+                    INNER JOIN Documentos_Lineas L WITH (NOLOCK) ON D.Serie = L.Serie AND D.Numero = L.Numero
+                    WHERE L.Unidades <> 0 
+                    AND CAST(D.Fecha AS DATE) = CAST(GETDATE() AS DATE)
+                    AND D.Hora_Cierre >= DATEADD(minute, -15, GETDATE()) 
+                    AND DATEDIFF(minute, D.Hora_Apertura, D.Hora_Cierre) <= 10
+                `);
+
+                let mapa = new Map();
+
+                resVivas.recordset.forEach(row => {
+                    const idMesa = row.Numero_Referencia.toString();
+                    
+                    if (!mapa.has(idMesa)) {
+                        mapa.set(idMesa, {
+                            numero_documento: idMesa,
+                            mesa: row.Mesa.toString(),
+                            notas_comanda: row.Nota_Cabecera1 || '',
+                            timestamp_tpv: row.Hora ? new Date(row.Hora).toISOString() : new Date().toISOString(),
+                            productosMap: new Map()
+                        });
+                    }
+
+                    const mesa = mapa.get(idMesa);
+                    const idPlato = row.articulo_id + '-' + row.nombre.trim();
+
+                    if (!mesa.productosMap.has(idPlato)) {
+                        mesa.productosMap.set(idPlato, {
+                            articulo_id: row.articulo_id,
+                            nombre: row.nombre.trim(),
+                            unidades: 0,
+                            precio: parseFloat(row.precio),
+                            notas: row.notas.trim()
+                        });
+                    }
+
+                    mesa.productosMap.get(idPlato).unidades += parseFloat(row.unidades);
+                });
+
+// 4. Limpiamos la basura y empaquetamos (CON BLINDAJE PARA EL TRIGGER DE SUPABASE)
+                const sala = Array.from(mapa.values()).map(mesa => {
+                    
+                    // Inyectamos el numero_documento DENTRO de cada plato para que el Trigger de Supabase no llore
+                    const productosReales = Array.from(mesa.productosMap.values()).map(p => ({
+                        ...p,
+                        numero_documento: mesa.numero_documento // ✨ BLINDAJE EXTRA
+                    }));
+
+                    return {
+                        numero_documento: mesa.numero_documento,
+                        id_ticket: mesa.numero_documento, // ✨ BLINDAJE EXTRA
+                        mesa: mesa.mesa,
+                        notas_comanda: mesa.notas_comanda,
+                        timestamp_tpv: mesa.timestamp_tpv,
+                        productos: productosReales
+                    };
+                }).filter(mesa => mesa.productos.some(p => p.unidades > 0)); // Solo enviamos la mesa si le queda al menos 1 plato vivo
+
+                await axios.post(URL_TELEMETRIA, { sala, total_mesas_vivas: sala.length });
+                process.stdout.write(`\r[${new Date().toLocaleTimeString()}] 📡 Enviando a Cocina: ${sala.length} mesas vivas en curso.  `);
+
+            } catch (e) { console.error('\nError Telemetría:', e.message); }
+        }, 5000);
+
+    } catch (err) { console.error('Error Crítico:', err.message); }
+}
+start();
