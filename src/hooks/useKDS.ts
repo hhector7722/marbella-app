@@ -106,13 +106,18 @@ export function useKDS() {
         if (!options.isSilent) setSyncStatus('syncing');
 
         const startOfToday = getStartOfLocalToday();
-
+        // Ventana rodante para comandas activas (mesas de la noche que cruzan medianoche).
+        const rollingStart = new Date(Date.now() - 36 * 60 * 60 * 1000);
+        const startIso = startOfToday.toISOString();
+        const rollingIso = rollingStart.toISOString();
+        // PostgREST: los ':' en ISO deben ir entre comillas dentro de .or() o el filtro falla y devuelve 0 filas.
         try {
             const { data, error } = await supabase
                 .from('kds_orders')
                 .select('*, lineas:kds_order_lines(*)')
-                .gte('created_at', startOfToday.toISOString())
-                .or(`estado.eq.activa,and(estado.eq.completada,completed_at.gte.${startOfToday.toISOString()})`)
+                .or(
+                    `and(estado.eq.activa,created_at.gte."${rollingIso}"),and(estado.eq.completada,completed_at.gte."${startIso}")`
+                )
                 .order('created_at', { ascending: true });
 
             if (!error && data) {
@@ -121,9 +126,10 @@ export function useKDS() {
                         ...orderWithParsedDates(order),
                         lineas: (order.lineas ?? []).filter((l: { estado: string }) => l.estado !== 'cancelado'),
                     }))
-                    .filter(order =>
-                        order.estado === 'completada' ||
-                        order.lineas.some((l: { estado: string }) => l.estado === 'pendiente')
+                    .filter(
+                        (order) =>
+                            order.estado === 'completada' ||
+                            (order.estado === 'activa' && (order.lineas?.length ?? 0) > 0)
                     );
 
                 if (options.isInitial) {
@@ -149,7 +155,6 @@ export function useKDS() {
     useEffect(() => {
         let reconnectTimeout: ReturnType<typeof setTimeout>;
         let backoffDelay = 2000;
-        const startOfToday = getStartOfLocalToday();
 
         const setupSubscription = () => {
             fetchActiveOrders({ isInitial: true });
