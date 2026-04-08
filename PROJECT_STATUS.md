@@ -1,15 +1,17 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-03-22 (Coste laboral: calendario + términos versionados)
+**Última actualización:** 2026-04-08 (Gemelo Digital: SQL KDS + doc de sincronización)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
 
+- [x] **Gemelo Digital BDP → Supabase (2026-04-08)**: Versionado en repo el pipeline **Radar + KDS**: tablas `estado_sala`, `kds_orders`, `kds_order_lines`, funciones `fncalcdelta` / `fn_calculate_and_insert_delta` / `fn_trg_process_kds_from_sala`, trigger `trg_update_kds_on_sala_change`, publicación Realtime y grants. Migración `20260408120000_kds_estado_sala_pipeline_snapshot.sql`. Documentación operativa en `context/ARQUITECTURA_SYNC_KDS.md` (rutas correctas: `RadarSala.tsx`, `src/components/kds/KDSView.tsx`, `context/server.txt`, `context/index.txt`).
 - [x] **Comunicados y Contratos Manuales (2026-03-10)**: Icono de Comunicados redefinido (Megaphone) en modal de nóminas. Managers pueden subir comunicados y contratos manualmente desde `/profile`; se guardan en bucket `employee-documents` y tabla `employee_documents` (tipo comunicado/contrato). Migración `20260310160000_employee_documents_bucket.sql`. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
 
 ---
 
 ## ✅ COMPLETADO
+- [x] **Documentación y SQL Gemelo Digital / KDS (2026-04-08)**: Alineación del flujo TPV → receptor → `estado_sala` → deltas en `kds_order_lines` con el código (`RadarSala`, `useKDS`, `parseTPVDate`). Evita drift de esquema al tener el snapshot en migraciones y la guía en `context/ARQUITECTURA_SYNC_KDS.md`.
 - [x] **Staff Dashboard: Diferenciación Origen/Destino en Cambio (2026-03-25)**: Mejorada la validación visual en el modal de selección de cajas para el flujo de Cambio. Ahora, las cajas de la columna **Origen** muestran un contorno verde (`emerald-500`) y fondo tenue cuando están seleccionadas, mientras que las de la columna **Destino** muestran un contorno rojo (`rose-500`), facilitando la distinción táctica inmediata entre ambas fuentes.
 - [x] **Desacoplamiento Horarios Eventos vs Trabajadores (2026-03-25)**: Resuelto el bug crítico donde los horarios de los eventos (MAÑANA/TARDE) sobreescribían los turnos individuales de los trabajadores. Se ha desacoplado la UI en `ScheduleDayEditor.tsx`: las tarjetas Petrol superiores gestionan exclusivamente los metadatos globales (`event_start_time`, `event_end_time`), mientras que los cambios en el personal son independientes. Se han añadido controles específicos de Actividad y Categoría para cada trabajador en la barra flotante de edición. La lógica de `handleSave` ahora preserva la integridad de los turnos de los empleados sin ser alterados por cambios en el horario del evento.
 - [x] **AI & Voice Agente Clean Start (2026-03-25)**: Reconstruido el sistema de IA desde cero ("Clean Start") para eliminar fallos de arquitectura previa. Implementado un **Cerebro de IA Unificado** (`src/lib/ai/tools.ts`) con soporte para Chat (Next.js) y Voz (Vapi). Se ha centralizado la lógica de herramientas (Laboral, Ventas, Recetas, Pedidos) con cumplimiento estricto de **RBAC**. La voz ahora utiliza el SDK de **Vapi** para una latencia ultra-baja y estabilidad total en entornos Windows/Web. Se ha migrado toda la infraestructura previa insegura a `/api/ai` con validación de identidad en el servidor.
@@ -348,6 +350,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 ---
 
 ## 🛠️ NOTAS TÉCNICAS
+- **Gemelo Digital (Sala / KDS):** El TPV envía telemetría al receptor (`context/server.txt`); Supabase mantiene la SSOT en `estado_sala` y el KDS en `kds_orders` / `kds_order_lines`. Ver `context/ARQUITECTURA_SYNC_KDS.md` y la migración `20260408120000_kds_estado_sala_pipeline_snapshot.sql`.
 - **Primary Color: #5B8FB9 (Azul Marbella) + Mejoras UI Dashboard
 - **Database Rules:** Seguir el protocolo `db-supabase-master`.
 - **Naming Convention:** Se mantienen nombres actuales de DB para evitar roturas de esquema.
