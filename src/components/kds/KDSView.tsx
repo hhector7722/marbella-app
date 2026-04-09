@@ -10,15 +10,12 @@ import Link from 'next/link';
 
 /** Menos columnas en pantallas grandes = tarjetas más anchas y texto más legible en cocina */
 function useColumns() {
-    const [cols, setCols] = useState(4);
+    const [cols, setCols] = useState(2);
     useEffect(() => {
         const update = () => {
-            if (window.innerWidth >= 1920) setCols(4);
-            else if (window.innerWidth >= 1536) setCols(4);
-            else if (window.innerWidth >= 1280) setCols(3);
-            else if (window.innerWidth >= 1024) setCols(3);
-            else if (window.innerWidth >= 768) setCols(2);
-            else if (window.innerWidth >= 640) setCols(2);
+            // Cocina: priorizamos legibilidad extrema.
+            // 1 columna en pantallas pequeñas, 2 columnas en la mayoría de monitores.
+            if (window.innerWidth >= 768) setCols(2);
             else setCols(1);
         };
         update();
@@ -81,7 +78,7 @@ export default function KDSView() {
             <div className="flex flex-1 min-h-0 flex-col bg-[#0f1522] relative">
 
                 {/* Área principal: comandas (scroll) */}
-                <div className="flex-1 min-h-0 overflow-y-auto pt-6 pb-4 custom-scrollbar">
+                <div className="flex-1 min-h-0 overflow-y-auto pt-4 pb-3 custom-scrollbar">
                     {loading && orders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400 animate-in fade-in duration-700">
                             <Loader2 className="animate-spin mb-4 opacity-20" size={56} strokeWidth={1} />
@@ -96,16 +93,16 @@ export default function KDSView() {
                         </div>
                     ) : (
                         orderRows.map((row, rowIdx) => (
-                            <div key={rowIdx} className="w-full relative pt-5 sm:pt-6 mb-2 sm:mb-4">
+                            <div key={rowIdx} className="w-full relative pt-4 sm:pt-5 mb-3 sm:mb-6">
                                 {/* THE METAL RAIL (Comandero) PER ROW STRETCHED */}
                                 <img
                                     src="/icons/comandero.png"
-                                    className="absolute top-0 left-0 w-full h-8 sm:h-10 z-20 shadow-lg object-fill border-b border-slate-900/50"
+                                    className="absolute top-0 left-0 w-full h-6 sm:h-8 z-20 shadow-lg object-fill border-b border-slate-900/50 opacity-80"
                                     alt="Comandero rail"
                                 />
 
                                 <div
-                                    className="px-6 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full grid gap-2 sm:gap-3 -mt-2 items-start"
+                                    className="px-5 sm:px-8 md:px-10 lg:px-12 relative z-10 w-full grid gap-4 sm:gap-6 -mt-2 items-start"
                                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                                 >
                                     {row.map(order => (
