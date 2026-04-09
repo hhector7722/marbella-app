@@ -136,7 +136,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     const groupedArray = Object.values(groupedLines);
 
     return (
-        <div
+        <>
+            <div
             ref={cardRef}
             className={`relative flex flex-col rounded-b-xl rounded-t-sm shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white ${
                 openDropdownKey ? 'z-[100]' : 'z-auto'
@@ -395,24 +396,25 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
           animation: pulse-critical 2s ease-in-out infinite;
         }
       `}</style>
-        </div>
+            </div>
 
-        <NotesModal
-            isOpen={notesModal !== null}
-            title={notesModal?.title ?? ''}
-            subtitle={notesModal?.subtitle ?? null}
-            initialNotes={notesModal?.initialNotes}
-            quickNotes={QUICK_NOTES}
-            accent="rose"
-            onClose={() => setNotesModal(null)}
-            onSave={async (next) => {
-                if (!notesModal) return;
-                if (notesModal.kind === 'order') {
-                    await onUpdateOrderNotes(order.id, next);
-                } else {
-                    await onUpdateLineNotes(notesModal.lineIds ?? [], next);
-                }
-            }}
-        />
+            <NotesModal
+                isOpen={notesModal !== null}
+                title={notesModal?.title ?? ''}
+                subtitle={notesModal?.subtitle ?? null}
+                initialNotes={notesModal?.initialNotes}
+                quickNotes={QUICK_NOTES}
+                accent="rose"
+                onClose={() => setNotesModal(null)}
+                onSave={async (next) => {
+                    if (!notesModal) return;
+                    if (notesModal.kind === 'order') {
+                        await onUpdateOrderNotes(order.id, next);
+                    } else {
+                        await onUpdateLineNotes(notesModal.lineIds ?? [], next);
+                    }
+                }}
+            />
+        </>
     );
 }
