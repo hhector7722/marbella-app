@@ -66,8 +66,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
     const getIndicatorColor = () => {
         if (isCompleted) return 'bg-slate-600';
         if (elapsed >= 20) return 'animate-pulse-critical';
-        if (elapsed >= 15) return 'bg-amber-500';
-        return 'bg-emerald-600';
+        if (elapsed >= 15) return 'bg-amber-400';
+        return 'bg-emerald-500';
     };
 
     const orderTime = formatLocalTime(new Date(effectiveStart));
@@ -104,20 +104,20 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         ? 'opacity-90'
                         : ''
                 }`}
-            style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '8px solid #cbd5e1' }}
+            style={{ marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '10px solid #cbd5e1' }}
         >
-            {/* Cabecera coloreada */}
-            <div className={`px-3 pb-1.5 flex justify-between items-start transition-colors duration-500 relative font-black rounded-t-sm ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
+            {/* Cabecera coloreada (tonos más claros en alerta roja) */}
+            <div className={`px-4 pb-2 flex justify-between items-start transition-colors duration-500 relative font-black rounded-t-sm ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
                 {isCompleted && (
-                    <div className="absolute top-0 right-3 bg-white/50 px-1.5 py-0.5 rounded-b-md text-[7px] font-black uppercase tracking-widest text-slate-700">
+                    <div className="absolute top-0 right-3 bg-white/50 px-2 py-1 rounded-b-md text-[10px] font-black uppercase tracking-[0.15em] text-slate-700">
                         FINALIZADA
                     </div>
                 )}
 
-                <div className="flex items-center gap-3 w-full pt-1.5">
+                <div className="flex items-center gap-4 w-full pt-2">
                     {/* Mesa */}
-                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-slate-900`}>
-                        <span className="text-base sm:text-lg font-black tracking-tighter uppercase tabular-nums">
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-slate-900`}>
+                        <span className="text-2xl sm:text-3xl font-black tracking-wide uppercase tabular-nums">
                             {(() => {
                                 const mesaNum = parseInt(order.mesa || '');
                                 if (!isNaN(mesaNum) && mesaNum > 1000) return '--';
@@ -127,20 +127,20 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     </div>
 
                     {/* Tiempo */}
-                    <div className="flex flex-col items-end flex-1 pr-1">
+                    <div className="flex flex-col items-end flex-1 pr-1 min-w-0">
                         <div className="flex items-center gap-1 text-right w-full justify-end opacity-95">
-                            <span className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest truncate">
+                            <span className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
                                 {orderTime}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1 text-right w-full justify-end">
-                            <span className="text-[8px] sm:text-[9px] font-bold opacity-70 uppercase tracking-wider">
+                        <div className="flex items-center gap-1 text-right w-full justify-end flex-wrap">
+                            <span className="text-sm sm:text-base font-bold opacity-85 uppercase tracking-[0.1em]">
                                 HACE {formatElapsed(elapsed)}
                             </span>
                             {order.origen_referencia && (
                                 <>
-                                    <span className="text-[8px] opacity-40 ml-1">•</span>
-                                    <span className="text-[8px] sm:text-[9px] font-bold opacity-70 uppercase tracking-wider ml-1">
+                                    <span className="text-sm opacity-50 ml-1">•</span>
+                                    <span className="text-sm sm:text-base font-bold opacity-80 uppercase tracking-[0.08em] ml-1 max-w-[12rem] truncate">
                                         {order.origen_referencia.replace(/^directo\s*-\s*/i, '').replace(/^directo-/i, '')}
                                     </span>
                                 </>
@@ -151,16 +151,16 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             </div>
 
             {order.notas_comanda && (
-                <div className={`px-3 py-1.5 flex items-start gap-1.5 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-red-50'}`}>
-                    <AlertTriangle size={14} className={`${isCompleted ? 'text-slate-400' : 'text-red-500'} mt-0.5 shrink-0`} />
-                    <p className={`text-[10px] font-black leading-tight uppercase tracking-tight ${isCompleted ? 'text-slate-500' : 'text-red-700'}`}>
+                <div className={`px-4 py-2.5 flex items-start gap-2 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
+                    <AlertTriangle size={22} className={`${isCompleted ? 'text-slate-400' : 'text-rose-500'} mt-0.5 shrink-0`} strokeWidth={2.5} />
+                    <p className={`text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${isCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
                         {order.notas_comanda}
                     </p>
                 </div>
             )}
 
             {/* Lista de Líneas */}
-            <div className="flex-1 p-1.5 space-y-1">
+            <div className="flex-1 p-3 sm:p-4 space-y-2">
                 {groupedArray.map((group) => {
                     const groupKey = group.ids.join(',');
                     const isDropdownOpen = openDropdownKey === groupKey;
@@ -176,7 +176,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center p-1.5 sm:p-2 select-none transition-all duration-200 border-b border-dashed border-slate-200/50 last:border-none ${isCompleted
+                                className={`group relative flex items-center p-3 sm:p-3.5 select-none transition-all duration-200 border-b border-dashed border-slate-200/50 last:border-none ${isCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-slate-50/50 cursor-pointer opacity-70'
@@ -187,28 +187,28 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                             >
                                 {/* Tick si no está pendiente */}
                                 {group.estado !== 'pendiente' && (
-                                    <div className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center rounded-xl transition-all duration-300 mr-2 ${isCompleted ? 'bg-slate-200 text-slate-400' :
+                                    <div className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center rounded-xl transition-all duration-300 mr-3 ${isCompleted ? 'bg-slate-200 text-slate-400' :
                                             group.estado === 'terminado' ? 'bg-green-500 text-white scale-110' :
                                                 group.estado === 'cancelado' ? 'bg-slate-300 text-slate-500' :
                                                     'bg-slate-100 text-slate-400 border border-slate-300'
                                         }`}>
-                                        {group.estado === 'cancelado' ? <X size={20} strokeWidth={3} /> : <CheckCircle size={20} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
+                                        {group.estado === 'cancelado' ? <X size={26} strokeWidth={3} /> : <CheckCircle size={26} strokeWidth={group.estado === 'terminado' ? 3 : 2} />}
                                     </div>
                                 )}
 
                                 <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="flex flex-col pr-1 min-w-0">
-                                        <span className={`text-[10px] sm:text-[11px] leading-tight font-black transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                                        <span className={`text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
                                                 group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
                                                     group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
-                                                        'text-slate-800'
+                                                        'text-slate-900'
                                             }`}>
                                             {group.producto_nombre}
                                         </span>
 
                                         {group.notas && (
-                                            <div className="flex items-center gap-1 mt-px">
-                                                <span className={`text-[8px] font-black text-red-600 italic ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
+                                            <div className="flex items-center gap-1 mt-1">
+                                                <span className={`text-base sm:text-lg font-bold text-rose-600 italic tracking-wide ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
                                                     {group.notas}
                                                 </span>
                                             </div>
@@ -224,7 +224,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                 e.stopPropagation(); // No propagar al div padre (que tacharía todo)
                                                 setOpenDropdownKey(isDropdownOpen ? null : groupKey);
                                             }}
-                                            className={`shrink-0 flex items-center justify-center gap-0.5 rounded px-1.5 py-0.5 border-2 min-w-[1.5rem] transition-all duration-150 ${
+                                            className={`shrink-0 flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 border-[3px] min-w-[3rem] transition-all duration-150 ${
                                                 group.estado === 'terminado'
                                                     ? 'border-green-200 text-green-600 bg-green-50 cursor-default'
                                                     : canInteract && group.estado === 'pendiente' && group.cantidad > 1
@@ -232,9 +232,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                         : 'border-slate-800 text-slate-900 bg-slate-50 cursor-default'
                                             }`}
                                         >
-                                            <span className="text-sm sm:text-base font-black">{group.cantidad}</span>
+                                            <span className="text-2xl sm:text-3xl font-black tracking-wide">{group.cantidad}</span>
                                             {canInteract && group.estado === 'pendiente' && group.cantidad > 1 && (
-                                                <ChevronDown size={10} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                                <ChevronDown size={18} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
                                             )}
                                         </div>
                                     )}
@@ -243,9 +243,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
                             {/* Dropdown "Finalizar por unidad" */}
                             {isDropdownOpen && (
-                                <div className="absolute right-1 top-full z-50 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden min-w-[160px]">
-                                    <div className="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Finalizar por unidad</span>
+                                <div className="absolute right-1 top-full z-50 mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden min-w-[220px]">
+                                    <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                                        <span className="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Finalizar por unidad</span>
                                     </div>
                                     {/* Opciones: 1 unidad, 2 unidades... hasta N */}
                                     {Array.from({ length: group.cantidad }, (_, i) => i + 1).map(n => (
@@ -258,14 +258,14 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                 const idsToMark = group.ids.slice(0, n);
                                                 onTacharProductos(idsToMark, group.estado);
                                             }}
-                                            className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-emerald-50 active:bg-emerald-100 transition-colors border-b border-slate-50 last:border-none"
+                                            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-emerald-50 active:bg-emerald-100 transition-colors border-b border-slate-50 last:border-none min-h-[48px]"
                                         >
-                                            <span className="text-[11px] font-black text-slate-700">
+                                            <span className="text-base font-black tracking-wide text-slate-800">
                                                 {n === group.cantidad
                                                     ? `Finalizar todos (${n})`
                                                     : `Finalizar ${n}`}
                                             </span>
-                                            <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">{n}</span>
+                                            <span className="text-sm font-bold text-slate-500 bg-slate-100 rounded px-2 py-1">{n}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -275,19 +275,19 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                 })}
             </div>
 
-            <div className="p-2 border-t border-slate-100 rounded-b-xl">
+            <div className="p-3 sm:p-4 border-t border-slate-100 rounded-b-xl">
                 {isCompleted ? (
                     <button
                         onClick={() => onRecuperarComanda(order.id)}
-                        className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 active:translate-y-1"
+                        className="w-full min-h-[52px] py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1"
                     >
                         Restaurar
                     </button>
                 ) : (
                     <button
                         onClick={() => onCompletarComanda(order.id)}
-                        className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 active:translate-y-1 ${isFullyDone
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 shadow-sm'
+                        className={`w-full min-h-[52px] py-3 rounded-xl font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1 ${isFullyDone
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300 shadow-sm'
                                 : 'bg-slate-100/80 text-slate-400 hover:bg-slate-200/80'
                             }`}
                     >
@@ -298,8 +298,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
             <style jsx>{`
         @keyframes pulse-critical {
-          0%, 100% { background-color: #991b1b; }
-          50% { background-color: #7f1d1d; }
+          0%, 100% { background-color: #fb7185; }
+          50% { background-color: #fda4af; }
         }
         .animate-pulse-critical {
           animation: pulse-critical 2s ease-in-out infinite;

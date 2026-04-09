@@ -3,20 +3,21 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
-import { Loader2, Package, LayoutGrid, Info, AlertTriangle, ListChecks, Check, X } from 'lucide-react';
+import { Loader2, Package, Info, ListChecks, Check, X } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
 
+/** Menos columnas en pantallas grandes = tarjetas más anchas y texto más legible en cocina */
 function useColumns() {
-    const [cols, setCols] = useState(6);
+    const [cols, setCols] = useState(4);
     useEffect(() => {
         const update = () => {
-            if (window.innerWidth >= 1920) setCols(7);
-            else if (window.innerWidth >= 1536) setCols(6);
-            else if (window.innerWidth >= 1280) setCols(5);
-            else if (window.innerWidth >= 1024) setCols(4);
-            else if (window.innerWidth >= 768) setCols(3);
+            if (window.innerWidth >= 1920) setCols(4);
+            else if (window.innerWidth >= 1536) setCols(4);
+            else if (window.innerWidth >= 1280) setCols(3);
+            else if (window.innerWidth >= 1024) setCols(3);
+            else if (window.innerWidth >= 768) setCols(2);
             else if (window.innerWidth >= 640) setCols(2);
             else setCols(1);
         };
@@ -75,97 +76,21 @@ export default function KDSView() {
     return (
         <div className={`fixed inset-0 z-[100] flex flex-col bg-slate-900 transition-all duration-500 ${isOffline ? 'grayscale-[0.5]' : ''}`}>
 
-
-
-            {/* CABECERA UNIFICADA DE COCINA */}
-            <header className="bg-slate-900 border-b border-black md:px-0 flex items-center justify-between z-20 shrink-0 h-16 w-full relative">
-
-                {/* 1. Izquierda: Logo y Status */}
-                <div className="flex items-center gap-3 shrink-0 h-full px-4 border-r border-slate-800">
-                    <div className="flex items-center justify-center">
-                        <Image src="/icons/logo-white.png" alt="Bar Marbella" width={40} height={40} className="object-contain drop-shadow-lg opacity-90" />
-                    </div>
-                    <div className="hidden sm:flex flex-col justify-center">
-                        <Link href="/dashboard/sala" className="flex items-center gap-1.5 mb-0.5 cursor-pointer">
-                            <span className={`block h-1.5 w-1.5 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                                {isOffline ? 'DESCONECTADO' : 'Live'}
-                            </p>
-                        </Link>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
-                            {visibleOrders.length} TICKETS
-                        </p>
-                    </div>
-                </div>
-
-                {/* 2. Centro: Resumen Preparación (Scroll Horizontal Intenso) */}
-                <div className="flex-1 flex items-center overflow-x-auto overflow-y-hidden custom-scrollbar-horizontal gap-2 px-4 h-full">
-                    <div className="hidden lg:flex items-center gap-1.5 shrink-0 pr-2">
-                        <Info size={14} className={showCompleted ? "text-slate-500" : "text-[#407080]"} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${showCompleted ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {showCompleted ? 'FINALIZADOS' : 'RESUMEN'}
-                        </span>
-                    </div>
-                    {aggregatedItems.length === 0 ? (
-                        !loading && (
-                            <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic my-auto">
-                                Nada que preparar
-                            </div>
-                        )
-                    ) : (
-                        aggregatedItems.map(item => (
-                            <div key={item.key} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md border border-slate-700 shrink-0 shadow-sm transition-colors cursor-default my-auto">
-                                <span className="text-[11px] font-bold text-slate-300 max-w-[120px] truncate">{item.nombre}</span>
-                                {item.notas && <span className="text-[9px] font-black tracking-tighter text-amber-500 italic max-w-[80px] truncate">{item.notas}</span>}
-                                <span className="bg-[#17253a] text-emerald-400 text-[10px] font-black px-1.5 py-0.5 rounded border border-emerald-900/40">
-                                    x{item.cantidad}
-                                </span>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* 3. Derecha: Toggles y Controles */}
-                <div className="flex items-center gap-4 shrink-0 h-full px-4 border-l border-slate-800">
-                    {/* Indicador de Sincronización Dinámico */}
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-500 overflow-hidden ${syncStatus === 'idle' ? 'w-0 opacity-0' : 'w-8 opacity-100 bg-slate-800 border border-slate-700/50 shadow-inner'}`}>
-                        {syncStatus === 'syncing' && <Loader2 size={16} className="text-blue-400 animate-spin" />}
-                        {syncStatus === 'success' && <Check size={16} className="text-emerald-400" />}
-                        {syncStatus === 'error' && <X size={16} className="text-red-500" />}
-                    </div>
-
-                    <div className="flex bg-slate-800 p-1 rounded-lg shadow-inner">
-                        <button
-                            onClick={() => setShowCompleted(false)}
-                            className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Cocina
-                        </button>
-                        <button
-                            onClick={() => setShowCompleted(true)}
-                            className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Finalizadas
-                        </button>
-                    </div>
-                </div>
-            </header>
-
             {isOffline && <div className="absolute inset-0 bg-red-900/10 pointer-events-none z-[90] backdrop-blur-[1px]" />}
 
-            <div className="flex-1 overflow-hidden flex flex-col bg-[#0f1522] relative">
+            <div className="flex flex-1 min-h-0 flex-col bg-[#0f1522] relative">
 
-                {/* AREA PRINCIPAL: ROWS DE COMANDAS CON SUS RIELES */}
-                <div className="flex-1 overflow-y-auto pt-10 pb-12 custom-scrollbar">
+                {/* Área principal: comandas (scroll) */}
+                <div className="flex-1 min-h-0 overflow-y-auto pt-6 pb-4 custom-scrollbar">
                     {loading && orders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400 animate-in fade-in duration-700">
-                            <Loader2 className="animate-spin mb-4 opacity-20" size={48} strokeWidth={1} />
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 animate-pulse">Sincronizando...</p>
+                            <Loader2 className="animate-spin mb-4 opacity-20" size={56} strokeWidth={1} />
+                            <p className="text-sm font-black uppercase tracking-[0.35em] opacity-40 animate-pulse">Sincronizando...</p>
                         </div>
                     ) : visibleOrders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 mt-8 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
                             {showCompleted ? <ListChecks className="text-slate-600 mb-4" size={64} strokeWidth={1} /> : <Package className="text-slate-600 mb-4" size={64} strokeWidth={1} />}
-                            <h3 className="text-lg font-bold text-slate-400 uppercase tracking-tighter">
+                            <h3 className="text-2xl font-bold text-slate-400 uppercase tracking-wide">
                                 {showCompleted ? 'Sin comandas finalizadas hoy' : 'No hay comandas pendientes'}
                             </h3>
                         </div>
@@ -199,6 +124,89 @@ export default function KDSView() {
                 </div>
 
             </div>
+
+            {/* Pie fijo: logo, resumen horizontal, controles (antes cabecera superior) */}
+            <footer className="shrink-0 z-30 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 min-h-[5.5rem] sm:min-h-[6rem] px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div className="flex items-center gap-4 shrink-0 border-b border-slate-800/80 sm:border-b-0 pb-3 sm:pb-0 sm:border-r sm:pr-6">
+                    <div className="flex items-center justify-center shrink-0">
+                        <Image src="/icons/logo-white.png" alt="Bar Marbella" width={52} height={52} className="object-contain drop-shadow-lg opacity-90" />
+                    </div>
+                    <div className="flex flex-col justify-center min-w-0">
+                        <Link href="/dashboard/sala" className="flex items-center gap-2 mb-1 cursor-pointer">
+                            <span className={`block h-2.5 w-2.5 rounded-full ${isOffline ? 'bg-rose-400' : 'bg-emerald-400'} animate-pulse shrink-0`} />
+                            <p className="text-sm sm:text-base font-black text-slate-300 uppercase tracking-[0.2em] leading-none">
+                                {isOffline ? 'DESCONECTADO' : 'Live'}
+                            </p>
+                        </Link>
+                        <p className="text-base sm:text-lg font-bold text-slate-400 uppercase tracking-[0.15em] leading-tight">
+                            {visibleOrders.length} tickets
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex-1 flex items-center overflow-x-auto overflow-y-hidden custom-scrollbar-horizontal gap-3 min-h-[3.25rem] px-1">
+                    <div className="hidden xl:flex items-center gap-2 shrink-0 pr-2">
+                        <Info size={22} className={showCompleted ? 'text-slate-500' : 'text-[#5a9aaa]'} strokeWidth={2.5} />
+                        <span className={`text-lg font-black uppercase tracking-[0.18em] ${showCompleted ? 'text-slate-500' : 'text-slate-200'}`}>
+                            {showCompleted ? 'Finalizados' : 'Resumen'}
+                        </span>
+                    </div>
+                    {aggregatedItems.length === 0 ? (
+                        !loading && (
+                            <div className="text-slate-500 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto">
+                                Nada que preparar
+                            </div>
+                        )
+                    ) : (
+                        aggregatedItems.map(item => (
+                            <div
+                                key={item.key}
+                                className="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-700/90 px-4 py-2.5 rounded-xl border border-slate-600/80 shrink-0 shadow-md"
+                            >
+                                <span className="text-lg sm:text-xl font-bold text-slate-100 max-w-[min(22rem,45vw)] truncate tracking-[0.06em]">
+                                    {item.nombre}
+                                </span>
+                                {item.notas && (
+                                    <span className="text-sm sm:text-base font-bold tracking-wide text-amber-300/95 italic max-w-[10rem] truncate">
+                                        {item.notas}
+                                    </span>
+                                )}
+                                <span className="bg-[#1e3a5f] text-emerald-300 text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-emerald-700/50 tracking-wide">
+                                    ×{item.cantidad}
+                                </span>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                <div className="flex items-center justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t border-slate-800/80 sm:border-t-0 sm:border-l sm:pl-6">
+                    <div
+                        className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-500 overflow-hidden ${syncStatus === 'idle' ? 'w-0 opacity-0' : 'w-11 opacity-100 bg-slate-800 border border-slate-600/50 shadow-inner'}`}
+                    >
+                        {syncStatus === 'syncing' && <Loader2 size={22} className="text-blue-400 animate-spin" />}
+                        {syncStatus === 'success' && <Check size={22} className="text-emerald-400" strokeWidth={2.5} />}
+                        {syncStatus === 'error' && <X size={22} className="text-rose-400" strokeWidth={2.5} />}
+                    </div>
+
+                    <div className="flex bg-slate-800 p-1.5 rounded-xl shadow-inner min-h-[52px] items-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowCompleted(false)}
+                            className={`min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Cocina
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowCompleted(true)}
+                            className={`min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Finalizadas
+                        </button>
+                    </div>
+                </div>
+            </footer>
+
             <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
