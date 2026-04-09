@@ -107,17 +107,48 @@ export function useKDS() {
 
         const startOfToday = getStartOfLocalToday();
         const startIso = startOfToday.toISOString();
-        // PostgREST: los ':' en ISO deben ir entre comillas dentro de .or() o el filtro falla y devuelve 0 filas.
         try {
-            const { data, error } = await supabase
+            // Importante:
+            // - KDS debe "limpiarse" a las 00:00, pero seguir mostrando mesas abiertas si tienen líneas NUEVAS hoy.
+            // - Por eso NO filtramos las activas por kds_orders.created_at, sino por existencia de kds_order_lines creadas hoy.
+            const { data: lineRefs, error: lineErr } = await supabase
+                .from('kds_order_lines')
+                .select('kds_order_id')
+                .gte('created_at', startIso)
+                .neq('estado', 'cancelado');
+
+            if (lineErr) throw lineErr;
+
+            const activeIds = Array.from(
+                new Set((lineRefs ?? []).map((r: { kds_order_id: string | null }) => r.kds_order_id).filter(Boolean))
+            ) as string[];
+
+            const ordersParts: KDSOrder[] = [];
+
+            if (activeIds.length > 0) {
+                const { data: activeOrders, error: activeErr } = await supabase
+                    .from('kds_orders')
+                    .select('*, lineas:kds_order_lines(*)')
+                    .eq('estado', 'activa')
+                    .in('id', activeIds);
+
+                if (activeErr) throw activeErr;
+                ordersParts.push(...((activeOrders as unknown as KDSOrder[]) ?? []));
+            }
+
+            const { data: completedOrders, error: completedErr } = await supabase
                 .from('kds_orders')
                 .select('*, lineas:kds_order_lines(*)')
-                .or(
-                    `and(estado.eq.activa,created_at.gte."${startIso}"),and(estado.eq.completada,completed_at.gte."${startIso}")`
-                )
+                .eq('estado', 'completada')
+                .gte('completed_at', startIso)
                 .order('created_at', { ascending: true });
 
-            if (!error && data) {
+            if (completedErr) throw completedErr;
+            ordersParts.push(...((completedOrders as unknown as KDSOrder[]) ?? []));
+
+            const data = ordersParts;
+
+            if (data) {
                 const cleanedData = data
                     .map(order => ({
                         ...orderWithParsedDates(order),
@@ -139,11 +170,11 @@ export function useKDS() {
                 }
                 setIsOffline(false);
                 if (!options.isSilent) setStatusWithTimeout('success');
-            } else if (error) {
-                console.error('Error KDS Fetch:', error.message);
-                setIsOffline(true);
-                setSyncStatus('error');
             }
+        } catch (e: any) {
+            console.error('Error KDS Fetch:', e?.message ?? e);
+            setIsOffline(true);
+            setSyncStatus('error');
         } finally {
             if (options.isInitial) setLoading(false);
         }

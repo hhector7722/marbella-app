@@ -67,7 +67,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         if (isCompleted) return 'bg-slate-600';
         if (elapsed >= 20) return 'animate-pulse-critical';
         if (elapsed >= 15) return 'bg-amber-400';
-        return 'bg-emerald-500';
+        // Petróleo (estado normal) + amarillo (aviso) + rojo claro (crítico) como en la configuración original
+        return 'bg-[#407080]';
     };
 
     const orderTime = formatLocalTime(new Date(effectiveStart));
