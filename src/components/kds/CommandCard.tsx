@@ -388,8 +388,8 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
             <style jsx>{`
         @keyframes pulse-critical {
-          0%, 100% { background-color: #fb7185; }
-          50% { background-color: #fda4af; }
+          0%, 100% { background-color: #dc2626; } /* red-600 */
+          50% { background-color: #b91c1c; } /* red-700 */
         }
         .animate-pulse-critical {
           animation: pulse-critical 2s ease-in-out infinite;
