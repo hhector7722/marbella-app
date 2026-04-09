@@ -1,23 +1,64 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { CheckCircle, AlertTriangle, X, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertTriangle, X, ChevronDown, Pencil } from 'lucide-react';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
+import { NotesModal } from './NotesModal';
 
 interface CommandCardProps {
     order: KDSOrder;
     onTacharProductos: (lineIds: string[], currentState: KDSItemStatus) => void;
     onCompletarComanda: (orderId: string) => void;
     onRecuperarComanda: (orderId: string) => void;
+    onUpdateLineNotes: (lineIds: string[], nextNotes: string) => Promise<void> | void;
+    onUpdateOrderNotes: (orderId: string, nextNotes: string) => Promise<void> | void;
 }
 
-export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRecuperarComanda }: CommandCardProps) {
+const QUICK_NOTES = [
+    'PARA LLEVAR',
+    'NO HACER',
+    'CORTADO EN DOS',
+    'PARA COMPARTIR',
+    'SIN TOMATE',
+    'CON TOMATE',
+    'CALIENTE',
+    'FRIO',
+    'SIN QUESO',
+    'SIN PIMIENTO',
+    'SIN OLIVAS',
+    'SIN SALSA',
+    'EXTRA SALSA BRAVA',
+    'POCO HECHO',
+    'PUNTO MENOS',
+    'PUNTO MÁS',
+    'MUY HECHO',
+    'SIN SAL',
+] as const;
+
+function hasNotes(raw: string | null | undefined) {
+    return (raw ?? '').trim().length > 0;
+}
+
+function splitBullets(raw: string | null | undefined) {
+    if (!raw) return [];
+    return raw.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRecuperarComanda, onUpdateLineNotes, onUpdateOrderNotes }: CommandCardProps) {
     const [elapsed, setElapsed] = useState<number>(0);
     // Clave del grupo cuyo dropdown de unidades está abierto (null = ninguno)
     const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
     const isCompleted = order.estado === 'completada';
+
+    const [notesModal, setNotesModal] = useState<null | {
+        kind: 'order' | 'lineGroup';
+        title: string;
+        subtitle?: string | null;
+        initialNotes: string | null | undefined;
+        lineIds?: string[];
+    }>(null);
 
     const getEffectiveStartTime = () => {
         const pendingLines = order.lineas?.filter(l => l.estado === 'pendiente') || [];
@@ -148,15 +189,38 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                             )}
                         </div>
                     </div>
+
+                    {/* Editar nota comanda */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setNotesModal({
+                                kind: 'order',
+                                title: `Mesa ${order.mesa || '--'}`,
+                                subtitle: 'NOTA COMANDA',
+                                initialNotes: order.notas_comanda,
+                            });
+                        }}
+                        className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isCompleted ? 'bg-slate-300/60 text-slate-600' : 'bg-white/10 hover:bg-white/15 text-white'}`}
+                        title="Editar nota comanda"
+                    >
+                        <Pencil size={20} strokeWidth={2.5} />
+                    </button>
                 </div>
             </div>
 
             {order.notas_comanda && (
                 <div className={`px-4 py-2.5 flex items-start gap-2 border-b border-slate-100 ${isCompleted ? 'bg-slate-50' : 'bg-rose-100/90'}`}>
                     <AlertTriangle size={22} className={`${isCompleted ? 'text-slate-400' : 'text-rose-500'} mt-0.5 shrink-0`} strokeWidth={2.5} />
-                    <p className={`text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${isCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
-                        {order.notas_comanda}
-                    </p>
+                    <div className={`flex-1 text-base sm:text-lg font-bold leading-snug uppercase tracking-[0.08em] ${isCompleted ? 'text-slate-500' : 'text-rose-800'}`}>
+                        {splitBullets(order.notas_comanda).map((n, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                                <span className="font-black">·</span>
+                                <span className="break-words">{n}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -199,19 +263,44 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
                                 <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="flex flex-col pr-1 min-w-0">
-                                        <span className={`text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                                        <div className="flex items-start gap-2 min-w-0">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setNotesModal({
+                                                        kind: 'lineGroup',
+                                                        title: group.producto_nombre,
+                                                        subtitle: `Mesa ${order.mesa || '--'}`,
+                                                        initialNotes: group.notas,
+                                                        lineIds: group.ids,
+                                                    });
+                                                }}
+                                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${isCompleted ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                                title="Editar nota artículo"
+                                            >
+                                                <Pencil size={18} strokeWidth={2.5} />
+                                            </button>
+
+                                            <span className={`flex-1 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
                                                 group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
                                                     group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
                                                         'text-slate-900'
                                             }`}>
                                             {group.producto_nombre}
-                                        </span>
+                                            </span>
+                                        </div>
 
-                                        {group.notas && (
-                                            <div className="flex items-center gap-1 mt-1">
-                                                <span className={`text-base sm:text-lg font-bold text-rose-600 italic tracking-wide ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
-                                                    {group.notas}
-                                                </span>
+                                        {hasNotes(group.notas) && (
+                                            <div className="mt-2 space-y-1">
+                                                {splitBullets(group.notas).map((n, idx) => (
+                                                    <div key={idx} className={`flex items-start gap-2 ${group.estado === 'cancelado' || isCompleted ? 'opacity-50' : ''}`}>
+                                                        <span className="text-rose-600 font-black text-lg">·</span>
+                                                        <span className="text-base sm:text-lg font-bold text-rose-700 italic tracking-wide break-words">
+                                                            {n}
+                                                        </span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
@@ -307,5 +396,23 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         }
       `}</style>
         </div>
+
+        <NotesModal
+            isOpen={notesModal !== null}
+            title={notesModal?.title ?? ''}
+            subtitle={notesModal?.subtitle ?? null}
+            initialNotes={notesModal?.initialNotes}
+            quickNotes={QUICK_NOTES}
+            accent="rose"
+            onClose={() => setNotesModal(null)}
+            onSave={async (next) => {
+                if (!notesModal) return;
+                if (notesModal.kind === 'order') {
+                    await onUpdateOrderNotes(order.id, next);
+                } else {
+                    await onUpdateLineNotes(notesModal.lineIds ?? [], next);
+                }
+            }}
+        />
     );
 }

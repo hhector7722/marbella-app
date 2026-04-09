@@ -349,5 +349,47 @@ export function useKDS() {
         }
     };
 
-    return { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda, refresh: fetchActiveOrders };
+    const updateLineNotes = async (lineIds: string[], nextNotes: string) => {
+        if (lineIds.length === 0) return;
+        setSyncStatus('syncing');
+
+        // Optimista
+        inFlightLineIds.current = new Set([...inFlightLineIds.current, ...lineIds]);
+        setOrders(prev => prev.map(o => ({
+            ...o,
+            lineas: (o.lineas || []).map(l => lineIds.includes(l.id) ? { ...l, notas: nextNotes } : l),
+        })));
+
+        const { error } = await supabase
+            .from('kds_order_lines')
+            .update({ notas: nextNotes })
+            .in('id', lineIds);
+
+        lineIds.forEach(id => inFlightLineIds.current.delete(id));
+
+        if (error) {
+            setSyncStatus('error');
+        } else {
+            setStatusWithTimeout('success');
+        }
+    };
+
+    const updateOrderNotes = async (orderId: string, nextNotes: string) => {
+        setSyncStatus('syncing');
+
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, notas_comanda: nextNotes } : o));
+
+        const { error } = await supabase
+            .from('kds_orders')
+            .update({ notas_comanda: nextNotes })
+            .eq('id', orderId);
+
+        if (error) {
+            setSyncStatus('error');
+        } else {
+            setStatusWithTimeout('success');
+        }
+    };
+
+    return { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes, refresh: fetchActiveOrders };
 }

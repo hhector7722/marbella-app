@@ -29,7 +29,7 @@ function useColumns() {
 }
 
 export default function KDSView() {
-    const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda } = useKDS();
+    const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
 
     const visibleOrders = useMemo(() => orders.filter(o =>
@@ -115,6 +115,8 @@ export default function KDSView() {
                                             onTacharProductos={tacharProductos}
                                             onCompletarComanda={completarComanda}
                                             onRecuperarComanda={recuperarComanda}
+                                            onUpdateLineNotes={updateLineNotes}
+                                            onUpdateOrderNotes={updateOrderNotes}
                                         />
                                     ))}
                                 </div>

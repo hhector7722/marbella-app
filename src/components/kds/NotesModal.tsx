@@ -1,0 +1,297 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { X, Plus, Check, Pencil, Trash2 } from "lucide-react";
+
+function norm(s: string) {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function splitNotes(raw: string | null | undefined) {
+  if (!raw) return [];
+  return raw
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function joinNotes(items: string[]) {
+  return items.map((s) => s.trim()).filter(Boolean).join("\n");
+}
+
+export function NotesModal(props: {
+  isOpen: boolean;
+  title: string;
+  subtitle?: string | null;
+  initialNotes: string | null | undefined;
+  quickNotes: readonly string[];
+  accent?: "red" | "rose";
+  onClose: () => void;
+  onSave: (notes: string) => Promise<void> | void;
+}) {
+  const {
+    isOpen,
+    title,
+    subtitle,
+    initialNotes,
+    quickNotes,
+    accent = "rose",
+    onClose,
+    onSave,
+  } = props;
+
+  const [items, setItems] = useState<string[]>([]);
+  const [draft, setDraft] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setItems(splitNotes(initialNotes));
+    setDraft("");
+    setEditingIndex(null);
+    // Teclado nativo: foco automático al abrir
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, [isOpen, initialNotes]);
+
+  const setByAddingUnique = (text: string) => {
+    const cleaned = text.trim().replace(/\s+/g, " ");
+    if (!cleaned) return;
+    const target = norm(cleaned);
+    setItems((prev) => {
+      const existing = new Set(prev.map(norm));
+      if (existing.has(target)) return prev;
+      return [...prev, cleaned];
+    });
+  };
+
+  const canSave = useMemo(() => true, []);
+  const accentClasses =
+    accent === "red"
+      ? {
+          chip: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
+          plus: "bg-emerald-600 hover:bg-emerald-700",
+          title: "text-red-700",
+        }
+      : {
+          chip: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
+          plus: "bg-emerald-600 hover:bg-emerald-700",
+          title: "text-rose-800",
+        };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[10050] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-3"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 bg-slate-900 text-white flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
+              {title}
+            </div>
+            {subtitle && (
+              <div className="text-sm sm:text-base font-bold text-white/70 tracking-wide truncate">
+                {subtitle}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 w-12 h-12 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center"
+          >
+            <X size={22} />
+          </button>
+        </div>
+
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* Chips notas rápidas */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {quickNotes.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => setByAddingUnique(q)}
+                className={`min-h-[52px] rounded-xl border px-3 py-2 text-left font-black uppercase tracking-[0.08em] text-[12px] sm:text-[13px] ${accentClasses.chip}`}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
+          {/* Lista actual */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="text-[12px] sm:text-sm font-black uppercase tracking-[0.18em] text-slate-500">
+                Notas
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setItems([]);
+                  setEditingIndex(null);
+                  setDraft("");
+                  requestAnimationFrame(() => textareaRef.current?.focus());
+                }}
+                className="min-h-[44px] px-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-black uppercase tracking-[0.12em] text-[11px] hover:bg-slate-100"
+              >
+                Borrar
+              </button>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="text-slate-500 font-bold tracking-wide italic py-2">
+                Sin notas
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {items.map((it, idx) => (
+                  <div
+                    key={`${it}-${idx}`}
+                    className="flex items-start gap-2 rounded-xl bg-white border border-slate-200 p-3"
+                  >
+                    <div className={`text-xl font-black ${accentClasses.title}`}>·</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingIndex(idx);
+                        setDraft(it);
+                        requestAnimationFrame(() => textareaRef.current?.focus());
+                      }}
+                      className="flex-1 text-left text-base sm:text-lg font-bold tracking-wide text-slate-800 break-words"
+                    >
+                      {it}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setItems((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                      className="shrink-0 w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
+                      title="Borrar nota"
+                    >
+                      <Trash2 size={18} className="text-slate-700" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Botón + (solo aquí, no pesa en la tarjeta si no hay notas) */}
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingIndex(null);
+                  setDraft("");
+                  requestAnimationFrame(() => textareaRef.current?.focus());
+                }}
+                className={`w-14 h-14 rounded-full ${accentClasses.plus} text-white flex items-center justify-center shadow-lg`}
+                title="Añadir nota"
+              >
+                <Plus size={26} strokeWidth={3} />
+              </button>
+            </div>
+          </div>
+
+          {/* Editor */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="text-[12px] sm:text-sm font-black uppercase tracking-[0.18em] text-slate-500">
+                {editingIndex === null ? "Nueva nota" : "Editar nota"}
+              </div>
+              <button
+                type="button"
+                onClick={() => textareaRef.current?.focus()}
+                className="min-h-[44px] px-3 rounded-xl bg-slate-900 text-white font-black uppercase tracking-[0.12em] text-[11px] hover:bg-slate-800 flex items-center gap-2"
+              >
+                <Pencil size={16} /> Escribir
+              </button>
+            </div>
+
+            <textarea
+              ref={textareaRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Escribe una nota…"
+              className="w-full min-h-[120px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base sm:text-lg font-semibold tracking-wide text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/40"
+              inputMode="text"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
+            />
+
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const cleaned = draft.trim().replace(/\s+/g, " ");
+                  if (!cleaned) return;
+                  setItems((prev) => {
+                    const existing = new Set(prev.map(norm));
+                    if (existing.has(norm(cleaned))) return prev;
+                    if (editingIndex === null) return [...prev, cleaned];
+                    const next = [...prev];
+                    next[editingIndex] = cleaned;
+                    return next;
+                  });
+                  setDraft("");
+                  setEditingIndex(null);
+                  requestAnimationFrame(() => textareaRef.current?.focus());
+                }}
+                className="flex-1 min-h-[52px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-[0.14em] text-base flex items-center justify-center gap-2"
+              >
+                <Plus size={20} strokeWidth={3} />{" "}
+                {editingIndex === null ? "Añadir" : "Actualizar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft("");
+                  setEditingIndex(null);
+                }}
+                className="min-h-[52px] px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase tracking-[0.14em] text-base"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 sm:p-4 border-t border-slate-200 bg-white flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[52px] px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase tracking-[0.14em] text-base"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={saving || !canSave}
+            onClick={async () => {
+              const payload = joinNotes(items);
+              try {
+                setSaving(true);
+                await onSave(payload);
+                onClose();
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="flex-1 min-h-[52px] rounded-xl bg-[#407080] hover:bg-[#36606F] text-white font-black uppercase tracking-[0.16em] text-base flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <Check size={22} strokeWidth={3} /> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
