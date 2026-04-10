@@ -28,6 +28,7 @@ function useColumns() {
 export default function KDSView() {
     const { orders, loading, isOffline, syncStatus, tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes } = useKDS();
     const [showCompleted, setShowCompleted] = useState(false);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
     const visibleOrders = useMemo(() => orders.filter(o =>
         (showCompleted ? o.estado === 'completada' : o.estado === 'activa') &&
@@ -158,24 +159,38 @@ export default function KDSView() {
                             </div>
                         )
                     ) : (
-                        aggregatedItems.map(item => (
-                            <div
-                                key={item.key}
-                                className="flex items-center gap-2 bg-white hover:bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 shrink-0 shadow-sm"
-                            >
-                                <span className="text-lg sm:text-xl font-black text-slate-900 max-w-[min(22rem,45vw)] truncate tracking-[0.06em]">
-                                    {item.nombre}
-                                </span>
-                                {item.notas && (
-                                    <span className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic max-w-[10rem] truncate">
-                                        {item.notas}
-                                    </span>
+                        <button
+                            type="button"
+                            onClick={() => setIsSummaryOpen(true)}
+                            className="flex-1 min-w-0 text-left"
+                            title="Ver resumen completo"
+                        >
+                            <div className="flex items-center gap-3 min-w-0 max-h-[3.25rem] overflow-hidden">
+                                {aggregatedItems.slice(0, 4).map(item => (
+                                    <div
+                                        key={item.key}
+                                        className="flex items-center gap-2 bg-white hover:bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 shrink-0 shadow-sm"
+                                    >
+                                        <span className="text-lg sm:text-xl font-black text-slate-900 max-w-[min(18rem,40vw)] truncate tracking-[0.06em]">
+                                            {item.nombre}
+                                        </span>
+                                        {item.notas && (
+                                            <span className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic max-w-[10rem] truncate">
+                                                {item.notas}
+                                            </span>
+                                        )}
+                                        <span className="bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide">
+                                            ×{item.cantidad}
+                                        </span>
+                                    </div>
+                                ))}
+                                {aggregatedItems.length > 4 && (
+                                    <div className="shrink-0 text-slate-300 font-black uppercase tracking-[0.18em]">
+                                        +{aggregatedItems.length - 4}
+                                    </div>
                                 )}
-                                <span className="bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide">
-                                    ×{item.cantidad}
-                                </span>
                             </div>
-                        ))
+                        </button>
                     )}
                 </div>
 
@@ -193,21 +208,21 @@ export default function KDSView() {
                             <div className="flex flex-col gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setShowCompleted(true)}
-                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-slate-600 text-white shadow-md"
-                                >
-                                    Finalizadas
-                                </button>
-                                <button
-                                    type="button"
                                     disabled={!lastCompletedOrderId}
                                     onClick={() => {
                                         if (!lastCompletedOrderId) return;
                                         recuperarComanda(lastCompletedOrderId);
                                     }}
-                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-[#407080] hover:bg-[#36606F] text-white shadow-md disabled:opacity-40 disabled:hover:bg-[#407080]"
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md disabled:opacity-40 disabled:hover:bg-emerald-600"
                                 >
                                     Recup Última
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCompleted(true)}
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-red-600 hover:bg-red-700 text-white shadow-md"
+                                >
+                                    Finalizadas
                                 </button>
                             </div>
                         ) : (
@@ -222,6 +237,62 @@ export default function KDSView() {
                     </div>
                 </div>
             </footer>
+
+            {/* Modal Resumen completo */}
+            {isSummaryOpen && (
+                <div
+                    className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setIsSummaryOpen(false);
+                    }}
+                >
+                    <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+                        <div className="px-4 sm:px-5 py-3 bg-[#36606F] text-white flex items-start justify-between gap-3 shrink-0">
+                            <div className="min-w-0">
+                                <div className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
+                                    Resumen
+                                </div>
+                                <div className="text-sm sm:text-base font-bold text-white/70 tracking-wide truncate">
+                                    {showCompleted ? 'Finalizadas' : 'Pendientes'}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsSummaryOpen(false)}
+                                className="shrink-0 w-12 h-12 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center"
+                                aria-label="Cerrar"
+                            >
+                                <X size={22} />
+                            </button>
+                        </div>
+
+                        <div className="p-3 sm:p-4 overflow-y-auto flex-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {aggregatedItems.map((item) => (
+                                    <div
+                                        key={item.key}
+                                        className="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-[0.06em]">
+                                                {item.nombre}
+                                            </div>
+                                            {item.notas && (
+                                                <div className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic truncate">
+                                                    {item.notas}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="shrink-0 bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide">
+                                            ×{item.cantidad}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
