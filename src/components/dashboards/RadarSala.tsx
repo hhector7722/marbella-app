@@ -10,8 +10,6 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
-  const [abierto, setAbierto] = useState(false);
-
   const productosValidos = m.productos?.filter((p: any) => parseFloat(p.unidades) > 0) || [];
 
   // ✨ AQUÍ ESTÁ LA MAGIA: Calculamos el total sumando (unidades * precio)
@@ -20,11 +18,8 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   }, 0);
 
   return (
-    <div className={`p-2 md:p-3 rounded-xl flex flex-col transition-all duration-300 h-fit ${estado.color} ${abierto ? 'shadow-2xl z-10 scale-[1.02]' : 'shadow-sm'}`}>
-      <div
-        className="flex justify-between items-center cursor-pointer select-none gap-2"
-        onClick={() => setAbierto(!abierto)}
-      >
+    <div className={`p-2 md:p-3 rounded-xl flex flex-col transition-all duration-300 h-fit ${estado.color} shadow-md`}>
+      <div className="flex justify-between items-center select-none gap-2">
         <span className="text-[11px] md:text-sm font-black text-white whitespace-nowrap tracking-tight">
           M {m.mesa}
         </span>
@@ -40,27 +35,25 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
         </div>
       </div>
 
-      {abierto && (
-        <div className="mt-2 pt-2 bg-white -mx-2 md:-mx-3 -mb-2 md:-mb-3 px-2 md:px-3 pb-2 md:pb-3 rounded-b-xl shadow-[inner_0_1px_4px_rgba(0,0,0,0.06)]">
-          <ul className="space-y-1.5 text-[10px] md:text-xs font-medium text-slate-600">
-            {productosValidos.length > 0 ? (
-              productosValidos.map((p: any, i: number) => (
-                <li key={i} className="flex justify-between items-start leading-tight">
-                  <span className="flex-1 pr-2 flex items-start">
-                    <span className="font-bold text-slate-900 mr-1.5 shrink-0">{p.unidades}x</span>
-                    <span className="break-words flex-1">{p.nombre}</span>
-                  </span>
-                  <span className="tabular-nums font-semibold shrink-0 pt-0.5 text-slate-700">
-                    {(parseFloat(p.unidades) * parseFloat(p.precio || 0)).toFixed(2)} €
-                  </span>
-                </li>
-              ))
-            ) : (
-              <li className="text-slate-400 italic">Mesa vacía...</li>
-            )}
-          </ul>
-        </div>
-      )}
+      <div className="mt-2 pt-2 bg-white -mx-2 md:-mx-3 -mb-2 md:-mb-3 px-2 md:px-3 pb-2 md:pb-3 rounded-b-xl shadow-[inner_0_1px_4px_rgba(0,0,0,0.06)]">
+        <ul className="space-y-1.5 text-[10px] md:text-xs font-medium text-slate-600">
+          {productosValidos.length > 0 ? (
+            productosValidos.map((p: any, i: number) => (
+              <li key={i} className="flex justify-between items-start leading-tight">
+                <span className="flex-1 pr-2 flex items-start">
+                  <span className="font-bold text-slate-900 mr-1.5 shrink-0">{p.unidades}x</span>
+                  <span className="break-words flex-1">{p.nombre}</span>
+                </span>
+                <span className="tabular-nums font-semibold shrink-0 pt-0.5 text-slate-700">
+                  {(parseFloat(p.unidades) * parseFloat(p.precio || 0)).toFixed(2)} €
+                </span>
+              </li>
+            ))
+          ) : (
+            <li className="text-slate-400 italic">Mesa vacía...</li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 }

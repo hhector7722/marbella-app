@@ -106,9 +106,9 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
     const getIndicatorColor = () => {
         if (isCompleted) return 'bg-slate-600';
-        if (elapsed >= 20) return 'animate-pulse-critical';
-        if (elapsed >= 15) return 'bg-amber-400';
-        // Petróleo (estado normal) + amarillo (aviso) + rojo claro (crítico) como en la configuración original
+        // Indicador temporal: ≤15 min petróleo, 16–24 amarillo, ≥25 rojo
+        if (elapsed >= 25) return 'animate-pulse-critical';
+        if (elapsed >= 16) return 'bg-amber-400';
         return 'bg-[#407080]';
     };
 

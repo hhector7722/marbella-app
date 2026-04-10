@@ -1,10 +1,11 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-08 (Gemelo Digital: SQL KDS + doc de sincronización)
+**Última actualización:** 2026-04-10 (KDS umbrales temporales + Sala tarjetas siempre expandidas)
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.
 
+- [x] **KDS + Sala UI (2026-04-10)**: Cabeceras de comanda en KDS según tiempo: ≤15 min petróleo (`#407080`), 16–24 min amarillo (`amber-400`), ≥25 min rojo (pulso crítico). En `/dashboard/sala`, `TarjetaMesa` muestra siempre el desglose del ticket (sin plegar).
 - [x] **Gemelo Digital BDP → Supabase (2026-04-08)**: Versionado en repo el pipeline **Radar + KDS**: tablas `estado_sala`, `kds_orders`, `kds_order_lines`, funciones `fncalcdelta` / `fn_calculate_and_insert_delta` / `fn_trg_process_kds_from_sala`, trigger `trg_update_kds_on_sala_change`, publicación Realtime y grants. Migración `20260408120000_kds_estado_sala_pipeline_snapshot.sql`. Documentación operativa en `context/ARQUITECTURA_SYNC_KDS.md` (rutas correctas: `RadarSala.tsx`, `src/components/kds/KDSView.tsx`, `context/server.txt`, `context/index.txt`).
 - [x] **Comunicados y Contratos Manuales (2026-03-10)**: Icono de Comunicados redefinido (Megaphone) en modal de nóminas. Managers pueden subir comunicados y contratos manualmente desde `/profile`; se guardan en bucket `employee-documents` y tabla `employee_documents` (tipo comunicado/contrato). Migración `20260310160000_employee_documents_bucket.sql`. Se ha migrado el middleware a la convención `proxy.ts`, y se ha forzado el uso del compilador Webpack en producción para evitar errores internos causados por inestabilidades del exportador de Turbopack en Next.js 16.
 

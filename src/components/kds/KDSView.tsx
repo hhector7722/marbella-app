@@ -97,7 +97,7 @@ export default function KDSView() {
                                 {/* THE METAL RAIL (Comandero) PER ROW STRETCHED */}
                                 <img
                                     src="/icons/comandero.png"
-                                    className="absolute top-0 left-0 w-full h-6 sm:h-8 z-20 shadow-lg object-fill border-b border-slate-900/50 opacity-80"
+                                    className="absolute top-0 left-[-28px] w-[calc(100%+56px)] h-6 sm:h-8 z-20 shadow-lg object-fill border-b border-slate-900/50 opacity-80"
                                     alt="Comandero rail"
                                 />
 
