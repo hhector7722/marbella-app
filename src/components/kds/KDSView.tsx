@@ -68,6 +68,13 @@ export default function KDSView() {
         return rows;
     }, [sortedOrders, cols]);
 
+    const lastCompletedOrderId = useMemo(() => {
+        const completed = orders
+            .filter((o) => o.estado === 'completada' && o.completed_at)
+            .sort((a, b) => new Date(b.completed_at as string).getTime() - new Date(a.completed_at as string).getTime());
+        return completed[0]?.id ?? null;
+    }, [orders]);
+
 
 
     return (
@@ -97,7 +104,7 @@ export default function KDSView() {
                                 {/* THE METAL RAIL (Comandero) PER ROW STRETCHED */}
                                 <img
                                     src="/icons/comandero.png"
-                                    className="absolute top-0 left-[-28px] w-[calc(100%+56px)] h-6 sm:h-8 z-20 shadow-lg object-fill border-b border-slate-900/50 opacity-80"
+                                    className="absolute top-0 left-[-80px] w-[calc(100%+160px)] h-6 sm:h-8 z-20 shadow-lg object-fill border-b border-slate-900/50 opacity-80"
                                     alt="Comandero rail"
                                 />
 
@@ -137,19 +144,13 @@ export default function KDSView() {
                                 {isOffline ? 'DESCONECTADO' : 'Live'}
                             </p>
                         </Link>
-                        <p className="text-base sm:text-lg font-bold text-slate-400 uppercase tracking-[0.15em] leading-tight">
-                            {visibleOrders.length} tickets
+                        <p className="text-base sm:text-lg font-black text-slate-200 uppercase tracking-[0.22em] leading-tight text-center">
+                            {visibleOrders.length === 0 ? ' ' : String(visibleOrders.length)}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex-1 flex items-center overflow-x-auto overflow-y-hidden custom-scrollbar-horizontal gap-3 min-h-[3.25rem] px-1">
-                    <div className="hidden xl:flex items-center gap-2 shrink-0 pr-2">
-                        <Info size={22} className={showCompleted ? 'text-slate-500' : 'text-[#5a9aaa]'} strokeWidth={2.5} />
-                        <span className={`text-lg font-black uppercase tracking-[0.18em] ${showCompleted ? 'text-slate-500' : 'text-slate-200'}`}>
-                            {showCompleted ? 'Finalizados' : 'Resumen'}
-                        </span>
-                    </div>
                     {aggregatedItems.length === 0 ? (
                         !loading && (
                             <div className="text-slate-500 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto">
@@ -160,17 +161,17 @@ export default function KDSView() {
                         aggregatedItems.map(item => (
                             <div
                                 key={item.key}
-                                className="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-700/90 px-4 py-2.5 rounded-xl border border-slate-600/80 shrink-0 shadow-md"
+                                className="flex items-center gap-2 bg-white hover:bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 shrink-0 shadow-sm"
                             >
-                                <span className="text-lg sm:text-xl font-bold text-slate-100 max-w-[min(22rem,45vw)] truncate tracking-[0.06em]">
+                                <span className="text-lg sm:text-xl font-black text-slate-900 max-w-[min(22rem,45vw)] truncate tracking-[0.06em]">
                                     {item.nombre}
                                 </span>
                                 {item.notas && (
-                                    <span className="text-sm sm:text-base font-bold tracking-wide text-amber-300/95 italic max-w-[10rem] truncate">
+                                    <span className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic max-w-[10rem] truncate">
                                         {item.notas}
                                     </span>
                                 )}
-                                <span className="bg-[#1e3a5f] text-emerald-300 text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-emerald-700/50 tracking-wide">
+                                <span className="bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide">
                                     ×{item.cantidad}
                                 </span>
                             </div>
@@ -188,20 +189,36 @@ export default function KDSView() {
                     </div>
 
                     <div className="flex bg-slate-800 p-1.5 rounded-xl shadow-inner min-h-[52px] items-center">
-                        <button
-                            type="button"
-                            onClick={() => setShowCompleted(false)}
-                            className={`min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 ${!showCompleted ? 'bg-[#407080] text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Cocina
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setShowCompleted(true)}
-                            className={`min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 ${showCompleted ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Finalizadas
-                        </button>
+                        {!showCompleted ? (
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCompleted(true)}
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-slate-600 text-white shadow-md"
+                                >
+                                    Finalizadas
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!lastCompletedOrderId}
+                                    onClick={() => {
+                                        if (!lastCompletedOrderId) return;
+                                        recuperarComanda(lastCompletedOrderId);
+                                    }}
+                                    className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-[#407080] hover:bg-[#36606F] text-white shadow-md disabled:opacity-40 disabled:hover:bg-[#407080]"
+                                >
+                                    Recup Última
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setShowCompleted(false)}
+                                className="min-h-[48px] px-5 rounded-lg text-base sm:text-lg font-black uppercase tracking-[0.12em] transition-all duration-300 bg-[#407080] text-white shadow-md"
+                            >
+                                Pendientes
+                            </button>
+                        )}
                     </div>
                 </div>
             </footer>

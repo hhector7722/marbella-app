@@ -242,13 +242,13 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center p-3 sm:p-3.5 select-none transition-all duration-200 border-b border-dashed border-slate-200/50 last:border-none ${isCompleted
+                                className={`group relative flex items-center p-3 sm:p-3.5 select-none transition-all duration-200 rounded-xl bg-white border border-slate-200 shadow-sm ${isCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
-                                            ? 'hover:bg-slate-50/50 cursor-pointer opacity-70'
+                                            ? 'hover:bg-slate-50 cursor-pointer opacity-70'
                                             : group.estado === 'cancelado'
                                                 ? 'opacity-60 cursor-not-allowed rounded-lg'
-                                                : 'hover:bg-slate-50/50 cursor-pointer active:scale-[0.98]'
+                                                : 'hover:bg-slate-50 cursor-pointer active:scale-[0.98]'
                                     }`}
                             >
                                 {/* Tick si no está pendiente */}
