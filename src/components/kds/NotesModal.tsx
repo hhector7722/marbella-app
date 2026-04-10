@@ -90,7 +90,7 @@ export function NotesModal(props: {
 
   return (
     <div
-      className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
+      className="fixed inset-0 z-[2147483647] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -125,7 +125,7 @@ export function NotesModal(props: {
                 key={q}
                 type="button"
                 onClick={() => setByAddingUnique(q)}
-                className="min-h-[48px] rounded-xl px-3 py-2 text-left font-black uppercase tracking-[0.08em] text-[12px] sm:text-[13px] bg-[#407080] hover:bg-[#36606F] text-white"
+                className="min-h-[48px] rounded-xl border-2 border-black bg-white text-black px-3 py-2 text-center font-black uppercase tracking-[0.08em] text-[12px] sm:text-[13px] hover:bg-slate-50"
               >
                 {q}
               </button>
