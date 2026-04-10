@@ -265,7 +265,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
                                 <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="flex flex-col pr-1 min-w-0">
-                                        <div className="flex items-start gap-2 min-w-0">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
