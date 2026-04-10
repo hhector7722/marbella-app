@@ -204,10 +204,10 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                 initialNotes: order.notas_comanda,
                             });
                         }}
-                        className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isCompleted ? 'bg-slate-300/60 text-slate-600' : 'bg-white/10 hover:bg-white/15 text-white'}`}
+                        className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center bg-transparent border-0 shadow-none hover:opacity-90 active:scale-95 transition"
                         title="Editar nota comanda"
                     >
-                        <Image src="/icons/notas.png" alt="Notas" width={22} height={22} className="opacity-90" />
+                        <Image src="/icons/notas.png" alt="Notas" width={44} height={44} className={`${isCompleted ? 'opacity-50' : 'opacity-95'} drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]`} />
                     </button>
                 </div>
             </div>
@@ -278,10 +278,10 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                         lineIds: group.ids,
                                                     });
                                                 }}
-                                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${isCompleted ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                                className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-transparent border-0 shadow-none hover:opacity-90 active:scale-95 transition"
                                                 title="Editar nota artículo"
                                             >
-                                                <Image src="/icons/notas.png" alt="Notas" width={18} height={18} className="opacity-90" />
+                                                <Image src="/icons/notas.png" alt="Notas" width={34} height={34} className={`${isCompleted ? 'opacity-45' : 'opacity-90'} drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]`} />
                                             </button>
 
                                             <span className={`flex-1 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
