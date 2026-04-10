@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { CheckCircle, AlertTriangle, X, ChevronDown, Pencil } from 'lucide-react';
+import { CheckCircle, AlertTriangle, X, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
 import { NotesModal } from './NotesModal';
@@ -206,7 +207,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isCompleted ? 'bg-slate-300/60 text-slate-600' : 'bg-white/10 hover:bg-white/15 text-white'}`}
                         title="Editar nota comanda"
                     >
-                        <Pencil size={20} strokeWidth={2.5} />
+                        <Image src="/icons/notas.png" alt="Notas" width={22} height={22} className="opacity-90" />
                     </button>
                 </div>
             </div>
@@ -280,7 +281,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                 className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${isCompleted ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                                                 title="Editar nota artículo"
                                             >
-                                                <Pencil size={18} strokeWidth={2.5} />
+                                                <Image src="/icons/notas.png" alt="Notas" width={18} height={18} className="opacity-90" />
                                             </button>
 
                                             <span className={`flex-1 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
