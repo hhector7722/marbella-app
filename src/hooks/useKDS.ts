@@ -165,7 +165,9 @@ export function useKDS() {
                 const cleanedData = data
                     .map(order => ({
                         ...orderWithParsedDates(order),
-                        lineas: (order.lineas ?? []).filter((l: { estado: string }) => l.estado !== 'cancelado'),
+                        // Importante: NO filtramos cancelados.
+                        // Cocina debe ver cancelaciones/abonos como líneas estado='cancelado' (para aviso visual).
+                        lineas: (order.lineas ?? []),
                     }))
                     .filter(
                         (order) =>
