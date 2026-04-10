@@ -51,8 +51,22 @@ export function NotesModal(props: {
     setItems(splitNotes(initialNotes));
     setDraft("");
     setEditingIndex(null);
-    // Teclado nativo: foco automático al abrir
-    requestAnimationFrame(() => textareaRef.current?.focus());
+    // Teclado nativo: intentar foco "fuerte" al abrir.
+    // Nota: en iOS/Android el teclado puede requerir gesto del usuario; esto mejora el éxito en la mayoría de casos.
+    const focus = () => {
+      try {
+        textareaRef.current?.focus({ preventScroll: true });
+      } catch {
+        textareaRef.current?.focus();
+      }
+    };
+    const t1 = setTimeout(focus, 0);
+    const t2 = setTimeout(focus, 60);
+    requestAnimationFrame(() => focus());
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [isOpen, initialNotes]);
 
   const setByAddingUnique = (text: string) => {
@@ -69,28 +83,20 @@ export function NotesModal(props: {
   const canSave = useMemo(() => true, []);
   const accentClasses =
     accent === "red"
-      ? {
-          chip: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
-          plus: "bg-emerald-600 hover:bg-emerald-700",
-          title: "text-red-700",
-        }
-      : {
-          chip: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
-          plus: "bg-emerald-600 hover:bg-emerald-700",
-          title: "text-rose-800",
-        };
+      ? { title: "text-red-700" }
+      : { title: "text-rose-800" };
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[10050] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-3"
+      className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="px-4 sm:px-5 py-4 bg-slate-900 text-white flex items-start justify-between gap-3">
+      <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+        <div className="px-4 sm:px-5 py-3 bg-[#36606F] text-white flex items-start justify-between gap-3 shrink-0">
           <div className="min-w-0">
             <div className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
               {title}
@@ -110,15 +116,16 @@ export function NotesModal(props: {
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 space-y-4">
+        {/* Cuerpo scrollable para mantener cabecera + footer siempre visibles */}
+        <div className="p-3 sm:p-4 space-y-3 overflow-y-auto flex-1">
           {/* Chips notas rápidas */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
             {quickNotes.map((q) => (
               <button
                 key={q}
                 type="button"
                 onClick={() => setByAddingUnique(q)}
-                className={`min-h-[52px] rounded-xl border px-3 py-2 text-left font-black uppercase tracking-[0.08em] text-[12px] sm:text-[13px] ${accentClasses.chip}`}
+                className="min-h-[48px] rounded-xl px-3 py-2 text-left font-black uppercase tracking-[0.08em] text-[12px] sm:text-[13px] bg-[#407080] hover:bg-[#36606F] text-white"
               >
                 {q}
               </button>
@@ -192,7 +199,7 @@ export function NotesModal(props: {
                   setDraft("");
                   requestAnimationFrame(() => textareaRef.current?.focus());
                 }}
-                className={`w-14 h-14 rounded-full ${accentClasses.plus} text-white flex items-center justify-center shadow-lg`}
+                className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg"
                 title="Añadir nota"
               >
                 <Plus size={26} strokeWidth={3} />
@@ -209,7 +216,7 @@ export function NotesModal(props: {
               <button
                 type="button"
                 onClick={() => textareaRef.current?.focus()}
-                className="min-h-[44px] px-3 rounded-xl bg-slate-900 text-white font-black uppercase tracking-[0.12em] text-[11px] hover:bg-slate-800 flex items-center gap-2"
+                className="min-h-[44px] px-3 rounded-xl bg-[#407080] hover:bg-[#36606F] text-white font-black uppercase tracking-[0.12em] text-[11px] flex items-center gap-2"
               >
                 <Pencil size={16} /> Escribir
               </button>
@@ -217,10 +224,11 @@ export function NotesModal(props: {
 
             <textarea
               ref={textareaRef}
+              autoFocus
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Escribe una nota…"
-              className="w-full min-h-[120px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base sm:text-lg font-semibold tracking-wide text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/40"
+              className="w-full min-h-[88px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base sm:text-lg font-semibold tracking-wide text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/40"
               inputMode="text"
               autoCorrect="off"
               autoCapitalize="sentences"
@@ -264,7 +272,7 @@ export function NotesModal(props: {
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 border-t border-slate-200 bg-white flex items-center justify-between gap-2">
+        <div className="p-3 sm:p-4 border-t border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0">
           <button
             type="button"
             onClick={onClose}

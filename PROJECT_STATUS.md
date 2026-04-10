@@ -1,7 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-10 (Libro Mayor: fecha en altas/ediciones + saldo acumulado en BD)
+**Última actualización:** 2026-04-15 (KDS: comandas abiertas + SQL pipeline)
 
+- [x] **KDS comandas abiertas + día en curso (2026-04-15)**: En `useKDS`, listado **solo del día en curso** (medianoche local): activas si cabecera `created_at` ≥ hoy **o** existe línea no cancelada creada hoy; completadas si `completed_at` ≥ hoy. Migración `20260415110000_kds_open_comandas_pipeline_fix.sql` (Supabase): trigger sin ventana 12h; `fncalcdelta` reutiliza cabecera `id_ticket` + activa. Ejecutar el SQL en Supabase si aún no está aplicado.
 - [x] **Libro Mayor `/dashboard/ledger` (2026-04-10)**: En nuevos apuntes y edición se elige **fecha contable** (selector táctil). Persistencia vía RPC `manager_ledger_insert_entry` / `manager_ledger_update_entry` con anclaje `Europe/Madrid`. Vista `v_manager_ledger_with_running` calcula el **saldo acumulado** con ventana SQL (`ORDER BY date, id`), recalculando el flujo al insertar/retroceder fechas. Migración `20260415100000_manager_ledger_running_view_and_rpc.sql`.
 
 ## 📌 ESTADO GENERAL

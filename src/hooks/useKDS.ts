@@ -108,9 +108,8 @@ export function useKDS() {
         const startOfToday = getStartOfLocalToday();
         const startIso = startOfToday.toISOString();
         try {
-            // Importante:
-            // - KDS debe "limpiarse" a las 00:00, pero seguir mostrando mesas abiertas si tienen líneas NUEVAS hoy.
-            // - Por eso NO filtramos las activas por kds_orders.created_at, sino por existencia de kds_order_lines creadas hoy.
+            // Solo día en curso (inicio día local → ahora):
+            // - Activas: cabecera creada hoy, O alguna línea no cancelada creada hoy (mesa abierta con pedido nuevo hoy).
             const { data: lineRefs, error: lineErr } = await supabase
                 .from('kds_order_lines')
                 .select('kds_order_id')
@@ -119,8 +118,21 @@ export function useKDS() {
 
             if (lineErr) throw lineErr;
 
+            const { data: headerToday, error: headerErr } = await supabase
+                .from('kds_orders')
+                .select('id')
+                .eq('estado', 'activa')
+                .gte('created_at', startIso);
+
+            if (headerErr) throw headerErr;
+
             const activeIds = Array.from(
-                new Set((lineRefs ?? []).map((r: { kds_order_id: string | null }) => r.kds_order_id).filter(Boolean))
+                new Set([
+                    ...((lineRefs ?? []) as { kds_order_id: string | null }[])
+                        .map((r) => r.kds_order_id)
+                        .filter(Boolean),
+                    ...((headerToday ?? []) as { id: string }[]).map((r) => r.id),
+                ])
             ) as string[];
 
             const ordersParts: KDSOrder[] = [];
@@ -130,7 +142,8 @@ export function useKDS() {
                     .from('kds_orders')
                     .select('*, lineas:kds_order_lines(*)')
                     .eq('estado', 'activa')
-                    .in('id', activeIds);
+                    .in('id', activeIds)
+                    .order('created_at', { ascending: true });
 
                 if (activeErr) throw activeErr;
                 ordersParts.push(...((activeOrders as unknown as KDSOrder[]) ?? []));
