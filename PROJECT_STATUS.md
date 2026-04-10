@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-10 (KDS umbrales temporales + Sala tarjetas siempre expandidas)
+**Última actualización:** 2026-04-10 (Libro Mayor: fecha en altas/ediciones + saldo acumulado en BD)
+
+- [x] **Libro Mayor `/dashboard/ledger` (2026-04-10)**: En nuevos apuntes y edición se elige **fecha contable** (selector táctil). Persistencia vía RPC `manager_ledger_insert_entry` / `manager_ledger_update_entry` con anclaje `Europe/Madrid`. Vista `v_manager_ledger_with_running` calcula el **saldo acumulado** con ventana SQL (`ORDER BY date, id`), recalculando el flujo al insertar/retroceder fechas. Migración `20260415100000_manager_ledger_running_view_and_rpc.sql`.
 
 ## 📌 ESTADO GENERAL
 El sistema ha sido estabilizado para su despliegue en Vercel.

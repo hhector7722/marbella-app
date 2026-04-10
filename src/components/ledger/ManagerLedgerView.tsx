@@ -14,7 +14,7 @@ import {
     PiggyBank,
     ArrowUp
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -32,11 +32,23 @@ interface LedgerRow {
     running_balance: number;
 }
 
+/** Fecha calendario (YYYY-MM-DD) en Europe/Madrid para filtros y apuntes retroactivos */
+function madridYmd(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(d);
+}
+
 export default function ManagerLedgerView() {
     const router = useRouter();
     const supabase = createClient();
 
-    const [allLogs, setAllLogs] = useState<Array<{ id: string; movement_type: 'entrada' | 'salida'; amount: number; concept: string; date: string }>>([]);
+    const [allLogs, setAllLogs] = useState<LedgerRow[]>([]);
     const [balance, setBalance] = useState<number>(0);
     const [loading, setLoading] = useState(true);
 
@@ -62,6 +74,8 @@ export default function ManagerLedgerView() {
     const [type, setType] = useState<'entrada' | 'salida'>('entrada');
     const [amount, setAmount] = useState<string>('');
     const [concept, setConcept] = useState('');
+    const [entryDate, setEntryDate] = useState('');
+    const [editDate, setEditDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -87,16 +101,23 @@ export default function ManagerLedgerView() {
             }
 
             const { data, error } = await supabase
-                .from('manager_ledger')
-                .select('id, movement_type, amount, concept, date')
-                .order('date', { ascending: true });
+                .from('v_manager_ledger_with_running')
+                .select('id, movement_type, amount, concept, date, running_balance')
+                .order('date', { ascending: true })
+                .order('id', { ascending: true });
 
             if (error) {
                 console.error('Ledger fetch:', error);
                 toast.error("Error al cargar movimientos: " + (error.message || ''));
                 setAllLogs([]);
             } else {
-                setAllLogs(data ?? []);
+                setAllLogs(
+                    (data ?? []).map((r) => ({
+                        ...r,
+                        amount: Number(r.amount),
+                        running_balance: Number(r.running_balance),
+                    }))
+                );
             }
         } catch (e: any) {
             toast.error("Error al cargar la cuenta corriente");
@@ -106,35 +127,17 @@ export default function ManagerLedgerView() {
         }
     }
 
-    const runningBalances = useMemo(() => {
-        let acc = 0;
-        return allLogs.map((row) => {
-            const delta = row.movement_type === 'entrada' ? row.amount : -row.amount;
-            acc += delta;
-            return { ...row, running_balance: acc };
-        });
-    }, [allLogs]);
-
     const filteredRowsWithBalance = useMemo((): LedgerRow[] => {
         if (!rangeStart && !rangeEnd && filterMode !== 'single') return [];
-        let start: Date;
-        let end: Date;
         if (filterMode === 'single') {
-            const d = parseLocalSafe(selectedDate);
-            start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-            end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-        } else {
-            if (!rangeStart || !rangeEnd) return [];
-            start = parseLocalSafe(rangeStart);
-            start.setHours(0, 0, 0, 0);
-            end = parseLocalSafe(rangeEnd);
-            end.setHours(23, 59, 59, 999);
+            return allLogs.filter((row) => madridYmd(row.date) === selectedDate);
         }
-        return runningBalances.filter((row) => {
-            const t = new Date(row.date);
-            return t.getTime() >= start.getTime() && t.getTime() <= end.getTime();
+        if (!rangeStart || !rangeEnd) return [];
+        return allLogs.filter((row) => {
+            const ymd = madridYmd(row.date);
+            return ymd >= rangeStart && ymd <= rangeEnd;
         });
-    }, [runningBalances, filterMode, selectedDate, rangeStart, rangeEnd]);
+    }, [allLogs, filterMode, selectedDate, rangeStart, rangeEnd]);
 
     const displayRows = useMemo(() => [...filteredRowsWithBalance].reverse(), [filteredRowsWithBalance]);
 
@@ -168,6 +171,10 @@ export default function ManagerLedgerView() {
         setType('entrada');
         setAmount('');
         setConcept('');
+        const d = new Date();
+        setEntryDate(
+            `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        );
         setModalOpen(true);
     };
 
@@ -176,6 +183,15 @@ export default function ManagerLedgerView() {
         setType(log.movement_type);
         setAmount(log.amount.toString());
         setConcept(log.concept);
+        const ymd = madridYmd(log.date);
+        if (ymd) {
+            setEditDate(ymd);
+        } else {
+            const x = new Date();
+            setEditDate(
+                `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
+            );
+        }
         setEditModalOpen(true);
     };
 
@@ -195,12 +211,17 @@ export default function ManagerLedgerView() {
             toast.error("El concepto es obligatorio");
             return;
         }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
+            toast.error("Fecha no válida");
+            return;
+        }
         setIsSaving(true);
         try {
-            const { error } = await supabase.from('manager_ledger').insert({
-                movement_type: type,
-                amount: numericAmount,
-                concept: concept.trim()
+            const { error } = await supabase.rpc('manager_ledger_insert_entry', {
+                p_movement_type: type,
+                p_amount: numericAmount,
+                p_concept: concept.trim(),
+                p_entry_date: entryDate,
             });
             if (error) throw error;
             toast.success("Movimiento registrado con éxito");
@@ -225,13 +246,19 @@ export default function ManagerLedgerView() {
             toast.error("El concepto es obligatorio");
             return;
         }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(editDate)) {
+            toast.error("Fecha no válida");
+            return;
+        }
         setIsSaving(true);
         try {
-            const { error } = await supabase.from('manager_ledger').update({
-                movement_type: type,
-                amount: numericAmount,
-                concept: concept.trim()
-            }).eq('id', selectedLog.id);
+            const { error } = await supabase.rpc('manager_ledger_update_entry', {
+                p_id: selectedLog.id,
+                p_movement_type: type,
+                p_amount: numericAmount,
+                p_concept: concept.trim(),
+                p_entry_date: editDate,
+            });
             if (error) throw error;
             toast.success("Movimiento actualizado con éxito");
             setEditModalOpen(false);
@@ -383,23 +410,33 @@ export default function ManagerLedgerView() {
                                                 </tr>
                                             ) : (
                                                 displayRows.map((mov) => {
-                                                    const date = new Date(mov.date);
+                                                    const d = new Date(mov.date);
+                                                    const ok = !isNaN(d.getTime());
+                                                    const dayLong = ok
+                                                        ? new Intl.DateTimeFormat('es', { timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'short' }).format(d)
+                                                        : '';
+                                                    const dayShort = ok
+                                                        ? new Intl.DateTimeFormat('es', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'short' }).format(d)
+                                                        : '';
+                                                    const hm = ok
+                                                        ? new Intl.DateTimeFormat('es', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+                                                        : '--:--';
                                                     return (
                                                         <tr key={mov.id} className="group hover:bg-zinc-50/80 transition-colors">
                                                             <td className="px-3 md:px-6 py-3">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[10px] md:text-[13px] font-black text-zinc-900 italic">
-                                                                        {isNaN(date.getTime()) ? (
+                                                                        {!ok ? (
                                                                             <span className="text-rose-500 text-[10px]">Fecha Inválida</span>
                                                                         ) : (
                                                                             <>
-                                                                                <span className="md:inline hidden">{format(date, 'eeee d MMM', { locale: es })}</span>
-                                                                                <span className="md:hidden inline">{format(date, 'd MMM', { locale: es })}</span>
+                                                                                <span className="md:inline hidden capitalize">{dayLong}</span>
+                                                                                <span className="md:hidden inline capitalize">{dayShort}</span>
                                                                             </>
                                                                         )}
                                                                     </span>
                                                                     <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 font-mono">
-                                                                        {isNaN(date.getTime()) ? '--:--' : format(date, 'HH:mm')}
+                                                                        {hm}
                                                                     </span>
                                                                 </div>
                                                             </td>
@@ -424,7 +461,7 @@ export default function ManagerLedgerView() {
                                                             </td>
                                                             <td className="px-3 md:px-8 py-3 text-right">
                                                                 <div className="flex items-center justify-end gap-1">
-                                                                    <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">{mov.running_balance.toFixed(2)}€</span>
+                                                                    <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">{formatMoney(mov.running_balance)}</span>
                                                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                         <button onClick={() => openEditModal(mov)} className="p-1.5 md:p-2 bg-zinc-50 hover:bg-blue-50 text-zinc-400 hover:text-blue-500 rounded-xl transition-all border border-zinc-100 hover:border-blue-200 shadow-sm active:scale-95">
                                                                             <Pencil size={14} />
@@ -503,9 +540,19 @@ export default function ManagerLedgerView() {
                             <h3 className="text-2xl font-black uppercase tracking-tighter">{editModalOpen ? 'Editar Apunte' : 'Nuevo Apunte'}</h3>
                         </div>
                         <form onSubmit={editModalOpen ? handleEdit : handleCreate} className="p-6">
-                            <div className="grid grid-cols-2 gap-2 mb-6 bg-zinc-100 p-1.5 rounded-2xl">
+                            <div className="grid grid-cols-2 gap-2 mb-4 bg-zinc-100 p-1.5 rounded-2xl">
                                 <button type="button" onClick={() => setType('entrada')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'entrada' ? 'bg-emerald-500 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Entrada</button>
                                 <button type="button" onClick={() => setType('salida')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'salida' ? 'bg-white text-zinc-900 shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Salida</button>
+                            </div>
+                            <div className="flex flex-col justify-center bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm min-h-[48px] shrink-0 mb-4">
+                                <label className="text-[8px] font-black text-white/70 uppercase tracking-widest mb-1">Fecha del apunte</label>
+                                <input
+                                    type="date"
+                                    value={editModalOpen ? editDate : entryDate}
+                                    onChange={(e) => (editModalOpen ? setEditDate(e.target.value) : setEntryDate(e.target.value))}
+                                    className="w-full bg-transparent border-none p-0 text-white text-[11px] md:text-xs font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer min-h-[28px]"
+                                    required
+                                />
                             </div>
                             <div className="space-y-4">
                                 <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-2xl shadow-sm">
