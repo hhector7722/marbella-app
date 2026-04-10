@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Plus, Check, Pencil, Trash2 } from "lucide-react";
 
 function norm(s: string) {
@@ -45,6 +46,11 @@ export function NotesModal(props: {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -86,14 +92,16 @@ export function NotesModal(props: {
       ? { title: "text-red-700" }
       : { title: "text-rose-800" };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modal = (
     <div
       className="fixed inset-0 z-[2147483647] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      role="dialog"
+      aria-modal="true"
     >
       <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
         <div className="px-4 sm:px-5 py-3 bg-[#36606F] text-white flex items-start justify-between gap-3 shrink-0">
@@ -301,5 +309,7 @@ export function NotesModal(props: {
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
 
