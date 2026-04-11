@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { normalizeRecipeImportUnit, type MassVolumeUnit } from '@/lib/recipe-cost'
+import { parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
 
 export type ImportResult = {
     success: boolean
@@ -41,32 +41,6 @@ function getCell(row: Record<string, unknown>, possibleKeys: string[]): unknown 
         }
     }
     return undefined
-}
-
-function parseNum(v: unknown): number | null {
-    if (v === undefined || v === null || v === '') return null
-    if (typeof v === 'number') return Number.isFinite(v) ? v : null
-    const s = String(v).replace(',', '.').trim()
-    const n = parseFloat(s)
-    return Number.isFinite(n) ? n : null
-}
-
-/**
- * Cantidad y unidad para recipe_ingredients: convierte cl→ml; unidad final en set permitido por recipe-cost.
- */
-function parseQuantityAndUnit(qtyRaw: unknown, unitRaw: unknown): { qty: number; unit: MassVolumeUnit } | null {
-    let qty = parseNum(qtyRaw)
-    if (qty === null || qty <= 0) return null
-    const raw = String(unitRaw ?? 'kg').trim().toLowerCase()
-    if (raw === 'cl' || raw === 'cls') {
-        return { qty: qty * 10, unit: 'ml' }
-    }
-    const u = normalizeRecipeImportUnit(raw)
-    const allowed: MassVolumeUnit[] = ['g', 'kg', 'ml', 'l', 'ud']
-    if (!allowed.includes(u)) {
-        return { qty, unit: 'kg' }
-    }
-    return { qty, unit: u }
 }
 
 export async function importSuppliers(data: Record<string, any>[]): Promise<ImportResult> {
