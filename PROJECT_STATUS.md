@@ -2,7 +2,7 @@
 
 **Última actualización:** 2026-04-11 (Webhook nóminas: registro en BD tras subir a Storage)
 
-- [x] **Webhook nóminas: filas en `nominas` (2026-04-11)**: `POST /api/webhooks/nominas` subía el PDF al bucket `nominas` pero no insertaba en `public.nominas` (ni `employee_documents` cuando hay `codigo_empleado`), por lo que la lista en perfil quedaba vacía sin error. Tras la subida se inserta la fila (y espejo opcional en `employee_documents`); reintentos idempotentes borran por `file_path` / `storage_path` antes de insertar.
+- [x] **Webhook nóminas: filas en `nominas` (2026-04-11)**: `POST /api/webhooks/nominas` subía el PDF al bucket `nominas` pero no insertaba en `public.nominas` (ni `employee_documents` cuando hay `codigo_empleado`), por lo que la lista en perfil quedaba vacía sin error. Tras la subida se inserta la fila (y espejo opcional en `employee_documents`); reintentos idempotentes borran por `file_path` / `storage_path` antes de insertar. PDFs antiguos solo en Storage: backfill SQL [`sql/backfill_nominas_desde_storage.sql`](sql/backfill_nominas_desde_storage.sql) (PREVIEW + INSERT comentado).
 
 - [x] **KDS: desacople radar / cierre manual (2026-04-16)**: Migración `20260416100000_kds_decouple_radar_auto_complete.sql` (Supabase): `fn_trg_process_kds_from_sala` ya no pasa `kds_orders` a `completada` cuando un `id_ticket` desaparece de `radiografia_completa`; solo aplica deltas. Cierre de comanda en cocina vía `completarComanda` en `useKDS`. Ejecutar el SQL en Supabase si el entorno aún tiene el comportamiento antiguo.
 

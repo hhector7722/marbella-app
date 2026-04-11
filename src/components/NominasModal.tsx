@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { X, FileText, Plus, Trash2, Eye } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -30,7 +30,8 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [nominas, setNominas] = useState<NominaRow[]>([]);
-    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [openingNominaId, setOpeningNominaId] = useState<string | null>(null);
+    const [pdfViewer, setPdfViewer] = useState<{ blobUrl: string; title: string } | null>(null);
     const [uploading, setUploading] = useState(false);
 
 
@@ -68,12 +69,19 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         if (isOpen) fetchNominas();
     }, [isOpen, targetUserId]);
 
-    const handleDownload = async (row: NominaRow) => {
+    const closePdfViewer = () => {
+        setPdfViewer((prev) => {
+            if (prev?.blobUrl) URL.revokeObjectURL(prev.blobUrl);
+            return null;
+        });
+    };
+
+    const openNomina = async (row: NominaRow) => {
         if (!row.storage_path) {
-            toast.error('No se puede descargar este documento');
+            toast.error('No se puede abrir este documento');
             return;
         }
-        setDownloadingId(row.id);
+        setOpeningNominaId(row.id);
         try {
             const { getNominaSignedDownloadUrl } = await import('@/app/actions/profile');
             const result = await getNominaSignedDownloadUrl({
@@ -84,12 +92,19 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 toast.error(result.error || 'No se pudo generar el enlace');
                 return;
             }
-            window.open(result.url, '_blank', 'noopener,noreferrer');
+            const res = await fetch(result.url);
+            if (!res.ok) {
+                toast.error('No se pudo cargar el PDF');
+                return;
+            }
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setPdfViewer({ blobUrl, title: labelPeriod(row) });
         } catch (err) {
-            console.error('Error descargando nómina:', err);
-            toast.error('No se pudo descargar el documento.');
+            console.error('Error abriendo nómina:', err);
+            toast.error('No se pudo abrir el documento.');
         } finally {
-            setDownloadingId(null);
+            setOpeningNominaId(null);
         }
     };
 
@@ -157,18 +172,45 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         }
     };
 
-    if (!isOpen) return null;
-
-    const labelPeriod = (row: NominaRow) => {
+    function labelPeriod(row: NominaRow) {
         const m = row.mes ?? '';
         const y = row.year ?? '';
         if (m || y) return `${m} ${y}`.trim();
         return row.filename || 'Nómina';
-    };
+    }
 
-
+    if (!isOpen && !pdfViewer) return null;
 
     return (
+        <>
+        {pdfViewer && (
+            <div
+                className="fixed inset-0 z-[200] flex flex-col bg-white animate-in fade-in duration-200"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Visor de nómina"
+            >
+                <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3 bg-[#36606F] text-white min-h-[52px]">
+                    <p className="text-sm font-black uppercase tracking-wider truncate pr-2">
+                        Nómina · {pdfViewer.title}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={closePdfViewer}
+                        className="min-h-[48px] min-w-[48px] shrink-0 flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors"
+                        aria-label="Cerrar visor"
+                    >
+                        <X size={22} strokeWidth={2.5} />
+                    </button>
+                </div>
+                <iframe
+                    title={pdfViewer.title}
+                    src={pdfViewer.blobUrl}
+                    className="flex-1 w-full min-h-0 border-0 bg-zinc-100"
+                />
+            </div>
+        )}
+        {isOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
                 <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
@@ -200,9 +242,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                         </div>
                     ) : nominas.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                            <div className="bg-zinc-100 p-4 rounded-2xl text-zinc-400 mb-3">
-                                <FileText size={32} strokeWidth={1.5} />
-                            </div>
                             <p className="text-zinc-600 font-semibold text-sm">
                                 {targetUserId ? 'Este empleado no tiene nóminas registradas en la app' : 'No hay nóminas registradas para tu cuenta'}
                             </p>
@@ -214,32 +253,38 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                     ) : (
                         <ul className="space-y-1">
                             {nominas.map((row) => (
-                                <li key={row.id} className="min-h-[56px] flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-colors hover:bg-zinc-50 border border-transparent hover:border-zinc-100">
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{labelPeriod(row)}</p>
-                                        <p className="text-[10px] text-zinc-400 truncate">{row.filename.replace('.pdf', '')}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
+                                <li key={row.id} className="min-h-[56px] flex items-stretch gap-1 rounded-xl border border-transparent hover:border-zinc-100 hover:bg-zinc-50 transition-colors">
+                                    <button
+                                        type="button"
+                                        onClick={() => openNomina(row)}
+                                        disabled={openingNominaId !== null}
+                                        className={cn(
+                                            'flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors',
+                                            'active:bg-zinc-100 disabled:opacity-60 disabled:pointer-events-none'
+                                        )}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{labelPeriod(row)}</p>
+                                            <p className="text-[10px] text-zinc-400 truncate">{row.filename.replace('.pdf', '')}</p>
+                                        </div>
+                                        {openingNominaId === row.id ? (
+                                            <LoadingSpinner size="sm" className="shrink-0 text-[#36606F]" />
+                                        ) : null}
+                                    </button>
+                                    {isManager && (
                                         <button
                                             type="button"
-                                            onClick={() => handleDownload(row)}
-                                            disabled={!!downloadingId}
-                                            className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
-                                            title="Descargar documento"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(row);
+                                            }}
+                                            className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors mr-1"
+                                            title="Eliminar"
+                                            aria-label="Eliminar nómina"
                                         >
-                                            {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Eye size={18} strokeWidth={2} />}
+                                            <Trash2 size={16} strokeWidth={2} />
                                         </button>
-                                        {isManager && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDelete(row)}
-                                                className="p-2.5 flex items-center justify-center rounded-lg text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-1"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={16} strokeWidth={2} />
-                                            </button>
-                                        )}
-                                    </div>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -247,5 +292,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 </div>
             </div>
         </div>
+        )}
+        </>
     );
 }
