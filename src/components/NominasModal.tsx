@@ -30,8 +30,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [nominas, setNominas] = useState<NominaRow[]>([]);
-    const [openingNominaId, setOpeningNominaId] = useState<string | null>(null);
-    const [pdfViewer, setPdfViewer] = useState<{ blobUrl: string; title: string } | null>(null);
     const [uploading, setUploading] = useState(false);
 
 
@@ -69,43 +67,17 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         if (isOpen) fetchNominas();
     }, [isOpen, targetUserId]);
 
-    const closePdfViewer = () => {
-        setPdfViewer((prev) => {
-            if (prev?.blobUrl) URL.revokeObjectURL(prev.blobUrl);
-            return null;
-        });
-    };
-
-    const openNomina = async (row: NominaRow) => {
+    /** Misma UX que antes (nueva pestaña + visor PDF nativo), pero la URL es la de la app, no Supabase. */
+    const openNomina = (row: NominaRow) => {
         if (!row.storage_path) {
             toast.error('No se puede abrir este documento');
             return;
         }
-        setOpeningNominaId(row.id);
-        try {
-            const { getNominaSignedDownloadUrl } = await import('@/app/actions/profile');
-            const result = await getNominaSignedDownloadUrl({
-                ownerUserId: row.user_id,
-                storagePath: row.storage_path
-            });
-            if (result.error || !result.url) {
-                toast.error(result.error || 'No se pudo generar el enlace');
-                return;
-            }
-            const res = await fetch(result.url);
-            if (!res.ok) {
-                toast.error('No se pudo cargar el PDF');
-                return;
-            }
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setPdfViewer({ blobUrl, title: labelPeriod(row) });
-        } catch (err) {
-            console.error('Error abriendo nómina:', err);
-            toast.error('No se pudo abrir el documento.');
-        } finally {
-            setOpeningNominaId(null);
-        }
+        const q = new URLSearchParams({
+            owner: row.user_id,
+            path: row.storage_path,
+        });
+        window.open(`/api/nominas/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
     };
 
 
@@ -179,38 +151,9 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         return row.filename || 'Nómina';
     }
 
-    if (!isOpen && !pdfViewer) return null;
+    if (!isOpen) return null;
 
     return (
-        <>
-        {pdfViewer && (
-            <div
-                className="fixed inset-0 z-[200] flex flex-col bg-white animate-in fade-in duration-200"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Visor de nómina"
-            >
-                <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3 bg-[#36606F] text-white min-h-[52px]">
-                    <p className="text-sm font-black uppercase tracking-wider truncate pr-2">
-                        Nómina · {pdfViewer.title}
-                    </p>
-                    <button
-                        type="button"
-                        onClick={closePdfViewer}
-                        className="min-h-[48px] min-w-[48px] shrink-0 flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors"
-                        aria-label="Cerrar visor"
-                    >
-                        <X size={22} strokeWidth={2.5} />
-                    </button>
-                </div>
-                <iframe
-                    title={pdfViewer.title}
-                    src={pdfViewer.blobUrl}
-                    className="flex-1 w-full min-h-0 border-0 bg-zinc-100"
-                />
-            </div>
-        )}
-        {isOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
                 <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
@@ -257,19 +200,15 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                                     <button
                                         type="button"
                                         onClick={() => openNomina(row)}
-                                        disabled={openingNominaId !== null}
                                         className={cn(
                                             'flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors',
-                                            'active:bg-zinc-100 disabled:opacity-60 disabled:pointer-events-none'
+                                            'active:bg-zinc-100'
                                         )}
                                     >
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{labelPeriod(row)}</p>
                                             <p className="text-[10px] text-zinc-400 truncate">{row.filename.replace('.pdf', '')}</p>
                                         </div>
-                                        {openingNominaId === row.id ? (
-                                            <LoadingSpinner size="sm" className="shrink-0 text-[#36606F]" />
-                                        ) : null}
                                     </button>
                                     {isManager && (
                                         <button
@@ -292,7 +231,5 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 </div>
             </div>
         </div>
-        )}
-        </>
     );
 }
