@@ -47,84 +47,14 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             }
             const effectiveUserId = targetUserId ?? user.id;
 
-            const seen = new Set<string>();
-            const merged: NominaRow[] = [];
-
-            // No usar storage.list(userId): el webhook guarda bajo codigo_empleado (ej. 01/…), no bajo UUID.
-            // El listado sale de employee_documents + nominas (tablas).
-
-            // ====================================================================
-            // 1. Nóminas registradas (webhook + manual): employee_documents
-            // ====================================================================
-            const { data: edData, error: edError } = await supabase
-                .from('employee_documents')
-                .select('id, user_id, mes, year, filename, storage_path, created_at')
-                .eq('user_id', effectiveUserId)
-                .eq('tipo', 'nomina')
-                .order('created_at', { ascending: false });
-
-            if (edError) console.error('Error fetching employee_documents nominas:', edError);
-
-            for (const row of edData ?? []) {
-                if (row.storage_path && !seen.has(row.storage_path)) {
-                    seen.add(row.storage_path);
-                    const isLegacyBucket = /^\d{2}\/\d{4}\//.test(row.storage_path);
-                    merged.push({
-                        id: row.id,
-                        user_id: row.user_id,
-                        mes: row.mes ?? '',
-                        year: row.year ?? 0,
-                        filename: row.filename ?? '',
-                        storage_path: row.storage_path,
-                        created_at: row.created_at,
-                        bucket: isLegacyBucket ? 'nominas' : 'employee-documents',
-                        sourceTable: 'employee_documents'
-                    });
-                }
+            const { fetchNominasListForUser } = await import('@/app/actions/profile');
+            const { rows, error } = await fetchNominasListForUser(effectiveUserId);
+            if (error) {
+                toast.error(error);
+                setNominas([]);
+                return;
             }
-
-            // ====================================================================
-            // 2. ARCHIVOS LEGACY: tabla nominas
-            // ====================================================================
-            const { data: nomData, error: nomError } = await supabase
-                .from('nominas')
-                .select('id, empleado_id, mes_anio, file_path, created_at')
-                .eq('empleado_id', effectiveUserId)
-                .order('created_at', { ascending: false });
-
-            if (nomError) console.error('Error fetching nominas legacy:', nomError);
-
-            for (const row of nomData ?? []) {
-                if (row.file_path && !seen.has(row.file_path)) {
-                    seen.add(row.file_path);
-                    const parts = (row.mes_anio ?? '').split('-');
-                    const [a, b] = parts;
-                    const isYearFirst = a?.length === 4;
-                    const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
-                    const mes = isYearFirst ? (b ?? '') : (a ?? '');
-
-                    merged.push({
-                        id: row.id,
-                        user_id: row.empleado_id,
-                        mes,
-                        year,
-                        filename: `Nómina ${row.mes_anio ?? ''}`,
-                        storage_path: row.file_path,
-                        created_at: row.created_at,
-                        bucket: 'nominas',
-                        sourceTable: 'nominas'
-                    });
-                }
-            }
-
-            // Ordenamiento por nombre de archivo (descendente para mostrar más recientes arriba)
-            merged.sort((a, b) => {
-                const nameA = a.storage_path.split('/').pop() || '';
-                const nameB = b.storage_path.split('/').pop() || '';
-                return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            setNominas(merged);
+            setNominas(rows as NominaRow[]);
         } catch (err) {
             console.error('NominasModal fetch error:', err);
             toast.error('Error al cargar las nóminas');
@@ -148,8 +78,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             const { getNominaSignedDownloadUrl } = await import('@/app/actions/profile');
             const result = await getNominaSignedDownloadUrl({
                 ownerUserId: row.user_id,
-                storagePath: row.storage_path,
-                bucket: row.bucket
+                storagePath: row.storage_path
             });
             if (result.error || !result.url) {
                 toast.error(result.error || 'No se pudo generar el enlace');

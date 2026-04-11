@@ -327,14 +327,127 @@ export async function updateAvatarFormAction(
     return updateAvatar(formData);
 }
 
+/** Subidas manuales usan `.../nominas/archivo` en bucket employee-documents; webhook usa bucket nominas. */
+function nominasStorageBucketForPath(storagePath: string): 'nominas' | 'employee-documents' {
+    if (storagePath.includes('/nominas/')) return 'employee-documents';
+    return 'nominas';
+}
+
+export type NominaListItem = {
+    id: string;
+    user_id: string;
+    mes: string;
+    year: number;
+    filename: string;
+    storage_path: string;
+    created_at: string | null;
+    bucket: 'nominas' | 'employee-documents';
+    sourceTable: 'employee_documents' | 'nominas';
+};
+
 /**
- * Descarga de nómina sin depender de RLS de Storage en el cliente.
- * Verifica en BD que el archivo pertenece al empleado; firma con service role.
+ * Lista nóminas evitando RLS en el cliente (staff a veces no pasa SELECT en employee_documents).
+ * Tras comprobar identidad, lee con service role.
+ */
+export async function fetchNominasListForUser(targetUserId: string): Promise<{ rows: NominaListItem[]; error?: string }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { rows: [], error: 'No autenticado' };
+
+    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const allowed =
+        user.id === targetUserId || me?.role === 'manager' || me?.role === 'supervisor';
+    if (!allowed) return { rows: [], error: 'Sin permiso' };
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return { rows: [], error: 'Configuración del servidor incompleta' };
+    }
+
+    const admin = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        { auth: { persistSession: false } }
+    );
+
+    const { data: edData, error: edErr } = await admin
+        .from('employee_documents')
+        .select('id, user_id, mes, year, filename, storage_path, created_at')
+        .eq('user_id', targetUserId)
+        .eq('tipo', 'nomina')
+        .order('created_at', { ascending: false });
+
+    if (edErr) {
+        console.error('fetchNominasListForUser employee_documents', edErr);
+        return { rows: [], error: edErr.message };
+    }
+
+    const { data: nomData, error: nomErr } = await admin
+        .from('nominas')
+        .select('id, empleado_id, mes_anio, file_path, created_at')
+        .eq('empleado_id', targetUserId)
+        .order('created_at', { ascending: false });
+
+    if (nomErr) {
+        console.error('fetchNominasListForUser nominas', nomErr);
+        return { rows: [], error: nomErr.message };
+    }
+
+    const seen = new Set<string>();
+    const rows: NominaListItem[] = [];
+
+    for (const row of edData ?? []) {
+        if (!row.storage_path || seen.has(row.storage_path)) continue;
+        seen.add(row.storage_path);
+        rows.push({
+            id: row.id,
+            user_id: row.user_id,
+            mes: row.mes ?? '',
+            year: row.year ?? 0,
+            filename: row.filename ?? '',
+            storage_path: row.storage_path,
+            created_at: row.created_at,
+            bucket: nominasStorageBucketForPath(row.storage_path),
+            sourceTable: 'employee_documents'
+        });
+    }
+
+    for (const row of nomData ?? []) {
+        if (!row.file_path || seen.has(row.file_path)) continue;
+        seen.add(row.file_path);
+        const parts = (row.mes_anio ?? '').split('-');
+        const [a, b] = parts;
+        const isYearFirst = a?.length === 4;
+        const year = parseInt(isYearFirst ? a : b ?? '0', 10) || 0;
+        const mes = isYearFirst ? (b ?? '') : (a ?? '');
+        rows.push({
+            id: row.id,
+            user_id: row.empleado_id,
+            mes,
+            year,
+            filename: `Nómina ${row.mes_anio ?? ''}`,
+            storage_path: row.file_path,
+            created_at: row.created_at,
+            bucket: 'nominas',
+            sourceTable: 'nominas'
+        });
+    }
+
+    rows.sort((a, b) => {
+        const nameA = a.storage_path.split('/').pop() || '';
+        const nameB = b.storage_path.split('/').pop() || '';
+        return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+    return { rows };
+}
+
+/**
+ * Descarga de nómina sin depender de RLS de Storage ni de SELECT del cliente.
+ * Verificación de fila con service role (RLS a veces bloquea al staff en employee_documents).
  */
 export async function getNominaSignedDownloadUrl(input: {
     ownerUserId: string;
     storagePath: string;
-    bucket: 'nominas' | 'employee-documents';
 }): Promise<{ url?: string; error?: string }> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -344,24 +457,6 @@ export async function getNominaSignedDownloadUrl(input: {
     const isManager = me?.role === 'manager' || me?.role === 'supervisor';
     const isOwn = user.id === input.ownerUserId;
     if (!isOwn && !isManager) return { error: 'Sin permiso' };
-
-    const { data: ed } = await supabase
-        .from('employee_documents')
-        .select('id')
-        .eq('user_id', input.ownerUserId)
-        .eq('storage_path', input.storagePath)
-        .maybeSingle();
-
-    const { data: leg } = await supabase
-        .from('nominas')
-        .select('id')
-        .eq('empleado_id', input.ownerUserId)
-        .eq('file_path', input.storagePath)
-        .maybeSingle();
-
-    if (!ed && !leg) {
-        return { error: 'Documento no encontrado o sin acceso' };
-    }
 
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         return { error: 'Configuración del servidor incompleta' };
@@ -373,9 +468,27 @@ export async function getNominaSignedDownloadUrl(input: {
         { auth: { persistSession: false } }
     );
 
-    const { data, error } = await admin.storage
-        .from(input.bucket)
-        .createSignedUrl(input.storagePath, 120);
+    const { data: ed } = await admin
+        .from('employee_documents')
+        .select('id')
+        .eq('user_id', input.ownerUserId)
+        .eq('storage_path', input.storagePath)
+        .eq('tipo', 'nomina')
+        .maybeSingle();
+
+    const { data: leg } = await admin
+        .from('nominas')
+        .select('id')
+        .eq('empleado_id', input.ownerUserId)
+        .eq('file_path', input.storagePath)
+        .maybeSingle();
+
+    if (!ed && !leg) {
+        return { error: 'Documento no encontrado o sin acceso' };
+    }
+
+    const bucket = nominasStorageBucketForPath(input.storagePath);
+    const { data, error } = await admin.storage.from(bucket).createSignedUrl(input.storagePath, 120);
 
     if (error) return { error: error.message };
     return { url: data.signedUrl };
