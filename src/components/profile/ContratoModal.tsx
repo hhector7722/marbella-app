@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { X, FileText, Plus, Trash2, Eye } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { addEmployeeDocumentByTipo, deleteEmployeeDocumentByTipo } from '@/app/actions/profile';
+
 interface ContratoModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -26,10 +27,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [docs, setDocs] = useState<DocRow[]>([]);
-    const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
-
-
 
     const fetchDocs = async () => {
         setLoading(true);
@@ -45,9 +43,9 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                 toast.error('Error al cargar contratos');
                 setDocs([]);
             } else {
-                const mapped = (data || []).map(row => ({
+                const mapped = (data || []).map((row) => ({
                     ...row,
-                    bucket: /^\d{2}\/\d{4}\//.test(row.storage_path) ? 'nominas' : 'employee-documents'
+                    bucket: /^\d{2}\/\d{4}\//.test(row.storage_path) ? 'nominas' : 'employee-documents',
                 })) as DocRow[];
                 setDocs(mapped);
             }
@@ -63,28 +61,14 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
         fetchDocs();
     }, [isOpen, userId]);
 
-    const handleDownload = async (doc: DocRow) => {
-        setDownloadingId(doc.id);
-        try {
-            const { data, error } = await supabase.storage
-                .from(doc.bucket)
-                .download(doc.storage_path);
-            if (error) throw error;
-            const blobUrl = URL.createObjectURL(data);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = doc.filename || 'contrato.pdf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-        } catch {
-            toast.error('Error al descargar el contrato');
-        } finally {
-            setDownloadingId(null);
-        }
+    const openDoc = (doc: DocRow) => {
+        const q = new URLSearchParams({
+            owner: userId,
+            path: doc.storage_path,
+            tipo: 'contrato',
+        });
+        window.open(`/api/employee-documents/open?${q.toString()}`, '_blank', 'noopener,noreferrer');
     };
-
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -108,7 +92,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
             const result = await addEmployeeDocumentByTipo(userId, {
                 tipo: 'contrato',
                 storage_path: filePath,
-                filename: file.name
+                filename: file.name,
             });
 
             if (result.success) {
@@ -141,9 +125,17 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className={cn('bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200')} onClick={e => e.stopPropagation()}>
-                <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-[#36606F] text-white">
+        <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div
+                className={cn(
+                    'bg-white w-full max-w-lg rounded-3xl shadow-xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-200'
+                )}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-[#36606F] text-white">
                     <h2 className="text-base font-black uppercase tracking-wider">Contrato</h2>
                     <div className="flex items-center gap-2">
                         {isManager && (
@@ -159,82 +151,74 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                                 <label
                                     htmlFor="contrato-upload"
                                     className={cn(
-                                        'min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors',
-                                        uploading ? 'bg-white/20 opacity-60 cursor-wait' : 'bg-white/20 hover:bg-white/30'
+                                        'min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30',
+                                        uploading && 'opacity-60 cursor-wait'
                                     )}
+                                    aria-label="Subir contrato"
                                 >
-                                    {uploading ? <LoadingSpinner className="w-5 h-5 text-white" /> : <Plus size={22} strokeWidth={2.5} />}
+                                    {uploading ? <LoadingSpinner size="sm" className="text-white" /> : <Plus size={22} strokeWidth={2.5} />}
                                 </label>
                             </>
                         )}
-                        <button type="button" onClick={onClose} className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white/80 hover:bg-white/20" aria-label="Cerrar">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white hover:bg-white/20 transition-colors"
+                            aria-label="Cerrar"
+                        >
                             <X size={22} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto max-h-[70vh] p-4">
+
+                <div className="flex-1 overflow-y-auto max-h-[60vh] p-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12">
-                            <LoadingSpinner className="w-10 h-10 text-[#36606F]" />
-                            <p className="mt-3 text-sm text-zinc-500">Cargando…</p>
+                            <LoadingSpinner size="lg" className="text-[#36606F]" />
+                            <p className="mt-3 text-sm text-zinc-500 font-medium">Cargando…</p>
                         </div>
                     ) : docs.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                            <div className="bg-zinc-100 p-4 rounded-2xl text-zinc-400 mb-3">
-                                <FileText size={32} strokeWidth={1.5} />
-                            </div>
-                            <p className="text-zinc-500 font-medium">No hay contrato disponible</p>
-                            {isManager && (
-                                <div className="mt-4">
-                                    <input
-                                        type="file"
-                                        id="contrato-upload-empty"
-                                        className="hidden"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
-                                        onChange={handleUpload}
-                                        disabled={uploading}
-                                    />
-                                    <label
-                                        htmlFor="contrato-upload-empty"
-                                        className={cn(
-                                            'inline-flex items-center gap-2 min-h-[48px] px-6 rounded-2xl bg-[#36606F] text-white font-black text-sm uppercase tracking-wider cursor-pointer transition-all active:scale-95',
-                                            uploading && 'opacity-60 cursor-wait'
-                                        )}
-                                    >
-                                        {uploading ? <LoadingSpinner className="w-5 h-5" /> : <Plus size={18} />}
-                                        Subir contrato
-                                    </label>
-                                </div>
-                            )}
+                            <p className="text-zinc-600 font-semibold text-sm">No hay contrato registrado</p>
+                            <p className="mt-3 text-xs text-zinc-500 leading-relaxed max-w-sm">
+                                Sube un archivo con el botón + de la cabecera.
+                            </p>
                         </div>
                     ) : (
                         <ul className="space-y-1">
                             {docs.map((row) => (
-                                <li key={row.id} className="min-h-[56px] flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-colors hover:bg-zinc-50 border border-transparent hover:border-zinc-100">
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{row.filename.replace('.pdf', '') || 'Contrato'}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        <button 
-                                            type="button" 
-                                            onClick={() => handleDownload(row)} 
-                                            disabled={!!downloadingId} 
-                                            className="p-2.5 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-colors disabled:opacity-50"
-                                            title="Descargar documento"
-                                        >
-                                            {downloadingId === row.id ? <LoadingSpinner size="sm" className="text-[#36606F]" /> : <Eye size={18} strokeWidth={2} />}
-                                        </button>
-                                        {isManager && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleDelete(row)} 
-                                                className="p-2.5 flex items-center justify-center rounded-lg text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-1"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={16} strokeWidth={2} />
-                                            </button>
+                                <li
+                                    key={row.id}
+                                    className="min-h-[56px] flex items-stretch gap-1 rounded-xl border border-transparent hover:border-zinc-100 hover:bg-zinc-50 transition-colors"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => openDoc(row)}
+                                        className={cn(
+                                            'flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors',
+                                            'active:bg-zinc-100'
                                         )}
-                                    </div>
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">
+                                                {row.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '') || 'Contrato'}
+                                            </p>
+                                        </div>
+                                    </button>
+                                    {isManager && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(row);
+                                            }}
+                                            className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors mr-1"
+                                            title="Eliminar"
+                                            aria-label="Eliminar"
+                                        >
+                                            <Trash2 size={16} strokeWidth={2} />
+                                        </button>
+                                    )}
                                 </li>
                             ))}
                         </ul>

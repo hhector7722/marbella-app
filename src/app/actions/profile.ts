@@ -71,7 +71,7 @@ export async function addEmployeeDocument(userId: string, docData: { type: 'cont
 /** Sube comunicado, contrato o nómina para un empleado (bucket employee-documents, tabla employee_documents) */
 export async function addEmployeeDocumentByTipo(
     userId: string,
-    docData: { tipo: 'comunicado' | 'contrato' | 'nomina'; storage_path: string; filename: string; mes?: string; year?: number }
+    docData: { tipo: 'comunicado' | 'contrato' | 'nomina' | 'sancion'; storage_path: string; filename: string; mes?: string; year?: number }
 ) {
     const supabase = await createClient();
 
@@ -84,8 +84,8 @@ export async function addEmployeeDocumentByTipo(
         .eq('id', currentUser.id)
         .single();
 
-    if (currentProfile?.role !== 'manager' && currentProfile?.role !== 'supervisor') {
-        return { success: false, error: 'Solo managers pueden subir documentos' };
+    if (currentProfile?.role !== 'manager') {
+        return { success: false, error: 'Solo el manager puede subir documentos' };
     }
 
     const { data: targetProfile } = await supabase
@@ -130,8 +130,8 @@ export async function deleteEmployeeDocumentByTipo(docId: string, storagePath: s
         .eq('id', currentUser.id)
         .single();
 
-    if (currentProfile?.role !== 'manager' && currentProfile?.role !== 'supervisor') {
-        return { success: false, error: 'No tienes permisos' };
+    if (currentProfile?.role !== 'manager') {
+        return { success: false, error: 'Solo el manager puede eliminar documentos' };
     }
 
     const { error: storageError } = await supabase.storage
