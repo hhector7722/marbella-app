@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { CheckCircle, AlertTriangle, X, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertTriangle, X } from 'lucide-react';
 import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
@@ -144,7 +144,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             <div
             ref={cardRef}
             className={cn(
-                'relative flex flex-col overflow-hidden rounded-xl shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)]',
+                'relative flex flex-col overflow-hidden rounded-t-none rounded-b-xl shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)]',
                 openDropdownKey ? 'z-[100]' : 'z-auto',
                 isCompleted ? 'opacity-60' : isFullyDone ? 'opacity-90' : '',
                 !kdsRailAttached && 'mt-2'
@@ -321,7 +321,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                 e.stopPropagation(); // No propagar al div padre (que tacharía todo)
                                                 setOpenDropdownKey(isDropdownOpen ? null : groupKey);
                                             }}
-                                            className={`shrink-0 flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 border-[3px] min-w-[3rem] transition-all duration-150 ${
+                                            className={`shrink-0 flex items-center justify-center rounded-lg px-2.5 py-1.5 border-[3px] min-w-[3rem] transition-all duration-150 ${
                                                 group.estado === 'terminado'
                                                     ? 'border-green-200 text-green-600 bg-green-50 cursor-default'
                                                     : canInteract && group.estado === 'pendiente' && group.cantidad > 1
@@ -330,9 +330,6 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                             }`}
                                         >
                                             <span className="text-2xl sm:text-3xl font-black tracking-wide">{group.cantidad}</span>
-                                            {canInteract && group.estado === 'pendiente' && group.cantidad > 1 && (
-                                                <ChevronDown size={18} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
-                                            )}
                                         </div>
                                     )}
                                 </div>

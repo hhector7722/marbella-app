@@ -15,7 +15,7 @@ const KDS_MAX_COLS = 4;
 const KDS_MIN_CARD_PX = 200;
 
 /** Subir este valor al reemplazar `public/icons/comandero.png` para forzar recarga (caché CDN/navegador). */
-const COMANDERO_PNG_VERSION = '20260412';
+const COMANDERO_PNG_VERSION = '20260413';
 
 type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
 
