@@ -1,34 +1,95 @@
 "use client";
 
-import { useState, useMemo, useLayoutEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useMemo, useLayoutEffect, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
 import { Loader2, Package, ListChecks, Check, X } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-/** Agrupa comandas en filas visuales según el layout flex-wrap del DOM (mismo offsetTop ≈ misma fila). */
-function chunkOrdersByVisualRows(wrap: HTMLElement, orders: KDSOrder[]): KDSOrder[][] {
-    const children = [...wrap.children] as HTMLElement[];
-    if (children.length === 0 || orders.length === 0) return [];
-    if (children.length !== orders.length) return [orders];
+/** Máximo de comandas por fila (pantalla ancha). */
+const KDS_MAX_COLS = 4;
+/** Ancho de reserva hasta medir la tarjeta real (evita filas vacías en el primer paint). */
+const KDS_MIN_CARD_PX = 200;
 
-    const items = children.map((el, i) => ({
-        order: orders[i],
-        top: Math.round(el.offsetTop),
-        left: el.offsetLeft,
-    }));
-    const tops = [...new Set(items.map((x) => x.top))].sort((a, b) => a - b);
-    return tops.map((t) =>
-        items
-            .filter((x) => x.top === t)
-            .sort((a, b) => a.left - b.left)
-            .map((x) => x.order)
+/** Subir este valor al reemplazar `public/icons/comandero.png` para forzar recarga (caché CDN/navegador). */
+const COMANDERO_PNG_VERSION = '20260411';
+
+/**
+ * Agrupa comandas en filas: hasta KDS_MAX_COLS, mientras que la suma de anchos
+ * (medidos o fallback) no supere el ancho disponible. El flex usa gap-0; justify-evenly reparte el hueco sobrante.
+ */
+function packOrdersIntoRows(
+    orders: KDSOrder[],
+    widthById: Record<string, number>,
+    availablePx: number,
+    fallbackWidth: number
+): KDSOrder[][] {
+    if (orders.length === 0) return [];
+    const avail = Math.max(1, availablePx);
+    const wOf = (o: KDSOrder) => widthById[o.id] ?? fallbackWidth;
+
+    const rows: KDSOrder[][] = [];
+    let i = 0;
+    while (i < orders.length) {
+        const row: KDSOrder[] = [];
+        let sum = 0;
+        while (i < orders.length && row.length < KDS_MAX_COLS) {
+            const o = orders[i];
+            const w = wOf(o);
+            if (row.length === 0) {
+                row.push(o);
+                sum = w;
+                i++;
+                if (w > avail) break;
+                continue;
+            }
+            if (sum + w <= avail) {
+                row.push(o);
+                sum += w;
+                i++;
+            } else {
+                break;
+            }
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+function KDSCardCell({
+    order,
+    onMeasuredWidth,
+    children,
+}: {
+    order: KDSOrder;
+    onMeasuredWidth: (id: string, w: number) => void;
+    children: ReactNode;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const ro = new ResizeObserver((entries) => {
+            const w = Math.ceil(entries[0]?.contentRect.width ?? 0);
+            if (w > 0) onMeasuredWidth(order.id, w);
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [order.id, onMeasuredWidth]);
+    return (
+        <div
+            ref={ref}
+            className="shrink-0 w-fit max-w-[min(92vw,48rem)] min-w-0 self-start"
+        >
+            {children}
+        </div>
     );
 }
 
-/** Un riel por fila; gap-x-10 entre comandas. Entre filas: gap-y fijo (borde inferior del bloque de tarjetas → siguiente riel), la fila crece según la comanda más alta (items-start). */
+/** Riel + filas: hasta 4 comandas/fila según ancho disponible + anchos medidos de cada tarjeta. */
 function KDSOrderRowsLayout({
     sortedOrders,
     renderCommandCard,
@@ -36,72 +97,100 @@ function KDSOrderRowsLayout({
     sortedOrders: KDSOrder[];
     renderCommandCard: (order: KDSOrder) => ReactNode;
 }) {
-    const [layoutRows, setLayoutRows] = useState<KDSOrder[][] | null>(null);
-    const [measureKey, setMeasureKey] = useState(0);
     const measureRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const [availableWidth, setAvailableWidth] = useState(0);
+    const [cardWidths, setCardWidths] = useState<Record<string, number>>({});
+
+    const [widthFallback] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth : 1024
+    );
 
     useLayoutEffect(() => {
-        const el = containerRef.current;
+        const el = measureRef.current;
         if (!el) return;
         const ro = new ResizeObserver(() => {
-            setLayoutRows(null);
-            setMeasureKey((k) => k + 1);
+            setAvailableWidth(el.clientWidth);
         });
         ro.observe(el);
+        setAvailableWidth(el.clientWidth);
         return () => ro.disconnect();
     }, []);
 
-    useLayoutEffect(() => {
-        if (sortedOrders.length === 0) {
-            setLayoutRows([]);
-            return;
-        }
-        const wrap = measureRef.current;
-        if (!wrap) return;
-        const chunks = chunkOrdersByVisualRows(wrap, sortedOrders);
-        setLayoutRows(chunks.length > 0 ? chunks : [sortedOrders]);
-    }, [sortedOrders, measureKey]);
+    useEffect(() => {
+        const ids = new Set(sortedOrders.map((o) => o.id));
+        setCardWidths((prev) => {
+            let dirty = false;
+            const next = { ...prev };
+            for (const k of Object.keys(next)) {
+                if (!ids.has(k)) {
+                    delete next[k];
+                    dirty = true;
+                }
+            }
+            return dirty ? next : prev;
+        });
+    }, [sortedOrders]);
+
+    const handleCardWidth = useCallback((id: string, w: number) => {
+        setCardWidths((prev) => {
+            if (prev[id] === w) return prev;
+            return { ...prev, [id]: w };
+        });
+    }, []);
+
+    const avail = availableWidth > 0 ? availableWidth : widthFallback;
+
+    const layoutRows = useMemo(
+        () =>
+            sortedOrders.length === 0
+                ? []
+                : packOrdersIntoRows(sortedOrders, cardWidths, avail, KDS_MIN_CARD_PX),
+        [sortedOrders, cardWidths, avail]
+    );
 
     return (
-        <div ref={containerRef} className="w-full px-3 sm:px-4 md:px-5">
-            {layoutRows === null && (
-                <div
-                    ref={measureRef}
-                    className="flex flex-wrap items-start gap-x-10 gap-y-0 w-full"
-                    aria-hidden
-                >
-                    {sortedOrders.map((order) => (
-                        <div key={order.id} className="shrink-0 w-fit max-w-[min(100vw-2rem,48rem)]">
-                            {renderCommandCard(order)}
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {layoutRows !== null && layoutRows.length > 0 && (
+        <div ref={measureRef} className="w-full min-w-0">
+            {layoutRows.length > 0 && (
                 <div className="flex flex-col gap-y-10 w-full">
                     {layoutRows.map((row, rowIdx) => (
                         <div
                             key={`row-${row.map((o) => o.id).join('-')}-${rowIdx}`}
                             className="flex flex-col w-full min-w-0"
                         >
-                            <div className="relative z-20 w-full h-6 sm:h-8 shrink-0 border-b border-slate-900/60 shadow-md overflow-hidden">
+                            {/* Full-bleed: sale del padding del scroll area */}
+                            <div
+                                className={cn(
+                                    'relative w-screen max-w-[100vw] shrink-0',
+                                    'left-1/2 -translate-x-1/2',
+                                    'shadow-[0_4px_12px_rgba(0,0,0,0.35)]'
+                                )}
+                            >
                                 <img
-                                    src="/icons/comandero.png"
+                                    src={`/icons/comandero.png?v=${COMANDERO_PNG_VERSION}`}
                                     alt=""
-                                    className="h-full w-full object-cover object-center opacity-90"
+                                    className="block w-full h-auto min-h-[40px] max-h-[72px] object-cover object-center select-none pointer-events-none"
+                                    draggable={false}
                                 />
                             </div>
                             {/*
-                              items-start: tarjetas cortas no estiran; la altura de la fila la marca la comanda más alta.
-                              gap-y del padre separa el borde inferior de este bloque del riel de la fila siguiente (siempre el mismo).
+                              Pegado al riel (pt-0). justify-evenly reparte hueco en filas con 1–4 comandas.
+                              items-start: la altura de fila = comanda más alta.
                             */}
-                            <div className="relative z-10 flex flex-wrap items-start content-start gap-x-10 gap-y-0 pt-3 sm:pt-4 w-full">
+                            <div
+                                className={cn(
+                                    'relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2',
+                                    'flex flex-row flex-nowrap justify-evenly items-start',
+                                    'pt-0 px-1 sm:px-2 gap-0'
+                                )}
+                            >
                                 {row.map((order) => (
-                                    <div key={order.id} className="shrink-0 w-fit max-w-[min(100vw-2rem,48rem)] self-start">
+                                    <KDSCardCell
+                                        key={order.id}
+                                        order={order}
+                                        onMeasuredWidth={handleCardWidth}
+                                    >
                                         {renderCommandCard(order)}
-                                    </div>
+                                    </KDSCardCell>
                                 ))}
                             </div>
                         </div>
@@ -164,6 +253,7 @@ export default function KDSView() {
         (order: KDSOrder) => (
             <CommandCard
                 order={order}
+                kdsRailAttached
                 onTacharProductos={tacharProductos}
                 onCompletarComanda={completarComanda}
                 onRecuperarComanda={recuperarComanda}
@@ -182,7 +272,7 @@ export default function KDSView() {
             <div className="flex flex-1 min-h-0 flex-col bg-[#0f1522] relative">
 
                 {/* Área principal: comandas (scroll) */}
-                <div className="flex-1 min-h-0 overflow-y-auto pt-4 pb-3 custom-scrollbar">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-4 pb-3 custom-scrollbar">
                     {loading && orders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400 animate-in fade-in duration-700">
                             <Loader2 className="animate-spin mb-4 opacity-20" size={56} strokeWidth={1} />

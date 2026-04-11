@@ -14,6 +14,8 @@ interface CommandCardProps {
     onRecuperarComanda: (orderId: string) => void;
     onUpdateLineNotes: (lineIds: string[], nextNotes: string) => Promise<void> | void;
     onUpdateOrderNotes: (orderId: string, nextNotes: string) => Promise<void> | void;
+    /** KDS: sin margen superior; pegada visualmente al riel comandero */
+    kdsRailAttached?: boolean;
 }
 
 const QUICK_NOTES = [
@@ -46,7 +48,7 @@ function splitBullets(raw: string | null | undefined) {
     return raw.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRecuperarComanda, onUpdateLineNotes, onUpdateOrderNotes }: CommandCardProps) {
+export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRecuperarComanda, onUpdateLineNotes, onUpdateOrderNotes, kdsRailAttached = false }: CommandCardProps) {
     const [elapsed, setElapsed] = useState<number>(0);
     // Clave del grupo cuyo dropdown de unidades está abierto (null = ninguno)
     const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
@@ -148,7 +150,11 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                         ? 'opacity-90'
                         : ''
                 }`}
-            style={{ marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '10px solid #cbd5e1' }}
+            style={{
+                marginTop: kdsRailAttached ? 0 : '0.5rem',
+                paddingTop: kdsRailAttached ? '0.5rem' : '0.75rem',
+                borderTop: '10px solid #cbd5e1',
+            }}
         >
             {/* Cabecera coloreada (tonos más claros en alerta roja) */}
             <div className={`px-4 pb-2 flex justify-between items-start transition-colors duration-500 relative font-black rounded-t-sm ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
