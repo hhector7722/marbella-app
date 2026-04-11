@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-11 (import recetas + precios albarán imagen)
+**Última actualización:** 2026-04-11 (recetas IA PDF/imagen + validación)
+
+- [x] **Import recetas con IA `/dashboard/recetas-import` (2026-04-11)**: Sube PDF o imagen; Gemini 2.5 Flash extrae recetas con **elaboración**, **presentación**, ingredientes y precios; vista de validación (aceptar/descartar, edición) antes de `applyValidatedRecipesAction`. Helpers compartidos en [`src/lib/recipe-import-shared.ts`](src/lib/recipe-import-shared.ts). Enlace desde paso Recetas de [`/dashboard/import`](src/app/dashboard/import/page.tsx). Requiere `GEMINI_API_KEY` y límite de body de Server Actions en [`next.config.ts`](next.config.ts).
 
 - [x] **Import recetas `/dashboard/import` paso 3 (2026-04-11)**: `importRecipes` en [`src/app/actions/import-legacy.ts`](src/app/actions/import-legacy.ts): Excel con filas agrupadas por `nombre_receta` (nombre obligatorio; categoría, precios, raciones, elaboración opcionales); líneas con `ingrediente_nombre` + `cantidad` + `unidad` resueltas contra `ingredients` por nombre; ingredientes inexistentes se omiten con aviso en `errors`.
 - [x] **Precios desde foto de albarán `/dashboard/albaranes-precios` (2026-04-11)**: Gemini 2.5 Flash interpreta imagen (JPG/PNG/WebP); propone precio y unidad canónicas; emparejamiento por [`src/lib/albaran-price-match.ts`](src/lib/albaran-price-match.ts); UI con aceptar/descartar, selector de ingrediente (sugerencias + listado completo); `applyAlbaranPriceUpdatesAction` actualiza `ingredients.current_price`, `purchase_unit`, `unit_type` (historial vía trigger `log_price_change`). Requiere `GEMINI_API_KEY`. Acceso manager/admin (misma lógica que otras vistas de gestión).
