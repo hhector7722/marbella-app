@@ -50,48 +50,11 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             const seen = new Set<string>();
             const merged: NominaRow[] = [];
 
-            // ====================================================================
-            // 1. MOTOR DIRECTO: Leer PDFs físicos inyectados por el Webhook (NUEVA ARQUITECTURA)
-            // ====================================================================
-            const { data: storageFiles, error: storageError } = await supabase.storage
-                .from('nominas')
-                .list(effectiveUserId);
-
-            if (!storageError && storageFiles) {
-                for (const file of storageFiles) {
-                    if (file.name.startsWith('.')) continue; // Filtrar archivos basura de sistema
-
-                    const filePath = `${effectiveUserId}/${file.name}`;
-                    seen.add(filePath);
-
-                    // Descomponer el formato estándar YYYY_mes_DNI.pdf
-                    let mes = '';
-                    let year = 0;
-                    let displayName = file.name;
-
-                    const parts = file.name.replace('.pdf', '').split('_');
-                    if (parts.length >= 2 && !isNaN(parseInt(parts[0]))) {
-                        year = parseInt(parts[0], 10);
-                        mes = parts[1];
-                        displayName = `Nómina ${mes} ${year}`;
-                    }
-
-                    merged.push({
-                        id: file.id || filePath,
-                        user_id: effectiveUserId,
-                        mes: mes,
-                        year: year,
-                        filename: displayName,
-                        storage_path: filePath,
-                        created_at: file.created_at || new Date().toISOString(),
-                        bucket: 'nominas',
-                        sourceTable: 'nominas' // Tratado como legacy a efectos de borrado
-                    });
-                }
-            }
+            // No usar storage.list(userId): el webhook guarda bajo codigo_empleado (ej. 01/…), no bajo UUID.
+            // El listado sale de employee_documents + nominas (tablas).
 
             // ====================================================================
-            // 2. SUBIDAS MANUALES: Leer de tabla employee_documents (MANAGERS)
+            // 1. Nóminas registradas (webhook + manual): employee_documents
             // ====================================================================
             const { data: edData, error: edError } = await supabase
                 .from('employee_documents')
@@ -121,7 +84,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             }
 
             // ====================================================================
-            // 3. ARCHIVOS LEGACY: Leer de tabla nominas antigua
+            // 2. ARCHIVOS LEGACY: tabla nominas
             // ====================================================================
             const { data: nomData, error: nomError } = await supabase
                 .from('nominas')
@@ -182,18 +145,17 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         }
         setDownloadingId(row.id);
         try {
-            const { data, error } = await supabase.storage
-                .from(row.bucket)
-                .download(row.storage_path);
-            if (error) throw error;
-            const blobUrl = URL.createObjectURL(data);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = row.filename || 'nomina.pdf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            const { getNominaSignedDownloadUrl } = await import('@/app/actions/profile');
+            const result = await getNominaSignedDownloadUrl({
+                ownerUserId: row.user_id,
+                storagePath: row.storage_path,
+                bucket: row.bucket
+            });
+            if (result.error || !result.url) {
+                toast.error(result.error || 'No se pudo generar el enlace');
+                return;
+            }
+            window.open(result.url, '_blank', 'noopener,noreferrer');
         } catch (err) {
             console.error('Error descargando nómina:', err);
             toast.error('No se pudo descargar el documento.');

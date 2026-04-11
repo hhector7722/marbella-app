@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
 export async function updateProfile(userId: string, data: { dni?: string; bank_account?: string; phone?: string; email?: string; joining_date?: string; prefer_stock_hours?: boolean; codigo_empleado?: string }) {
@@ -324,6 +325,60 @@ export async function updateAvatarFormAction(
     formData: FormData
 ): Promise<UpdateAvatarResult> {
     return updateAvatar(formData);
+}
+
+/**
+ * Descarga de nómina sin depender de RLS de Storage en el cliente.
+ * Verifica en BD que el archivo pertenece al empleado; firma con service role.
+ */
+export async function getNominaSignedDownloadUrl(input: {
+    ownerUserId: string;
+    storagePath: string;
+    bucket: 'nominas' | 'employee-documents';
+}): Promise<{ url?: string; error?: string }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'No autenticado' };
+
+    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const isManager = me?.role === 'manager' || me?.role === 'supervisor';
+    const isOwn = user.id === input.ownerUserId;
+    if (!isOwn && !isManager) return { error: 'Sin permiso' };
+
+    const { data: ed } = await supabase
+        .from('employee_documents')
+        .select('id')
+        .eq('user_id', input.ownerUserId)
+        .eq('storage_path', input.storagePath)
+        .maybeSingle();
+
+    const { data: leg } = await supabase
+        .from('nominas')
+        .select('id')
+        .eq('empleado_id', input.ownerUserId)
+        .eq('file_path', input.storagePath)
+        .maybeSingle();
+
+    if (!ed && !leg) {
+        return { error: 'Documento no encontrado o sin acceso' };
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return { error: 'Configuración del servidor incompleta' };
+    }
+
+    const admin = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        { auth: { persistSession: false } }
+    );
+
+    const { data, error } = await admin.storage
+        .from(input.bucket)
+        .createSignedUrl(input.storagePath, 120);
+
+    if (error) return { error: error.message };
+    return { url: data.signedUrl };
 }
 
 export async function completeOnboarding() {
