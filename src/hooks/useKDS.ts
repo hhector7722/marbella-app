@@ -246,9 +246,9 @@ export function useKDS() {
                         await fetchActiveOrders({ isInitial: false, isSilent: true });
                     }
 
+                    // Realtime puede cortarse (pestaña en segundo plano, Wi‑Fi, reconexión): se reintenta en silencio.
+                    // No mezclar eso con "desconectado" ni icono de error; el fetch HTTP es la fuente de verdad.
                     if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                        setIsOffline(true);
-                        setSyncStatus('error');
                         clearTimeout(reconnectTimeout);
                         reconnectTimeout = setTimeout(() => {
                             backoffDelay = Math.min(backoffDelay * 1.5, 30000);
