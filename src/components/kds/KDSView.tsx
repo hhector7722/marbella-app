@@ -241,10 +241,10 @@ function KDSOrderRowsLayout({
                             key={`row-${row.map((o) => o.id).join('-')}-${rowIdx}`}
                             className="flex flex-col w-full min-w-0"
                         >
-                            {/* Full-bleed: sale del padding del scroll area */}
+                            {/* Full-bleed: imagen más ancha que el viewport; overflow recorta laterales del PNG */}
                             <div
                                 className={cn(
-                                    'relative w-screen max-w-[100vw] shrink-0',
+                                    'relative w-screen max-w-[100vw] shrink-0 overflow-hidden',
                                     'left-1/2 -translate-x-1/2',
                                     'shadow-[0_4px_12px_rgba(0,0,0,0.35)]'
                                 )}
@@ -252,7 +252,11 @@ function KDSOrderRowsLayout({
                                 <img
                                     src={`/icons/comandero.png?v=${COMANDERO_PNG_VERSION}`}
                                     alt=""
-                                    className="block w-full h-auto min-h-[22px] max-h-[44px] object-cover object-center select-none pointer-events-none"
+                                    className={cn(
+                                        'block h-auto min-h-[22px] max-h-[44px] max-w-none select-none pointer-events-none',
+                                        'w-[132%] min-w-[132%] object-cover object-center',
+                                        'relative left-1/2 -translate-x-1/2'
+                                    )}
                                     draggable={false}
                                 />
                             </div>
