@@ -26,6 +26,8 @@ export function useKDS() {
     const inFlightLineIds = useRef<Set<string>>(new Set());
     const realtimeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const pendingUpdates = useRef<Array<() => void>>([]);
+    /** Tras al menos un fetch HTTP correcto a Supabase, no marcar DESCONECTADO por errores puntuales de refetch. */
+    const kdsFetchSucceededOnce = useRef(false);
 
     const scheduleUpdate = useCallback((fn: () => void) => {
         pendingUpdates.current.push(fn);
@@ -183,13 +185,18 @@ export function useKDS() {
                 } else {
                     startTransition(() => mergeOrders(cleanedData));
                 }
+                kdsFetchSucceededOnce.current = true;
                 setIsOffline(false);
                 if (!options.isSilent) setStatusWithTimeout('success');
             }
         } catch (e: any) {
             console.error('Error KDS Fetch:', e?.message ?? e);
-            setIsOffline(true);
+            // Refetch silencioso o fallo puntual: no forzar DESCONECTADO si ya hubo carga OK (evita falso positivo).
+            if (options.isSilent) return;
             setSyncStatus('error');
+            if (!kdsFetchSucceededOnce.current) {
+                setIsOffline(true);
+            }
         } finally {
             if (options.isInitial) setLoading(false);
         }
