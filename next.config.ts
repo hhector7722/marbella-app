@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Fotos de albarán pueden superar el límite por defecto (1 MB) de Server Actions
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
+  },
   // 🧠 AISLAMIENTO ESTRICTO: Evita que Webpack/Turbopack minifique y rompa la librería
   serverExternalPackages: ["pdf-parse"],
 

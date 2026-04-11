@@ -42,6 +42,8 @@ export default function AlbaranesPreciosClient({
   const [rows, setRows] = useState<RowState[]>([])
   const [extracting, setExtracting] = useState(false)
   const [applying, setApplying] = useState(false)
+  /** Mensaje visible siempre bajo el botón (complemento a sonner). */
+  const [statusLine, setStatusLine] = useState<string | null>(null)
 
   const acceptedRows = useMemo(() => rows.filter((r) => r.decision === 'accepted'), [rows])
 
@@ -50,18 +52,25 @@ export default function AlbaranesPreciosClient({
     if (!file) return
     setExtracting(true)
     setRows([])
+    setStatusLine('Enviando imagen al servidor…')
     try {
       const fd = new FormData()
       fd.set('file', file)
       const res = await extractAlbaranPricesFromImageAction(fd)
       if (!res.success) {
+        setStatusLine(res.message)
         toast.error(res.message)
         return
       }
       setRows(res.lines.map(lineToRowState))
-      toast.success(`Se interpretaron ${res.lines.length} líneas. Revisa y marca las que quieras aplicar.`)
-    } catch {
-      toast.error('Error al procesar la imagen')
+      const okMsg = `Se interpretaron ${res.lines.length} líneas. Revisa y marca las que quieras aplicar.`
+      setStatusLine(okMsg)
+      toast.success(okMsg)
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Error al procesar la imagen (¿archivo muy grande? Redimensiona o sube otra).'
+      setStatusLine(msg)
+      toast.error(msg)
     } finally {
       setExtracting(false)
       e.target.value = ''
@@ -162,6 +171,16 @@ export default function AlbaranesPreciosClient({
             {extracting ? 'Interpretando…' : 'Seleccionar imagen'}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
           </label>
+          {statusLine ? (
+            <p
+              className={cn(
+                'text-sm text-center max-w-md',
+                statusLine.includes('interpretaron') ? 'text-emerald-800' : 'text-zinc-700'
+              )}
+            >
+              {statusLine}
+            </p>
+          ) : null}
         </div>
 
         {rows.length > 0 && (

@@ -55,10 +55,25 @@ export async function extractAlbaranPricesFromImageAction(
   if (!file?.size) return { success: false, message: 'Selecciona una imagen' }
   if (file.size > 10 * 1024 * 1024) return { success: false, message: 'Máximo 10 MB' }
 
-  const mime = file.type || 'application/octet-stream'
+  /** En Windows/Chrome a veces `file.type` viene vacío; inferir por extensión. */
+  function inferImageMime(f: File): string {
+    const t = (f.type || '').trim().toLowerCase()
+    if (t.startsWith('image/')) return t
+    const name = (f.name || '').toLowerCase()
+    if (name.endsWith('.png')) return 'image/png'
+    if (name.endsWith('.webp')) return 'image/webp'
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg'
+    return t || 'application/octet-stream'
+  }
+
+  const mime = inferImageMime(file)
   const allowed = ['image/jpeg', 'image/png', 'image/webp']
   if (!allowed.includes(mime)) {
-    return { success: false, message: 'Formato no soportado (JPG, PNG o WebP)' }
+    return {
+      success: false,
+      message:
+        'Formato no reconocido (JPG, PNG o WebP). Si es foto de móvil, exporta como JPEG o rehaz la captura.',
+    }
   }
 
   const geminiKey = process.env.GEMINI_API_KEY

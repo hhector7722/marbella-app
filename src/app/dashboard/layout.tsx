@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Toaster } from 'sonner';
 
 export default function DashboardLayout({
     children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 
     return (
         <main className="w-full">
+            <Toaster position="top-center" richColors closeButton />
             {children}
         </main>
     );
