@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import * as XLSX from 'xlsx'
 import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -165,12 +166,20 @@ export default function ImportPage() {
                                 </ul>
                             )}
                             {currentStep === 'recipes' && (
-                                <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded space-y-1">
-                                    <li><strong>nombre_receta</strong> (req): mismo valor en cada fila del mismo plato</li>
-                                    <li>categoria, precio_barra, precio_pavelló, raciones, elaboración, presentación</li>
-                                    <li>Por línea de ingrediente: ingrediente_nombre, cantidad, unidad (g, kg, ml, l, ud, cl)</li>
-                                    <li>Receta sin líneas: una sola fila solo con cabecera</li>
-                                </ul>
+                                <div className="space-y-2 text-xs">
+                                    <ul className="list-disc list-inside font-mono bg-white/50 p-2 rounded space-y-1">
+                                        <li><strong>nombre_receta</strong> (req): mismo valor en cada fila del mismo plato</li>
+                                        <li>categoria, precio_barra, precio_pavelló, raciones</li>
+                                        <li>elaboración / presentación (texto; columnas: elaboration, elaboración, preparacion / presentation, presentación)</li>
+                                        <li>Por línea: ingrediente_nombre, cantidad, unidad (g, kg, ml, l, ud, cl)</li>
+                                    </ul>
+                                    <Link
+                                        href="/dashboard/recetas-import"
+                                        className="inline-flex min-h-12 items-center justify-center w-full rounded-lg bg-[#36606F]/10 text-[#36606F] font-semibold px-3 hover:bg-[#36606F]/15"
+                                    >
+                                        O importar desde PDF o imagen con IA y validación
+                                    </Link>
+                                </div>
                             )}
                             {currentStep === 'logs' && (
                                 <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded">
