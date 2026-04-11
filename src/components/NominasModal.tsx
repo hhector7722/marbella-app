@@ -203,8 +203,12 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                             <div className="bg-zinc-100 p-4 rounded-2xl text-zinc-400 mb-3">
                                 <FileText size={32} strokeWidth={1.5} />
                             </div>
-                            <p className="text-zinc-500 font-medium">
-                                {targetUserId ? 'Este empleado no tiene nóminas disponibles' : 'No tienes nóminas disponibles'}
+                            <p className="text-zinc-600 font-semibold text-sm">
+                                {targetUserId ? 'Este empleado no tiene nóminas registradas en la app' : 'No hay nóminas registradas para tu cuenta'}
+                            </p>
+                            <p className="mt-3 text-xs text-zinc-500 leading-relaxed max-w-sm">
+                                Las nóminas automáticas solo aparecen cuando el correo las procesa y quedan guardadas en base de datos.
+                                Si el PDF ya existe pero ves esto vacío, revisa que tu DNI en el perfil coincida con la nómina o contacta con administración.
                             </p>
                         </div>
                     ) : (

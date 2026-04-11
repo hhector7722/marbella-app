@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
         const { data: profile, error: dbError } = await supabase
             .from('profiles')
-            .select('id, first_name')
+            .select('id, first_name, codigo_empleado')
             .eq('dni', extractedDni)
             .single();
 
@@ -91,7 +91,9 @@ export async function POST(request: Request) {
         }
 
         let mesDevengo = '';
-        let anioDevengo = new Date(emailDate).getFullYear();
+        const emailDateObj = emailDate ? new Date(emailDate) : new Date();
+        const emailTime = Number.isNaN(emailDateObj.getTime()) ? Date.now() : emailDateObj.getTime();
+        let anioDevengo = new Date(emailTime).getFullYear();
         const filenameLower = filename.toLowerCase();
         const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -103,24 +105,61 @@ export async function POST(request: Request) {
         }
 
         if (!mesDevengo) {
-            const dateObj = new Date(emailDate);
+            const dateObj = new Date(emailTime);
             dateObj.setMonth(dateObj.getMonth() - 1);
             mesDevengo = dateObj.toLocaleString('es-ES', { month: 'long' }).toLowerCase();
         } else {
-            if (new Date(emailDate).getMonth() === 0 && mesDevengo === 'diciembre') {
+            if (new Date(emailTime).getMonth() === 0 && mesDevengo === 'diciembre') {
                 anioDevengo -= 1;
             }
         }
 
+        const monthNum = meses.indexOf(mesDevengo) + 1;
+        const mesAnio = monthNum >= 1 && monthNum <= 12
+            ? `${anioDevengo}-${String(monthNum).padStart(2, '0')}`
+            : `${anioDevengo}-01`;
+
         const safeFilename = `${anioDevengo}_${mesDevengo}_${extractedDni}.pdf`;
+        const storagePath = `${profile.id}/${safeFilename}`;
+
         const { error: storageError } = await supabase.storage
             .from('nominas')
-            .upload(`${profile.id}/${safeFilename}`, pdfBuffer, {
+            .upload(storagePath, pdfBuffer, {
                 contentType: 'application/pdf',
                 upsert: true
             });
 
         if (storageError) throw new Error(`Fallo Storage: ${storageError.message}`);
+
+        // Registro en BD: la app lista nóminas desde `nominas` / `employee_documents`, no desde Storage solo.
+        await supabase.from('nominas').delete().eq('file_path', storagePath);
+
+        const { error: nominaRowError } = await supabase.from('nominas').insert({
+            empleado_id: profile.id,
+            mes_anio: mesAnio,
+            file_path: storagePath
+        });
+
+        if (nominaRowError) {
+            console.error('nominas insert tras webhook:', nominaRowError);
+            throw new Error(`Fallo al registrar la nómina en base de datos: ${nominaRowError.message}`);
+        }
+
+        if (profile.codigo_empleado && String(profile.codigo_empleado).trim()) {
+            await supabase.from('employee_documents').delete().eq('storage_path', storagePath);
+            const { error: edError } = await supabase.from('employee_documents').insert({
+                user_id: profile.id,
+                codigo_empleado: String(profile.codigo_empleado).trim(),
+                tipo: 'nomina',
+                mes: mesDevengo,
+                year: anioDevengo,
+                filename: safeFilename,
+                storage_path: storagePath
+            });
+            if (edError) {
+                console.error('employee_documents insert (opcional) tras webhook:', edError);
+            }
+        }
 
         return NextResponse.json({
             success: true,
