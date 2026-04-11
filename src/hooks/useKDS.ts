@@ -319,24 +319,43 @@ export function useKDS() {
         }
     };
 
-    // CIERRE DE COMANDA OPTIMISTA
-    const completarComanda = async (orderId: string) => {
+    // CIERRE DE COMANDA OPTIMISTA — todas las tandas (mismo id_ticket) se cierran a la vez
+    const completarComanda = async (orderId: string, idTicket?: string | null) => {
         setSyncStatus('syncing');
-        // Registrar en el veto local ANTES del update
-        localCompletedIds.current.add(orderId);
+        const completedAt = new Date().toISOString();
+        const ticketKey = (idTicket && String(idTicket).trim()) ? String(idTicket).trim() : null;
 
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'completada', completed_at: new Date().toISOString() } : o));
+        let affectedIds: string[] = [];
+        setOrders((prev) => {
+            const targets = ticketKey
+                ? prev.filter((o) => (o.id_ticket ?? null) === ticketKey && o.estado === 'activa')
+                : prev.filter((o) => o.id === orderId);
+            affectedIds = targets.map((t) => t.id);
+            affectedIds.forEach((id) => localCompletedIds.current.add(id));
+            return prev.map((o) => {
+                if (ticketKey && (o.id_ticket ?? null) === ticketKey && o.estado === 'activa') {
+                    return { ...o, estado: 'completada' as const, completed_at: completedAt };
+                }
+                if (!ticketKey && o.id === orderId) {
+                    return { ...o, estado: 'completada' as const, completed_at: completedAt };
+                }
+                return o;
+            });
+        });
 
-        const { error } = await supabase
-            .from('kds_orders')
-            .update({ estado: 'completada', completed_at: new Date().toISOString() })
-            .eq('id', orderId);
+        const payload = { estado: 'completada' as const, completed_at: completedAt };
+        const { error } = ticketKey
+            ? await supabase.from('kds_orders').update(payload).eq('id_ticket', ticketKey).eq('estado', 'activa')
+            : await supabase.from('kds_orders').update(payload).eq('id', orderId);
 
         if (error) {
             setSyncStatus('error');
-            // Revertir el veto
-            localCompletedIds.current.delete(orderId);
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: 'activa', completed_at: null } : o));
+            affectedIds.forEach((id) => localCompletedIds.current.delete(id));
+            setOrders((prev) =>
+                prev.map((o) =>
+                    affectedIds.includes(o.id) ? { ...o, estado: 'activa' as const, completed_at: null } : o
+                )
+            );
         } else {
             setStatusWithTimeout('success');
         }

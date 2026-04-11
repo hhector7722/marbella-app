@@ -1,10 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-04-11 (Webhook nóminas: registro en BD tras subir a Storage)
+**Última actualización:** 2026-04-16 (KDS: finalizar por id_ticket + riel/columnas)
 
 - [x] **Webhook nóminas: filas en `nominas` (2026-04-11)**: `POST /api/webhooks/nominas` subía el PDF al bucket `nominas` pero no insertaba en `public.nominas` (ni `employee_documents` cuando hay `codigo_empleado`), por lo que la lista en perfil quedaba vacía sin error. Tras la subida se inserta la fila (y espejo opcional en `employee_documents`); reintentos idempotentes borran por `file_path` / `storage_path` antes de insertar. PDFs antiguos solo en Storage: backfill SQL [`sql/backfill_nominas_desde_storage.sql`](sql/backfill_nominas_desde_storage.sql) (PREVIEW + INSERT comentado).
 
 - [x] **KDS: desacople radar / cierre manual (2026-04-16)**: Migración `20260416100000_kds_decouple_radar_auto_complete.sql` (Supabase): `fn_trg_process_kds_from_sala` ya no pasa `kds_orders` a `completada` cuando un `id_ticket` desaparece de `radiografia_completa`; solo aplica deltas. Cierre de comanda en cocina vía `completarComanda` en `useKDS`. Ejecutar el SQL en Supabase si el entorno aún tiene el comportamiento antiguo.
+
+- [x] **KDS: finalizar todas las tandas del mismo `id_ticket` + UI riel (2026-04-16)**: Al pulsar finalizar, `completarComanda` en `useKDS` marca como `completada` todas las cabeceras activas con el mismo `id_ticket` (evita que otra tanda del mismo ticket reaparezca). Riel porta-comandas a ancho completo; tres columnas en `md+` en `KDSView`.
 
 - [x] **Import recetas con IA `/dashboard/recetas-import` (2026-04-11)**: Sube PDF o imagen; Gemini 2.5 Flash extrae recetas con **elaboración**, **presentación**, ingredientes y precios; vista de validación (aceptar/descartar, edición) antes de `applyValidatedRecipesAction`. Helpers compartidos en [`src/lib/recipe-import-shared.ts`](src/lib/recipe-import-shared.ts). Enlace desde paso Recetas de [`/dashboard/import`](src/app/dashboard/import/page.tsx). Requiere `GEMINI_API_KEY` y límite de body de Server Actions en [`next.config.ts`](next.config.ts).
 

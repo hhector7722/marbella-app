@@ -10,7 +10,7 @@ import { NotesModal } from './NotesModal';
 interface CommandCardProps {
     order: KDSOrder;
     onTacharProductos: (lineIds: string[], currentState: KDSItemStatus) => void;
-    onCompletarComanda: (orderId: string) => void;
+    onCompletarComanda: (orderId: string, idTicket: string | null) => void;
     onRecuperarComanda: (orderId: string) => void;
     onUpdateLineNotes: (lineIds: string[], nextNotes: string) => Promise<void> | void;
     onUpdateOrderNotes: (orderId: string, nextNotes: string) => Promise<void> | void;
@@ -377,7 +377,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                     </button>
                 ) : (
                     <button
-                        onClick={() => onCompletarComanda(order.id)}
+                        onClick={() => onCompletarComanda(order.id, order.id_ticket ?? null)}
                         className={`w-full min-h-[52px] py-3 rounded-xl font-black text-base sm:text-lg uppercase tracking-[0.15em] transition-all duration-300 active:translate-y-1 ${isFullyDone
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300 shadow-sm'
                                 : 'bg-slate-100/80 text-slate-400 hover:bg-slate-200/80'

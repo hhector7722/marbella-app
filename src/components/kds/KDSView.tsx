@@ -8,14 +8,12 @@ import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
 
-/** Menos columnas en pantallas grandes = tarjetas más anchas y texto más legible en cocina */
+/** Tres comandas por fila en cocina (md+); 1 columna en móvil */
 function useColumns() {
-    const [cols, setCols] = useState(2);
+    const [cols, setCols] = useState(3);
     useEffect(() => {
         const update = () => {
-            // Cocina: priorizamos legibilidad extrema.
-            // 1 columna en pantallas pequeñas, 2 columnas en la mayoría de monitores.
-            if (window.innerWidth >= 768) setCols(2);
+            if (window.innerWidth >= 768) setCols(3);
             else setCols(1);
         };
         update();
@@ -101,16 +99,18 @@ export default function KDSView() {
                         </div>
                     ) : (
                         orderRows.map((row, rowIdx) => (
-                            <div key={rowIdx} className="w-full relative pt-4 sm:pt-5 mb-3 sm:mb-6">
-                                {/* THE METAL RAIL (Comandero) PER ROW STRETCHED */}
-                                <img
-                                    src="/icons/comandero.png"
-                                    className="absolute top-0 left-[-120px] right-[-320px] w-auto h-6 sm:h-8 z-20 shadow-lg object-fill border-b border-slate-900/50 opacity-80"
-                                    alt="Comandero rail"
-                                />
+                            <div key={rowIdx} className="w-full mb-3 sm:mb-6">
+                                {/* Riel porta-comandas: ancho completo del viewport (sin offsets negativos) */}
+                                <div className="relative z-20 w-full h-6 sm:h-8 shrink-0 border-b border-slate-900/60 shadow-md overflow-hidden">
+                                    <img
+                                        src="/icons/comandero.png"
+                                        alt=""
+                                        className="h-full w-full object-cover object-center opacity-90"
+                                    />
+                                </div>
 
                                 <div
-                                    className="px-5 sm:px-8 md:px-10 lg:px-12 relative z-10 w-full grid gap-4 sm:gap-6 -mt-2 items-start"
+                                    className="relative z-10 w-full max-w-none grid gap-3 sm:gap-4 pt-3 sm:pt-4 px-2 sm:px-3 md:px-4 items-start"
                                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                                 >
                                     {row.map(order => (

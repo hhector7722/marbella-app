@@ -15,6 +15,8 @@ export interface KDSOrderLine {
 
 export interface KDSOrder {
     id: string;
+    /** Mismo ticket TPV / mesa; puede haber varias cabeceras (tandas) con el mismo valor */
+    id_ticket?: string | null;
     origen_referencia: string | null;
     mesa: string | null;
     notas_comanda: string | null;
