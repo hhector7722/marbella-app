@@ -1,26 +1,115 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useLayoutEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useKDS } from '@/hooks/useKDS';
 import { CommandCard } from './CommandCard';
-import { Loader2, Package, Info, ListChecks, Check, X } from 'lucide-react';
+import { Loader2, Package, ListChecks, Check, X } from 'lucide-react';
 import { KDSOrder } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
 
-/** Tres comandas por fila en cocina (md+); 1 columna en móvil */
-function useColumns() {
-    const [cols, setCols] = useState(3);
-    useEffect(() => {
-        const update = () => {
-            if (window.innerWidth >= 768) setCols(3);
-            else setCols(1);
-        };
-        update();
-        window.addEventListener('resize', update);
-        return () => window.removeEventListener('resize', update);
+/** Agrupa comandas en filas visuales según el layout flex-wrap del DOM (mismo offsetTop ≈ misma fila). */
+function chunkOrdersByVisualRows(wrap: HTMLElement, orders: KDSOrder[]): KDSOrder[][] {
+    const children = [...wrap.children] as HTMLElement[];
+    if (children.length === 0 || orders.length === 0) return [];
+    if (children.length !== orders.length) return [orders];
+
+    const items = children.map((el, i) => ({
+        order: orders[i],
+        top: Math.round(el.offsetTop),
+        left: el.offsetLeft,
+    }));
+    const tops = [...new Set(items.map((x) => x.top))].sort((a, b) => a - b);
+    return tops.map((t) =>
+        items
+            .filter((x) => x.top === t)
+            .sort((a, b) => a.left - b.left)
+            .map((x) => x.order)
+    );
+}
+
+/** Un riel por fila; gap-x-10 entre comandas. Entre filas: gap-y fijo (borde inferior del bloque de tarjetas → siguiente riel), la fila crece según la comanda más alta (items-start). */
+function KDSOrderRowsLayout({
+    sortedOrders,
+    renderCommandCard,
+}: {
+    sortedOrders: KDSOrder[];
+    renderCommandCard: (order: KDSOrder) => ReactNode;
+}) {
+    const [layoutRows, setLayoutRows] = useState<KDSOrder[][] | null>(null);
+    const [measureKey, setMeasureKey] = useState(0);
+    const measureRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(() => {
+            setLayoutRows(null);
+            setMeasureKey((k) => k + 1);
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
     }, []);
-    return cols;
+
+    useLayoutEffect(() => {
+        if (sortedOrders.length === 0) {
+            setLayoutRows([]);
+            return;
+        }
+        const wrap = measureRef.current;
+        if (!wrap) return;
+        const chunks = chunkOrdersByVisualRows(wrap, sortedOrders);
+        setLayoutRows(chunks.length > 0 ? chunks : [sortedOrders]);
+    }, [sortedOrders, measureKey]);
+
+    return (
+        <div ref={containerRef} className="w-full px-3 sm:px-4 md:px-5">
+            {layoutRows === null && (
+                <div
+                    ref={measureRef}
+                    className="flex flex-wrap items-start gap-x-10 gap-y-0 w-full"
+                    aria-hidden
+                >
+                    {sortedOrders.map((order) => (
+                        <div key={order.id} className="shrink-0 w-fit max-w-[min(100vw-2rem,48rem)]">
+                            {renderCommandCard(order)}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {layoutRows !== null && layoutRows.length > 0 && (
+                <div className="flex flex-col gap-y-10 w-full">
+                    {layoutRows.map((row, rowIdx) => (
+                        <div
+                            key={`row-${row.map((o) => o.id).join('-')}-${rowIdx}`}
+                            className="flex flex-col w-full min-w-0"
+                        >
+                            <div className="relative z-20 w-full h-6 sm:h-8 shrink-0 border-b border-slate-900/60 shadow-md overflow-hidden">
+                                <img
+                                    src="/icons/comandero.png"
+                                    alt=""
+                                    className="h-full w-full object-cover object-center opacity-90"
+                                />
+                            </div>
+                            {/*
+                              items-start: tarjetas cortas no estiran; la altura de la fila la marca la comanda más alta.
+                              gap-y del padre separa el borde inferior de este bloque del riel de la fila siguiente (siempre el mismo).
+                            */}
+                            <div className="relative z-10 flex flex-wrap items-start content-start gap-x-10 gap-y-0 pt-3 sm:pt-4 w-full">
+                                {row.map((order) => (
+                                    <div key={order.id} className="shrink-0 w-fit max-w-[min(100vw-2rem,48rem)] self-start">
+                                        {renderCommandCard(order)}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default function KDSView() {
@@ -58,15 +147,6 @@ export default function KDSView() {
         (a, b) => getEffectiveStartTime(a) - getEffectiveStartTime(b)
     ), [visibleOrders]);
 
-    const cols = useColumns();
-    const orderRows = useMemo(() => {
-        const rows = [];
-        for (let i = 0; i < sortedOrders.length; i += cols) {
-            rows.push(sortedOrders.slice(i, i + cols));
-        }
-        return rows;
-    }, [sortedOrders, cols]);
-
     const lastCompletedOrderId = useMemo(() => {
         const completed = orders
             .filter((o) => o.estado === 'completada' && o.completed_at)
@@ -74,7 +154,25 @@ export default function KDSView() {
         return completed[0]?.id ?? null;
     }, [orders]);
 
+    /** Remonta el layout cuando cambian ids o tamaño de comandas (anchura de tarjeta / saltos de línea). */
+    const rowsLayoutKey = useMemo(
+        () => sortedOrders.map((o) => `${o.id}:${(o.lineas ?? []).length}`).join('|'),
+        [sortedOrders]
+    );
 
+    const renderCommandCard = useCallback(
+        (order: KDSOrder) => (
+            <CommandCard
+                order={order}
+                onTacharProductos={tacharProductos}
+                onCompletarComanda={completarComanda}
+                onRecuperarComanda={recuperarComanda}
+                onUpdateLineNotes={updateLineNotes}
+                onUpdateOrderNotes={updateOrderNotes}
+            />
+        ),
+        [tacharProductos, completarComanda, recuperarComanda, updateLineNotes, updateOrderNotes]
+    );
 
     return (
         <div className={`fixed inset-0 z-[100] flex flex-col bg-slate-900 transition-all duration-500 ${isOffline ? 'grayscale-[0.5]' : ''}`}>
@@ -98,35 +196,11 @@ export default function KDSView() {
                             </h3>
                         </div>
                     ) : (
-                        orderRows.map((row, rowIdx) => (
-                            <div key={rowIdx} className="w-full mb-3 sm:mb-6">
-                                {/* Riel porta-comandas: ancho completo del viewport (sin offsets negativos) */}
-                                <div className="relative z-20 w-full h-6 sm:h-8 shrink-0 border-b border-slate-900/60 shadow-md overflow-hidden">
-                                    <img
-                                        src="/icons/comandero.png"
-                                        alt=""
-                                        className="h-full w-full object-cover object-center opacity-90"
-                                    />
-                                </div>
-
-                                <div
-                                    className="relative z-10 w-full max-w-none grid gap-3 sm:gap-4 pt-3 sm:pt-4 px-2 sm:px-3 md:px-4 items-start"
-                                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-                                >
-                                    {row.map(order => (
-                                        <CommandCard
-                                            key={order.id}
-                                            order={order}
-                                            onTacharProductos={tacharProductos}
-                                            onCompletarComanda={completarComanda}
-                                            onRecuperarComanda={recuperarComanda}
-                                            onUpdateLineNotes={updateLineNotes}
-                                            onUpdateOrderNotes={updateOrderNotes}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))
+                        <KDSOrderRowsLayout
+                            key={rowsLayoutKey}
+                            sortedOrders={sortedOrders}
+                            renderCommandCard={renderCommandCard}
+                        />
                     )}
                 </div>
 

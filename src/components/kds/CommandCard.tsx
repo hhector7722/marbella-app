@@ -140,7 +140,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         <>
             <div
             ref={cardRef}
-            className={`relative flex flex-col rounded-b-xl rounded-t-sm shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white ${
+            className={`relative flex flex-col rounded-b-xl rounded-t-sm shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)] ${
                 openDropdownKey ? 'z-[100]' : 'z-auto'
             } ${isCompleted
                     ? 'opacity-60'
