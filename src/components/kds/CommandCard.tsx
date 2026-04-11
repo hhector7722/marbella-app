@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { KDSOrder, KDSItemStatus } from './types';
 import { parseDBDate, formatLocalTime } from '@/utils/date-utils';
 import { NotesModal } from './NotesModal';
+import { cn } from '@/lib/utils';
 
 interface CommandCardProps {
     order: KDSOrder;
@@ -142,29 +143,27 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
         <>
             <div
             ref={cardRef}
-            className={`relative flex flex-col rounded-b-xl rounded-t-sm shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)] ${
-                openDropdownKey ? 'z-[100]' : 'z-auto'
-            } ${isCompleted
-                    ? 'opacity-60'
-                    : isFullyDone
-                        ? 'opacity-90'
-                        : ''
-                }`}
-            style={{
-                marginTop: kdsRailAttached ? 0 : '0.5rem',
-                paddingTop: kdsRailAttached ? '0.5rem' : '0.75rem',
-                borderTop: '10px solid #cbd5e1',
-            }}
+            className={cn(
+                'relative flex flex-col overflow-hidden rounded-xl shadow-2xl transition-all duration-300 border-x border-b border-slate-300 bg-white w-full min-w-0 sm:w-fit sm:max-w-[min(100vw-2rem,48rem)]',
+                openDropdownKey ? 'z-[100]' : 'z-auto',
+                isCompleted ? 'opacity-60' : isFullyDone ? 'opacity-90' : '',
+                !kdsRailAttached && 'mt-2'
+            )}
         >
-            {/* Cabecera coloreada (tonos más claros en alerta roja) */}
-            <div className={`px-4 pb-2 flex justify-between items-start transition-colors duration-500 relative font-black rounded-t-sm ${isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`}`}>
+            {/* Cabecera: color desde el borde superior de la tarjeta (sin franja clara ni marco superior) */}
+            <div
+                className={cn(
+                    'px-3 sm:px-4 pb-2 pt-1.5 flex justify-between items-start transition-colors duration-500 relative font-black',
+                    isCompleted ? 'bg-slate-200 text-slate-600' : `${getIndicatorColor()} text-white`
+                )}
+            >
                 {isCompleted && (
                     <div className="absolute top-0 right-3 bg-white/50 px-2 py-1 rounded-b-md text-[10px] font-black uppercase tracking-[0.15em] text-slate-700">
                         FINALIZADA
                     </div>
                 )}
 
-                <div className="flex items-center gap-4 w-full pt-2">
+                <div className="flex items-center gap-4 w-full pt-0">
                     {/* Mesa */}
                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-slate-900`}>
                         <span className="text-2xl sm:text-3xl font-black tracking-wide uppercase tabular-nums">
@@ -233,7 +232,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
             )}
 
             {/* Lista de Líneas */}
-            <div className="flex-1 p-3 sm:p-4 space-y-2">
+            <div className="flex-1 space-y-2 px-0 py-2 sm:py-3">
                 {groupedArray.map((group) => {
                     const groupKey = group.ids.join(',');
                     const isDropdownOpen = openDropdownKey === groupKey;
@@ -249,7 +248,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                     // Tachar TODAS las unidades del grupo de golpe
                                     onTacharProductos(group.ids, group.estado);
                                 }}
-                                className={`group relative flex items-center p-3 sm:p-3.5 select-none transition-all duration-200 rounded-xl bg-white border border-slate-200 shadow-sm ${isCompleted
+                                className={`group relative flex items-center pl-0 pr-3 py-3 sm:py-3.5 select-none transition-all duration-200 rounded-xl bg-white border border-slate-200 shadow-sm ${isCompleted
                                         ? 'opacity-40 cursor-default'
                                         : group.estado === 'terminado'
                                             ? 'hover:bg-slate-50 cursor-pointer opacity-70'
@@ -271,7 +270,7 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
 
                                 <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="flex flex-col pr-1 min-w-0">
-                                        <div className="flex items-center gap-2 min-w-0">
+                                        <div className="flex items-center gap-0 min-w-0">
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
@@ -284,13 +283,13 @@ export function CommandCard({ order, onTacharProductos, onCompletarComanda, onRe
                                                         lineIds: group.ids,
                                                     });
                                                 }}
-                                                className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-transparent border-0 shadow-none hover:opacity-90 active:scale-95 transition"
+                                                className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
                                                 title="Editar nota artículo"
                                             >
                                                 <Image src="/icons/notas.png" alt="Notas" width={34} height={34} className={`${isCompleted ? 'opacity-45' : 'opacity-90'} drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]`} />
                                             </button>
 
-                                            <span className={`flex-1 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
+                                            <span className={`flex-1 min-w-0 text-xl sm:text-2xl lg:text-3xl leading-tight font-bold tracking-[0.06em] transition-all duration-300 block truncate ${isCompleted ? 'text-slate-400 line-through' :
                                                 group.estado === 'terminado' ? 'text-green-600/60 line-through decoration-2' :
                                                     group.estado === 'cancelado' ? 'text-slate-400 line-through decoration-slate-400 decoration-2' :
                                                         'text-slate-900'

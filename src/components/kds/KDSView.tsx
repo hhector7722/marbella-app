@@ -15,7 +15,91 @@ const KDS_MAX_COLS = 4;
 const KDS_MIN_CARD_PX = 200;
 
 /** Subir este valor al reemplazar `public/icons/comandero.png` para forzar recarga (caché CDN/navegador). */
-const COMANDERO_PNG_VERSION = '20260411';
+const COMANDERO_PNG_VERSION = '20260412';
+
+type KdsAggregatedLine = { key: string; nombre: string; notas: string | null; cantidad: number };
+
+const KDS_FOOTER_ROW_PX = 19;
+const KDS_FOOTER_ROW_GAP_PX = 2;
+const KDS_FOOTER_PLUS_LINE_PX = 18;
+
+function rowsBlockHeightPx(rowCount: number): number {
+    if (rowCount <= 0) return 0;
+    return rowCount * KDS_FOOTER_ROW_PX + Math.max(0, rowCount - 1) * KDS_FOOTER_ROW_GAP_PX;
+}
+
+/** Máximo de filas que caben en `availableH` sin scroll; si no caben todas, se reserva altura para "+N". */
+function maxRowsFitInFooter(availableH: number, totalItems: number): number {
+    if (totalItems <= 0) return 0;
+    if (availableH <= 0) return Math.min(totalItems, 4);
+    for (let n = totalItems; n >= 1; n--) {
+        const need =
+            n < totalItems ? rowsBlockHeightPx(n) + KDS_FOOTER_PLUS_LINE_PX : rowsBlockHeightPx(n);
+        if (need <= availableH) return n;
+    }
+    return 1;
+}
+
+function KDSFooterTotalsCard({ items, onOpen }: { items: KdsAggregatedLine[]; onOpen: () => void }) {
+    const middleRef = useRef<HTMLDivElement>(null);
+    const [visibleCount, setVisibleCount] = useState(1);
+
+    const recalc = useCallback(() => {
+        const el = middleRef.current;
+        if (!el || items.length === 0) {
+            setVisibleCount(0);
+            return;
+        }
+        const h = el.clientHeight;
+        setVisibleCount(maxRowsFitInFooter(h, items.length));
+    }, [items.length]);
+
+    useLayoutEffect(() => {
+        recalc();
+        const el = middleRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(() => recalc());
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [recalc]);
+
+    const shown = items.slice(0, visibleCount);
+    const rest = items.length - shown.length;
+
+    return (
+        <button
+            type="button"
+            onClick={onOpen}
+            className={cn(
+                'flex h-[6.5rem] w-full min-w-0 min-h-[48px] flex-col overflow-hidden rounded-xl border border-slate-700/90 bg-slate-900/95 px-3 py-2 text-left shadow-inner',
+                'hover:bg-slate-900 active:scale-[0.99] transition'
+            )}
+            title="Ver resumen completo"
+        >
+            <span className="mb-0.5 shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                Totales por artículo
+            </span>
+            <div ref={middleRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
+                    {shown.map((item) => (
+                        <div
+                            key={item.key}
+                            className="flex min-w-0 shrink-0 items-center justify-between gap-2 text-xs leading-tight sm:text-sm"
+                        >
+                            <span className="min-w-0 truncate font-bold text-slate-100">{item.nombre}</span>
+                            <span className="shrink-0 font-black tabular-nums text-slate-300">×{item.cantidad}</span>
+                        </div>
+                    ))}
+                </div>
+                {rest > 0 && (
+                    <span className="shrink-0 pt-0.5 text-[10px] font-black tabular-nums text-slate-400">
+                        +{rest}
+                    </span>
+                )}
+            </div>
+        </button>
+    );
+}
 
 /**
  * Agrupa comandas en filas: hasta KDS_MAX_COLS, mientras que la suma de anchos
@@ -168,7 +252,7 @@ function KDSOrderRowsLayout({
                                 <img
                                     src={`/icons/comandero.png?v=${COMANDERO_PNG_VERSION}`}
                                     alt=""
-                                    className="block w-full h-auto min-h-[40px] max-h-[72px] object-cover object-center select-none pointer-events-none"
+                                    className="block w-full h-auto min-h-[22px] max-h-[44px] object-cover object-center select-none pointer-events-none"
                                     draggable={false}
                                 />
                             </div>
@@ -296,8 +380,8 @@ export default function KDSView() {
 
             </div>
 
-            {/* Pie fijo: logo, resumen horizontal, controles (antes cabecera superior) */}
-            <footer className="shrink-0 z-30 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 min-h-[5.5rem] sm:min-h-[6rem] px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {/* Pie fijo: logo, resumen por artículo (sin scroll horizontal), controles */}
+            <footer className="shrink-0 z-30 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 min-h-[5.5rem] sm:min-h-[6rem] px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] overflow-x-hidden">
                 <div className="flex items-center gap-4 shrink-0 border-b border-slate-800/80 sm:border-b-0 pb-3 sm:pb-0 sm:border-r sm:pr-6">
                     <div className="flex items-center justify-center shrink-0">
                         <Image src="/icons/logo-white.png" alt="Bar Marbella" width={52} height={52} className="object-contain drop-shadow-lg opacity-90" />
@@ -315,46 +399,18 @@ export default function KDSView() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex items-center overflow-x-auto overflow-y-hidden custom-scrollbar-horizontal gap-3 min-h-[3.25rem] px-1">
+                <div className="flex-1 flex flex-col items-stretch gap-2 min-w-0 min-h-[3.25rem] overflow-x-hidden">
                     {aggregatedItems.length === 0 ? (
                         !loading && (
-                            <div className="text-slate-500 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto">
+                            <div className="text-slate-500 text-base sm:text-lg font-bold uppercase tracking-[0.12em] italic my-auto px-1">
                                 Nada que preparar
                             </div>
                         )
                     ) : (
-                        <button
-                            type="button"
-                            onClick={() => setIsSummaryOpen(true)}
-                            className="flex-1 min-w-0 text-left"
-                            title="Ver resumen completo"
-                        >
-                            <div className="flex items-center gap-3 min-w-0 max-h-[3.25rem] overflow-hidden">
-                                {aggregatedItems.slice(0, 4).map(item => (
-                                    <div
-                                        key={item.key}
-                                        className="flex items-center gap-2 bg-white hover:bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 shrink-0 shadow-sm"
-                                    >
-                                        <span className="text-lg sm:text-xl font-black text-slate-900 max-w-[min(18rem,40vw)] truncate tracking-[0.06em]">
-                                            {item.nombre}
-                                        </span>
-                                        {item.notas && (
-                                            <span className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic max-w-[10rem] truncate">
-                                                {item.notas}
-                                            </span>
-                                        )}
-                                        <span className="bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide">
-                                            ×{item.cantidad}
-                                        </span>
-                                    </div>
-                                ))}
-                                {aggregatedItems.length > 4 && (
-                                    <div className="shrink-0 text-slate-300 font-black uppercase tracking-[0.18em]">
-                                        +{aggregatedItems.length - 4}
-                                    </div>
-                                )}
-                            </div>
-                        </button>
+                        <KDSFooterTotalsCard
+                            items={aggregatedItems}
+                            onOpen={() => setIsSummaryOpen(true)}
+                        />
                     )}
                 </div>
 
@@ -464,10 +520,6 @@ export default function KDSView() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        .custom-scrollbar-horizontal::-webkit-scrollbar { height: 6px; }
-        .custom-scrollbar-horizontal::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar-horizontal::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover { background: #475569; }
       `}</style>
         </div>
     );
