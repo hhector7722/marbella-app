@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { normalizeRecipeImportUnit, type MassVolumeUnit } from '@/lib/recipe-cost'
 
 export type ImportResult = {
     success: boolean
@@ -26,6 +27,46 @@ function excelDateToJSDate(serial: number) {
     const minutes = Math.floor(total_seconds / 60) % 60
 
     return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds)
+}
+
+/** Lee la primera columna cuyo encabezado coincide (sin acentos, case-insensitive). */
+function getCell(row: Record<string, unknown>, possibleKeys: string[]): unknown {
+    const rowKeys = Object.keys(row)
+    const norm = (s: string) =>
+        s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    for (const pk of possibleKeys) {
+        const foundKey = rowKeys.find((rk) => norm(rk) === norm(pk))
+        if (foundKey !== undefined && row[foundKey] !== undefined && row[foundKey] !== null && String(row[foundKey]).trim() !== '') {
+            return row[foundKey]
+        }
+    }
+    return undefined
+}
+
+function parseNum(v: unknown): number | null {
+    if (v === undefined || v === null || v === '') return null
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null
+    const s = String(v).replace(',', '.').trim()
+    const n = parseFloat(s)
+    return Number.isFinite(n) ? n : null
+}
+
+/**
+ * Cantidad y unidad para recipe_ingredients: convierte cl→ml; unidad final en set permitido por recipe-cost.
+ */
+function parseQuantityAndUnit(qtyRaw: unknown, unitRaw: unknown): { qty: number; unit: MassVolumeUnit } | null {
+    let qty = parseNum(qtyRaw)
+    if (qty === null || qty <= 0) return null
+    const raw = String(unitRaw ?? 'kg').trim().toLowerCase()
+    if (raw === 'cl' || raw === 'cls') {
+        return { qty: qty * 10, unit: 'ml' }
+    }
+    const u = normalizeRecipeImportUnit(raw)
+    const allowed: MassVolumeUnit[] = ['g', 'kg', 'ml', 'l', 'ud']
+    if (!allowed.includes(u)) {
+        return { qty, unit: 'kg' }
+    }
+    return { qty, unit: u }
 }
 
 export async function importSuppliers(data: Record<string, any>[]): Promise<ImportResult> {
@@ -165,8 +206,188 @@ export async function importProducts(data: Record<string, any>[]): Promise<Impor
 }
 
 export async function importRecipes(data: Record<string, any>[]): Promise<ImportResult> {
-    // Conceptual implementation - requires complex parsing of ingredients
-    return { success: false, message: "Importación de recetas aún no implementada completamente." }
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { success: false, message: 'Usuario no autenticado' }
+    }
+
+    if (!data?.length) {
+        return { success: false, message: 'No hay filas para importar' }
+    }
+
+    const { data: ingredientRows, error: ingErr } = await supabase.from('ingredients').select('id, name')
+    if (ingErr || !ingredientRows) {
+        return { success: false, message: `No se pudieron cargar ingredientes: ${ingErr?.message ?? 'desconocido'}` }
+    }
+
+    const ingredientMap = new Map<string, string>()
+    for (const ing of ingredientRows) {
+        const key = String(ing.name).toLowerCase().trim()
+        ingredientMap.set(key, ing.id)
+    }
+
+    type GroupRow = Record<string, unknown>
+    const groups = new Map<string, { displayName: string; rows: GroupRow[] }>()
+
+    for (const row of data as GroupRow[]) {
+        const nameRaw = getCell(row, [
+            'nombre_receta',
+            'nombre receta',
+            'receta',
+            'recipe_name',
+            'nombre_plato',
+            'nombre',
+            'name',
+        ])
+        const recipeName = nameRaw != null ? String(nameRaw).trim() : ''
+        if (!recipeName) {
+            continue
+        }
+        const gkey = recipeName.toLowerCase()
+        if (!groups.has(gkey)) {
+            groups.set(gkey, { displayName: recipeName, rows: [] })
+        }
+        groups.get(gkey)!.rows.push(row)
+    }
+
+    const errors: string[] = []
+    let successCount = 0
+
+    for (const [, { displayName: recipeName, rows }] of groups) {
+        try {
+            const { data: existing } = await supabase.from('recipes').select('id').ilike('name', recipeName).maybeSingle()
+            if (existing) {
+                errors.push(`Receta ya existe (omitida): ${recipeName}`)
+                continue
+            }
+
+            const header = rows[0]
+            const categoryRaw = getCell(header, ['categoria', 'category', 'categoría'])
+            const saleRaw = getCell(header, ['precio_barra', 'sale_price', 'pvp', 'precio'])
+            const pavRaw = getCell(header, ['precio_pavelló', 'precio_pavello', 'sales_price_pavello', 'pvp_pavello'])
+            const servingsRaw = getCell(header, ['raciones', 'servings', 'comensales'])
+            const elaboration = getCell(header, ['elaboration', 'elaboración', 'preparacion'])
+            const presentation = getCell(header, ['presentation', 'presentación'])
+            const halfRaw = getCell(header, ['has_half_ration', 'media_racion', 'mitades'])
+
+            const category = categoryRaw != null ? String(categoryRaw).trim() : ''
+            const sale_price = parseNum(saleRaw) ?? 0
+            const sales_price_pavello = parseNum(pavRaw) ?? 0
+            let servings = Math.round(parseNum(servingsRaw) ?? 1)
+            if (servings < 1) servings = 1
+
+            const has_half_ration =
+                typeof halfRaw === 'boolean'
+                    ? halfRaw
+                    : String(halfRaw ?? '')
+                          .toLowerCase()
+                          .match(/^(1|si|sí|true|yes)$/) != null
+
+            const insertPayload: Record<string, unknown> = {
+                name: recipeName,
+                category: category || 'Principales',
+                sale_price,
+                sales_price_pavello,
+                servings,
+                elaboration: elaboration != null ? String(elaboration) : '',
+                presentation: presentation != null ? String(presentation) : '',
+                has_half_ration,
+                sale_price_half: 0,
+                sale_price_half_pavello: 0,
+                target_food_cost_pct: 30,
+            }
+
+            const { data: newRecipe, error: recipeError } = await supabase
+                .from('recipes')
+                .insert(insertPayload as never)
+                .select('id')
+                .single()
+
+            if (recipeError) throw new Error(recipeError.message)
+            if (!newRecipe?.id) throw new Error('Inserción sin id')
+
+            const linesToInsert: {
+                recipe_id: string
+                ingredient_id: string
+                quantity_gross: number
+                quantity_half: number
+                unit: string
+            }[] = []
+            const missing: string[] = []
+
+            for (const row of rows) {
+                const ingNameRaw = getCell(row, [
+                    'ingrediente_nombre',
+                    'ingrediente',
+                    'ingredient',
+                    'ingredient_name',
+                    'producto',
+                ])
+                if (ingNameRaw === undefined || ingNameRaw === null || String(ingNameRaw).trim() === '') {
+                    continue
+                }
+                const ingName = String(ingNameRaw).trim()
+                const id = ingredientMap.get(ingName.toLowerCase())
+                if (!id) {
+                    missing.push(ingName)
+                    continue
+                }
+                const qtyUnit = parseQuantityAndUnit(
+                    getCell(row, ['cantidad', 'quantity', 'qty', 'gramos']),
+                    getCell(row, ['unidad', 'unit', 'ud'])
+                )
+                if (!qtyUnit) {
+                    errors.push(`Receta "${recipeName}": cantidad inválida o ≤0 para "${ingName}"`)
+                    continue
+                }
+                const { qty, unit } = qtyUnit
+                const unitDb = unit === 'ud' ? 'ud' : unit
+                const qh = qty / 2
+                linesToInsert.push({
+                    recipe_id: newRecipe.id,
+                    ingredient_id: id,
+                    quantity_gross: qty,
+                    quantity_half: qh,
+                    unit: unitDb,
+                })
+            }
+
+            if (linesToInsert.length > 0) {
+                const { error: riError } = await supabase.from('recipe_ingredients').insert(linesToInsert)
+                if (riError) throw new Error(riError.message)
+            }
+
+            if (missing.length > 0) {
+                errors.push(`Receta "${recipeName}": ingredientes no encontrados en BD (líneas omitidas): ${[...new Set(missing)].join(', ')}`)
+            }
+
+            successCount++
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            errors.push(`Receta "${recipeName}": ${message}`)
+        }
+    }
+
+    if (groups.size === 0) {
+        return {
+            success: false,
+            message: 'Ninguna fila tenía nombre_receta (o equivalente) relleno.',
+            count: 0,
+            errors,
+        }
+    }
+
+    revalidatePath('/recipes')
+    return {
+        success: true,
+        message: `Importadas ${successCount} recetas (${groups.size} grupos detectados)`,
+        count: successCount,
+        errors,
+    }
 }
 
 export async function importLogs(data: Record<string, any>[]): Promise<ImportResult> {

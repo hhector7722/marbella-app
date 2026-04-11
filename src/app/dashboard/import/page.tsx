@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 // import { Button } from '@/components/ui/button' // Removed
 // import { Card, ... } from '@/components/ui/card' // Removed
 // import { Alert, ... } from '@/components/ui/alert' // Removed
-import { importSuppliers, importProducts, importLogs, importInitialMovements, ImportResult } from '@/app/actions/import-legacy'
+import { importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
 type ImportStep = 'suppliers' | 'products' | 'recipes' | 'logs' | 'treasury'
@@ -67,6 +67,8 @@ export default function ImportPage() {
                 result = await importLogs(fileData)
             } else if (currentStep === 'treasury') {
                 result = await importInitialMovements(fileData)
+            } else if (currentStep === 'recipes') {
+                result = await importRecipes(fileData)
             } else {
                 result = { success: false, message: "Este paso aún no está implementado." }
             }
@@ -163,7 +165,12 @@ export default function ImportPage() {
                                 </ul>
                             )}
                             {currentStep === 'recipes' && (
-                                <p className="italic text-xs">Aún no disponible.</p>
+                                <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded space-y-1">
+                                    <li><strong>nombre_receta</strong> (req): mismo valor en cada fila del mismo plato</li>
+                                    <li>categoria, precio_barra, precio_pavelló, raciones, elaboración, presentación</li>
+                                    <li>Por línea de ingrediente: ingrediente_nombre, cantidad, unidad (g, kg, ml, l, ud, cl)</li>
+                                    <li>Receta sin líneas: una sola fila solo con cabecera</li>
+                                </ul>
                             )}
                             {currentStep === 'logs' && (
                                 <ul className="list-disc list-inside font-mono text-xs bg-white/50 p-2 rounded">

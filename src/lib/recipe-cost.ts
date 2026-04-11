@@ -22,6 +22,11 @@ function normalizeUnit(u: string): MassVolumeUnit {
   return s as MassVolumeUnit;
 }
 
+/** Unidad canónica para líneas de receta importadas (g, kg, ml, l, ud). */
+export function normalizeRecipeImportUnit(u: string): MassVolumeUnit {
+  return normalizeUnit(u);
+}
+
 function unitDimension(unit: MassVolumeUnit): 'mass' | 'volume' | 'count' {
   if (MASS_UNITS.includes(unit)) return 'mass';
   if (VOLUME_UNITS.includes(unit)) return 'volume';
