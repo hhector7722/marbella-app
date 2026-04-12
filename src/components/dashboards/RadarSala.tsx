@@ -20,9 +20,16 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   return (
     <div className={`p-2 md:p-3 rounded-xl flex flex-col transition-all duration-300 h-fit ${estado.color} shadow-md`}>
       <div className="flex justify-between items-center select-none gap-2">
-        <span className="text-[11px] md:text-sm font-black text-white whitespace-nowrap tracking-tight">
-          M {m.mesa}
-        </span>
+        <div className="min-w-0 flex flex-col">
+          <span className="text-[11px] md:text-sm font-black text-white whitespace-nowrap tracking-tight">
+            M {m.mesa}
+          </span>
+          {(m.nombre_cliente && String(m.nombre_cliente).trim()) ? (
+            <span className="text-[9px] md:text-[10px] font-semibold text-white/90 truncate max-w-[10rem] md:max-w-[14rem]">
+              {String(m.nombre_cliente).trim()}
+            </span>
+          ) : null}
+        </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-1 justify-end">
           {/* ✨ Y AQUÍ PINTAMOS EL TOTAL CALCULADO */}

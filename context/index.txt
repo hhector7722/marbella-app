@@ -64,6 +64,7 @@ async function start() {
                         CAST(C.Numero_Referencia AS VARCHAR) AS Numero_Referencia, 
                         ISNULL(C.Mesa, 0) AS Mesa, 
                         C.Nota_Cabecera1, 
+                        LTRIM(RTRIM(ISNULL(C.Nombre_Cliente, ''))) AS Nombre_Cliente,
                         L.PLU as articulo_id, 
                         L.Descripcion as nombre, 
                         L.Unidades as unidades, 
@@ -81,6 +82,7 @@ async function start() {
                         'DIRECTO-' + CAST(D.Numero AS VARCHAR) AS Numero_Referencia, 
                         ISNULL(D.Mesa, 0) AS Mesa, 
                         D.Nota_Cabecera1, 
+                        LTRIM(RTRIM(ISNULL(D.Nombre_Cliente, ''))) AS Nombre_Cliente,
                         L.PLU as articulo_id, 
                         L.Descripcion as nombre, 
                         L.Unidades as unidades, 
@@ -105,12 +107,15 @@ async function start() {
                             numero_documento: idMesa,
                             mesa: row.Mesa.toString(),
                             notas_comanda: row.Nota_Cabecera1 || '',
+                            nombre_cliente: '',
                             timestamp_tpv: row.Hora ? new Date(row.Hora).toISOString() : new Date().toISOString(),
                             productosMap: new Map()
                         });
                     }
 
                     const mesa = mapa.get(idMesa);
+                    const nc = (row.Nombre_Cliente && String(row.Nombre_Cliente).trim()) || '';
+                    if (nc && !mesa.nombre_cliente) mesa.nombre_cliente = nc;
                     const idPlato = row.articulo_id + '-' + row.nombre.trim();
 
                     if (!mesa.productosMap.has(idPlato)) {
@@ -140,6 +145,7 @@ async function start() {
                         id_ticket: mesa.numero_documento, // ✨ BLINDAJE EXTRA
                         mesa: mesa.mesa,
                         notas_comanda: mesa.notas_comanda,
+                        nombre_cliente: mesa.nombre_cliente || '',
                         timestamp_tpv: mesa.timestamp_tpv,
                         productos: productosReales
                     };
